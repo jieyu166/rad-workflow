@@ -1,0 +1,74 @@
+TEXT::常用組合模板
+正常KUB::No obvious abnormal radiopaque density can be depicted._Bilateral renal and psoas muscle shadows are unremarkable._Unremarkable bowel gas pattern._Unremarkable bony structure.
+正常+靜脈石::No obvious abnormal radiopaque density can be depicted._Bilateral renal and psoas muscle shadows are unremarkable._Unremarkable bowel gas pattern._Pelvic phleboliths._Unremarkable bony structure.
+老人KUB::No obvious abnormal radiopaque density can be depicted._Bilateral renal and psoas muscle shadows are unremarkable._Unremarkable bowel gas pattern._Pelvic phleboliths._Degenerative change and spur formation of spine. Generalized diminished bone density.
+腸氣增+便秘KUB::No obvious abnormal radiopaque density can be depicted._Bilateral renal and psoas muscle shadows are unremarkable._Increased bowel gas with fecal impaction._Unremarkable bony structure.
+NEXT
+--Page--
+TEXT::基本評估 (多選)
+MULTI
+無異常密度::No obvious abnormal radiopaque density can be depicted.
+腎結石::Suspected {LtRt} renal stones.
+疑似腎結石::Suspected {LtRt} renal stones, or bowel content or others.
+膽結石::Gallstones.
+疑似膽結石::Suspected gallstones, or right renal stones or others.
+輸尿管結石::{LtRt} ureteral stone at L_ level, about __cm.
+靜脈石或下輸尿管結石::Pelvic phleboliths. DDx. lower ureteral stones can not be excluded. 
+腸氣干擾::Urotract stone evaluation limited because bowel interference.
+NEXT
+--Page--
+TEXT::腎臟及腰肌影
+腎腰正常::Bilateral renal and psoas muscle shadows are unremarkable.
+腎影模糊::{LtRt} renal shadow obscured.
+腰肌模糊::{LtRt} psoas muscle shadow obscured.
+腎腫大::{LtRt} kidney enlargement.
+NEXT
+
+--Page--
+TEXT::腸氣評估
+腸氣正常::Unremarkable bowel gas pattern.
+腸氣增::Mild increased bowel gas.
+腸氣增-ileus::Increased bowel gas or mild ileus
+疑腸阻塞::Suspect ileus or bowel obstruction.
+糞便堆積::Fecal impaction.
+NEXT
+--Page--
+TEXT::骨盆軟組織
+MULTI
+骨盆靜脈石::Pelvic phleboliths.
+疑膀胱結石::Suspected bladder stone.
+攝護腺鈣化::Prostatic calcifications.
+子宮肌瘤鈣::Suspected calcified myoma(ta).
+NEXT
+
+--Page--
+TEXT::骨骼結構
+MULTI
+骨正常::Unremarkable bony structure.
+輕退化::Mild degenerative change of spine. 
+退化性::Degenerative change and spur formation of spine.
+退化+骨密低::Degenerative change and spur formation of spine. Generalized diminished bone density.
+退化+骨鬆::Degenerative and osteoporotic change of spine.
+脊側彎::Mild scoliosis, convex to the {LtRt} side.
+Hip退化::Mild osteoarthritis of bilateral hip joints.
+SI關節炎::Mild SI joint narrowing, could be sacroiliitis or others.
+OCI/P::otitis condensa_ilii_pubis
+
+NEXT
+--Page--
+TEXT::其他發現
+MULTI
+動脈鈣化::Atherosclerosis of arteries.
+VP分流管::Status post VP shunt placement.
+手術夾::Surgical clips in _ abdomen.
+NEXT
+--Page--
+TEXT::建議
+MULTI
+建議追蹤::Suggest follow up.
+建議超音波::Suggest sonography for further evaluation.
+建議IVU::Suggest IVU if clinically indicated.
+建議CT::Suggest CT for further evaluation.
+臨床相關::Suggest clinical correlation.
+腸氣干擾::Bowel gas interference, stone evaluation limited.
+NEXT
