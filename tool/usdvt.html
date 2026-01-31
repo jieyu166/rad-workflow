@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVT 超音波報告輔助工具</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #3a7bd5 0%, #00d2ff 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 100px 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .header-cell {
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+            padding: 10px;
+            background: linear-gradient(45deg, #3a7bd5, #00d2ff);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        .vein-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .toggle-btn {
+            padding: 12px 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .toggle-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        /* Patent/Occlusion states */
+        .toggle-btn.patent {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        .toggle-btn.occlusion {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        /* Compressible/Not Compressible states */
+        .toggle-btn.compressible {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        
+        .toggle-btn.not-compressible {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        
+        /* GSV Section */
+        .gsv-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .gsv-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .gsv-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .gsv-side {
+            text-align: center;
+        }
+        
+        .gsv-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        
+        .gsv-btn {
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+            width: 100%;
+            max-width: 200px;
+        }
+        
+        .gsv-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .gsv-btn.not-performed {
+            background: #e9ecef;
+            border-color: #6c757d;
+            color: #495057;
+        }
+        
+        .gsv-btn.reflux-negative {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        .gsv-btn.reflux-positive {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        /* Report output */
+        .report-section {
+            margin-top: 30px;
+        }
+        
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .report-title {
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .copy-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        
+        .clear-btn {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+        }
+        
+        .clear-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        
+        .report-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            white-space: pre;
+            overflow-x: auto;
+            min-height: 180px;
+            line-height: 1.5;
+        }
+        
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid;
+        }
+        
+        .legend-color.patent {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        
+        .legend-color.occlusion {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        
+        .legend-color.compressible {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+        }
+        
+        .legend-color.not-compressible {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🦵 DVT 超音波報告輔助工具</h1>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color patent"></div>
+                <span>Patent (P)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color occlusion"></div>
+                <span>Occlusion (O)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color compressible"></div>
+                <span>Compressible (C)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color not-compressible"></div>
+                <span>Not Compressible (X)</span>
+            </div>
+        </div>
+        
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Header Row -->
+            <div class="header-cell" style="background: transparent; color: #333;">Vein</div>
+            <div class="header-cell">Right</div>
+            <div class="header-cell">Left</div>
+            
+            <!-- CFV Row -->
+            <div class="vein-label">CFV</div>
+            <div class="button-group">
+                <button class="toggle-btn patent" id="cfv-rt-po" onclick="togglePO(this)">P</button>
+                <button class="toggle-btn compressible" id="cfv-rt-cx" onclick="toggleCX(this)">C</button>
+            </div>
+            <div class="button-group">
+                <button class="toggle-btn patent" id="cfv-lt-po" onclick="togglePO(this)">P</button>
+                <button class="toggle-btn compressible" id="cfv-lt-cx" onclick="toggleCX(this)">C</button>
+            </div>
+            
+            <!-- FV Row -->
+            <div class="vein-label">FV</div>
+            <div class="button-group">
+                <button class="toggle-btn patent" id="fv-rt-po" onclick="togglePO(this)">P</button>
+                <button class="toggle-btn compressible" id="fv-rt-cx" onclick="toggleCX(this)">C</button>
+            </div>
+            <div class="button-group">
+                <button class="toggle-btn patent" id="fv-lt-po" onclick="togglePO(this)">P</button>
+                <button class="toggle-btn compressible" id="fv-lt-cx" onclick="toggleCX(this)">C</button>
+            </div>
+            
+            <!-- Popliteal Row -->
+            <div class="vein-label">Popliteal</div>
+            <div class="button-group">
+                <button class="toggle-btn patent" id="pop-rt-po" onclick="togglePO(this)">P</button>
+                <button class="toggle-btn compressible" id="pop-rt-cx" onclick="toggleCX(this)">C</button>
+            </div>
+            <div class="button-group">
+                <button class="toggle-btn patent" id="pop-lt-po" onclick="togglePO(this)">P</button>
+                <button class="toggle-btn compressible" id="pop-lt-cx" onclick="toggleCX(this)">C</button>
+            </div>
+        </div>
+        
+        <!-- GSV Section -->
+        <div class="gsv-section">
+            <div class="gsv-title">GSV Reflux</div>
+            <div class="gsv-grid">
+                <div class="gsv-side">
+                    <div class="gsv-label">Right GSV</div>
+                    <button class="gsv-btn not-performed" id="gsv-rt" onclick="toggleGSV(this)">Not performed</button>
+                </div>
+                <div class="gsv-side">
+                    <div class="gsv-label">Left GSV</div>
+                    <button class="gsv-btn not-performed" id="gsv-lt" onclick="toggleGSV(this)">Not performed</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Report Output -->
+        <div class="report-section">
+            <div class="report-header">
+                <span class="report-title">📋 報告輸出</span>
+                <div class="btn-group">
+                    <button class="action-btn copy-btn" onclick="copyReport()">📋 複製報告</button>
+                    <button class="action-btn clear-btn" onclick="resetAll()">🔄 重置</button>
+                </div>
+            </div>
+            <div class="report-output" id="report-output">Sonography of bilateral lower extremity shows:</div>
+        </div>
+    </div>
+    
+    <script>
+        // State management - 預設皆為 P/C (正常)
+        const state = {
+            cfv: { rt: { po: 'P', cx: 'C' }, lt: { po: 'P', cx: 'C' } },
+            fv:  { rt: { po: 'P', cx: 'C' }, lt: { po: 'P', cx: 'C' } },
+            pop: { rt: { po: 'P', cx: 'C' }, lt: { po: 'P', cx: 'C' } },
+            gsv: { rt: 0, lt: 0 }  // 0: Not performed, 1: Reflux(-), 2: Reflux(+)
+        };
+        
+        const gsvStates = ['Not performed', 'Reflux(-)', 'Reflux(+)'];
+        const gsvClasses = ['not-performed', 'reflux-negative', 'reflux-positive'];
+        
+        function togglePO(btn) {
+            const [vein, side] = btn.id.split('-');
+            const current = state[vein][side].po;
+            const newState = current === 'P' ? 'O' : 'P';
+            state[vein][side].po = newState;
+            
+            btn.textContent = newState;
+            btn.className = `toggle-btn ${newState === 'P' ? 'patent' : 'occlusion'}`;
+            
+            updateReport();
+        }
+        
+        function toggleCX(btn) {
+            const [vein, side] = btn.id.split('-');
+            const current = state[vein][side].cx;
+            const newState = current === 'C' ? 'X' : 'C';
+            state[vein][side].cx = newState;
+            
+            btn.textContent = newState;
+            btn.className = `toggle-btn ${newState === 'C' ? 'compressible' : 'not-compressible'}`;
+            
+            updateReport();
+        }
+        
+        function toggleGSV(btn) {
+            const side = btn.id.split('-')[1];
+            state.gsv[side] = (state.gsv[side] + 1) % 3;
+            
+            btn.textContent = gsvStates[state.gsv[side]];
+            btn.className = `gsv-btn ${gsvClasses[state.gsv[side]]}`;
+            
+            updateReport();
+        }
+        
+        function updateReport() {
+            const lines = [];
+            lines.push('Sonography of bilateral lower extremity shows:');
+            lines.push('');
+            lines.push('V             Right          Left');
+            lines.push('-------      -------        -------');
+            
+            // CFV
+            const cfvRt = `${state.cfv.rt.po}/${state.cfv.rt.cx}`;
+            const cfvLt = `${state.cfv.lt.po}/${state.cfv.lt.cx}`;
+            lines.push(`CFV            ${cfvRt.padEnd(14)}${cfvLt}`);
+            
+            // FV
+            const fvRt = `${state.fv.rt.po}/${state.fv.rt.cx}`;
+            const fvLt = `${state.fv.lt.po}/${state.fv.lt.cx}`;
+            lines.push(`FV             ${fvRt.padEnd(14)}${fvLt}`);
+            
+            // Popliteal
+            const popRt = `${state.pop.rt.po}/${state.pop.rt.cx}`;
+            const popLt = `${state.pop.lt.po}/${state.pop.lt.cx}`;
+            lines.push(`Popliteal      ${popRt.padEnd(14)}${popLt}`);
+            
+            // GSV Reflux
+            const gsvRt = state.gsv.rt;
+            const gsvLt = state.gsv.lt;
+            
+            if (gsvRt !== 0 || gsvLt !== 0) {
+                lines.push('');
+                
+                // Both performed
+                if (gsvRt !== 0 && gsvLt !== 0) {
+                    if (gsvRt === gsvLt) {
+                        // Same result bilaterally
+                        if (gsvRt === 1) {
+                            lines.push('_No reflux noted in bil. GSV to suggest venous insufficiency.');
+                        } else {
+                            lines.push('_Reflux noted in bil. GSV to suggest venous insufficiency.');
+                        }
+                    } else {
+                        // Different results
+                        if (gsvRt === 1) {
+                            lines.push('_No reflux noted in R GSV to suggest venous insufficiency.');
+                        } else {
+                            lines.push('_Reflux noted in R GSV to suggest venous insufficiency.');
+                        }
+                        if (gsvLt === 1) {
+                            lines.push('_No reflux noted in L GSV to suggest venous insufficiency.');
+                        } else {
+                            lines.push('_Reflux noted in L GSV to suggest venous insufficiency.');
+                        }
+                    }
+                } else {
+                    // Only one side performed
+                    if (gsvRt !== 0) {
+                        if (gsvRt === 1) {
+                            lines.push('_No reflux noted in R GSV to suggest venous insufficiency.');
+                        } else {
+                            lines.push('_Reflux noted in R GSV to suggest venous insufficiency.');
+                        }
+                    }
+                    if (gsvLt !== 0) {
+                        if (gsvLt === 1) {
+                            lines.push('_No reflux noted in L GSV to suggest venous insufficiency.');
+                        } else {
+                            lines.push('_Reflux noted in L GSV to suggest venous insufficiency.');
+                        }
+                    }
+                }
+            }
+            
+            // Abbreviations
+            lines.push('');
+            lines.push('abbr: Occlusion/Patency(O/P), Compressibility(C/X)');
+            
+            document.getElementById('report-output').textContent = lines.join('\n');
+        }
+        
+        function copyReport() {
+            const reportText = document.getElementById('report-output').textContent;
+            
+            navigator.clipboard.writeText(reportText).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ 已複製!';
+                btn.style.background = 'linear-gradient(45deg, #20c997, #17a2b8)';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = 'linear-gradient(45deg, #28a745, #20c997)';
+                }, 2000);
+            }).catch(err => {
+                alert('複製失敗，請手動複製文字內容');
+            });
+        }
+        
+        function resetAll() {
+            // Reset state to defaults - 預設皆為 P/C (正常)
+            state.cfv = { rt: { po: 'P', cx: 'C' }, lt: { po: 'P', cx: 'C' } };
+            state.fv  = { rt: { po: 'P', cx: 'C' }, lt: { po: 'P', cx: 'C' } };
+            state.pop = { rt: { po: 'P', cx: 'C' }, lt: { po: 'P', cx: 'C' } };
+            state.gsv = { rt: 0, lt: 0 };
+            
+            // Update buttons - 全部設為 P/C
+            document.getElementById('cfv-rt-po').className = 'toggle-btn patent';
+            document.getElementById('cfv-rt-po').textContent = 'P';
+            document.getElementById('cfv-rt-cx').className = 'toggle-btn compressible';
+            document.getElementById('cfv-rt-cx').textContent = 'C';
+            document.getElementById('cfv-lt-po').className = 'toggle-btn patent';
+            document.getElementById('cfv-lt-po').textContent = 'P';
+            document.getElementById('cfv-lt-cx').className = 'toggle-btn compressible';
+            document.getElementById('cfv-lt-cx').textContent = 'C';
+            
+            document.getElementById('fv-rt-po').className = 'toggle-btn patent';
+            document.getElementById('fv-rt-po').textContent = 'P';
+            document.getElementById('fv-rt-cx').className = 'toggle-btn compressible';
+            document.getElementById('fv-rt-cx').textContent = 'C';
+            document.getElementById('fv-lt-po').className = 'toggle-btn patent';
+            document.getElementById('fv-lt-po').textContent = 'P';
+            document.getElementById('fv-lt-cx').className = 'toggle-btn compressible';
+            document.getElementById('fv-lt-cx').textContent = 'C';
+            
+            document.getElementById('pop-rt-po').className = 'toggle-btn patent';
+            document.getElementById('pop-rt-po').textContent = 'P';
+            document.getElementById('pop-rt-cx').className = 'toggle-btn compressible';
+            document.getElementById('pop-rt-cx').textContent = 'C';
+            document.getElementById('pop-lt-po').className = 'toggle-btn patent';
+            document.getElementById('pop-lt-po').textContent = 'P';
+            document.getElementById('pop-lt-cx').className = 'toggle-btn compressible';
+            document.getElementById('pop-lt-cx').textContent = 'C';
+            
+            document.getElementById('gsv-rt').className = 'gsv-btn not-performed';
+            document.getElementById('gsv-rt').textContent = 'Not performed';
+            document.getElementById('gsv-lt').className = 'gsv-btn not-performed';
+            document.getElementById('gsv-lt').textContent = 'Not performed';
+            
+            updateReport();
+        }
+        
+        // Initialize report on load
+        updateReport();
+    </script>
+</body>
+</html>
