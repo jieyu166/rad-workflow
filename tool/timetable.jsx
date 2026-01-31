@@ -1,0 +1,489 @@
+import React, { useState, useMemo } from 'react';
+
+// Train data parsed from the documents
+// 順行: 美術館 → 新左營 → 台南 → 大橋 → 善化
+// 逆行: 善化 → 大橋 → 台南 → 新左營 → 美術館
+
+const forwardTrains = [
+  // 自強 / 普悠瑪 / 普通列車
+  { id: "自強108", type: "自強", times: { 美術館: null, 新左營: "06:13", 台南: "06:43", 大橋: null, 善化: null } },
+  { id: "自強110", type: "自強(3000)", times: { 美術館: null, 新左營: null, 台南: "07:21", 大橋: null, 善化: null } },
+  { id: "自強112", type: "自強", times: { 美術館: null, 新左營: "07:03", 台南: "07:30", 大橋: null, 善化: "07:43" } },
+  { id: "自強114", type: "自強", times: { 美術館: null, 新左營: "08:17", 台南: "08:44", 大橋: null, 善化: null } },
+  { id: "自強116", type: "自強(3000)", times: { 美術館: null, 新左營: "09:31", 台南: "09:57", 大橋: null, 善化: null } },
+  { id: "自強118", type: "自強", times: { 美術館: null, 新左營: "10:14", 台南: "10:44", 大橋: null, 善化: null } },
+  { id: "自強120", type: "自強(3000)", times: { 美術館: null, 新左營: "10:43", 台南: "11:09", 大橋: null, 善化: null } },
+  { id: "自強122", type: "自強", times: { 美術館: null, 新左營: "12:08", 台南: "12:35", 大橋: null, 善化: null } },
+  { id: "普悠瑪124", type: "普悠瑪", times: { 美術館: null, 新左營: null, 台南: "13:02", 大橋: null, 善化: null } },
+  { id: "自強128", type: "自強", times: { 美術館: null, 新左營: "13:37", 台南: "14:08", 大橋: null, 善化: null } },
+  { id: "自強132", type: "自強(3000)", times: { 美術館: null, 新左營: null, 台南: "14:46", 大橋: null, 善化: null } },
+  { id: "自強134", type: "自強", times: { 美術館: null, 新左營: "14:41", 台南: "15:08", 大橋: null, 善化: "15:21" } },
+  { id: "普悠瑪136", type: "普悠瑪", times: { 美術館: null, 新左營: null, 台南: "15:54", 大橋: null, 善化: null } },
+  { id: "自強138", type: "自強", times: { 美術館: null, 新左營: "15:45", 台南: "16:12", 大橋: null, 善化: null } },
+  { id: "自強142", type: "自強", times: { 美術館: null, 新左營: "16:18", 台南: "16:48", 大橋: null, 善化: null } },
+  { id: "自強144", type: "自強", times: { 美術館: null, 新左營: "17:07", 台南: "17:35", 大橋: null, 善化: "17:52" } },
+  { id: "自強146", type: "自強(3000)", times: { 美術館: null, 新左營: "17:34", 台南: "18:00", 大橋: null, 善化: null } },
+  { id: "自強150", type: "自強", times: { 美術館: null, 新左營: "18:23", 台南: "18:55", 大橋: null, 善化: "19:08" } },
+  { id: "自強152", type: "自強", times: { 美術館: null, 新左營: "19:15", 台南: "19:45", 大橋: null, 善化: null } },
+  { id: "自強154", type: "自強(3000)", times: { 美術館: null, 新左營: null, 台南: "19:16", 大橋: null, 善化: null } },
+  { id: "自強156", type: "自強", times: { 美術館: null, 新左營: "21:18", 台南: "21:48", 大橋: null, 善化: "22:04" } },
+  { id: "普悠瑪162", type: "普悠瑪", times: { 美術館: null, 新左營: null, 台南: "08:29", 大橋: null, 善化: null } },
+  { id: "自強168", type: "自強(3000)", times: { 美術館: null, 新左營: "17:57", 台南: "18:24", 大橋: null, 善化: null } },
+  { id: "自強172", type: "自強", times: { 美術館: null, 新左營: "11:17", 台南: "11:44", 大橋: null, 善化: "11:57" } },
+  { id: "自強176", type: "自強", times: { 美術館: null, 新左營: "13:02", 台南: "13:29", 大橋: null, 善化: null } },
+  { id: "自強196", type: "自強(3000)", times: { 美術館: null, 新左營: "20:28", 台南: "20:56", 大橋: null, 善化: null } },
+  { id: "自強304", type: "自強(3000)", times: { 美術館: null, 新左營: "09:57", 台南: null, 大橋: null, 善化: null } },
+  { id: "自強306", type: "自強(3000)", times: { 美術館: null, 新左營: "11:00", 台南: null, 大橋: null, 善化: null } },
+  { id: "自強308", type: "自強(3000)", times: { 美術館: null, 新左營: "15:01", 台南: null, 大橋: null, 善化: null } },
+  { id: "自強314", type: "自強(3000)", times: { 美術館: null, 新左營: "15:50", 台南: null, 大橋: null, 善化: null } },
+  { id: "自強324", type: "自強(3000)", times: { 美術館: null, 新左營: "20:03", 台南: "20:31", 大橋: null, 善化: null } },
+  { id: "自強372", type: "自強(3000)", times: { 美術館: null, 新左營: "12:53", 台南: "13:20", 大橋: null, 善化: null } },
+  { id: "自強386", type: "自強(3000)", times: { 美術館: null, 新左營: "19:45", 台南: "20:12", 大橋: null, 善化: null } },
+  { id: "自強422", type: "自強(3000)", times: { 美術館: null, 新左營: "17:12", 台南: null, 大橋: null, 善化: null } },
+  { id: "自強428", type: "自強(3000)", times: { 美術館: null, 新左營: "21:01", 台南: null, 大橋: null, 善化: null } },
+  { id: "自強432", type: "自強(3000)", times: { 美術館: null, 新左營: "21:54", 台南: null, 大橋: null, 善化: null } },
+  { id: "自強434", type: "自強(3000)", times: { 美術館: null, 新左營: "23:06", 台南: null, 大橋: null, 善化: null } },
+
+  // 莒光
+  { id: "莒光510", type: "莒光", times: { 美術館: null, 新左營: "08:35", 台南: "09:09", 大橋: null, 善化: "09:25" } },
+  { id: "莒光516", type: "莒光", times: { 美術館: null, 新左營: "11:24", 台南: "12:00", 大橋: null, 善化: null } },
+  { id: "莒光554", type: "莒光", times: { 美術館: null, 新左營: "13:48", 台南: "14:29", 大橋: null, 善化: "14:48" } },
+  { id: "莒光708", type: "莒光", times: { 美術館: null, 新左營: "18:46", 台南: null, 大橋: null, 善化: null } },
+
+  // 區間快
+  { id: "區間快1006", type: "區間快", times: { 美術館: null, 新左營: "07:32", 台南: "08:06", 大橋: null, 善化: "08:22" } },
+  { id: "區間快1038", type: "區間快", times: { 美術館: null, 新左營: "15:17", 台南: "15:57", 大橋: null, 善化: "16:16" } },
+  { id: "區間快3010", type: "區間快", times: { 美術館: null, 新左營: "11:56", 台南: "12:41", 大橋: null, 善化: "13:02" } },
+  { id: "區間快3018", type: "區間快", times: { 美術館: null, 新左營: "14:12", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3028", type: "區間快", times: { 美術館: null, 新左營: "17:00", 台南: "17:41", 大橋: null, 善化: "18:01" } },
+  { id: "區間快3032", type: "區間快", times: { 美術館: null, 新左營: "18:07", 台南: "18:35", 大橋: null, 善化: null } },
+  { id: "區間快3038", type: "區間快", times: { 美術館: null, 新左營: "20:07", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3052", type: "區間快", times: { 美術館: null, 新左營: "06:30", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3054", type: "區間快", times: { 美術館: null, 新左營: "07:47", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3058", type: "區間快", times: { 美術館: null, 新左營: "08:55", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3062", type: "區間快", times: { 美術館: null, 新左營: "10:02", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3064", type: "區間快", times: { 美術館: null, 新左營: "11:08", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3072", type: "區間快", times: { 美術館: null, 新左營: "13:41", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3074", type: "區間快", times: { 美術館: "15:30", 新左營: "15:39", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3078", type: "區間快", times: { 美術館: "17:42", 新左營: "17:50", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3082", type: "區間快", times: { 美術館: "19:23", 新左營: "19:31", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間快3802", type: "區間快", times: { 美術館: null, 新左營: null, 台南: "07:05", 大橋: null, 善化: "07:26" } },
+
+  // 區間
+  { id: "區間3116", type: "區間", times: { 美術館: null, 新左營: null, 台南: "05:30", 大橋: "05:34", 善化: "05:54" } },
+  { id: "區間3118", type: "區間", times: { 美術館: "05:14", 新左營: "05:22", 台南: "06:06", 大橋: "06:09", 善化: "06:29" } },
+  { id: "區間3122", type: "區間", times: { 美術館: "05:36", 新左營: "05:45", 台南: "06:28", 大橋: "06:31", 善化: "06:56" } },
+  { id: "區間3128", type: "區間", times: { 美術館: "05:56", 新左營: "06:05", 台南: "06:58", 大橋: "07:01", 善化: "07:21" } },
+  { id: "區間3132", type: "區間", times: { 美術館: "06:19", 新左營: "06:32", 台南: "07:14", 大橋: "07:17", 善化: "07:48" } },
+  { id: "區間3138", type: "區間", times: { 美術館: "06:45", 新左營: "07:06", 台南: "07:50", 大橋: "07:53", 善化: "08:13" } },
+  { id: "區間3140", type: "區間", times: { 美術館: "07:17", 新左營: "07:25", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間3142", type: "區間", times: { 美術館: "07:33", 新左營: "07:41", 台南: "08:32", 大橋: "08:36", 善化: "09:03" } },
+  { id: "區間3148", type: "區間", times: { 美術館: "08:05", 新左營: "08:20", 台南: "09:03", 大橋: "09:06", 善化: "09:32" } },
+  { id: "區間3152", type: "區間", times: { 美術館: "08:32", 新左營: "08:41", 台南: "09:26", 大橋: "09:29", 善化: "09:50" } },
+  { id: "區間3158", type: "區間", times: { 美術館: "09:01", 新左營: "09:10", 台南: "10:00", 大橋: "10:04", 善化: "10:23" } },
+  { id: "區間3162", type: "區間", times: { 美術館: "09:34", 新左營: "09:42", 台南: "10:25", 大橋: "10:28", 善化: "10:48" } },
+  { id: "區間3168", type: "區間", times: { 美術館: "09:59", 新左營: "10:09", 台南: "10:59", 大橋: "11:02", 善化: "11:26" } },
+  { id: "區間3172", type: "區間", times: { 美術館: "10:30", 新左營: "10:38", 台南: "11:27", 大橋: "11:30", 善化: "11:50" } },
+  { id: "區間3178", type: "區間", times: { 美術館: "10:57", 新左營: "11:07", 台南: "12:06", 大橋: "12:09", 善化: "12:29" } },
+  { id: "區間3180", type: "區間", times: { 美術館: "11:28", 新左營: "11:35", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間3188", type: "區間", times: { 美術館: "11:44", 新左營: "11:59", 台南: "12:50", 大橋: "12:53", 善化: "13:18" } },
+  { id: "區間3192", type: "區間", times: { 美術館: "12:24", 新左營: "12:33", 台南: "13:36", 大橋: "13:39", 善化: "13:59" } },
+  { id: "區間3198", type: "區間", times: { 美術館: "12:49", 新左營: "13:05", 台南: "13:49", 大橋: "13:52", 善化: "14:12" } },
+  { id: "區間3202", type: "區間", times: { 美術館: "13:24", 新左營: "13:32", 台南: "14:22", 大橋: "14:25", 善化: "14:59" } },
+  { id: "區間3208", type: "區間", times: { 美術館: "13:59", 新左營: "14:07", 台南: "14:58", 大橋: "15:01", 善化: "15:25" } },
+  { id: "區間3212", type: "區間", times: { 美術館: "14:27", 新左營: "14:44", 台南: "15:32", 大橋: "15:35", 善化: "15:56" } },
+  { id: "區間3218", type: "區間", times: { 美術館: "14:58", 新左營: "15:07", 台南: "16:03", 大橋: "16:06", 善化: "16:32" } },
+  { id: "區間3222", type: "區間", times: { 美術館: "15:14", 新左營: "15:24", 台南: "16:25", 大橋: "16:28", 善化: "16:49" } },
+  { id: "區間3228", type: "區間", times: { 美術館: "15:54", 新左營: "16:04", 台南: "16:55", 大橋: "16:58", 善化: "17:18" } },
+  { id: "區間3232", type: "區間", times: { 美術館: "16:20", 新左營: "16:29", 台南: "17:19", 大橋: "17:22", 善化: "17:43" } },
+  { id: "區間3238", type: "區間", times: { 美術館: "16:48", 新左營: "17:10", 台南: "17:54", 大橋: "17:57", 善化: "18:22" } },
+  { id: "區間3242", type: "區間", times: { 美術館: "17:21", 新左營: "17:37", 台南: "18:29", 大橋: "18:32", 善化: "18:52" } },
+  { id: "區間3248", type: "區間", times: { 美術館: "17:53", 新左營: "18:02", 台南: "19:03", 大橋: "19:06", 善化: "19:34" } },
+  { id: "區間3250", type: "區間", times: { 美術館: "18:09", 新左營: "18:17", 台南: null, 大橋: null, 善化: null } },
+  { id: "區間3252", type: "區間", times: { 美術館: "18:33", 新左營: "18:42", 台南: "19:35", 大橋: "19:38", 善化: "20:03" } },
+  { id: "區間3258", type: "區間", times: { 美術館: "19:16", 新左營: "19:24", 台南: "20:06", 大橋: "20:09", 善化: "20:34" } },
+  { id: "區間3262", type: "區間", times: { 美術館: "19:40", 新左營: "19:50", 台南: "20:37", 大橋: "20:40", 善化: "21:00" } },
+  { id: "區間3266", type: "區間", times: { 美術館: "20:04", 新左營: "20:14", 台南: "21:00", 大橋: "21:03", 善化: "21:23" } },
+  { id: "區間3268", type: "區間", times: { 美術館: "20:21", 新左營: "20:34", 台南: "21:16", 大橋: "21:20", 善化: "21:39" } },
+  { id: "區間3272", type: "區間", times: { 美術館: "20:48", 新左營: "20:57", 台南: "21:40", 大橋: "21:43", 善化: "22:09" } },
+  { id: "區間3278", type: "區間", times: { 美術館: "21:23", 新左營: "21:32", 台南: "22:16", 大橋: "22:19", 善化: "22:39" } },
+  { id: "區間3282", type: "區間", times: { 美術館: "21:51", 新左營: "22:00", 台南: "22:43", 大橋: "22:46", 善化: "23:06" } },
+  { id: "區間3288", type: "區間", times: { 美術館: "22:21", 新左營: "22:30", 台南: "23:13", 大橋: "23:16", 善化: "23:36" } },
+  { id: "區間3292", type: "區間", times: { 美術館: "22:41", 新左營: "22:50", 台南: "23:31", 大橋: null, 善化: null } },
+  { id: "區間3294", type: "區間", times: { 美術館: "23:03", 新左營: "23:12", 台南: "23:53", 大橋: null, 善化: null } },
+];
+
+const reverseTrains = [
+  // 自強 / 普悠瑪 / 莒光 / 區間快 / 區間 - 逆行（同車次已整合）
+  { id: "自強101", type: "自強", times: { 善化: "07:27", 大橋: null, 台南: "07:47", 新左營: "08:18", 美術館: null } },
+  { id: "自強103", type: "自強", times: { 善化: null, 大橋: null, 台南: "11:00", 新左營: "11:27", 美術館: null } },
+  { id: "自強105", type: "自強", times: { 善化: null, 大橋: null, 台南: "11:33", 新左營: "12:03", 美術館: null } },
+  { id: "普悠瑪107", type: "普悠瑪", times: { 善化: null, 大橋: null, 台南: "10:54", 新左營: null, 美術館: null } },
+  { id: "自強109", type: "自強", times: { 善化: "12:12", 大橋: null, 台南: "12:27", 新左營: "12:55", 美術館: null } },
+  { id: "自強(3000)111", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: "11:27", 新左營: null, 美術館: null } },
+  { id: "自強115", type: "自強", times: { 善化: null, 大橋: null, 台南: "13:35", 新左營: "14:02", 美術館: null } },
+  { id: "自強(3000)117", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: "14:19", 新左營: "14:48", 美術館: null } },
+  { id: "自強121", type: "自強", times: { 善化: null, 大橋: null, 台南: "15:20", 新左營: "15:46", 美術館: null } },
+  { id: "自強123", type: "自強", times: { 善化: "16:05", 大橋: null, 台南: "16:23", 新左營: "16:49", 美術館: null } },
+  { id: "自強125", type: "自強", times: { 善化: null, 大橋: null, 台南: "17:18", 新左營: "17:45", 美術館: null } },
+  { id: "自強129", type: "自強", times: { 善化: null, 大橋: null, 台南: "18:12", 新左營: "18:39", 美術館: null } },
+  { id: "自強(3000)131", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: "13:29", 新左營: null, 美術館: null } },
+  { id: "自強(3000)133", type: "自強(3000)", times: { 善化: "18:50", 大橋: null, 台南: "19:05", 新左營: "19:33", 美術館: null } },
+  { id: "自強135", type: "自強", times: { 善化: null, 大橋: null, 台南: "19:22", 新左營: "19:49", 美術館: null } },
+  { id: "普悠瑪137", type: "普悠瑪", times: { 善化: null, 大橋: null, 台南: "18:57", 新左營: null, 美術館: null } },
+  { id: "自強139", type: "自強", times: { 善化: null, 大橋: null, 台南: "21:15", 新左營: "21:42", 美術館: null } },
+  { id: "自強141", type: "自強", times: { 善化: null, 大橋: null, 台南: "21:54", 新左營: "22:21", 美術館: null } },
+  { id: "自強(3000)143", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: "21:30", 新左營: null, 美術館: null } },
+  { id: "自強(3000)145", type: "自強", times: { 善化: null, 大橋: null, 台南: "22:25", 新左營: "22:54", 美術館: null } },
+  { id: "自強149", type: "自強", times: { 善化: "23:06", 大橋: null, 台南: "23:21", 新左營: "23:47", 美術館: null } },
+  { id: "自強(3000)161", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: "09:54", 新左營: "10:20", 美術館: null } },
+  { id: "普悠瑪165", type: "普悠瑪", times: { 善化: null, 大橋: null, 台南: "16:43", 新左營: null, 美術館: null } },
+  { id: "自強175", type: "自強", times: { 善化: "20:06", 大橋: null, 台南: "20:21", 新左營: "20:51", 美術館: null } },
+  { id: "自強181", type: "自強", times: { 善化: null, 大橋: null, 台南: "23:45", 新左營: "00:11", 美術館: null } },
+
+  { id: "自強(3000)301", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: "06:30", 新左營: "07:00", 美術館: null } },
+  { id: "自強(3000)313", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: null, 新左營: "14:36", 美術館: null } },
+  { id: "自強(3000)317", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: null, 新左營: "15:51", 美術館: null } },
+  { id: "自強(3000)323", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: null, 新左營: "18:49", 美術館: null } },
+  { id: "自強(3000)327", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: null, 新左營: "21:31", 美術館: null } },
+
+  { id: "自強(3000)371", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: "08:50", 新左營: "09:17", 美術館: null } },
+  { id: "自強(3000)385", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: "19:35", 新左營: "20:02", 美術館: null } },
+  { id: "自強(3000)411", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: null, 新左營: "05:23", 美術館: null } },
+  { id: "自強(3000)415", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: null, 新左營: "07:37", 美術館: null } },
+  { id: "自強(3000)423", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: null, 新左營: "10:47", 美術館: null } },
+  { id: "自強(3000)431", type: "自強(3000)", times: { 善化: null, 大橋: null, 台南: null, 新左營: "12:42", 美術館: null } },
+
+  { id: "莒光501", type: "莒光", times: { 善化: "07:37", 大橋: null, 台南: "07:59", 新左營: "08:47", 美術館: null } },
+  { id: "莒光503", type: "莒光", times: { 善化: null, 大橋: null, 台南: null, 新左營: "06:17", 美術館: null } },
+  { id: "莒光511", type: "莒光", times: { 善化: "14:47", 大橋: null, 台南: "15:04", 新左營: "15:41", 美術館: null } },
+  { id: "莒光521", type: "莒光", times: { 善化: "21:47", 大橋: null, 台南: "22:04", 新左營: "22:39", 美術館: null } },
+
+  { id: "區間快3003", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "06:27", 美術館: null } },
+  { id: "區間快3005", type: "區間快", times: { 善化: "08:05", 大橋: null, 台南: "08:25", 新左營: "08:55", 美術館: null } },
+  { id: "區間快3021", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "17:15", 美術館: null } },
+  { id: "區間快3023", type: "區間快", times: { 善化: "16:52", 大橋: null, 台南: "17:21", 新左營: "17:59", 美術館: null } },
+  { id: "區間快3029", type: "區間快", times: { 善化: "18:00", 大橋: null, 台南: "18:20", 新左營: "18:56", 美術館: null } },
+  { id: "區間快3031", type: "區間快", times: { 善化: null, 大橋: null, 台南: "18:47", 新左營: "19:25", 美術館: "19:39" } },
+  { id: "區間快3035", type: "區間快", times: { 善化: "19:24", 大橋: null, 台南: "19:45", 新左營: "20:21", 美術館: null } },
+  { id: "區間快3051", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "06:48", 美術館: null } },
+  { id: "區間快3053", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "07:42", 美術館: null } },
+  { id: "區間快3057", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "10:13", 美術館: null } },
+  { id: "區間快3061", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "11:20", 美術館: "11:33" } },
+  { id: "區間快3063", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "13:15", 美術館: null } },
+  { id: "區間快3067", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "14:13", 美術館: null } },
+  { id: "區間快3071", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "14:56", 美術館: "15:05" } },
+  { id: "區間快3073", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "16:15", 美術館: null } },
+  { id: "區間快3081", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "20:36", 美術館: null } },
+  { id: "區間快3087", type: "區間快", times: { 善化: null, 大橋: null, 台南: null, 新左營: "22:15", 美術館: null } },
+
+  { id: "區間3111", type: "區間", times: { 善化: null, 大橋: null, 台南: "05:24", 新左營: "06:06", 美術館: "06:14" } },
+  { id: "區間3117", type: "區間", times: { 善化: "05:24", 大橋: "05:42", 台南: "05:47", 新左營: "06:30", 美術館: "06:38" } },
+  { id: "區間3121", type: "區間", times: { 善化: "05:51", 大橋: "06:10", 台南: "06:15", 新左營: "07:05", 美術館: "07:13" } },
+  { id: "區間3127", type: "區間", times: { 善化: "06:20", 大橋: "06:38", 台南: "06:43", 新左營: "07:26", 美術館: "07:34" } },
+  { id: "區間3131", type: "區間", times: { 善化: "06:44", 大橋: "07:02", 台南: "07:08", 新左營: "07:53", 美術館: "08:01" } },
+  { id: "區間3137", type: "區間", times: { 善化: "07:09", 大橋: "07:27", 台南: "07:32", 新左營: "08:23", 美術館: "08:30" } },
+  { id: "區間3141", type: "區間", times: { 善化: "07:54", 大橋: "08:12", 台南: "08:17", 新左營: "09:06", 美術館: "09:14" } },
+  { id: "區間3147", type: "區間", times: { 善化: "08:43", 大橋: "09:01", 台南: "09:05", 新左營: "09:49", 美術館: "09:58" } },
+  { id: "區間3151", type: "區間", times: { 善化: "09:11", 大橋: "09:29", 台南: "09:35", 新左營: "10:25", 美術館: "10:33" } },
+  { id: "區間3157", type: "區間", times: { 善化: "09:48", 大橋: "10:06", 台南: "10:10", 新左營: "10:53", 美術館: "11:01" } },
+  { id: "區間3161", type: "區間", times: { 善化: "10:08", 大橋: "10:26", 台南: "10:31", 新左營: "11:37", 美術館: "11:45" } },
+  { id: "區間3167", type: "區間", times: { 善化: "10:55", 大橋: "11:13", 台南: "11:19", 新左營: "12:13", 美術館: "12:21" } },
+  { id: "區間3171", type: "區間", times: { 善化: "11:21", 大橋: "11:40", 台南: "11:47", 新左營: "12:31", 美術館: "12:39" } },
+  { id: "區間3177", type: "區間", times: { 善化: "11:52", 大橋: "12:10", 台南: "12:17", 新左營: "13:08", 美術館: "13:22" } },
+  { id: "區間3181", type: "區間", times: { 善化: "12:21", 大橋: "12:39", 台南: "12:44", 新左營: "13:28", 美術館: "13:36" } },
+  { id: "區間3187", type: "區間", times: { 善化: "12:37", 大橋: "12:56", 台南: "13:01", 新左營: "13:44", 美術館: "13:57" } },
+  { id: "區間3191", type: "區間", times: { 善化: "12:56", 大橋: "13:15", 台南: "13:21", 新左營: "14:17", 美術館: "14:25" } },
+  { id: "區間3197", type: "區間", times: { 善化: "13:30", 大橋: "13:49", 台南: "13:56", 新左營: "14:41", 美術館: "14:54" } },
+  { id: "區間3201", type: "區間", times: { 善化: "13:55", 大橋: "14:20", 台南: "14:27", 新左營: "15:15", 美術館: "15:23" } },
+  { id: "區間3207", type: "區間", times: { 善化: "14:34", 大橋: "14:52", 台南: "14:57", 新左營: "15:55", 美術館: "16:03" } },
+  { id: "區間3211", type: "區間", times: { 善化: "14:56", 大橋: "15:20", 台南: "15:27", 新左營: "16:09", 美術館: "16:22" } },
+  { id: "區間3217", type: "區間", times: { 善化: "15:33", 大橋: "15:51", 台南: "15:56", 新左營: "16:39", 美術館: "16:47" } },
+  { id: "區間3221", type: "區間", times: { 善化: "16:14", 大橋: "16:32", 台南: "16:37", 新左營: "17:28", 美術館: "17:36" } },
+  { id: "區間3227", type: "區間", times: { 善化: "16:37", 大橋: "16:55", 台南: "17:01", 新左營: "17:52", 美術館: "18:05" } },
+  { id: "區間3231", type: "區間", times: { 善化: "17:14", 大橋: "17:32", 台南: "17:37", 新左營: "18:20", 美術館: "18:28" } },
+  { id: "區間3237", type: "區間", times: { 善化: "17:39", 大橋: "17:57", 台南: "18:02", 新左營: "19:01", 美術館: "19:09" } },
+  { id: "區間3241", type: "區間", times: { 善化: "18:07", 大橋: "18:25", 台南: "18:30", 新左營: "19:20", 美術館: "19:29" } },
+  { id: "區間3247", type: "區間", times: { 善化: "18:26", 大橋: "18:44", 台南: "19:00", 新左營: "19:55", 美術館: "20:08" } },
+  { id: "區間3251", type: "區間", times: { 善化: "19:10", 大橋: "19:35", 台南: "19:40", 新左營: "20:30", 美術館: "20:43" } },
+  { id: "區間3257", type: "區間", times: { 善化: "19:48", 大橋: "20:07", 台南: "20:13", 新左營: "21:02", 美術館: "21:10" } },
+  { id: "區間3261", type: "區間", times: { 善化: "20:09", 大橋: "20:28", 台南: "20:33", 新左營: "21:16", 美術館: "21:24" } },
+  { id: "區間3267", type: "區間", times: { 善化: "20:32", 大橋: "20:50", 台南: "20:58", 新左營: "21:55", 美術館: "22:03" } },
+  { id: "區間3271", type: "區間", times: { 善化: "22:05", 大橋: "22:30", 台南: "22:35", 新左營: "23:18", 美術館: "23:26" } },
+  { id: "區間3277", type: "區間", times: { 善化: "21:07", 大橋: "21:31", 台南: "21:36", 新左營: "22:26", 美術館: "22:34" } },
+  { id: "區間3281", type: "區間", times: { 善化: "21:53", 大橋: "22:12", 台南: "22:17", 新左營: "23:05", 美術館: "23:13" } },
+  { id: "區間3287", type: "區間", times: { 善化: "22:33", 大橋: "22:50", 台南: "22:55", 新左營: "23:37", 美術館: "23:45" } },
+  { id: "區間3305", type: "區間", times: { 善化: null, 大橋: null, 台南: null, 新左營: "05:28", 美術館: "05:37" } },
+  { id: "區間3311", type: "區間", times: { 善化: null, 大橋: null, 台南: null, 新左營: "08:59", 美術館: "09:08" } },
+  { id: "區間3331", type: "區間", times: { 善化: null, 大橋: null, 台南: null, 新左營: "16:55", 美術館: "17:09" } },
+  { id: "區間3335", type: "區間", times: { 善化: null, 大橋: null, 台南: null, 新左營: "18:31", 美術館: "18:45" } },
+
+  { id: "區間3701", type: "區間", times: { 善化: null, 大橋: null, 台南: "05:29", 新左營: null, 美術館: null } },
+  { id: "區間3703", type: "區間", times: { 善化: null, 大橋: null, 台南: "05:53", 新左營: null, 美術館: null } },
+  { id: "區間3705", type: "區間", times: { 善化: "06:06", 大橋: "06:24", 台南: "06:34", 新左營: null, 美術館: null } },
+  { id: "區間3707", type: "區間", times: { 善化: null, 大橋: null, 台南: "06:57", 新左營: null, 美術館: null } },
+  { id: "區間3709", type: "區間", times: { 善化: "07:16", 大橋: "07:34", 台南: "07:39", 新左營: null, 美術館: null } },
+  { id: "區間3711", type: "區間", times: { 善化: "07:44", 大橋: "08:03", 台南: "08:08", 新左營: null, 美術館: null } },
+  { id: "區間3713", type: "區間", times: { 善化: "08:17", 大橋: "08:36", 台南: "08:41", 新左營: null, 美術館: null } },
+  { id: "區間3715", type: "區間", times: { 善化: "08:47", 大橋: "09:06", 台南: "09:11", 新左營: null, 美術館: null } },
+  { id: "區間3717", type: "區間", times: { 善化: null, 大橋: null, 台南: "09:27", 新左營: null, 美術館: null } },
+  { id: "區間3721", type: "區間", times: { 善化: "09:23", 大橋: "09:42", 台南: "09:46", 新左營: null, 美術館: null } },
+  { id: "區間3723", type: "區間", times: { 善化: null, 大橋: null, 台南: "10:26", 新左營: null, 美術館: null } },
+  { id: "區間3725", type: "區間", times: { 善化: "10:25", 大橋: "10:44", 台南: "11:03", 新左營: null, 美術館: null } },
+  { id: "區間3727", type: "區間", times: { 善化: null, 大橋: null, 台南: "11:36", 新左營: null, 美術館: null } },
+  { id: "區間3731", type: "區間", times: { 善化: null, 大橋: "11:58", 台南: "12:03", 新左營: null, 美術館: null } },
+  { id: "區間3733", type: "區間", times: { 善化: null, 大橋: null, 台南: "12:31", 新左營: null, 美術館: null } },
+  { id: "區間3735", type: "區間", times: { 善化: "12:31", 大橋: "12:50", 台南: "12:55", 新左營: null, 美術館: null } },
+  { id: "區間3737", type: "區間", times: { 善化: null, 大橋: null, 台南: "13:38", 新左營: null, 美術館: null } },
+  { id: "區間3741", type: "區間", times: { 善化: null, 大橋: null, 台南: "14:04", 新左營: null, 美術館: null } },
+  { id: "區間3743", type: "區間", times: { 善化: "14:18", 大橋: "14:37", 台南: "14:42", 新左營: null, 美術館: null } },
+  { id: "區間3745", type: "區間", times: { 善化: null, 大橋: "15:05", 台南: "15:10", 新左營: null, 美術館: null } },
+  { id: "區間3747", type: "區間", times: { 善化: null, 大橋: null, 台南: "15:42", 新左營: null, 美術館: null } },
+  { id: "區間3751", type: "區間", times: { 善化: "15:42", 大橋: "16:01", 台南: "16:06", 新左營: null, 美術館: null } },
+  { id: "區間3753", type: "區間", times: { 善化: null, 大橋: "16:25", 台南: "16:30", 新左營: null, 美術館: null } },
+  { id: "區間3755", type: "區間", times: { 善化: null, 大橋: null, 台南: "17:07", 新左營: null, 美術館: null } },
+  { id: "區間3757", type: "區間", times: { 善化: "17:06", 大橋: "17:25", 台南: "17:30", 新左營: null, 美術館: null } },
+  { id: "區間3761", type: "區間", times: { 善化: null, 大橋: null, 台南: "18:06", 新左營: null, 美術館: null } },
+  { id: "區間3765", type: "區間", times: { 善化: null, 大橋: "18:34", 台南: "18:39", 新左營: null, 美術館: null } },
+  { id: "區間3767", type: "區間", times: { 善化: null, 大橋: null, 台南: "19:26", 新左營: null, 美術館: null } },
+  { id: "區間3771", type: "區間", times: { 善化: "19:41", 大橋: "19:59", 台南: "20:04", 新左營: null, 美術館: null } },
+  { id: "區間3773", type: "區間", times: { 善化: null, 大橋: null, 台南: "20:25", 新左營: null, 美術館: null } },
+  { id: "區間3775", type: "區間", times: { 善化: null, 大橋: null, 台南: "21:04", 新左營: null, 美術館: null } },
+  { id: "區間3777", type: "區間", times: { 善化: "20:50", 大橋: "21:15", 台南: "21:21", 新左營: null, 美術館: null } },
+  { id: "區間3781", type: "區間", times: { 善化: null, 大橋: null, 台南: "21:45", 新左營: null, 美術館: null } },
+  { id: "區間3783", type: "區間", times: { 善化: null, 大橋: null, 台南: "22:30", 新左營: null, 美術館: null } },
+
+  { id: "區間快3861", type: "區間快", times: { 善化: "17:28", 大橋: null, 台南: null, 新左營: "17:49", 美術館: null } },
+  { id: "區間快3863", type: "區間快", times: { 善化: "18:32", 大橋: null, 台南: null, 新左營: "18:52", 美術館: null } },
+];
+
+
+const forwardStations = ["美術館", "新左營", "台南", "大橋", "善化"];
+const reverseStations = ["善化", "大橋", "台南", "新左營", "美術館"];
+
+const getTrainTypeColor = (type) => {
+  switch (type) {
+    case "自強": return "bg-red-100 text-red-800 border-red-300";
+    case "區間快": return "bg-blue-100 text-blue-800 border-blue-300";
+    case "區間": return "bg-green-100 text-green-800 border-green-300";
+    case "莒光": return "bg-orange-100 text-orange-800 border-orange-300";
+    case "普悠瑪": return "bg-purple-100 text-purple-800 border-purple-300";
+    default: return "bg-gray-100 text-gray-800 border-gray-300";
+  }
+};
+
+const getTrainTypeBadge = (type) => {
+  switch (type) {
+    case "自強": return "bg-red-500";
+    case "區間快": return "bg-blue-500";
+    case "區間": return "bg-green-500";
+    case "莒光": return "bg-orange-500";
+    case "普悠瑪": return "bg-purple-500";
+    default: return "bg-gray-500";
+  }
+};
+
+const timeToMinutes = (time) => {
+  if (!time) return null;
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+};
+
+export default function TrainTimetable() {
+  const [isForward, setIsForward] = useState(true);
+  const [showOnlyMainStations, setShowOnlyMainStations] = useState(false);
+  const [selectedType, setSelectedType] = useState("all");
+
+  const trains = isForward ? forwardTrains : reverseTrains;
+  const stations = isForward ? forwardStations : reverseStations;
+  const displayStations = showOnlyMainStations 
+    ? stations.filter(s => ["新左營", "台南"].includes(s))
+    : stations;
+
+  const filteredTrains = useMemo(() => {
+    let result = trains.filter(train => {
+      // Count how many of our 5 stations this train stops at
+      const stopCount = stations.filter(s => train.times[s]).length;
+      // Exclude trains that only stop at 1 station
+      return stopCount >= 2;
+    });
+
+    if (selectedType !== "all") {
+      result = result.filter(train => train.type === selectedType);
+    }
+
+    // Sort by first available time
+    result.sort((a, b) => {
+      const aTime = stations.map(s => timeToMinutes(a.times[s])).find(t => t !== null) || 0;
+      const bTime = stations.map(s => timeToMinutes(b.times[s])).find(t => t !== null) || 0;
+      return aTime - bTime;
+    });
+
+    return result;
+  }, [trains, stations, selectedType]);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">台鐵西部幹線時刻表</h1>
+              <p className="text-sm text-gray-500">2026/01/02 (四)</p>
+            </div>
+            <a 
+              href="https://www.railway.gov.tw" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline"
+            >
+              資料來源：國營臺灣鐵路公司
+            </a>
+          </div>
+
+          {/* Direction Toggle */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex bg-gray-200 rounded-lg p-1">
+              <button
+                onClick={() => setIsForward(true)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  isForward 
+                    ? "bg-blue-600 text-white shadow" 
+                    : "text-gray-600 hover:bg-gray-300"
+                }`}
+              >
+                順行 (北上)
+              </button>
+              <button
+                onClick={() => setIsForward(false)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  !isForward 
+                    ? "bg-blue-600 text-white shadow" 
+                    : "text-gray-600 hover:bg-gray-300"
+                }`}
+              >
+                逆行 (南下)
+              </button>
+            </div>
+
+            {/* Train Type Filter */}
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="px-3 py-2 border rounded-lg text-sm"
+            >
+              <option value="all">全部車種</option>
+              <option value="自強">自強號</option>
+              <option value="區間快">區間快</option>
+              <option value="區間">區間車</option>
+              <option value="莒光">莒光號</option>
+              <option value="普悠瑪">普悠瑪</option>
+            </select>
+
+            <span className="text-sm text-gray-500">
+              共 {filteredTrains.length} 班次
+            </span>
+          </div>
+
+          {/* Direction Indicator */}
+          <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+            <span className="font-medium">行駛方向：</span>
+            <div className="flex items-center gap-1">
+              {stations.map((s, i) => (
+                <React.Fragment key={s}>
+                  <span className={s === "新左營" || s === "台南" ? "font-bold text-blue-600" : ""}>
+                    {s}
+                  </span>
+                  {i < stations.length - 1 && <span className="text-gray-400">→</span>}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="text-xs text-gray-500">車種圖例：</span>
+            {["自強", "區間快", "區間", "莒光", "普悠瑪"].map(type => (
+              <span 
+                key={type}
+                className={`px-2 py-0.5 rounded text-xs ${getTrainTypeColor(type)}`}
+              >
+                {type}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Timetable */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-800 text-white">
+                  <th className="px-3 py-3 text-left text-sm font-semibold sticky left-0 bg-gray-800 z-10 min-w-32">
+                    車次
+                  </th>
+                  {displayStations.map(station => (
+                    <th 
+                      key={station} 
+                      className={`px-4 py-3 text-center text-sm font-semibold min-w-20 ${
+                        station === "新左營" || station === "台南" 
+                          ? "bg-blue-900" 
+                          : ""
+                      }`}
+                    >
+                      {station}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredTrains.map((train, idx) => (
+                  <tr 
+                    key={train.id + idx} 
+                    className={`hover:bg-gray-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                  >
+                    <td className="px-3 py-2 sticky left-0 bg-inherit z-10">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${getTrainTypeBadge(train.type)}`}></span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded border ${getTrainTypeColor(train.type)}`}>
+                          {train.id}
+                        </span>
+                      </div>
+                    </td>
+                    {displayStations.map(station => {
+                      const time = train.times[station];
+                      return (
+                        <td 
+                          key={station} 
+                          className={`px-4 py-2 text-center text-sm ${
+                            station === "新左營" || station === "台南"
+                              ? "bg-blue-50"
+                              : ""
+                          }`}
+                        >
+                          {time ? (
+                            <span className="font-mono">{time}</span>
+                          ) : (
+                            <span className="text-gray-300">│</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-4 text-center text-xs text-gray-500">
+          <p>「│」表示該列車不停靠此站（可能過站不停或未經該站）</p>
+          <p className="mt-1">新左營、台南 為主要轉乘站，以藍色底色標示</p>
+        </div>
+      </div>
+    </div>
+  );
+}
