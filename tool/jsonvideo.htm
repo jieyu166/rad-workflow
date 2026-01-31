@@ -375,17 +375,17 @@
     });
 
     // ===== Read recap JSON =====
-    recapFileInput.addEventListener('change', async function() {
-      const f = recapFileInput.files[0];
-      if (!f) return;
-
-      try {
-        const text = await readFileAsText(f);
-        recap = JSON.parse(text);
-
-        if (!recap || !Array.isArray(recap.segments)) {
-          throw new Error('JSON 格式錯誤：找不到 segments 陣列');
-        }
+    recapFileInput.addEventListener('change', async function() {␊
+      const f = recapFileInput.files[0];␊
+      if (!f) return;␊
+␊
+      try {␊
+        const text = await readFileAsText(f);␊
+        recap = parseRecapJson(text);
+␊
+        if (!recap || !Array.isArray(recap.segments)) {␊
+          throw new Error('JSON 格式錯誤：找不到 segments 陣列');␊
+        }␊
 
         normalizeRecapSegments(recap.segments);
         renderRecap(recap);
@@ -646,6 +646,91 @@ copyBtn.addEventListener('click', async (ev) => {
       });
     }
 
+    function parseRecapJson(rawText) {
+      const text = String(rawText || '');
+      const cleanedText = text
+        .replace(/^\uFEFF/, '')
+        .replace(/```json\s*/gi, '')
+        .replace(/```/g, '')
+        .trim();
+
+      try {
+        return JSON.parse(preprocessJsonText(cleanedText));
+      } catch (err) {
+        const extracted = extractJsonPayload(cleanedText);
+        if (extracted) {
+          return JSON.parse(normalizeJsonText(extracted));
+        }
+        throw err;
+      }
+    }
+
+    function preprocessJsonText(text) {
+      return normalizeJsonText(text);
+    }
+
+    function extractJsonPayload(text) {
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        return text.slice(firstBrace, lastBrace + 1);
+      }
+      const firstBracket = text.indexOf('[');
+      const lastBracket = text.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+        return text.slice(firstBracket, lastBracket + 1);
+      }
+      return '';
+    }
+
+    function normalizeJsonText(text) {
+      const normalized = text
+        .replace(/\\r\\n/g, '\n')
+        .replace(/\\n/g, '\n')
+        .replace(/\\t/g, '\t')
+        .replace(/,\s*([}\]])/g, '$1');
+      return sanitizeInvalidJsonEscapes(normalized);
+    }
+
+    function sanitizeInvalidJsonEscapes(text) {
+      let result = '';
+      let inString = false;
+      let escaped = false;
+
+      for (let i = 0; i < text.length; i += 1) {
+        const ch = text[i];
+
+        if (escaped) {
+          escaped = false;
+          result += ch;
+          continue;
+        }
+
+        if (ch === '"') {
+          inString = !inString;
+          result += ch;
+          continue;
+        }
+
+        if (inString && ch === '\\') {
+          const next = text[i + 1];
+          const isValidEscape = next && ['"', '\\', '/', 'b', 'f', 'n', 'r', 't', 'u'].includes(next);
+          if (!isValidEscape) {
+            result += '\\\\';
+            continue;
+          }
+          escaped = true;
+          result += ch;
+          continue;
+        }
+
+        result += ch;
+      }
+
+      return result;
+    }
+}
+
     function parseTimeToSec(str) {
       // supports mm:ss or hh:mm:ss
       const s = str.trim();
@@ -713,3 +798,4 @@ async function tryCopyToClipboard(text) {
   </script>
 </body>
 </html>
+
