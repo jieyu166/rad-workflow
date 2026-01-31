@@ -11,8 +11,12 @@ SetBatchLines -1
 ; 確保包含必要的檔案（如果需要全局變數）
 ; #Include 簡碼 jai.ahk  ; 取得 LOGI 等全局變數
 
-; 如果沒有包含主檔案，需要定義這些變數
-global LOGI := "A80748"  ; 請替換為您的登入ID
+; 從設定檔讀取登入ID
+IniRead, LOGI, %A_ScriptDir%\radiologist_settings.ini, Login, Username
+if (LOGI = "ERROR" or LOGI = "") {
+    MsgBox, 無法從 radiologist_settings.ini 讀取登入ID，請確認設定檔存在且包含 [Login] Username 欄位。
+    ExitApp
+}
 global vExamLoc := 1     ; 1: 佳里, 0: 永康
 
 ; ============================================================================
