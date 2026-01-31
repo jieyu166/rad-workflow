@@ -381,7 +381,7 @@
 
       try {
         const text = await readFileAsText(f);
-        recap = JSON.parse(text);
+        recap = parseRecapJson(text);
 
         if (!recap || !Array.isArray(recap.segments)) {
           throw new Error('JSON 格式錯誤：找不到 segments 陣列');
@@ -644,6 +644,43 @@ copyBtn.addEventListener('click', async (ev) => {
         reader.onerror = () => reject(new Error('讀取檔案失敗'));
         reader.readAsText(file);
       });
+    }
+
+    function parseRecapJson(rawText) {
+      const text = String(rawText || '');
+      const cleanedText = text
+        .replace(/^\uFEFF/, '')
+        .replace(/```json\s*/gi, '')
+        .replace(/```/g, '')
+        .trim();
+
+      try {
+        return JSON.parse(cleanedText);
+      } catch (err) {
+        const extracted = extractJsonPayload(cleanedText);
+        if (extracted) {
+          return JSON.parse(normalizeJsonText(extracted));
+        }
+        throw err;
+      }
+    }
+
+    function extractJsonPayload(text) {
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        return text.slice(firstBrace, lastBrace + 1);
+      }
+      const firstBracket = text.indexOf('[');
+      const lastBracket = text.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+        return text.slice(firstBracket, lastBracket + 1);
+      }
+      return '';
+    }
+
+    function normalizeJsonText(text) {
+      return text.replace(/,\s*([}\]])/g, '$1');
     }
 
     function parseTimeToSec(str) {
