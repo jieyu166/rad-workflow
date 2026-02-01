@@ -1,5 +1,6 @@
 ; CXR3 - X-ray Report Assistant (模板式報告產生器)
 ; 此檔案放在 ahk-scripts 目錄下，範本 .txt 檔案存放於 cxr\ 子資料夾
+; 使用命名 GUI "CXR3" 避免與其他腳本的 GuiClose/GuiEscape 衝突
 
 ::cxr3;::
 ; 初始化變數
@@ -30,14 +31,14 @@ StringSplit, FileArray, FileList, |
 currentFile := FileArray1
 
 ; 初始建立GUI
-Gosub, CreateGUI
+Gosub, CXR3CreateGUI
 
 Return
 
 ; 建立新的GUI
-CreateGUI:
+CXR3CreateGUI:
 ; 先銷毀舊的GUI（如果存在）
-Gui, Destroy
+Gui, CXR3:Destroy
 
 ; 重置變數
 selectedItems := {}
@@ -48,15 +49,15 @@ buttonTexts := {}  ; 儲存按鈕的完整文字
 hotkeys := ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
 
 ; GUI基本設置
-Gui, Font, s12
+Gui, CXR3:Font, s12
 
 ; 上方控制區
-Gui, Add, Text, x10 y10 w80 h30, 選擇模板:
-Gui, Add, DropDownList, x90 y10 w150 h90 vSelectedFile gFileChanged, %FileList%
-GuiControl,, SelectedFile, %currentFile%
-Gui, Add, Button, x250 y10 w80 h30 gLockFile, 鎖定(&L)
-Gui, Add, Button, x340 y10 w100 h30 gCXRout, Copy代碼(&S)
-Gui, Add, Button, x450 y10 w80 h30 gClearAll, 清空(&C)
+Gui, CXR3:Add, Text, x10 y10 w80 h30, 選擇模板:
+Gui, CXR3:Add, DropDownList, x90 y10 w150 h90 vSelectedFile gCXR3FileChanged, %FileList%
+GuiControl, CXR3:, SelectedFile, %currentFile%
+Gui, CXR3:Add, Button, x250 y10 w80 h30 gCXR3LockFile, 鎖定(&L)
+Gui, CXR3:Add, Button, x340 y10 w100 h30 gCXR3out, Copy代碼(&S)
+Gui, CXR3:Add, Button, x450 y10 w80 h30 gCXR3ClearAll, 清空(&C)
 
 ; 計算頁籤數量
 tabcount_total := 1
@@ -73,11 +74,11 @@ Loop, read, %cxrFilePath%
 }
 
 ; 創建Tab控件 (左側) - 減少寬度
-Gui Add, Tab3, x10 y50 w300 h600 vtaba, % tab_str
+Gui, CXR3:Add, Tab3, x10 y50 w300 h600 vtaba, % tab_str
 
 tabcount := 1
-Gui Tab, %tabcount%
-Gui Add, Text, x1 y90, " " ; 定位用
+Gui, CXR3:Tab, %tabcount%
+Gui, CXR3:Add, Text, x1 y90, " " ; 定位用
 yPos := 90
 buttonIndex := 0
 pageButtonIndex := 1  ; 修正：從1開始，不是0
@@ -88,9 +89,9 @@ Loop, read, %cxrFilePath%
     if (InStr(A_LoopReadLine, "--Page--", false)){
         ; 換頁
         tabcount := tabcount + 1
-        Gui Tab, %tabcount%
+        Gui, CXR3:Tab, %tabcount%
         opt_multi[tabcount] := 0
-        Gui Add, Text, x1 y90, " " ; 定位用
+        Gui, CXR3:Add, Text, x1 y90, " " ; 定位用
         yPos := 90
         buttonIndex := 0
         pageButtonIndex := 1  ; 重置每頁的按鈕索引，從1開始
@@ -98,7 +99,7 @@ Loop, read, %cxrFilePath%
     else if(InStr(A_LoopReadLine, "TEXT::", false)){
         ; 顯示文字標籤
         yPos += 35
-        Gui, Add, Text, x20 y%yPos% w280 h20, % Substr(A_LoopReadLine, 7)
+        Gui, CXR3:Add, Text, x20 y%yPos% w280 h20, % Substr(A_LoopReadLine, 7)
     }
     else if(InStr(A_LoopReadLine, "MULTI", true)){
         ; 設定多選模式
@@ -107,7 +108,7 @@ Loop, read, %cxrFilePath%
     else if(InStr(A_LoopReadLine, "NEXT", true)){
         ; 下一頁按鈕 - 使用特殊熱鍵
         yPos += 35
-        Gui, Add, Button, x20 y%yPos% w280 h30 gButtonNext, 下一頁(&N)
+        Gui, CXR3:Add, Button, x20 y%yPos% w280 h30 gCXR3ButtonNext, 下一頁(&N)
     }
     else if(InStr(A_LoopReadLine, "::", false)){
         ; 縮寫按鈕
@@ -129,11 +130,11 @@ Loop, read, %cxrFilePath%
 
         ; 檢查是否包含 {LtRt} 或類似的選擇標記
         if (InStr(tmpstr[2], "{LtRt}") || InStr(tmpstr[2], "{LungSel}") || InStr(tmpstr[2], "{LungDxSel}")){
-            Gui, Add, Button, x20 y%yPos% w280 h30 v%buttonName% gButtonClickWithMenu, %buttonLabel%
+            Gui, CXR3:Add, Button, x20 y%yPos% w280 h30 v%buttonName% gCXR3ButtonClickWithMenu, %buttonLabel%
             buttonTexts[buttonName] := tmpstr[2]
         }
         else {
-            Gui, Add, Button, x20 y%yPos% w280 h30 v%buttonName% gButtonClick2, %buttonLabel%
+            Gui, CXR3:Add, Button, x20 y%yPos% w280 h30 v%buttonName% gCXR3ButtonClick2, %buttonLabel%
             buttonTexts[buttonName] := tmpstr[2]
         }
     }
@@ -155,92 +156,92 @@ Loop, read, %cxrFilePath%
 
         ; 檢查是否包含選擇標記
         if (InStr(A_LoopReadLine, "{LtRt}") || InStr(A_LoopReadLine, "{LungSel}") || InStr(A_LoopReadLine, "{LungDxSel}")){
-            Gui, Add, Button, x20 y%yPos% w280 h30 v%buttonName% gButtonClickWithMenu, %buttonLabel%
+            Gui, CXR3:Add, Button, x20 y%yPos% w280 h30 v%buttonName% gCXR3ButtonClickWithMenu, %buttonLabel%
             buttonTexts[buttonName] := A_LoopReadLine
         }
         else {
-            Gui, Add, Button, x20 y%yPos% w280 h30 v%buttonName% gButtonClick, %buttonLabel%
+            Gui, CXR3:Add, Button, x20 y%yPos% w280 h30 v%buttonName% gCXR3ButtonClick, %buttonLabel%
             buttonTexts[buttonName] := A_LoopReadLine
         }
     }
 }
 
-Gui Tab  ; 結束Tab控件
+Gui, CXR3:Tab  ; 結束Tab控件
 
 ; 右側已選擇項目顯示區 - 高度砍半
-Gui, Add, GroupBox, x320 y50 w220 h280, 已選擇項目
-Gui, Add, Edit, x330 y70 w200 h250 vSelectedDisplay +Multi +ReadOnly +VScroll
+Gui, CXR3:Add, GroupBox, x320 y50 w220 h280, 已選擇項目
+Gui, CXR3:Add, Edit, x330 y70 w200 h250 vSelectedDisplay +Multi +ReadOnly +VScroll
 
 ; 右側舊報告顯示區
-Gui, Add, Button, x320 y340 w220 h30 gShowOldReport3, 顯示舊報告(&2)
-Gui, Add, GroupBox, x320 y375 w220 h275, 舊報告
-Gui, Add, Edit, x330 y395 w200 h245 vOldReportDisplay3 +Multi +ReadOnly +VScroll
+Gui, CXR3:Add, Button, x320 y340 w220 h30 gCXR3ShowOldReport, 顯示舊報告(&2)
+Gui, CXR3:Add, GroupBox, x320 y375 w220 h275, 舊報告
+Gui, CXR3:Add, Edit, x330 y395 w200 h245 vOldReportDisplay3 +Multi +ReadOnly +VScroll
 
 ; 設定焦點到第一個Tab
-GuiControl, Focus, taba
+GuiControl, CXR3:Focus, taba
 
 ; 顯示GUI
-Gui, Show, w550 h660, X-ray Report Assistant - %currentFile%
+Gui, CXR3:Show, w550 h660, X-ray Report Assistant - %currentFile%
 
 ; 啟用數字鍵切換Tab的熱鍵
 Hotkey, IfWinActive, X-ray Report Assistant
 Loop, 9
 {
-    Hotkey, %A_Index%, TabSwitch
+    Hotkey, %A_Index%, CXR3TabSwitch
 }
 Hotkey, IfWinActive
 
 Return
 
 ; Tab切換熱鍵處理
-TabSwitch:
+CXR3TabSwitch:
     tabNum := A_ThisHotkey
-    GuiControl, Choose, taba, %tabNum%
+    GuiControl, CXR3:Choose, taba, %tabNum%
 return
 
 ; 鎖定/解鎖檔案選擇
-LockFile:
-GuiControlGet, isEnabled, Enabled, SelectedFile
+CXR3LockFile:
+GuiControlGet, isEnabled, CXR3:Enabled, SelectedFile
 if (isEnabled) {
-    GuiControl, Disable, SelectedFile
-    GuiControl,, LockFile, 解鎖(&U)
+    GuiControl, CXR3:Disable, SelectedFile
+    GuiControl, CXR3:, CXR3LockFile, 解鎖(&U)
     ; 設定焦點到Tab控件
-    GuiControl, Focus, taba
+    GuiControl, CXR3:Focus, taba
 } else {
-    GuiControl, Enable, SelectedFile
-    GuiControl,, LockFile, 鎖定(&L)
+    GuiControl, CXR3:Enable, SelectedFile
+    GuiControl, CXR3:, CXR3LockFile, 鎖定(&L)
 }
 return
 
 ; 清空所有選擇
-ClearAll:
+CXR3ClearAll:
 desc := ""
 selectedItems := {}
-GuiControl,, SelectedDisplay,
+GuiControl, CXR3:, SelectedDisplay,
 return
 
 ; 檔案選擇變更事件
-FileChanged:
-Gui, Submit, NoHide
+CXR3FileChanged:
+Gui, CXR3:Submit, NoHide
 currentFile := SelectedFile
 ; 重新建立整個GUI
-Gosub, CreateGUI
+Gosub, CXR3CreateGUI
 Return
 
 ; 下一頁按鈕
-ButtonNext:
-GuiControlGet, selectedTab,, taba
+CXR3ButtonNext:
+GuiControlGet, selectedTab, CXR3:, taba
 tabNum := RegExReplace(selectedTab, "Tab ", "")
 nextTab := tabNum + 1
 if (nextTab <= tabcount_total) {
-    GuiControl, Choose, taba, %nextTab%
+    GuiControl, CXR3:Choose, taba, %nextTab%
 }
 return
 
 ; 普通按鈕點擊
-ButtonClick:
+CXR3ButtonClick:
 buttonName := A_GuiControl
-GuiControlGet, ButtonText,, %buttonName%
+GuiControlGet, ButtonText, CXR3:, %buttonName%
 
 ; 移除快捷鍵標記
 ButtonText := RegExReplace(ButtonText, " \(&[A-Z]\)$", "")
@@ -256,23 +257,23 @@ desc .= "`r"
 
 ; 更新已選擇顯示
 selectedItems[buttonName] := fullText
-UpdateSelectedDisplay()
+CXR3UpdateSelectedDisplay()
 
 ; 檢查是否自動跳到下一頁
-GuiControlGet, selectedTab,, taba
+GuiControlGet, selectedTab, CXR3:, taba
 tabNum := RegExReplace(selectedTab, "Tab ", "")
 if(!opt_multi[tabNum]){
     nextTab := tabNum + 1
     if (nextTab <= tabcount_total) {
-        GuiControl, Choose, taba, %nextTab%
+        GuiControl, CXR3:Choose, taba, %nextTab%
     }
 }
 Return
 
 ; 縮寫按鈕點擊
-ButtonClick2:
+CXR3ButtonClick2:
 buttonName := A_GuiControl
-GuiControlGet, ButtonText,, %buttonName%
+GuiControlGet, ButtonText, CXR3:, %buttonName%
 
 ; 移除快捷鍵標記
 ButtonText := RegExReplace(ButtonText, " \(&[A-Z]\)$", "")
@@ -290,23 +291,23 @@ desc .= "`r"
 
 ; 更新已選擇顯示
 selectedItems[buttonName] := ButtonText . " → " . fullText
-UpdateSelectedDisplay()
+CXR3UpdateSelectedDisplay()
 
 ; 檢查是否自動跳到下一頁
-GuiControlGet, selectedTab,, taba
+GuiControlGet, selectedTab, CXR3:, taba
 tabNum := RegExReplace(selectedTab, "Tab ", "")
 if(!opt_multi[tabNum]){
     nextTab := tabNum + 1
     if (nextTab <= tabcount_total) {
-        GuiControl, Choose, taba, %nextTab%
+        GuiControl, CXR3:Choose, taba, %nextTab%
     }
 }
 Return
 
 ; 帶有選單的按鈕點擊
-ButtonClickWithMenu:
+CXR3ButtonClickWithMenu:
 currentButton := A_GuiControl
-GuiControlGet, ButtonText,, %currentButton%
+GuiControlGet, ButtonText, CXR3:, %currentButton%
 
 ; 移除快捷鍵標記
 ButtonText := RegExReplace(ButtonText, " \(&[A-Z]\)$", "")
@@ -328,37 +329,37 @@ currentButtonTextForMenu := ButtonText
 if (InStr(fullText, "{LtRt}")){
     ; 建立LtRt選單
     Try Menu, LtRtMenu, DeleteAll
-    Menu, LtRtMenu, Add, Left(&L), MenuHandlerLtRt
-    Menu, LtRtMenu, Add, Right(&R), MenuHandlerLtRt
-    Menu, LtRtMenu, Add, Bilateral(&B), MenuHandlerLtRt
+    Menu, LtRtMenu, Add, Left(&L), CXR3MenuHandlerLtRt
+    Menu, LtRtMenu, Add, Right(&R), CXR3MenuHandlerLtRt
+    Menu, LtRtMenu, Add, Bilateral(&B), CXR3MenuHandlerLtRt
     Menu, LtRtMenu, Show
 }
 else if (InStr(fullText, "{LungSel}")){
     ; 建立Lung選單
     Try Menu, LungMenu, DeleteAll
-    Menu, LungMenu, Add, right upper lung(&1), MenuHandlerLung
-    Menu, LungMenu, Add, right middle lung(&2), MenuHandlerLung
-    Menu, LungMenu, Add, right lower lung(&3), MenuHandlerLung
-    Menu, LungMenu, Add, left upper lung(&4), MenuHandlerLung
-    Menu, LungMenu, Add, left lower lung(&5), MenuHandlerLung
-    Menu, LungMenu, Add, bilateral lung(&6), MenuHandlerLung
-    Menu, LungMenu, Add, bilateral lower lung(&7), MenuHandlerLung
+    Menu, LungMenu, Add, right upper lung(&1), CXR3MenuHandlerLung
+    Menu, LungMenu, Add, right middle lung(&2), CXR3MenuHandlerLung
+    Menu, LungMenu, Add, right lower lung(&3), CXR3MenuHandlerLung
+    Menu, LungMenu, Add, left upper lung(&4), CXR3MenuHandlerLung
+    Menu, LungMenu, Add, left lower lung(&5), CXR3MenuHandlerLung
+    Menu, LungMenu, Add, bilateral lung(&6), CXR3MenuHandlerLung
+    Menu, LungMenu, Add, bilateral lower lung(&7), CXR3MenuHandlerLung
     Menu, LungMenu, Show
 }
 else if (InStr(fullText, "{LungDxSel}")){
     ; 建立Dx選單
     Try Menu, DxMenu, DeleteAll
-    Menu, DxMenu, Add, DDx: pneumonia(&P), MenuHandlerDx
-    Menu, DxMenu, Add, DDx: pulmonary edema(&E), MenuHandlerDx
-    Menu, DxMenu, Add, DDx: atelectasis(&A), MenuHandlerDx
-    Menu, DxMenu, Add, DDx: tumor(&T), MenuHandlerDx
-    Menu, DxMenu, Add, Clinical correlation is needed(&C), MenuHandlerDx
+    Menu, DxMenu, Add, DDx: pneumonia(&P), CXR3MenuHandlerDx
+    Menu, DxMenu, Add, DDx: pulmonary edema(&E), CXR3MenuHandlerDx
+    Menu, DxMenu, Add, DDx: atelectasis(&A), CXR3MenuHandlerDx
+    Menu, DxMenu, Add, DDx: tumor(&T), CXR3MenuHandlerDx
+    Menu, DxMenu, Add, Clinical correlation is needed(&C), CXR3MenuHandlerDx
     Menu, DxMenu, Show
 }
 Return
 
 ; LtRt選單處理
-MenuHandlerLtRt:
+CXR3MenuHandlerLtRt:
 buttonName := currentButtonForMenu
 fullText := currentFullTextForMenu
 ButtonText := currentButtonTextForMenu
@@ -375,21 +376,21 @@ desc .= "`r"
 
 ; 更新已選擇顯示
 selectedItems[buttonName] := ButtonText . " → " . fullText
-UpdateSelectedDisplay()
+CXR3UpdateSelectedDisplay()
 
 ; 檢查是否自動跳到下一頁
-GuiControlGet, selectedTab,, taba
+GuiControlGet, selectedTab, CXR3:, taba
 tabNum := RegExReplace(selectedTab, "Tab ", "")
 if(!opt_multi[tabNum]){
     nextTab := tabNum + 1
     if (nextTab <= tabcount_total) {
-        GuiControl, Choose, taba, %nextTab%
+        GuiControl, CXR3:Choose, taba, %nextTab%
     }
 }
 Return
 
 ; Lung選單處理
-MenuHandlerLung:
+CXR3MenuHandlerLung:
 buttonName := currentButtonForMenu
 fullText := currentFullTextForMenu
 ButtonText := currentButtonTextForMenu
@@ -406,21 +407,21 @@ desc .= "`r"
 
 ; 更新已選擇顯示
 selectedItems[buttonName] := ButtonText . " → " . fullText
-UpdateSelectedDisplay()
+CXR3UpdateSelectedDisplay()
 
 ; 檢查是否自動跳到下一頁
-GuiControlGet, selectedTab,, taba
+GuiControlGet, selectedTab, CXR3:, taba
 tabNum := RegExReplace(selectedTab, "Tab ", "")
 if(!opt_multi[tabNum]){
     nextTab := tabNum + 1
     if (nextTab <= tabcount_total) {
-        GuiControl, Choose, taba, %nextTab%
+        GuiControl, CXR3:Choose, taba, %nextTab%
     }
 }
 Return
 
 ; Dx選單處理
-MenuHandlerDx:
+CXR3MenuHandlerDx:
 buttonName := currentButtonForMenu
 fullText := currentFullTextForMenu
 ButtonText := currentButtonTextForMenu
@@ -437,21 +438,21 @@ desc .= "`r"
 
 ; 更新已選擇顯示
 selectedItems[buttonName] := ButtonText . " → " . fullText
-UpdateSelectedDisplay()
+CXR3UpdateSelectedDisplay()
 
 ; 檢查是否自動跳到下一頁
-GuiControlGet, selectedTab,, taba
+GuiControlGet, selectedTab, CXR3:, taba
 tabNum := RegExReplace(selectedTab, "Tab ", "")
 if(!opt_multi[tabNum]){
     nextTab := tabNum + 1
     if (nextTab <= tabcount_total) {
-        GuiControl, Choose, taba, %nextTab%
+        GuiControl, CXR3:Choose, taba, %nextTab%
     }
 }
 Return
 
 ; 更新已選擇項目的顯示
-UpdateSelectedDisplay(){
+CXR3UpdateSelectedDisplay(){
     global selectedItems
     displayText := ""
     count := 0
@@ -461,12 +462,12 @@ UpdateSelectedDisplay(){
             displayText .= "`r`n"
         displayText .= count . ". " . value
     }
-    GuiControl,, SelectedDisplay, %displayText%
+    GuiControl, CXR3:, SelectedDisplay, %displayText%
 }
 
 ; 顯示舊報告
-ShowOldReport3:
-Gui, Submit, NoHide
+CXR3ShowOldReport:
+Gui, CXR3:Submit, NoHide
 
 ClipboardBackup := Clipboard
 
@@ -479,14 +480,14 @@ oldReport := GetOldReportContent(accessionNum, false)
 oldReport := RegExReplace(oldReport, "(\r\n|\n|\r)", "`r`n")
 
 ; 顯示在舊報告 Edit 控件中
-GuiControl,, OldReportDisplay3, %oldReport%
+GuiControl, CXR3:, OldReportDisplay3, %oldReport%
 
 ; 恢復原始剪貼簿內容
 Clipboard := ClipboardBackup
 return
 
 ; 輸出結果
-CXRout:
+CXR3out:
 if (desc = ""){
     MsgBox, 沒有選擇任何項目！
     return
@@ -506,11 +507,11 @@ Send, {Enter}
 
 desc := ""
 selectedItems := {}
-GuiControl,, SelectedDisplay,
+GuiControl, CXR3:, SelectedDisplay,
 return
 
-; GUI關閉
-GuiClose:
+; GUI關閉 (命名GUI: CXR3GuiClose)
+CXR3GuiClose:
 ; 清理熱鍵
 Hotkey, IfWinActive, X-ray Report Assistant
 Loop, 9
@@ -518,11 +519,11 @@ Loop, 9
     Hotkey, %A_Index%, Off
 }
 Hotkey, IfWinActive
-Gui, Destroy
+Gui, CXR3:Destroy
 return
 
-; 按Escape關閉GUI
-GuiEscape:
+; 按Escape關閉GUI (命名GUI: CXR3GuiEscape)
+CXR3GuiEscape:
 ; 清理熱鍵
 Hotkey, IfWinActive, X-ray Report Assistant
 Loop, 9
@@ -530,5 +531,5 @@ Loop, 9
     Hotkey, %A_Index%, Off
 }
 Hotkey, IfWinActive
-Gui, Destroy
+Gui, CXR3:Destroy
 return
