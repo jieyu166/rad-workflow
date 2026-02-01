@@ -1,5 +1,10 @@
+#NoEnv
+SendMode Input
+SetWorkingDir %A_ScriptDir%
+ 
 ; CXR3 - X-ray Report Assistant (模板式報告產生器)
-; 此檔案由上層 ahk 腳本引用，不再獨立執行
+; 引用上層資料夾的函數 (GetDICOMData, GetAccessionNumber, GetOldReportContent 等)
+#Include %A_ScriptDir%\..\test.ahk
 
 ::cxr3;::
 ; 初始化變數
@@ -9,8 +14,8 @@ currentFile := ""    ; 當前選擇的檔案
 ; 記錄目前視窗
 WinGet, ActiveId, ID, A
 
-; 搜尋 cxr 子目錄下的所有txt檔案
-cxrDir := A_ScriptDir . "\cxr\"
+; 搜尋同目錄下的所有txt檔案
+cxrDir := A_ScriptDir . "\"
 FileList := ""
 Loop, %cxrDir%*.txt
 {
