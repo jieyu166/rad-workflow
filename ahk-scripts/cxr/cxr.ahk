@@ -1,7 +1,7 @@
-; CXR3 - X-ray Report Assistant (模板式報告產生器)
-; 此檔案放在 ahk-scripts 目錄下，範本 .txt 檔案存放於 cxr\ 子資料夾
-; 使用命名 GUI "CXR3" 避免與其他腳本的 GuiClose/GuiEscape 衝突
- 
+#NoEnv
+SendMode Input
+SetWorkingDir %A_ScriptDir%
+
 ::cxr3;::
 ; 初始化變數
 selectedItems := {}  ; 儲存已選擇的項目
@@ -9,11 +9,10 @@ currentFile := ""    ; 當前選擇的檔案
  
 ; 記錄目前視窗
 WinGet, ActiveId, ID, A
- 
-; 搜尋 cxr 子目錄下的所有txt檔案
-cxrDir := A_ScriptDir . "\cxr\"
+
+; 搜尋同目錄下的所有txt檔案
 FileList := ""
-Loop, %cxrDir%*.txt
+Loop, *.txt
 {
     FileList .= A_LoopFileName . "|"
 }
@@ -62,9 +61,8 @@ Gui, CXR3:Add, Button, x450 y10 w80 h30 gCXR3ClearAll, 清空(&C)
 ; 計算頁籤數量
 tabcount_total := 1
 tab_str := "Tab 1"
-cxrFilePath := cxrDir . currentFile
- 
-Loop, read, %cxrFilePath%
+
+Loop, read, %currentFile%
 {
     if (InStr(A_LoopReadLine, "--Page--", false)){
         tabcount_total := tabcount_total + 1
@@ -72,10 +70,10 @@ Loop, read, %cxrFilePath%
         tab_str .= tabcount_total
     }
 }
- 
-; 創建Tab控件 (左側) - 減少寬度
-Gui, CXR3:Add, Tab3, x10 y50 w300 h600 vtaba, % tab_str
- 
+
+; 創建Tab控件 (左側)
+Gui Add, Tab3, x10 y50 w360 h600 vtaba, % tab_str
+
 tabcount := 1
 Gui, CXR3:Tab, %tabcount%
 Gui, CXR3:Add, Text, x1 y90, " " ; 定位用
@@ -84,7 +82,7 @@ buttonIndex := 0
 pageButtonIndex := 1  ; 修正：從1開始，不是0
  
 ; 讀取檔案並生成按鈕
-Loop, read, %cxrFilePath%
+Loop, read, %currentFile%
 {
     if (InStr(A_LoopReadLine, "--Page--", false)){
         ; 換頁
@@ -99,7 +97,7 @@ Loop, read, %cxrFilePath%
     else if(InStr(A_LoopReadLine, "TEXT::", false)){
         ; 顯示文字標籤
         yPos += 35
-        Gui, CXR3:Add, Text, x20 y%yPos% w280 h20, % Substr(A_LoopReadLine, 7)
+        Gui, Add, Text, x20 y%yPos% w340 h20, % Substr(A_LoopReadLine, 7)
     }
     else if(InStr(A_LoopReadLine, "MULTI", true)){
         ; 設定多選模式
@@ -108,7 +106,7 @@ Loop, read, %cxrFilePath%
     else if(InStr(A_LoopReadLine, "NEXT", true)){
         ; 下一頁按鈕 - 使用特殊熱鍵
         yPos += 35
-        Gui, CXR3:Add, Button, x20 y%yPos% w280 h30 gCXR3ButtonNext, 下一頁(&N)
+        Gui, Add, Button, x20 y%yPos% w340 h30 gButtonNext, 下一頁(&N)
     }
     else if(InStr(A_LoopReadLine, "::", false)){
         ; 縮寫按鈕
@@ -117,7 +115,7 @@ Loop, read, %cxrFilePath%
         buttonIndex++
         buttonName := "Button" . tabcount . "_" . buttonIndex
         yPos += 35
- 
+        
         ; 加入快捷鍵
         if (pageButtonIndex <= hotkeys.MaxIndex()){
             hotkeyLabel := "(&" . hotkeys[pageButtonIndex] . ")"
@@ -127,14 +125,14 @@ Loop, read, %cxrFilePath%
             hotkeyLabel := ""
         }
         buttonLabel := tmpstr[1] . " " . hotkeyLabel
- 
+        
         ; 檢查是否包含 {LtRt} 或類似的選擇標記
         if (InStr(tmpstr[2], "{LtRt}") || InStr(tmpstr[2], "{LungSel}") || InStr(tmpstr[2], "{LungDxSel}")){
-            Gui, CXR3:Add, Button, x20 y%yPos% w280 h30 v%buttonName% gCXR3ButtonClickWithMenu, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClickWithMenu, %buttonLabel%
             buttonTexts[buttonName] := tmpstr[2]
         }
         else {
-            Gui, CXR3:Add, Button, x20 y%yPos% w280 h30 v%buttonName% gCXR3ButtonClick2, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClick2, %buttonLabel%
             buttonTexts[buttonName] := tmpstr[2]
         }
     }
@@ -143,7 +141,7 @@ Loop, read, %cxrFilePath%
         buttonIndex++
         buttonName := "Button" . tabcount . "_" . buttonIndex
         yPos += 35
- 
+        
         ; 加入快捷鍵
         if (pageButtonIndex <= hotkeys.MaxIndex()){
             hotkeyLabel := "(&" . hotkeys[pageButtonIndex] . ")"
@@ -153,36 +151,31 @@ Loop, read, %cxrFilePath%
             hotkeyLabel := ""
         }
         buttonLabel := A_LoopReadLine . " " . hotkeyLabel
- 
+        
         ; 檢查是否包含選擇標記
         if (InStr(A_LoopReadLine, "{LtRt}") || InStr(A_LoopReadLine, "{LungSel}") || InStr(A_LoopReadLine, "{LungDxSel}")){
-            Gui, CXR3:Add, Button, x20 y%yPos% w280 h30 v%buttonName% gCXR3ButtonClickWithMenu, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClickWithMenu, %buttonLabel%
             buttonTexts[buttonName] := A_LoopReadLine
         }
         else {
-            Gui, CXR3:Add, Button, x20 y%yPos% w280 h30 v%buttonName% gCXR3ButtonClick, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClick, %buttonLabel%
             buttonTexts[buttonName] := A_LoopReadLine
         }
     }
 }
- 
-Gui, CXR3:Tab  ; 結束Tab控件
- 
-; 右側已選擇項目顯示區 - 高度砍半
-Gui, CXR3:Add, GroupBox, x320 y50 w220 h280, 已選擇項目
-Gui, CXR3:Add, Edit, x330 y70 w200 h250 vSelectedDisplay +Multi +ReadOnly +VScroll
- 
-; 右側舊報告顯示區
-Gui, CXR3:Add, Button, x320 y340 w220 h30 gCXR3ShowOldReport, 顯示舊報告(&2)
-Gui, CXR3:Add, GroupBox, x320 y375 w220 h275, 舊報告
-Gui, CXR3:Add, Edit, x330 y395 w200 h245 vOldReportDisplay3 +Multi +ReadOnly +VScroll
- 
+
+Gui Tab  ; 結束Tab控件
+
+; 右側已選擇項目顯示區
+Gui, Add, GroupBox, x380 y50 w250 h600, 已選擇項目
+Gui, Add, Edit, x390 y70 w230 h570 vSelectedDisplay +Multi +ReadOnly +VScroll
+
 ; 設定焦點到第一個Tab
 GuiControl, CXR3:Focus, taba
  
 ; 顯示GUI
-Gui, CXR3:Show, w550 h660, X-ray Report Assistant - %currentFile%
- 
+Gui, Show, w640 h660, X-ray Report Assistant - %currentFile%
+
 ; 啟用數字鍵切換Tab的熱鍵
 Hotkey, IfWinActive, X-ray Report Assistant
 Loop, 9
@@ -464,28 +457,7 @@ CXR3UpdateSelectedDisplay(){
     }
     GuiControl, CXR3:, SelectedDisplay, %displayText%
 }
- 
-; 顯示舊報告
-CXR3ShowOldReport:
-Gui, CXR3:Submit, NoHide
- 
-ClipboardBackup := Clipboard
- 
-; 取得舊報告內容
-dicom := GetDICOMData()
-accessionNum := GetAccessionNumber(dicom)
-oldReport := GetOldReportContent(accessionNum, false)
- 
-; 清理報告格式
-oldReport := RegExReplace(oldReport, "(\r\n|\n|\r)", "`r`n")
- 
-; 顯示在舊報告 Edit 控件中
-GuiControl, CXR3:, OldReportDisplay3, %oldReport%
- 
-; 恢復原始剪貼簿內容
-Clipboard := ClipboardBackup
-return
- 
+
 ; 輸出結果
 CXR3out:
 if (desc = ""){
@@ -519,11 +491,10 @@ Loop, 9
     Hotkey, %A_Index%, Off
 }
 Hotkey, IfWinActive
-Gui, CXR3:Destroy
-return
- 
-; 按Escape關閉GUI (命名GUI: CXR3GuiEscape)
-CXR3GuiEscape:
+ExitApp
+
+; 按Escape關閉GUI
+GuiEscape:
 ; 清理熱鍵
 Hotkey, IfWinActive, X-ray Report Assistant
 Loop, 9
@@ -531,6 +502,4 @@ Loop, 9
     Hotkey, %A_Index%, Off
 }
 Hotkey, IfWinActive
-Gui, CXR3:Destroy
-return
- 
+ExitApp
