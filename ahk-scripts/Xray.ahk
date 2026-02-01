@@ -1,4 +1,4 @@
-﻿;============================================================================================
+;============================================================================================
 ; X-ray
 ;============================================================================================
 
@@ -747,7 +747,7 @@ return
 
 
 ::sco;::
-HotstringMenuV("A","MenuShortcut2","Mild scoliosis.","Mild scoliosis, convex to _{LtRt}","_Mild _scoliosis of thoracolumbar spine, with major and compensatory curvature.","BRK","Mild rotatory asymmetry of the _upper _thoracic _lumbar spine, convex to {LtRt}, measuring _ degree.","_Mild _scoliosis of the _upper _thoracic _lumbar spine, apex at _, convex to {LtRt}, measuring _ degree.")
+HotstringMenuV("A","MenuShortcut2","Mild scoliosis.","Mild scoliosis, convex to _{LtRt}","_Mild _scoliosis of thoracolumbar spine, with major and compensatory curvature.","BRK","Mild rotatory asymmetry of the _upper _thoracic _lumbar spine, convex to {LtRt}, measuring _ degree.","_Mild _scoliosis of the _upper _thoracic _thoracolumbar _lumbar spine, _, apex at _, convex to {LtRt}, measuring _ degree.")
 return
 
 :O:cxr;::
