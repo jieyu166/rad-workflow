@@ -1,4 +1,4 @@
-﻿; 方法2: 使用 #If 指令 (更優雅的方式)
+; 方法2: 使用 #If 指令 (更優雅的方式)
 #If (varWhere = 5 or varWhere = 8)
 F5::LWin
 #If
@@ -420,7 +420,8 @@ PosDICOMLU:
     if(varWhere=1) {
         MouseMove 3286, 986     ; 佳里學姊
     } else if(varWhere=2) {
-        MouseMove 3000,0        ; 佳里座位
+        MouseMove 3000,150        ; 佳里座位
+		;MouseMove 3200,120        ; 佳里座位125%
     } else if(varWhere=3) {
         MouseMove 0,0           ; 第三VS辦公室(佳里)
     } else if(varWhere=4) {
@@ -443,7 +444,8 @@ PosDICOMRU:
     if(varWhere=1) {
         MouseMove 4793, 940     ; 佳里學姊
     } else if(varWhere=2) {
-        MouseMove 4400,0        ; 佳里座位
+        MouseMove 4400,150        ; 佳里座位
+		;MouseMove 4800,140        ; 佳里座位125%
     } else if(varWhere=3) {
         MouseMove 4450,700      ; 第三VS佳里
     } else if(varWhere=4) {
@@ -464,7 +466,8 @@ PosDICOMButton:
     if(varWhere=1) {
         MouseMove 4400,150     ; 佳里學姊
     } else if(varWhere=2) {
-        MouseMove 4400,-290     ; 佳里
+        ;MouseMove 4400,-310     ; 佳里100%
+		MouseMove 4400,-305     ; 佳里
     } else if(varWhere=3) {
         MouseMove 4400,150      ; 第三VS佳里
     } else if(varWhere=4) {
@@ -545,8 +548,11 @@ return
     ; 根據不同地點調整滑鼠位置
     if(varWhere=1) {
         MouseMove 770, 43       ; R辦公室
-    } else if(varWhere=2 or varWhere=3 or varWhere=4) {
-        MouseMove 780,50       ; 佳里/第三VS
+    } else if(varWhere=3 or varWhere=4) {
+        MouseMove 780,50       ; 第三VS
+    } else if(varWhere=2) {
+        ;MouseMove 620,40       ; 佳里100%
+		MouseMove 770,50       ; 佳里125%
     } else if(varWhere=5) {
         MouseMove 1245,80       ; 遠端
     } else if(varWhere=6) {
