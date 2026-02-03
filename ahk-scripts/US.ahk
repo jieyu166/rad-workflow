@@ -1632,26 +1632,50 @@ return
 
 ; 獲取剪貼簿中的影像並儲存
 GetClipboardImageAndSave(imageType) {
-    ; 檢查剪貼簿是否有影像
-    if !DllCall("IsClipboardFormatAvailable", "uint", 2) {
+    ; 檢查剪貼簿是否有影像 (CF_BITMAP=2, CF_DIB=8, CF_DIBV5=17)
+    ; Win11 某些應用程式可能只提供 CF_DIB 或 CF_DIBV5 格式
+    hasBitmap := DllCall("IsClipboardFormatAvailable", "uint", 2)
+    hasDIB := DllCall("IsClipboardFormatAvailable", "uint", 8)
+    hasDIBV5 := DllCall("IsClipboardFormatAvailable", "uint", 17)
+    if (!hasBitmap && !hasDIB && !hasDIBV5) {
         return ""
     }
-    
+
+    ; 使用 GDI+ 從剪貼簿建立點陣圖 (更可靠地處理各種格式)
+    tempFile := A_Temp . "\usai_" . imageType . ".png"
+    if IsFunc("Gdip_Startup") {
+        pToken := Gdip_Startup()
+        if (!pToken) {
+            return ""
+        }
+        pBitmap := Gdip_CreateBitmapFromClipboard()
+        if (pBitmap < 0 || !pBitmap) {
+            ; GDI+ 剪貼簿讀取失敗，回退到手動方式
+            Gdip_Shutdown(pToken)
+            goto ClipboardManualFallback
+        }
+        result := Gdip_SaveBitmapToFile(pBitmap, tempFile)
+        Gdip_DisposeImage(pBitmap)
+        Gdip_Shutdown(pToken)
+        success := (result = 0)
+    } else {
+        goto ClipboardManualFallback
+    }
+    goto ClipboardImageSaved
+
+    ClipboardManualFallback:
     if !DllCall("OpenClipboard", "ptr", 0) {
         return ""
     }
-    
     hBitmap := DllCall("GetClipboardData", "uint", 2, "ptr")
     if (!hBitmap) {
         DllCall("CloseClipboard")
         return ""
     }
-    
-    ; 儲存完整原始影像 (作為備份與 OCR 使用)
-    tempFile := A_Temp . "\usai_" . imageType . ".png"
     success := SaveBitmapToPNG(hBitmap, tempFile)
-    
     DllCall("CloseClipboard")
+
+    ClipboardImageSaved:
     
     if (success) {
         aiImagePath := A_Temp . "\usai_" . imageType . "_ai.png"
@@ -2376,32 +2400,57 @@ B64EncodeFile(filePath) {
 
 ; 獲取剪貼簿中的影像
 GetClipboardImage() {
-    ; 檢查剪貼簿是否有影像
-    if !DllCall("IsClipboardFormatAvailable", "uint", 2) { ; CF_BITMAP = 2
+    ; 檢查剪貼簿是否有影像 (CF_BITMAP=2, CF_DIB=8, CF_DIBV5=17)
+    ; Win11 某些應用程式可能只提供 CF_DIB 或 CF_DIBV5 格式
+    hasBitmap := DllCall("IsClipboardFormatAvailable", "uint", 2)
+    hasDIB := DllCall("IsClipboardFormatAvailable", "uint", 8)
+    hasDIBV5 := DllCall("IsClipboardFormatAvailable", "uint", 17)
+    if (!hasBitmap && !hasDIB && !hasDIBV5) {
         return ""
     }
-    
-    ; 打開剪貼簿
+
+    ; 優先使用 GDI+ 從剪貼簿讀取 (更可靠地處理 Win11 格式)
+    if IsFunc("Gdip_Startup") {
+        pToken := Gdip_Startup()
+        if (pToken) {
+            pBitmap := Gdip_CreateBitmapFromClipboard()
+            if (pBitmap > 0) {
+                tempFile := A_Temp . "\temp_clipboard_" . A_TickCount . ".png"
+                result := Gdip_SaveBitmapToFile(pBitmap, tempFile)
+                Gdip_DisposeImage(pBitmap)
+                Gdip_Shutdown(pToken)
+                if (result = 0) {
+                    base64 := B64EncodeFile(tempFile)
+                    FileDelete, %tempFile%
+                    if (base64 != "") {
+                        return "data:image/png;base64," . base64
+                    }
+                }
+                return ""
+            }
+            Gdip_Shutdown(pToken)
+        }
+    }
+
+    ; 回退：手動開啟剪貼簿取得 CF_BITMAP
     if !DllCall("OpenClipboard", "ptr", 0) {
         return ""
     }
-    
-    ; 獲取影像句柄
-    hBitmap := DllCall("GetClipboardData", "uint", 2, "ptr") ; CF_BITMAP = 2
+
+    hBitmap := DllCall("GetClipboardData", "uint", 2, "ptr")
     if (!hBitmap) {
         DllCall("CloseClipboard")
         return ""
     }
-    
-    ; 轉換為 base64
+
     base64 := BitmapToBase64(hBitmap)
-    
+
     DllCall("CloseClipboard")
-    
+
     if (base64 != "") {
         return "data:image/png;base64," . base64
     }
-    
+
     return ""
 }
 
