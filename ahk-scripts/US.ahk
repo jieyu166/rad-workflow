@@ -1630,6 +1630,27 @@ USAIExecuteOCR2:
 return
 
 
+; 將 GDI+ pBitmap 儲存為 PNG (使用硬編碼 CLSID，繞過 Gdip_SaveBitmapToFile 的編碼器列舉問題)
+; Gdip.ahk 的 Gdip_SaveBitmapToFile 在 64-bit AHK + Win11 下結構體偏移量不正確，
+; 導致找不到 PNG 編碼器 (回傳 -3)。此函式直接使用 PNG CLSID 呼叫 GdipSaveImageToFile。
+SavePBitmapToPNG(pBitmap, filePath) {
+    ; PNG Encoder CLSID: {557CF406-1A04-11D3-9A73-0000F81EF32E}
+    VarSetCapacity(pCodec, 16, 0)
+    NumPut(0x557CF406, pCodec, 0, "uint")
+    NumPut(0x1A04, pCodec, 4, "ushort")
+    NumPut(0x11D3, pCodec, 6, "ushort")
+    NumPut(0x9A, pCodec, 8, "uchar")
+    NumPut(0x73, pCodec, 9, "uchar")
+    NumPut(0x00, pCodec, 10, "uchar")
+    NumPut(0x00, pCodec, 11, "uchar")
+    NumPut(0xF8, pCodec, 12, "uchar")
+    NumPut(0x1E, pCodec, 13, "uchar")
+    NumPut(0xF3, pCodec, 14, "uchar")
+    NumPut(0x2E, pCodec, 15, "uchar")
+
+    return DllCall("gdiplus\GdipSaveImageToFile", "ptr", pBitmap, "wstr", filePath, "ptr", &pCodec, "uint", 0)
+}
+
 ; 獲取剪貼簿中的影像並儲存
 GetClipboardImageAndSave(imageType) {
     ; 檢查剪貼簿是否有影像 (CF_BITMAP=2, CF_DIB=8, CF_DIBV5=17)
@@ -1654,7 +1675,8 @@ GetClipboardImageAndSave(imageType) {
             Gdip_Shutdown(pToken)
             goto ClipboardManualFallback
         }
-        result := Gdip_SaveBitmapToFile(pBitmap, tempFile)
+        ; 使用硬編碼 PNG CLSID 儲存 (繞過 Gdip_SaveBitmapToFile 的 64-bit 相容性問題)
+        result := SavePBitmapToPNG(pBitmap, tempFile)
         Gdip_DisposeImage(pBitmap)
         Gdip_Shutdown(pToken)
         success := (result = 0)
@@ -1716,21 +1738,21 @@ SaveBitmapToPNG(hBitmap, filePath) {
         if (!pToken) {
             return false
         }
-        
+
         pBitmap := Gdip_CreateBitmapFromHBITMAP(hBitmap)
         if (!pBitmap) {
             Gdip_Shutdown(pToken)
             return false
         }
-        
-        ; 保存為 PNG 檔案
-        result := Gdip_SaveBitmapToFile(pBitmap, filePath)
+
+        ; 使用硬編碼 PNG CLSID 儲存 (繞過 Gdip_SaveBitmapToFile 的 64-bit 相容性問題)
+        result := SavePBitmapToPNG(pBitmap, filePath)
         Gdip_DisposeImage(pBitmap)
         Gdip_Shutdown(pToken)
-        
+
         return (result = 0)
     }
-    
+
     ; 備用方法：使用系統功能
     ; 這裡可以添加其他儲存方法
     return false
@@ -2416,7 +2438,8 @@ GetClipboardImage() {
             pBitmap := Gdip_CreateBitmapFromClipboard()
             if (pBitmap > 0) {
                 tempFile := A_Temp . "\temp_clipboard_" . A_TickCount . ".png"
-                result := Gdip_SaveBitmapToFile(pBitmap, tempFile)
+                ; 使用硬編碼 PNG CLSID 儲存 (繞過 Gdip_SaveBitmapToFile 的 64-bit 相容性問題)
+                result := SavePBitmapToPNG(pBitmap, tempFile)
                 Gdip_DisposeImage(pBitmap)
                 Gdip_Shutdown(pToken)
                 if (result = 0) {
@@ -2494,11 +2517,11 @@ BitmapToBase64_GDIPlus(hBitmap) {
         return ""
     }
     
-    ; 保存為 PNG 檔案
-    result := Gdip_SaveBitmapToFile(pBitmap, tempFile)
+    ; 使用硬編碼 PNG CLSID 儲存 (繞過 Gdip_SaveBitmapToFile 的 64-bit 相容性問題)
+    result := SavePBitmapToPNG(pBitmap, tempFile)
     Gdip_DisposeImage(pBitmap)
     Gdip_Shutdown(pToken)
-    
+
     ; 檢查檔案是否成功保存
     if (result != 0 || !FileExist(tempFile)) {
         return ""
@@ -2868,8 +2891,8 @@ CropImage(inputPath, outputPath, cropPercent := 20, fromBottom := true) {
     ; 執行裁切
     Gdip_DrawImage(pGraphics, pBitmap, 0, 0, cropWidth, cropHeight, cropX, cropY, cropWidth, cropHeight)
     
-    ; 儲存裁切後的影像
-    Gdip_SaveBitmapToFile(pBitmapCropped, outputPath)
+    ; 儲存裁切後的影像 (使用硬編碼 PNG CLSID)
+    SavePBitmapToPNG(pBitmapCropped, outputPath)
     
     ; 清理資源
     Gdip_DeleteGraphics(pGraphics)
@@ -2903,9 +2926,9 @@ CreateAIImage(inputPath, outputPath, keepPercent := 90) {
     pBitmapAI := Gdip_CreateBitmap(origWidth, keepHeight)
     pGraphics := Gdip_GraphicsFromImage(pBitmapAI)
     
-    ; 裁切並儲存
+    ; 裁切並儲存 (使用硬編碼 PNG CLSID)
     Gdip_DrawImage(pGraphics, pBitmap, 0, 0, origWidth, keepHeight, 0, cropY, origWidth, keepHeight)
-    Gdip_SaveBitmapToFile(pBitmapAI, outputPath)
+    SavePBitmapToPNG(pBitmapAI, outputPath)
     
     ; 清理
     Gdip_DeleteGraphics(pGraphics)
