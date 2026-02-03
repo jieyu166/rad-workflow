@@ -1443,10 +1443,12 @@ return
 ; 輸入：location = "Rt(12/21)", dimension = "8.8*3.7"
 ; 輸出：Rt 10/6: 7.6*3.3mm.(Srs/Img:1/_) _
 FormatOCRToReport(location, dimension, imgNum := "_") {
+    global USAI_DICOMSeries, USAI_DICOMInstance
+
     ; 1. 處理側別 (Side)
     sideFormatted := "Rt"  ; 預設 Rt
     positionNumbers := "_/_"
-    
+
     if (location != "") {
         if (InStr(location, "Lt")) {
             sideFormatted := "Lt"
@@ -1458,21 +1460,23 @@ FormatOCRToReport(location, dimension, imgNum := "_") {
             positionNumbers := match1
         }
     }
-    
+
     ; 2. 處理尺寸
     dimensionFormatted := "_x_"
     if (dimension != "") {
         dimensionFormatted := StrReplace(dimension, " mm", "")
         dimensionFormatted := StrReplace(dimensionFormatted, " ", "")
     }
-    
-    ; 3. 處理影像編號
-    if (imgNum = "")
-        imgNum := "_"
-    
-    ; 4. 組合輸出格式：Rt 10/6: 7.6*3.3mm.(Srs/Img:1/_) _
-    result := sideFormatted . " " . positionNumbers . ": " . dimensionFormatted . "mm.(Srs/Img:1/" . imgNum . ") _"
-    
+
+    ; 3. 處理 Series/Instance Number (優先使用 DICOM，回退到 OCR)
+    seriesNum := (USAI_DICOMSeries != "") ? USAI_DICOMSeries : "1"
+    instanceNum := (USAI_DICOMInstance != "") ? USAI_DICOMInstance : imgNum
+    if (instanceNum = "")
+        instanceNum := "_"
+
+    ; 4. 組合輸出格式：Rt 10/6: 7.6*3.3mm.(Srs/Img:1/5) _
+    result := sideFormatted . " " . positionNumbers . ": " . dimensionFormatted . "mm.(Srs/Img:" . seriesNum . "/" . instanceNum . ") _"
+
     return result
 }
 

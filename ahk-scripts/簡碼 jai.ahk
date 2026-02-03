@@ -460,25 +460,47 @@ return
 XButton2_USAIGUI:
     ; 記錄原始滑鼠位置
     MouseGetPos, origX, origY
-    
+
     ; 移動到 DICOM 左螢幕位置
     Gosub, PosDICOMLU
     Sleep, 100
-    
+
     ; 複製影像（Ctrl+C）
     Send, ^c
     Sleep, 300  ; 等待影像複製完成
-    
+
+    ; --- 自動取得 DICOM Series/Instance Number ---
+    ; 注意：不使用 clipboard 變數，以免覆蓋剛複製的影像
+    Gosub, PosDICOMLU
+    Send, {LButton}
+    Gosub, PosDICOMButton
+    Send, {LButton}
+    Gosub, PosDICOMLU
+    Send, {LButton}
+    Send, {LButton}{LButton}
+    WinWaitActive, DICOM 檔頭訊息, , 2
+    if (ErrorLevel = 0) {
+        ControlGetText, USAI_DICOMText, Edit3, DICOM 檔頭訊息
+        Sleep, 120
+        Send, {Esc}{Esc}
+        USAI_DICOMSeries := GetDICOMLineData("Series Number", USAI_DICOMText)
+        USAI_DICOMInstance := GetDICOMLineData("Instance Number", USAI_DICOMText)
+    } else {
+        USAI_DICOMSeries := ""
+        USAI_DICOMInstance := ""
+    }
+    ; --- END DICOM ---
+
     ; 恢復滑鼠位置
     MouseMove, %origX%, %origY%
-    
+
     ; 啟動 USAIGUI 視窗
     WinActivate, 超音波 AI 分析 (含 OCR)
     Sleep, 100
-    
+
     ; 執行貼上影像1
     Gosub, USAIPasteImage1
-    
+
     ; 提示
     TrayTip, XButton2, 影像已自動擷取並貼上, 2, 1
 return
