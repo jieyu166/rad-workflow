@@ -1,0 +1,83 @@
+TEXT::肺部描述 (必選)
+MULTI
+正常::No active lung lesion is noted.
+浸潤輕::Mild infiltration at {LungSel}, could be pneumonia or others.
+斑塊::Patchy consolidation/opacities at {LungSel}, DDx: pneumonia or others. Occult entities can not be excluded.
+實質化::Consolidation at {LungSel}, could be pneumonia or others.
+肺紋增::Increased bronchovascular marking over {LungSel}
+磨玻璃::Ground-glass opacities at {LungSel}
+肺氣腫::Emphysematous change of bilateral lung.
+肺鬱血::Pulmonary congestion pattern.
+TB舊疤::Fibrocalcified change in both upper lungs, suspect old TB or others.
+NEXT
+
+--Page--
+TEXT::心臟大小 (必選)
+心正常::Normal heart size.
+心邊緣::Borderline cardiomegaly.
+心肥大::Cardiomegaly.
+瓣膜鈣::Valvular calcifications.
+冠狀支架::Status post coronary stenting.
+NEXT
+--Page--
+TEXT::縱隔腔評估
+縱隔正常::Unremarkable mediastinum.
+縱隔輕寬::Mild mediastinal widening.
+縱隔寬因動脈::Mild mediastinal widening, could be related to elongated aorta or others. 
+縱隔明寬::Obvious mediastinal widening. Occult entities can not be excluded.
+右氣管旁::Widened right paratracheal region. Could be SVC shadow but RUL/mediastinal lesion can not be excluded.
+NEXT
+--Page--
+TEXT::肺門評估
+肺門正常::Unremarkable bilateral hila.
+雙肺門大::Bilateral hilar fullness, could be vascular shadows or others.
+{LtRt}肺門異常::{LtRt} hilar fullness, DDx: vessel shadow, lymphadenopathy or other lesions.
+NEXT
+--Page--
+TEXT::主動脈
+主動脈鈣::Intimal calcification of aorta.
+主動脈彎::Tortuous aorta with intimal calcification.
+主動脈長::Elongation of aorta with intimal calcification.
+NEXT
+--Page--
+TEXT::肋膜/橫膈
+MULTI
+正常肋膜::No pleural abnormality.
+{LtRt}上肋膜厚::{LtRt} apical pleural thickening.
+{LtRt}肋膜積水::{LtRt} pleural effusion or pleural changes.
+{LtRt}橫膈高::Elevated {LtRt} hemidiaphragm.
+{LtRt}管路::Status post pigtail insertion with tip at {LtRt} pleural cavity.
+NEXT
+
+--Page--
+TEXT::骨骼結構
+MULTI
+骨正常::Unremarkable bony structure.
+輕退化::Mild degenerative change of spine. 
+退化性::Degenerative change and spur formation of spine.
+退化+骨密低::Degenerative change and spur formation of spine. Generalized diminished bone density.
+退化+骨鬆::Degenerative and osteoporotic change of spine.
+脊側彎::Mild scoliosis, convex to the {LtRt} side.
+舊肋骨折::{LtRt} ribs old fracture.
+壓迫性骨折::Compression fracture at _.
+NEXT
+--Page--
+TEXT::管路位置 (如適用)
+MULTI
+NG正位::Status post nasogastric tube insertion, tip in stomach.
+NG不見::Status post nasogastric tube insertion, tip not visualized.
+CVC::{LtRt} central venous catheter in place.
+Port-A::Port-A catheter via {LtRt} subclavian vein in place.
+氣管內管::Endotracheal tube in place, tip to carina _cm.
+氣切::Tracheostomy in place.
+NEXT
+
+--Page--
+TEXT::建議與註記
+MULTI
+建議追蹤::Suggest follow up.
+臨床相關::Suggest clinical correlation.
+吸氣不足::Insufficient inspiration. Occult entities may be obscured.
+姿勢不良::Unsatisfactory posture, lesion may be obscured.
+動作偽影::Motion artifact due to patient incooperation.
+NEXT

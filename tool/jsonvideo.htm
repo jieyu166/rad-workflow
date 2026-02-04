@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>影片字幕播放器 + Recap 章節跳轉</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 { color: #333; margin-bottom: 16px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .player-card {
+  position: sticky;
+  top: 16px;
+  align-self: start;
+}
+    .player-card, .side-card {
+      background: white;
+      border-radius: 8px;
+      padding: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .player-container {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 56.25%;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #000;
+    }
+    video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+    }
+    .subtitle-display {
+      position: absolute;
+      bottom: 50px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: white;
+      font-size: 22px;
+      text-shadow: 0 0 4px #000;
+      padding: 10px 12px;
+      background-color: rgba(0, 0, 0, 0.45);
+      z-index: 10;
+      min-height: 30px;
+      pointer-events: none;
+    }
+
+    .controls {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+
+    .subtitle-options {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .option { display: flex; gap: 8px; align-items: center; }
+    .hidden { display: none; }
+
+    button {
+      padding: 10px 14px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #3367d6; }
+
+    .side-title {
+      font-weight: 800;
+      margin-bottom: 10px;
+      color: #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .muted { color: #666; font-size: 12px; font-weight: 600; }
+
+    .recap-upload {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .segments {
+      max-height: 520px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .segment {
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #fff;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .segment:hover { background: #f7fbff; }
+    .segment.active {
+      border-color: #4285f4;
+      background: #eef5ff;
+    }
+    .seg-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+      align-items: baseline;
+    }
+    .seg-time {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      color: #444;
+      white-space: nowrap;
+    }
+    .seg-title {
+      font-weight: 800;
+      color: #222;
+      line-height: 1.2;
+      flex: 1;
+    }
+    .seg-summary {
+      color: #333;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .seg-bullets {
+      margin: 6px 0 0 18px;
+      color: #333;
+      font-size: 12.5px;
+    }
+
+    .overall-box {
+      margin-top: 10px;
+      padding: 10px;
+      background: #fafafa;
+      border: 1px dashed #ddd;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #333;
+      line-height: 1.35;
+    }
+    .overall-box h3 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+    }
+    .takeaways {
+      margin: 6px 0 0 18px;
+    }
+    .overall-details {
+  margin-top: 12px;
+  border-radius: 8px;
+  background: #fafafa;
+  border: 1px dashed #ddd;
+  padding: 8px 10px;
+}
+.overall-details summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: #222;
+}
+.overall-box {
+  margin-top: 8px;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+.seg-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.copy-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  background: white;
+  color: #333;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: #f3f3f3;
+}
+.copy-ok {
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+  </style>
+</head>
+
+<body>
+  <h1>影片字幕播放器 + Recap 章節跳轉</h1>
+
+  <div class="layout">
+    <!-- LEFT: Player -->
+    <div class="player-card">
+      <div class="player-container">
+        <video id="videoPlayer" controls>
+          您的瀏覽器不支援 HTML5 video 標籤。
+        </video>
+        <div id="subtitleDisplay" class="subtitle-display"></div>
+      </div>
+
+      <div class="controls">
+        <div class="file-input">
+          <label for="videoUrl">影片網址：</label>
+          <input type="text" id="videoUrl" placeholder="請輸入影片網址（mp4 / webm）" />
+        </div>
+
+        <div class="subtitle-options">
+          <div class="option">
+            <input type="radio" id="subtitleFile" name="subtitleSource" value="file" checked />
+            <label for="subtitleFile">上傳字幕檔</label>
+          </div>
+          <div class="option">
+            <input type="radio" id="subtitleUrl" name="subtitleSource" value="url" />
+            <label for="subtitleUrl">字幕網址</label>
+          </div>
+        </div>
+
+        <div id="fileUploadBlock" class="file-input">
+          <label for="subtitleFileInput">選擇字幕檔（.srt 或 .vtt）：</label>
+          <input type="file" id="subtitleFileInput" accept=".srt,.vtt" />
+        </div>
+
+        <div id="urlInputBlock" class="file-input hidden">
+          <label for="subtitleUrlInput">字幕檔網址（.srt 或 .vtt）：</label>
+          <input type="text" id="subtitleUrlInput" placeholder="請輸入字幕檔的網址" />
+        </div>
+
+        <button id="loadButton">載入影片和字幕</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Recap -->
+    <div class="side-card">
+      <div class="side-title">
+        <span>Recap 章節清單</span>
+        <span class="muted" id="recapStatus">未載入</span>
+      </div>
+
+      <div class="recap-upload">
+        <label for="recapFileInput">上傳 recap.json（GPT 產出的章節整理）</label>
+        <input type="file" id="recapFileInput" accept=".json" />
+      </div>
+
+      <div class="segments" id="segmentsList"></div>
+
+      <details id="overallDetails" class="overall-details hidden">
+        <summary>全片總結（點我展開）</summary>
+        <div id="overallBox" class="overall-box"></div>
+      </details>
+    </div>
+  </div>
+
+  <script>
+    // ===== DOM =====
+    const videoPlayer = document.getElementById('videoPlayer');
+    const subtitleDisplay = document.getElementById('subtitleDisplay');
+    const loadButton = document.getElementById('loadButton');
+    const videoUrlInput = document.getElementById('videoUrl');
+
+    const subtitleFileInput = document.getElementById('subtitleFileInput');
+    const subtitleUrlInput = document.getElementById('subtitleUrlInput');
+    const fileOption = document.getElementById('subtitleFile');
+    const urlOption = document.getElementById('subtitleUrl');
+    const fileUploadBlock = document.getElementById('fileUploadBlock');
+    const urlInputBlock = document.getElementById('urlInputBlock');
+
+    const recapFileInput = document.getElementById('recapFileInput');
+    const segmentsList = document.getElementById('segmentsList');
+    const recapStatus = document.getElementById('recapStatus');
+    const overallBox = document.getElementById('overallBox');
+    const overallDetails = document.getElementById('overallDetails');
+
+
+    // ===== State =====
+    let subtitles = [];
+    let currentSubtitleIndex = -1;
+
+    let recap = null;
+    let activeSegmentIndex = -1;
+
+    // ===== UI Toggle =====
+    fileOption.addEventListener('change', function() {
+      if (this.checked) {
+        fileUploadBlock.classList.remove('hidden');
+        urlInputBlock.classList.add('hidden');
+      }
+    });
+
+    urlOption.addEventListener('change', function() {
+      if (this.checked) {
+        fileUploadBlock.classList.add('hidden');
+        urlInputBlock.classList.remove('hidden');
+      }
+    });
+
+    // ===== Load video + subtitle =====
+    loadButton.addEventListener('click', async function() {
+      const videoUrl = videoUrlInput.value.trim();
+
+      if (!videoUrl) {
+        alert('請輸入影片網址');
+        return;
+      }
+
+      videoPlayer.src = videoUrl;
+      videoPlayer.load();
+
+      // Load subtitle (file or url)
+      if (fileOption.checked) {
+        const subtitleFile = subtitleFileInput.files[0];
+        if (!subtitleFile) {
+          alert('請選擇字幕檔（SRT 或 VTT）');
+          return;
+        }
+
+        const content = await readFileAsText(subtitleFile);
+        subtitles = parseSubtitleAuto(content, subtitleFile.name);
+        console.log('已載入字幕檔案:', subtitles.length);
+      } else {
+        const subtitleUrl = subtitleUrlInput.value.trim();
+        if (!subtitleUrl) {
+          alert('請輸入字幕檔網址');
+          return;
+        }
+
+        try {
+          const res = await fetch(subtitleUrl);
+          if (!res.ok) throw new Error('無法獲取字幕檔');
+          const content = await res.text();
+          subtitles = parseSubtitleAuto(content, subtitleUrl);
+          console.log('已從網址載入字幕:', subtitles.length);
+        } catch (err) {
+          alert('載入字幕檔失敗: ' + err.message);
+          return;
+        }
+      }
+    });
+
+    // ===== Read recap JSON =====
+    recapFileInput.addEventListener('change', async function() {␊
+      const f = recapFileInput.files[0];␊
+      if (!f) return;␊
+␊
+      try {␊
+        const text = await readFileAsText(f);␊
+        recap = parseRecapJson(text);
+␊
+        if (!recap || !Array.isArray(recap.segments)) {␊
+          throw new Error('JSON 格式錯誤：找不到 segments 陣列');␊
+        }␊
+
+        normalizeRecapSegments(recap.segments);
+        renderRecap(recap);
+        recapStatus.textContent = `已載入：${recap.segments.length} 段`;
+      } catch (e) {
+        recap = null;
+        segmentsList.innerHTML = '';
+        recapStatus.textContent = '載入失敗';
+        overallBox.classList.add('hidden');
+        alert('recap.json 載入失敗：' + e.message);
+      }
+    });
+
+    function normalizeRecapSegments(segments) {
+      // 確保每段都有 start_sec / end_sec
+      for (const seg of segments) {
+        if (typeof seg.start_sec !== 'number') {
+          if (typeof seg.start_time === 'string') seg.start_sec = parseTimeToSec(seg.start_time);
+        }
+        if (typeof seg.end_sec !== 'number') {
+          if (typeof seg.end_time === 'string') seg.end_sec = parseTimeToSec(seg.end_time);
+        }
+        // fallback
+        if (!Number.isFinite(seg.start_sec)) seg.start_sec = 0;
+        if (!Number.isFinite(seg.end_sec)) seg.end_sec = seg.start_sec + 1;
+      }
+    }
+
+    function renderRecap(recap) {
+      // overall summary
+      if (recap.overall_summary_zh || (recap.takeaways_zh && recap.takeaways_zh.length)) {
+  overallDetails.classList.remove('hidden');
+  overallDetails.open = false; // 預設收起來
+  const takeawaysHtml = Array.isArray(recap.takeaways_zh)
+    ? `<ul class="takeaways">${recap.takeaways_zh.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>`
+    : '';
+  overallBox.innerHTML = `
+    <div>${escapeHtml(recap.overall_summary_zh || '')}</div>
+    ${takeawaysHtml}
+  `;
+} else {
+  overallDetails.classList.add('hidden');
+}
+
+
+      // segments list
+      segmentsList.innerHTML = '';
+      recap.segments.forEach((seg, idx) => {
+        const startStr = seg.start_time || secToTime(seg.start_sec);
+        const endStr = seg.end_time || secToTime(seg.end_sec);
+
+        const el = document.createElement('div');
+        el.className = 'segment';
+        el.dataset.index = String(idx);
+
+        const bullets = Array.isArray(seg.bullets_zh) ? seg.bullets_zh.slice(0, 6) : [];
+        const bulletsHtml = bullets.length
+          ? `<ul class="seg-bullets">${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>`
+          : '';
+
+          el.innerHTML = `
+  <div class="seg-top">
+    <div class="seg-title">${escapeHtml(seg.title || `段落 ${idx + 1}`)}</div>
+    <div class="seg-actions">
+      <div class="seg-time">${escapeHtml(startStr)}–${escapeHtml(endStr)}</div>
+      <button class="copy-btn" data-copy-index="${idx}">複製</button>
+    </div>
+  </div>
+  <div class="seg-summary">${escapeHtml(seg.summary_zh || '')}</div>
+  ${bulletsHtml}
+`;
+
+
+        el.addEventListener('click', () => {
+          jumpToSegment(idx);
+        });
+
+        segmentsList.appendChild(el);
+
+        const copyBtn = el.querySelector('.copy-btn');
+copyBtn.addEventListener('click', async (ev) => {
+  ev.stopPropagation(); // 防止同時觸發跳轉播放
+
+  const textToCopy = buildSegmentCopyText(seg);
+  const ok = await tryCopyToClipboard(textToCopy);
+
+  if (ok) {
+    copyBtn.textContent = '已複製';
+    copyBtn.classList.add('copy-ok');
+    setTimeout(() => {
+      copyBtn.textContent = '複製';
+      copyBtn.classList.remove('copy-ok');
+    }, 900);
+  } else {
+    alert('複製失敗（可能是瀏覽器限制）。你可以手動選取文字複製。');
+  }
+});
+
+      });
+    }
+
+    function jumpToSegment(idx) {
+      if (!recap || !recap.segments || !recap.segments[idx]) return;
+      const seg = recap.segments[idx];
+
+      videoPlayer.currentTime = Math.max(0, seg.start_sec || 0);
+      videoPlayer.play().catch(() => { /* ignore autoplay restriction */ });
+
+      setActiveSegment(idx);
+    }
+
+    function setActiveSegment(idx) {
+      activeSegmentIndex = idx;
+      const items = segmentsList.querySelectorAll('.segment');
+      items.forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+      });
+
+      // auto scroll into view
+      const activeEl = segmentsList.querySelector(`.segment[data-index="${idx}"]`);
+      if (activeEl) activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    // ===== Subtitles: SRT + VTT =====
+    function parseSubtitleAuto(content, filenameOrUrl) {
+      const lower = String(filenameOrUrl || '').toLowerCase();
+      if (lower.endsWith('.vtt') || content.trim().startsWith('WEBVTT')) {
+        return parseVTT(content);
+      }
+      return parseSRT(content);
+    }
+
+    function parseSRT(srtContent) {
+      const srtItems = [];
+      const blocks = srtContent.trim().split(/\r?\n\r?\n/);
+
+      for (const block of blocks) {
+        const lines = block.split(/\r?\n/);
+        if (lines.length < 2) continue;
+
+        // find time line (some srt blocks may not have index)
+        const timeLine = lines.find(l => l.includes('-->'));
+        if (!timeLine) continue;
+
+        const timeMatch = timeLine.match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
+        if (!timeMatch) continue;
+
+        const startTime = srtTimeToSeconds(timeMatch[1]);
+        const endTime = srtTimeToSeconds(timeMatch[2]);
+
+        // text lines are after time line
+        const timeIdx = lines.indexOf(timeLine);
+        const text = lines.slice(timeIdx + 1).join(' ').trim();
+
+        srtItems.push({ startTime, endTime, text });
+      }
+
+      return srtItems;
+    }
+
+    function parseVTT(vttContent) {
+      const items = [];
+      const content = vttContent.replace(/\r/g, '').trim();
+
+      // Remove WEBVTT header if exists
+      const cleaned = content.replace(/^WEBVTT.*\n+/, '');
+
+      const blocks = cleaned.split('\n\n');
+      for (const block of blocks) {
+        const lines = block.split('\n').filter(Boolean);
+        if (!lines.length) continue;
+
+        // time line format: 00:00:05.000 --> 00:00:08.000
+        const timeLine = lines.find(l => l.includes('-->'));
+        if (!timeLine) continue;
+
+        const timeMatch = timeLine.match(/(\d{2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3})/);
+        if (!timeMatch) continue;
+
+        const startTime = vttTimeToSeconds(timeMatch[1]);
+        const endTime = vttTimeToSeconds(timeMatch[2]);
+
+        const timeIdx = lines.indexOf(timeLine);
+        const text = lines.slice(timeIdx + 1).join(' ').trim();
+
+        items.push({ startTime, endTime, text });
+      }
+      return items;
+    }
+
+    function srtTimeToSeconds(timeString) {
+      const [time, ms] = timeString.split(',');
+      const [hh, mm, ss] = time.split(':').map(Number);
+      return hh * 3600 + mm * 60 + ss + (parseInt(ms, 10) / 1000);
+    }
+
+    function vttTimeToSeconds(t) {
+      // supports mm:ss.xxx or hh:mm:ss.xxx
+      const parts = t.split(':');
+      let hh = 0, mm = 0, ss = 0;
+      if (parts.length === 2) {
+        mm = Number(parts[0]);
+        ss = Number(parts[1]);
+      } else {
+        hh = Number(parts[0]);
+        mm = Number(parts[1]);
+        ss = Number(parts[2]);
+      }
+      return hh * 3600 + mm * 60 + ss;
+    }
+
+    // ===== Subtitle rendering =====
+    function updateSubtitles(currentTime) {
+      let found = false;
+
+      for (let i = 0; i < subtitles.length; i++) {
+        if (currentTime >= subtitles[i].startTime && currentTime <= subtitles[i].endTime) {
+          if (i !== currentSubtitleIndex) {
+            subtitleDisplay.textContent = subtitles[i].text;
+            currentSubtitleIndex = i;
+          }
+          found = true;
+          break;
+        }
+      }
+
+      if (!found && currentSubtitleIndex !== -1) {
+        subtitleDisplay.textContent = '';
+        currentSubtitleIndex = -1;
+      }
+    }
+
+    videoPlayer.addEventListener('timeupdate', function() {
+      const t = videoPlayer.currentTime;
+      updateSubtitles(t);
+
+      // highlight active segment
+      if (recap && recap.segments && recap.segments.length) {
+        const idx = recap.segments.findIndex(s => t >= s.start_sec && t <= s.end_sec);
+        if (idx !== -1 && idx !== activeSegmentIndex) {
+          setActiveSegment(idx);
+        }
+      }
+    });
+
+    videoPlayer.addEventListener('ended', function() {
+      subtitleDisplay.textContent = '';
+      currentSubtitleIndex = -1;
+    });
+
+    // ===== Utilities =====
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => reject(new Error('讀取檔案失敗'));
+        reader.readAsText(file);
+      });
+    }
+
+    function parseRecapJson(rawText) {
+      const text = String(rawText || '');
+      const cleanedText = text
+        .replace(/^\uFEFF/, '')
+        .replace(/```json\s*/gi, '')
+        .replace(/```/g, '')
+        .trim();
+
+      try {
+        return JSON.parse(preprocessJsonText(cleanedText));
+      } catch (err) {
+        const extracted = extractJsonPayload(cleanedText);
+        if (extracted) {
+          return JSON.parse(normalizeJsonText(extracted));
+        }
+        throw err;
+      }
+    }
+
+    function preprocessJsonText(text) {
+      return normalizeJsonText(text);
+    }
+
+    function extractJsonPayload(text) {
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        return text.slice(firstBrace, lastBrace + 1);
+      }
+      const firstBracket = text.indexOf('[');
+      const lastBracket = text.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+        return text.slice(firstBracket, lastBracket + 1);
+      }
+      return '';
+    }
+
+    function normalizeJsonText(text) {
+      const normalized = text
+        .replace(/\\r\\n/g, '\n')
+        .replace(/\\n/g, '\n')
+        .replace(/\\t/g, '\t')
+        .replace(/,\s*([}\]])/g, '$1');
+      return sanitizeInvalidJsonEscapes(normalized);
+    }
+
+    function sanitizeInvalidJsonEscapes(text) {
+      let result = '';
+      let inString = false;
+      let escaped = false;
+
+      for (let i = 0; i < text.length; i += 1) {
+        const ch = text[i];
+
+        if (escaped) {
+          escaped = false;
+          result += ch;
+          continue;
+        }
+
+        if (ch === '"') {
+          inString = !inString;
+          result += ch;
+          continue;
+        }
+
+        if (inString && ch === '\\') {
+          const next = text[i + 1];
+          const isValidEscape = next && ['"', '\\', '/', 'b', 'f', 'n', 'r', 't', 'u'].includes(next);
+          if (!isValidEscape) {
+            result += '\\\\';
+            continue;
+          }
+          escaped = true;
+          result += ch;
+          continue;
+        }
+
+        result += ch;
+      }
+
+      return result;
+    }
+}
+
+    function parseTimeToSec(str) {
+      // supports mm:ss or hh:mm:ss
+      const s = str.trim();
+      const parts = s.split(':').map(Number);
+      if (parts.some(n => Number.isNaN(n))) return NaN;
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      return NaN;
+    }
+
+    function secToTime(sec) {
+      const s = Math.max(0, Math.floor(sec));
+      const hh = Math.floor(s / 3600);
+      const mm = Math.floor((s % 3600) / 60);
+      const ss = s % 60;
+
+      if (hh > 0) {
+        return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+      }
+      return `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+    function buildSegmentCopyText(seg) {
+  const startStr = seg.start_time || secToTime(seg.start_sec);
+  const endStr = seg.end_time || secToTime(seg.end_sec);
+  const bullets = Array.isArray(seg.bullets_zh) ? seg.bullets_zh : [];
+
+  return [
+    `${seg.title || ''} (${startStr}–${endStr})`,
+    seg.summary_zh || '',
+    bullets.length ? ('- ' + bullets.join('\n- ')) : ''
+  ].filter(Boolean).join('\n');
+}
+
+async function tryCopyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    // fallback：用舊方法
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+  </script>
+</body>
+</html>
+
