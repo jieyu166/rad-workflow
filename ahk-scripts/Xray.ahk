@@ -8,41 +8,46 @@ WinGet, ActiveId, ID, A ;記錄目前視窗
 Gui, Font, s14
 Gui Add, Text, x10 y-25, " " ;定位用
 
-Gui Add, CheckBox, x10 y10 w250 h23 vL1 checked1, &No active lung lesions
-Gui Add, Radio, x10 yp+35 w140 h23 vL3, Cardiomegaly(&C)
-Gui Add, Radio, xp+150 yp w160 h23 vL5, 邊緣心臟擴大(&B)
-Gui Add, Radio, xp+170 yp w120 h23 vL7 checked1, 心臟正常
-
-Gui Add, CheckBox, x260 y10 w140 h23 vC1, 比較舊片(&O)
-
-; 肺部發現按鈕 (類似 spine2 的按鈕形式)
-Gui Add, Button, x10 y85 w140 h40 gBtnApicalPleural, Apical pleural(&A)
+; === 肺部發現按鈕 (最上方) ===
+Gui Add, Button, x10 y10 w140 h40 gBtnApicalPleural, Apical pleural(&A)
 Gui Add, Button, x160 yp w140 h40 gBtnEmphysema, Emphysema(&E)
 Gui Add, Button, x310 yp w140 h40 gBtnHilarFullness, Hilar fullness(&H)
 Gui Add, Button, x10 yp+50 w140 h40 gBtnMediastinal, Mediastinal(&M)
 Gui Add, Button, x160 yp w140 h40 gBtnCongestion, Congestion
 Gui Add, Button, x310 yp w140 h40 gBtnAortaCalcif, Aorta鈣化
 
-Gui Add, Button, x10 y215 w120 h50 gCXR1, 正常(&D)
-Gui Add, Button, x160 yp w120 h50 gCXR3, 老人硬化+骨鬆
-Gui Add, Button, x310 yp w120 h50 gCXR4, 硬化+骨鬆+骨密度低
-Gui Add, Button, x310 yp+60 w120 h50 gCXR5, 硬化+骨鬆+骨疏
+; === 分隔線 ===
+Gui Add, Text, x10 y110 w440 h2 0x10
+
+; === CheckBox 和 Radio ===
+Gui Add, CheckBox, x10 y120 w200 h23 vL1 checked1, &No active lung lesions
+Gui Add, CheckBox, x220 yp w130 h23 vC1, 比較舊片(&O)
+Gui Add, Radio, x10 yp+30 w140 h23 vL3, Cardiomegaly(&C)
+Gui Add, Radio, xp+150 yp w140 h23 vL5, 邊緣心臟擴大(&B)
+Gui Add, Radio, xp+150 yp w100 h23 vL7 checked1, 心臟正常
+
+; === 範本按鈕區 ===
+Gui Add, Button, x10 y185 w120 h50 gCXR1, 正常(&D)
+Gui Add, Button, x140 yp w120 h50 gCXR3, 老人硬化+骨鬆
+Gui Add, Button, x270 yp w120 h50 gCXR4, 硬化+骨鬆+骨密度低
+Gui Add, Button, x270 yp+60 w120 h50 gCXR5, 硬化+骨鬆+骨疏
 
 Gui Add, Button, x10 yp+20 w120 h50 gCXR6, 洗腎
-Gui Add, Button, x160 yp w120 h50 gCXR7, 小孩(&K)
+Gui Add, Button, x140 yp w120 h50 gCXR7, 小孩(&K)
 Gui Add, Button, x10 yp+60 w120 h50 gCXR8, 吸氣不足
-Gui Add, Button, x160 yp w120 h50 gCXR10, 心臟手術術後
-Gui Add, Button, x310 yp w120 h50 gCXR11, Edema通殺
+Gui Add, Button, x140 yp w120 h50 gCXR10, 心臟手術術後
+Gui Add, Button, x270 yp w120 h50 gCXR11, Edema通殺
 Gui Add, Button, x10 yp+60 w120 h30 gMergeExams, 合併標題(&Z)
-Gui Add, Button, x160 yp w120 h30 gCXR9, 清除選項(&R)
-Gui Add, Button, x310 yp w120 h30 gCXRclose, 切換&Spine
-Gui Add, Button, x10 yp+60 w120 h30 gSeeCXRAIforCXR, 看AI報告(&1)
-Gui Add, Button, x160 yp w120 h30 gCopyOld2, 顯示舊報告(&2)
-Gui Add, Button, x310 yp w120 h30 gCopyOld, Copy 舊報告(&3)
+Gui Add, Button, x140 yp w120 h30 gCXR9, 清除選項(&R)
+Gui Add, Button, x270 yp w120 h30 gCXRclose, 切換&Spine
+Gui Add, Button, x10 yp+40 w120 h30 gSeeCXRAIforCXR, 看AI報告(&1)
+Gui Add, Button, x140 yp w120 h30 gCopyOld2, 顯示舊報告(&2)
+Gui Add, Button, x270 yp w120 h50 gCopyOld, Copy 舊報告(&3)
 
-Gui Add, Edit, x260 y50 w220 h120 vOldReportContent Multi VScroll  ; 新增編輯框顯示舊報告
+; === 舊報告顯示區 (右側) ===
+Gui Add, Edit, x400 y10 w200 h200 vOldReportContent Multi VScroll
 
-Gui Show, w470 h520, CXR 範例
+Gui Show, w610 h490, CXR 範例
 Return
 
 CXRcommon:
