@@ -13,26 +13,26 @@ Gui Add, Button, x10 y10 w140 h35 gBtnApicalPleural, Apical pleural(&A)
 Gui Add, Button, x160 yp w140 h35 gBtnEmphysema, Emphysema(&E)
 Gui Add, Button, x310 yp w140 h35 gBtnHilarFullness, Hilar fullness(&H)
 Gui Add, Button, x10 yp+40 w140 h35 gBtnMediastinal, Mediastinal(&M)
-Gui Add, Button, x160 yp w140 h35 gBtnAortaCalcif, Aorta鈣化
-Gui Add, Button, x310 yp w140 h35 gBtnCongestion, Congestion
-Gui Add, Button, x10 yp+40 w140 h35 gCXR8, 吸氣不足
-Gui Add, Button, x160 yp w140 h35 gCXR11, Edema通殺
+Gui Add, Button, x160 yp w140 h35 gBtnEff, 積液(&F)
+Gui Add, Button, x310 yp w140 h35 gBtnCongestion, Congestion(&G)
+Gui Add, Button, x10 yp+40 w140 h35 gCXR8, 吸氣不足(&I)
+Gui Add, Button, x160 yp w140 h35 gCXR11, Edema通殺(&D)
 
 ; === 分隔線 ===
 Gui Add, Text, x10 yp+40 w440 h2 0x10
 
 ; === CheckBox 和 Radio ===
 Gui Add, CheckBox, x10 yp+5 w200 h23 vL1 checked1, &No active lung lesions
-Gui Add, CheckBox, x220 yp w130 h23 vC1, 比較舊片(&O)
+Gui Add, CheckBox, x220 yp w130 h23 vC1, 比較舊片
 Gui Add, Radio, x10 yp+30 w140 h23 vL3, Cardiomegaly(&C)
 Gui Add, Radio, xp+150 yp w140 h23 vL5, 邊緣擴大(&B)
 Gui Add, Radio, xp+150 yp w100 h23 vL7 checked1, 心臟正常
 
 ; === 範本按鈕區 ===
-Gui Add, Button, x10 yp+30 w140 h45 gCXR1, 正常(&D)
-Gui Add, Button, x160 yp w140 h45 gCXR3, 老人Ca+輕退化
-Gui Add, Button, x310 yp w140 h45 gCXR4, 硬化+骨密低
-Gui Add, Button, xp yp+50 w140 h45 gCXR5, 硬化+骨鬆
+Gui Add, Button, x10 yp+30 w140 h45 gCXR1, 正常(&7)
+Gui Add, Button, x160 yp w140 h45 gCXR3, 硬化+輕退化
+Gui Add, Button, x310 yp w140 h45 gCXR4, 硬化+骨密低(&8)
+Gui Add, Button, xp yp+50 w140 h45 gCXR5, 硬化+骨鬆(&9)
 
 Gui Add, Button, x10 yp+5 w140 h45 gCXR6, 洗腎
 Gui Add, Button, x160 yp w140 h45 gCXR10, 心臟手術術後
@@ -182,36 +182,37 @@ return
 ; ============================================
 BtnApicalPleural:
     desc := "Bilateral apical pleural thickening.`r"
-    CopyCXRtoHISWithParam(1)
+    gosub CXRFinish
 return
 
 BtnEmphysema:
     desc := "Emphysematous change of both lungs.`r"
-    CopyCXRtoHISWithParam(1)
+    gosub CXRFinish
 return
 
 BtnHilarFullness:
     desc := "Bilateral hilar fullness, could be vascular shadows or others.`r"
-    CopyCXRtoHISWithParam(1)
+    gosub CXRFinish
 return
 
 BtnMediastinal:
     desc := "Mild mediastinal widening.`r"
-    CopyCXRtoHISWithParam(1)
+    gosub CXRFinish
 return
 
 BtnCongestion:
     desc := "Mild pulmonary congestion pattern.`r"
-    CopyCXRtoHISWithParam(1)
+    gosub CXRFinish
 return
 
-BtnAortaCalcif:
-    desc := "Intimal calcification of aorta.`r"
-    CopyCXRtoHISWithParam(1)
+BtnEff:
+    desc := "Bilateral _minimal pleural effusion or pleural cahnges.`r"
+    gosub CXRFinish
 return
 
 CXRFinish:
 CopyCXRtoHISWithParam(2)
+WinActivate, CXR 範例
 gosub CXR9
 return
 
@@ -219,6 +220,7 @@ CXRclose:
 Gui, Destroy
 goto WinSpine
 return
+
 
 ; 新增 CopyOld2 子程序
 CopyOld2:

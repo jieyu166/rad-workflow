@@ -428,10 +428,7 @@ CopyCXRtoHISWithParam(moveDown := 2) {
     }
 }
 
-; 保持原來的 CopyCXRtoHIS 以確保向下相容
-CopyCXRtoHIS:
-    CopyCXRtoHISWithParam(2)
-return
+
 
 ; ============================================================================
 ; XButton2 多功能切換
