@@ -1,0 +1,8 @@
+# 機密設定檔
+ahk-scripts/radiologist_settings.ini
+
+# 其他常見忽略項目
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
