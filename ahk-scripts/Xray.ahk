@@ -9,17 +9,21 @@ Gui, Font, s14
 Gui Add, Text, x10 y-25, " " ;定位用
 
 Gui Add, CheckBox, x10 y10 w250 h23 vL1 checked1, &No active lung lesions
-Gui Add, CheckBox, x10 yp+35 w240 h23 vL6, &Apical pleural thickening
-Gui Add, CheckBox, x10 yp+35 w240 h23 vL8, &Emphysematous change
-Gui Add, CheckBox, x10 yp+35 w240 h23 vL4, Bilateral &Hilar fullness
-Gui Add, CheckBox, x10 yp+35 w240 h23 vL2, &Mediastinal widening
 Gui Add, Radio, x10 yp+35 w140 h23 vL3, Cardiomegaly(&C)
 Gui Add, Radio, xp+150 yp w160 h23 vL5, 邊緣心臟擴大(&B)
 Gui Add, Radio, xp+170 yp w120 h23 vL7 checked1, 心臟正常
 
 Gui Add, CheckBox, x260 y10 w140 h23 vC1, 比較舊片(&O)
 
-Gui Add, Button, x10 y255 w120 h50 gCXR1, 正常(&D)
+; 肺部發現按鈕 (類似 spine2 的按鈕形式)
+Gui Add, Button, x10 y85 w140 h40 gBtnApicalPleural, Apical pleural(&A)
+Gui Add, Button, x160 yp w140 h40 gBtnEmphysema, Emphysema(&E)
+Gui Add, Button, x310 yp w140 h40 gBtnHilarFullness, Hilar fullness(&H)
+Gui Add, Button, x10 yp+50 w140 h40 gBtnMediastinal, Mediastinal(&M)
+Gui Add, Button, x160 yp w140 h40 gBtnCongestion, Congestion
+Gui Add, Button, x310 yp w140 h40 gBtnAortaCalcif, Aorta鈣化
+
+Gui Add, Button, x10 y215 w120 h50 gCXR1, 正常(&D)
 Gui Add, Button, x160 yp w120 h50 gCXR3, 老人硬化+骨鬆
 Gui Add, Button, x310 yp w120 h50 gCXR4, 硬化+骨鬆+骨密度低
 Gui Add, Button, x310 yp+60 w120 h50 gCXR5, 硬化+骨鬆+骨疏
@@ -38,7 +42,7 @@ Gui Add, Button, x310 yp w120 h30 gCopyOld, Copy 舊報告(&3)
 
 Gui Add, Edit, x260 y50 w220 h120 vOldReportContent Multi VScroll  ; 新增編輯框顯示舊報告
 
-Gui Show, w500 h560, CXR 範例
+Gui Show, w470 h520, CXR 範例
 Return
 
 CXRcommon:
@@ -48,27 +52,15 @@ If(C1){
 	desc := "`r"
 }
 
+; 只檢查 L1 (No active lung lesion) 和心臟大小選項 (L3/L5/L7)
 If(L1){
-	If(!(L6 OR L8)){
-		desc .= "No active lung lesion is noted.`r"
-	}else{
-		desc .= "_`r"
-	}
+	desc .= "No active lung lesion is noted.`r"
 }else{
 	desc .= "_`r"
 }
 
-If(L4){
-	desc .= "Bilateral hilar fullness, could be vascular shadows or others.`r"
-}
 If(varL4=1){
 	desc .= "Mild pulmonary congestion pattern.`r"
-}
-If(L6){
-	desc .= "Bilateral apical pleural thickening.`r"
-}
-If(L8){
-	desc .= "Emphysematous change of both lungs.`r"
 }
 If(L3){
 	desc .= "Cardiomegaly.`r"
@@ -79,9 +71,6 @@ If(L3){
 }
 If(varL1){
 	desc .= "Intimal calcification of aorta.`r"
-}
-If(L2){
-	desc .= "Mild mediastinal widening.`r"
 }
 
 If(varL2){
@@ -137,8 +126,7 @@ gosub CXRFinish
 return
 
 CXR6:
-GuiControl,, L1, 0 
-GuiControl,, L2, 1 
+GuiControl,, L1, 0
 GuiControl,, L5, 1
 
 varL1:=1
@@ -146,6 +134,7 @@ varL2:=1
 varL3:=1
 varL4:=1
 gosub CXRcommon
+desc .= "Mild mediastinal widening.`r"
 desc .= "Status post permcath catheter insertion at _right_left _chest.`r"
 gosub CXRFinish
 return
@@ -163,16 +152,12 @@ gosub CXRFinish
 return
 
 CXR9:
-GuiControl,, C1, 0 
+GuiControl,, C1, 0
 GuiControl,, L1, 1
-GuiControl,, L2, 0 
-GuiControl,, L3, 0 
-GuiControl,, L4, 0
-GuiControl,, L5, 0 
-GuiControl,, L6, 0
+GuiControl,, L3, 0
+GuiControl,, L5, 0
 GuiControl,, L7, 1
-GuiControl,, L8, 0
-GuiControl,, OldReportContent, 
+GuiControl,, OldReportContent,
 return
 
 CXR10:
@@ -192,11 +177,43 @@ return
 CXR11:
 desc .= "Pulmonary congestion pattern or emphysematous change of both lungs.`r"
 desc .= "Superimposed pneumonia or other occult entities can not be excluded.`r"
-desc .= "_Bilateral minimal pleural effusion or pleural cahnges. `r" 
-desc .= "Bilateral hilar fullness, could be vascular shadows or others. `r" 
+desc .= "_Bilateral minimal pleural effusion or pleural cahnges. `r"
+desc .= "Bilateral hilar fullness, could be vascular shadows or others. `r"
 gosub CXRFinish
 return
 
+; ============================================
+; 肺部發現按鈕 (單獨輸出文字，類似 spine2)
+; ============================================
+BtnApicalPleural:
+    desc := "Bilateral apical pleural thickening.`r"
+    CopyCXRtoHISWithParam(1)
+return
+
+BtnEmphysema:
+    desc := "Emphysematous change of both lungs.`r"
+    CopyCXRtoHISWithParam(1)
+return
+
+BtnHilarFullness:
+    desc := "Bilateral hilar fullness, could be vascular shadows or others.`r"
+    CopyCXRtoHISWithParam(1)
+return
+
+BtnMediastinal:
+    desc := "Mild mediastinal widening.`r"
+    CopyCXRtoHISWithParam(1)
+return
+
+BtnCongestion:
+    desc := "Mild pulmonary congestion pattern.`r"
+    CopyCXRtoHISWithParam(1)
+return
+
+BtnAortaCalcif:
+    desc := "Intimal calcification of aorta.`r"
+    CopyCXRtoHISWithParam(1)
+return
 
 CXRFinish:
 gosub CopyCXRtoHIS
