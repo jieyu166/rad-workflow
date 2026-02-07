@@ -106,7 +106,7 @@ Loop, read, %currentFile%
     else if(InStr(A_LoopReadLine, "NEXT", true)){
         ; 下一頁按鈕 - 使用特殊熱鍵
         yPos += 35
-        Gui, Add, Button, x20 y%yPos% w340 h30 gButtonNext, 下一頁(&N)
+        Gui, Add, Button, x20 y%yPos% w340 h30 gCXR3ButtonNext, 下一頁(&N)
     }
     else if(InStr(A_LoopReadLine, "::", false)){
         ; 縮寫按鈕
@@ -128,11 +128,11 @@ Loop, read, %currentFile%
         
         ; 檢查是否包含 {LtRt} 或類似的選擇標記
         if (InStr(tmpstr[2], "{LtRt}") || InStr(tmpstr[2], "{LungSel}") || InStr(tmpstr[2], "{LungDxSel}")){
-            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClickWithMenu, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gCXR3ButtonClickWithMenu, %buttonLabel%
             buttonTexts[buttonName] := tmpstr[2]
         }
         else {
-            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClick2, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gCXR3ButtonClick2, %buttonLabel%
             buttonTexts[buttonName] := tmpstr[2]
         }
     }
@@ -154,11 +154,11 @@ Loop, read, %currentFile%
         
         ; 檢查是否包含選擇標記
         if (InStr(A_LoopReadLine, "{LtRt}") || InStr(A_LoopReadLine, "{LungSel}") || InStr(A_LoopReadLine, "{LungDxSel}")){
-            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClickWithMenu, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gCXR3ButtonClickWithMenu, %buttonLabel%
             buttonTexts[buttonName] := A_LoopReadLine
         }
         else {
-            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClick, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gCXR3ButtonClick, %buttonLabel%
             buttonTexts[buttonName] := A_LoopReadLine
         }
     }
