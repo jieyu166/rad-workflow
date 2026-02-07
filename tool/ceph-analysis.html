@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cephalometric Analysis 互動學習工具</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-card: #1a2236;
+  --bg-card-hover: #1f2a42;
+  --accent-cyan: #22d3ee;
+  --accent-blue: #3b82f6;
+  --accent-purple: #a78bfa;
+  --accent-green: #34d399;
+  --accent-yellow: #fbbf24;
+  --accent-red: #f87171;
+  --accent-orange: #fb923c;
+  --accent-pink: #f472b6;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border: #2d3a52;
+  --glow-cyan: rgba(34, 211, 238, 0.15);
+  --glow-blue: rgba(59, 130, 246, 0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    radial-gradient(ellipse at 20% 50%, rgba(34,211,238,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(167,139,250,0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { position: relative; z-index: 1; }
+
+/* Header */
+.header {
+  padding: 2rem 2rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(34,211,238,0.03) 0%, transparent 100%);
+}
+
+.header h1 {
+  font-size: 2.2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue), var(--accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.3rem;
+}
+
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 300;
+}
+
+/* Navigation */
+.nav {
+  display: flex;
+  gap: 0;
+  padding: 0 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nav-btn {
+  padding: 0.85rem 1.3rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: all 0.25s;
+}
+
+.nav-btn:hover { color: var(--text-secondary); }
+.nav-btn.active {
+  color: var(--accent-cyan);
+  border-bottom-color: var(--accent-cyan);
+  background: var(--glow-cyan);
+}
+
+/* Sections */
+.section { display: none; padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+.section.active { display: block; }
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.2rem;
+  transition: border-color 0.3s;
+}
+
+.card:hover { border-color: rgba(34,211,238,0.3); }
+
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-cyan { background: rgba(34,211,238,0.15); color: var(--accent-cyan); }
+.badge-blue { background: rgba(59,130,246,0.15); color: var(--accent-blue); }
+.badge-green { background: rgba(52,211,153,0.15); color: var(--accent-green); }
+.badge-yellow { background: rgba(251,191,36,0.15); color: var(--accent-yellow); }
+.badge-red { background: rgba(248,113,113,0.15); color: var(--accent-red); }
+.badge-purple { background: rgba(167,139,250,0.15); color: var(--accent-purple); }
+
+/* SVG Diagram */
+.diagram-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.diagram-container svg { width: 100%; height: auto; }
+
+.landmark-dot {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.landmark-dot:hover { filter: brightness(1.4) drop-shadow(0 0 6px currentColor); }
+
+.tooltip-box {
+  position: absolute;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  font-size: 0.85rem;
+  max-width: 300px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 100;
+}
+
+.tooltip-box.visible { opacity: 1; }
+.tooltip-box .tt-name { font-weight: 700; color: var(--accent-cyan); margin-bottom: 0.3rem; }
+.tooltip-box .tt-desc { color: var(--text-secondary); line-height: 1.5; }
+
+/* Tables */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.data-table thead th {
+  background: rgba(34,211,238,0.08);
+  padding: 0.7rem 0.8rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+
+.data-table tbody td {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid rgba(45,58,82,0.5);
+  vertical-align: top;
+}
+
+.data-table tbody tr:hover { background: rgba(34,211,238,0.04); }
+
+.data-table .mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--accent-yellow);
+}
+
+/* Report Generator */
+.report-section { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+@media (max-width: 900px) {
+  .report-section { grid-template-columns: 1fr; }
+}
+
+.input-group {
+  margin-bottom: 0.8rem;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
+.input-group input, .input-group select {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus, .input-group select:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 2px var(--glow-cyan);
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.input-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.btn {
+  padding: 0.65rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  color: #000;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(34,211,238,0.3);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover { border-color: var(--accent-cyan); }
+
+.btn-sm { padding: 0.4rem 1rem; font-size: 0.82rem; }
+
+/* Report Output */
+.report-output {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: var(--text-secondary);
+  min-height: 400px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.report-output .highlight { color: var(--accent-cyan); }
+.report-output .abnormal { color: var(--accent-red); font-weight: 600; }
+.report-output .normal-val { color: var(--accent-green); }
+
+/* Analysis Steps */
+.step {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.step:hover { border-color: rgba(34,211,238,0.3); transform: translateX(4px); }
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  color: #000;
+}
+
+.step-content h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.step-content p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.step-detail {
+  display: none;
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.step.expanded .step-detail { display: block; }
+
+.key-point {
+  padding: 0.5rem 0.8rem;
+  background: rgba(34,211,238,0.05);
+  border-left: 3px solid var(--accent-cyan);
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Quiz Section */
+.quiz-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.quiz-question {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.quiz-options { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.quiz-option {
+  padding: 0.7rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.quiz-option:hover { border-color: var(--accent-cyan); background: rgba(34,211,238,0.05); }
+.quiz-option.correct { border-color: var(--accent-green); background: rgba(52,211,153,0.1); color: var(--accent-green); }
+.quiz-option.wrong { border-color: var(--accent-red); background: rgba(248,113,113,0.1); color: var(--accent-red); }
+.quiz-option.disabled { pointer-events: none; }
+
+.quiz-explanation {
+  margin-top: 0.8rem;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  display: none;
+}
+
+.quiz-explanation.show { display: block; }
+.quiz-explanation.correct-exp { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); }
+.quiz-explanation.wrong-exp { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); }
+
+.score-display {
+  text-align: center;
+  padding: 1rem;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 1.2rem;
+}
+
+.score-number {
+  font-size: 2.5rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Value indicator */
+.val-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.val-normal { background: rgba(52,211,153,0.12); color: var(--accent-green); }
+.val-high { background: rgba(248,113,113,0.12); color: var(--accent-red); }
+.val-low { background: rgba(59,130,246,0.12); color: var(--accent-blue); }
+
+/* Interpretation panel */
+.interp-panel {
+  background: rgba(167,139,250,0.06);
+  border: 1px solid rgba(167,139,250,0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 0.8rem;
+}
+
+.interp-panel h4 {
+  color: var(--accent-purple);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.interp-panel p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Grid layouts */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .report-section { grid-template-columns: 1fr; }
+  .header h1 { font-size: 1.6rem; }
+  .input-row, .input-row-3 { grid-template-columns: 1fr; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Copy button */
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.35rem 0.7rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+
+.report-wrapper { position: relative; }
+
+/* Floating info tags */
+.info-tag {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  color: var(--accent-blue);
+  margin: 0.2rem;
+}
+
+/* Tabs inside card */
+.inner-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.inner-tab {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.inner-tab.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); }
+.inner-content { display: none; }
+.inner-content.active { display: block; }
+
+.fade-in {
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>📐 Cephalometric Analysis</h1>
+    <p class="subtitle">放射科住院醫師互動學習工具 — Lateral Cephalometric Radiograph 報告撰寫指南</p>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showSection('overview')">📖 概述</button>
+    <button class="nav-btn" onclick="showSection('landmarks')">📍 標記點</button>
+    <button class="nav-btn" onclick="showSection('measurements')">📏 測量值</button>
+    <button class="nav-btn" onclick="showSection('steps')">🔬 分析步驟</button>
+    <button class="nav-btn" onclick="showSection('report')">📝 報告產生器</button>
+    <button class="nav-btn" onclick="showSection('quiz')">🧠 測驗練習</button>
+  </nav>
+
+  <!-- ===== OVERVIEW ===== -->
+  <div id="overview" class="section active fade-in">
+    <div class="card">
+      <div class="card-title">🎯 什麼是 Cephalometric Analysis？</div>
+      <p style="color:var(--text-secondary);line-height:1.8;font-size:0.92rem;">
+        側面頭顱放射線攝影 (Lateral Cephalometric Radiograph, LCR) 是一種標準化、可重複的頭部側面X光攝影，主要用於<strong style="color:var(--accent-cyan)">齒顎矯正診斷與治療計畫</strong>。攝影時，X光管球距離患者 1.5 公尺，片匣距離患者頭部約 15 公分，預期有約 8% 的放大率。患者被固定在 cephalostat 上，兩側耳桿插入外耳道，Frankfort plane 水平對齊，牙齒咬在最大咬合位 (centric occlusion)。
+      </p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="badge badge-cyan">臨床</span> 主要用途</div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:0.88rem;">
+          <p>• 齒顎矯正的診斷與治療計畫擬定</p>
+          <p>• 正顎手術 (Orthognathic surgery) 評估</p>
+          <p>• 判斷咬合不正 (malocclusion) 的病因 — 骨骼性、齒性或兩者皆有</p>
+          <p>• 治療前後的比較與追蹤</p>
+          <p>• 氣道評估（如 OSA 相關評估）</p>
+          <p>• 生長發育的研究</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge badge-yellow">重點</span> 放射科醫師的角色</div>
+        <div style="color:var(--text-secondary);line-height:1.8;font-size:0.88rem;">
+          <p>• <strong style="color:var(--accent-yellow)">首先檢查病理！</strong>— 在做 tracing 之前，務必先檢查是否有意外發現的病變</p>
+          <p>• 確認影像品質：頭部位置、Frankfort plane 是否水平</p>
+          <p>• 系統性描述骨骼與齒性的前後向、垂直向關係</p>
+          <p>• 提供各角度/距離的測量值與正常值比較</p>
+          <p>• 軟組織輪廓分析</p>
+          <p>• 氣道通暢度評估</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-green">分析方法</span> 常見的 Cephalometric Analysis 系統</div>
+      <div class="grid-3" style="margin-top:0.5rem;">
+        <div style="padding:0.8rem;background:var(--bg-secondary);border-radius:8px;">
+          <div style="font-weight:700;color:var(--accent-cyan);margin-bottom:0.3rem;">Steiner Analysis (1953)</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);">以 SN plane 為參考線，包含 SNA、SNB、ANB 等，是最常用的分析法之一</div>
+        </div>
+        <div style="padding:0.8rem;background:var(--bg-secondary);border-radius:8px;">
+          <div style="font-weight:700;color:var(--accent-blue);margin-bottom:0.3rem;">Downs Analysis (1948)</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);">最早的系統化分析法，基於 20 名正常咬合的白人樣本建立常模</div>
+        </div>
+        <div style="padding:0.8rem;background:var(--bg-secondary);border-radius:8px;">
+          <div style="font-weight:700;color:var(--accent-purple);margin-bottom:0.3rem;">Tweed Analysis (1954)</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);">著重 FMA、IMPA、FMIA 三個角度的三角關係</div>
+        </div>
+        <div style="padding:0.8rem;background:var(--bg-secondary);border-radius:8px;">
+          <div style="font-weight:700;color:var(--accent-green);margin-bottom:0.3rem;">McNamara Analysis (1983)</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);">使用 Frankfort Horizontal 建立垂線，評估上下顎骨的前後位置</div>
+        </div>
+        <div style="padding:0.8rem;background:var(--bg-secondary);border-radius:8px;">
+          <div style="font-weight:700;color:var(--accent-orange);margin-bottom:0.3rem;">Ricketts Analysis (1979)</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);">包含基本分析 12 項測量，特別著重下顎位置與生長方向</div>
+        </div>
+        <div style="padding:0.8rem;background:var(--bg-secondary);border-radius:8px;">
+          <div style="font-weight:700;color:var(--accent-pink);margin-bottom:0.3rem;">Wits Analysis (1975)</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);">改善 ANB 角度受 N 點位置影響的缺點，使用咬合平面做為參考</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LANDMARKS ===== -->
+  <div id="landmarks" class="section fade-in">
+    <div class="grid-2">
+      <div class="diagram-container" id="diagramContainer">
+        <div class="tooltip-box" id="tooltip">
+          <div class="tt-name" id="ttName"></div>
+          <div class="tt-desc" id="ttDesc"></div>
+        </div>
+        <svg viewBox="0 0 520 660" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- ============ CRANIAL VAULT (outer contour) ============ -->
+          <!-- Occipital → Parietal → Frontal dome -->
+          <path d="M95,235 Q80,200 82,160 Q85,120 105,85 Q130,50 175,32 Q220,18 275,15 Q330,15 375,35 Q410,50 430,80 Q445,105 445,140 Q445,165 435,185 L420,200"
+                fill="none" stroke="rgba(100,180,255,0.35)" stroke-width="1.8"/>
+
+          <!-- Frontal bone → Glabella → Nasion area -->
+          <path d="M420,200 Q415,210 400,215 Q393,218 388,210 Q382,200 380,195"
+                fill="none" stroke="rgba(100,180,255,0.35)" stroke-width="1.8"/>
+
+          <!-- Nasal bone (N downward) -->
+          <path d="M380,195 Q378,210 380,230 Q385,250 395,270"
+                fill="none" stroke="rgba(100,180,255,0.3)" stroke-width="1.5"/>
+
+          <!-- Nasal / Maxilla front profile -->
+          <path d="M395,270 Q400,285 410,300 Q415,310 418,325 L415,335 Q408,342 400,345"
+                fill="none" stroke="rgba(100,180,255,0.3)" stroke-width="1.5"/>
+
+          <!-- Maxilla anterior surface (ANS → A point → alveolus) -->
+          <path d="M400,345 Q395,355 393,365 Q390,375 395,390 Q398,400 400,410"
+                fill="none" stroke="rgba(100,180,255,0.3)" stroke-width="1.5"/>
+
+          <!-- Upper teeth -->
+          <path d="M400,410 L395,430 M393,410 L388,428 M386,408 L382,425"
+                fill="none" stroke="rgba(148,163,184,0.35)" stroke-width="1.8"/>
+
+          <!-- Lower teeth -->
+          <path d="M382,435 L386,418 M375,437 L380,420 M370,438 L375,422"
+                fill="none" stroke="rgba(148,163,184,0.35)" stroke-width="1.8"/>
+
+          <!-- Mandible: symphysis (B → Pog → Gn → Me) -->
+          <path d="M370,438 Q368,455 365,470 Q360,485 362,500 Q365,515 372,525 Q378,533 380,535 Q382,540 378,548 Q370,558 355,565 Q340,570 325,568"
+                fill="none" stroke="rgba(100,180,255,0.35)" stroke-width="1.8"/>
+
+          <!-- Mandible: body (Me → Go) -->
+          <path d="M325,568 Q290,565 255,555 Q220,542 185,520 Q155,500 132,478 Q118,462 112,445"
+                fill="none" stroke="rgba(100,180,255,0.35)" stroke-width="1.8"/>
+
+          <!-- Mandible: angle + ramus (Go → Condyle) -->
+          <path d="M112,445 Q108,425 112,405 Q118,380 130,355 Q142,330 155,310 Q165,296 172,285"
+                fill="none" stroke="rgba(100,180,255,0.35)" stroke-width="1.8"/>
+
+          <!-- Condyle -->
+          <path d="M172,285 Q176,275 178,265 Q182,252 175,242 Q168,235 158,238 Q150,242 148,252 Q147,260 150,270"
+                fill="none" stroke="rgba(100,180,255,0.3)" stroke-width="1.5"/>
+
+          <!-- Skull base (posterior: Occipital → Basion → Sella area) -->
+          <path d="M95,235 Q100,250 115,265 Q130,275 148,275"
+                fill="none" stroke="rgba(100,180,255,0.2)" stroke-width="1.2"/>
+
+          <!-- Skull base (Sella area → mid-cranial base) -->
+          <path d="M175,242 Q190,228 210,222 Q230,218 250,222 Q270,228 285,240"
+                fill="none" stroke="rgba(100,180,255,0.2)" stroke-width="1.2"/>
+
+          <!-- Sella turcica (pituitary fossa) -->
+          <path d="M210,222 Q215,235 225,240 Q235,242 245,238 Q250,232 250,222"
+                fill="none" stroke="rgba(100,180,255,0.4)" stroke-width="1.5"/>
+
+          <!-- Orbit outline -->
+          <ellipse cx="370" cy="250" rx="42" ry="35" fill="none" stroke="rgba(100,180,255,0.15)" stroke-width="1"/>
+
+          <!-- Hard palate (PNS → ANS) -->
+          <path d="M235,355 Q280,350 320,348 Q360,346 400,345"
+                fill="none" stroke="rgba(100,180,255,0.2)" stroke-width="1" stroke-dasharray="3,3"/>
+
+          <!-- Pterygoid plate / posterior maxilla -->
+          <path d="M235,355 Q230,370 228,385 Q226,400 230,415"
+                fill="none" stroke="rgba(100,180,255,0.15)" stroke-width="1"/>
+
+          <!-- Coronoid process -->
+          <path d="M172,285 Q195,290 215,310 Q225,325 230,345"
+                fill="none" stroke="rgba(100,180,255,0.15)" stroke-width="1"/>
+
+          <!-- Soft tissue profile (outer) -->
+          <path d="M420,200 Q435,200 445,210 Q455,225 458,245 Q460,260 455,275 Q450,290 440,305 Q435,315 432,325 Q430,335 425,345 Q420,360 420,375 Q422,390 425,400 Q428,408 430,415 Q432,425 428,440 Q422,455 418,465 Q415,475 412,485 Q410,495 405,510 Q400,522 395,535 Q388,548 378,560 Q365,572 348,578 Q330,582 315,578"
+                fill="none" stroke="rgba(148,163,184,0.15)" stroke-width="1" stroke-dasharray="4,3"/>
+
+          <!-- ============ REFERENCE LINES ============ -->
+          <!-- SN line (dashed) -->
+          <line x1="228" y1="230" x2="380" y2="195" stroke="rgba(34,211,238,0.2)" stroke-width="1" stroke-dasharray="5,4"/>
+          <!-- FH plane (dashed) -->
+          <line x1="88" y1="270" x2="410" y2="270" stroke="rgba(251,191,36,0.18)" stroke-width="1" stroke-dasharray="5,4"/>
+          <!-- Maxillary plane (dashed) -->
+          <line x1="235" y1="355" x2="400" y2="345" stroke="rgba(52,211,153,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+          <!-- Mandibular plane (dashed) -->
+          <line x1="112" y1="445" x2="325" y2="568" stroke="rgba(167,139,250,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+
+          <!-- ============ LANDMARK POINTS ============ -->
+          <!-- Cranial base landmarks (cyan) -->
+          <circle class="landmark-dot" cx="228" cy="230" r="6" fill="#22d3ee" data-name="Sella (S)" data-desc="蝶鞍中心點 (midpoint of sella turcica / pituitary fossa)。是 SN line 的起點，為顱底的重要參考點。位於蝶鞍的幾何中心。"/>
+
+          <circle class="landmark-dot" cx="380" cy="195" r="6" fill="#22d3ee" data-name="Nasion (N)" data-desc="額鼻縫 (frontonasal suture) 的最前方點。SN line 的終點，是許多角度測量的基準點。N 點的位置可能因生長而改變，影響 SNA、SNB、ANB 等數值。"/>
+
+          <!-- Frankfort plane landmarks (yellow) -->
+          <circle class="landmark-dot" cx="88" cy="270" r="6" fill="#fbbf24" data-name="Porion (Po)" data-desc="外耳道上方中點 (upper midpoint of external auditory meatus)。構成 Frankfort Plane 的後方參考點。位於耳朵附近，在影像上位於最左側。"/>
+
+          <circle class="landmark-dot" cx="350" cy="270" r="6" fill="#fbbf24" data-name="Orbitale (Or)" data-desc="眶下緣最前最下方的點 (most anterior-inferior point on infraorbital rim)。構成 Frankfort Plane 的前方參考點。位於眼眶的下方。"/>
+
+          <!-- Articulare / Condylion (orange) -->
+          <circle class="landmark-dot" cx="160" cy="265" r="6" fill="#fb923c" data-name="Articulare (Ar)" data-desc="顱底下方輪廓與髁突 (condyle) 後緣的交點。用於評估下顎的有效長度 (Ar-Go, Ar-A, Ar-B)。若 Ar 偏移，相關的距離測量也需修正。"/>
+
+          <circle class="landmark-dot" cx="170" cy="290" r="6" fill="#fb923c" data-name="Condylion (Co)" data-desc="髁突 (mandibular condyle) 最上方的點。McNamara 分析中用於測量下顎有效長度 (Co-Gn)。"/>
+
+          <!-- Maxillary landmarks (green/blue) -->
+          <circle class="landmark-dot" cx="235" cy="355" r="6" fill="#34d399" data-name="PNS" data-desc="後鼻棘 (Posterior Nasal Spine) 的尖端。構成 Maxillary Plane (MxPl) 的後方參考點。ANS-PNS 連線即為上顎平面。"/>
+
+          <circle class="landmark-dot" cx="400" cy="345" r="6" fill="#34d399" data-name="ANS" data-desc="前鼻棘 (Anterior Nasal Spine) 的尖端。構成 Maxillary Plane (MxPl) 的前方參考點。位於鼻腔下方的骨性突出。"/>
+
+          <circle class="landmark-dot" cx="393" cy="375" r="6" fill="#3b82f6" data-name="A Point (A)" data-desc="上顎牙槽突前面最深凹陷處 (deepest concavity on anterior maxillary alveolus)。代表上顎骨的前後位置，位於 ANS 下方、上顎牙齒牙根尖之上的凹陷處。"/>
+
+          <!-- Mandibular landmarks -->
+          <circle class="landmark-dot" cx="365" cy="470" r="6" fill="#3b82f6" data-name="B Point (B)" data-desc="下顎聯合前面最深凹陷處 (deepest concavity on anterior mandibular symphysis)。代表下顎骨的前後位置，位於下顎牙齒牙根尖之下的凹陷處。"/>
+
+          <circle class="landmark-dot" cx="112" cy="445" r="6" fill="#a78bfa" data-name="Gonion (Go)" data-desc="下顎角 (mandibular angle) 最後下方的點。構成 Mandibular Plane 的後方參考點。為下顎升支後緣與下顎體下緣切線的交點。"/>
+
+          <circle class="landmark-dot" cx="380" cy="535" r="6" fill="#f472b6" data-name="Pogonion (Pog)" data-desc="下顎聯合最前方的點 (most anterior point on mandibular symphysis)。用於評估下巴的突出程度 (chin prominence)。"/>
+
+          <circle class="landmark-dot" cx="365" cy="558" r="6" fill="#f472b6" data-name="Gnathion (Gn)" data-desc="下顎聯合最前最下方的點 (most anterior-inferior point on mandibular symphysis)。位於 Menton 與 Pogonion 之間。用於 facial axis (Ba-N to Pt-Gn) 和 McNamara 下顎有效長度 (Co-Gn) 測量。"/>
+
+          <circle class="landmark-dot" cx="325" cy="568" r="6" fill="#a78bfa" data-name="Menton (Me)" data-desc="下顎聯合 (mandibular symphysis) 的最下方點。構成 Mandibular Plane (Go-Me) 的前方參考點。也用於計算前面高 (anterior facial height)。"/>
+
+          <!-- ============ LABELS ============ -->
+          <text x="215" y="222" text-anchor="end" fill="#22d3ee" font-size="12" font-weight="700">S</text>
+          <text x="395" y="192" fill="#22d3ee" font-size="12" font-weight="700">N</text>
+          <text x="68" y="274" text-anchor="end" fill="#fbbf24" font-size="12" font-weight="700">Po</text>
+          <text x="365" y="266" fill="#fbbf24" font-size="12" font-weight="700">Or</text>
+          <text x="140" y="262" text-anchor="end" fill="#fb923c" font-size="12" font-weight="700">Ar</text>
+          <text x="150" y="296" text-anchor="end" fill="#fb923c" font-size="12" font-weight="700">Co</text>
+          <text x="215" y="360" text-anchor="end" fill="#34d399" font-size="12" font-weight="700">PNS</text>
+          <text x="415" y="342" fill="#34d399" font-size="12" font-weight="700">ANS</text>
+          <text x="408" y="378" fill="#3b82f6" font-size="12" font-weight="700">A</text>
+          <text x="378" y="466" fill="#3b82f6" font-size="12" font-weight="700">B</text>
+          <text x="92" y="452" text-anchor="end" fill="#a78bfa" font-size="12" font-weight="700">Go</text>
+          <text x="395" y="538" fill="#f472b6" font-size="12" font-weight="700">Pog</text>
+          <text x="378" y="565" fill="#f472b6" font-size="12" font-weight="700">Gn</text>
+          <text x="325" y="586" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="700">Me</text>
+
+          <!-- Plane labels (small) -->
+          <text x="305" y="205" fill="rgba(34,211,238,0.4)" font-size="9" font-style="italic">SN line</text>
+          <text x="240" y="264" fill="rgba(251,191,36,0.4)" font-size="9" font-style="italic">Frankfort Plane</text>
+          <text x="300" y="340" fill="rgba(52,211,153,0.35)" font-size="9" font-style="italic">Maxillary Plane</text>
+          <text x="185" y="520" fill="rgba(167,139,250,0.35)" font-size="9" font-style="italic">Mandibular Plane</text>
+        </svg>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">📍 Cephalometric Landmarks 標記點</div>
+          <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">
+            將滑鼠移到左側圖上的點可查看詳細說明。以下為各標記點的分類總覽：
+          </p>
+          
+          <div style="margin-bottom:0.8rem;">
+            <div style="font-weight:600;color:var(--accent-cyan);font-size:0.85rem;margin-bottom:0.4rem;">🔵 顱底參考點 Cranial Base</div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.7;">
+              <strong>Sella (S)</strong> — 蝶鞍中心點<br>
+              <strong>Nasion (N)</strong> — 額鼻縫最前方點<br>
+              <strong>Articulare (Ar)</strong> — 顱底與髁突後緣交點
+            </div>
+          </div>
+
+          <div style="margin-bottom:0.8rem;">
+            <div style="font-weight:600;color:var(--accent-yellow);font-size:0.85rem;margin-bottom:0.4rem;">🟡 Frankfort Plane 參考點</div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.7;">
+              <strong>Orbitale (Or)</strong> — 眶下緣最前下方點<br>
+              <strong>Porion (Po)</strong> — 外耳道上方中點
+            </div>
+          </div>
+
+          <div style="margin-bottom:0.8rem;">
+            <div style="font-weight:600;color:var(--accent-blue);font-size:0.85rem;margin-bottom:0.4rem;">🔷 上下顎骨參考點 Maxilla & Mandible</div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.7;">
+              <strong>A Point</strong> — 上顎前方最深凹陷<br>
+              <strong>B Point</strong> — 下顎前方最深凹陷<br>
+              <strong>ANS / PNS</strong> — 前/後鼻棘<br>
+              <strong>Gonion (Go)</strong> — 下顎角最後下方點<br>
+              <strong>Menton (Me)</strong> — 下顎最下方點<br>
+              <strong>Gnathion (Gn)</strong> — 下顎最前下方點<br>
+              <strong>Pogonion (Pog)</strong> — 下顎最前方點<br>
+              <strong>Condylion (Co)</strong> — 髁突最上方點
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📐 主要 Cephalometric Planes</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.8;">
+            <strong style="color:var(--accent-cyan)">SN Line</strong> — Sella → Nasion，前顱底參考線<br>
+            <strong style="color:var(--accent-yellow)">Frankfort Plane (FH)</strong> — Porion → Orbitale，應接近水平<br>
+            <strong style="color:var(--accent-green)">Maxillary Plane (MxPl)</strong> — ANS → PNS，上顎平面<br>
+            <strong style="color:var(--accent-purple)">Mandibular Plane (MnPl)</strong> — Gonion → Menton，下顎平面<br>
+            <strong style="color:var(--accent-pink)">Occlusal Plane</strong> — 上下後牙咬合面的連線<br>
+            <strong style="color:var(--accent-orange)">Facial Axis</strong> — Ba-N 至 Pt-Gn，下顎生長方向
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MEASUREMENTS ===== -->
+  <div id="measurements" class="section fade-in">
+    <div class="card">
+      <div class="card-title">📏 主要 Cephalometric 測量值與正常範圍</div>
+      <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">
+        以下數值基於 Eastman/Steiner 標準（白人族群），亞洲族群的正常值可能略有差異。點擊各列可查看詳細說明。
+      </p>
+      
+      <div class="inner-tabs">
+        <button class="inner-tab active" onclick="showInnerTab(this, 'tab-sagittal')">前後向 Sagittal</button>
+        <button class="inner-tab" onclick="showInnerTab(this, 'tab-vertical')">垂直向 Vertical</button>
+        <button class="inner-tab" onclick="showInnerTab(this, 'tab-dental')">齒性 Dental</button>
+        <button class="inner-tab" onclick="showInnerTab(this, 'tab-soft')">軟組織 Soft Tissue</button>
+      </div>
+
+      <div id="tab-sagittal" class="inner-content active">
+        <table class="data-table">
+          <thead>
+            <tr><th>測量值</th><th>正常值</th><th>代表意義</th><th>異常判讀</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>SNA</strong></td>
+              <td class="mono">82° ± 2°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">上顎相對於顱底的前後位置</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ &gt;84°</span> 上顎前突<br>
+                <span class="val-indicator val-low">↓ &lt;80°</span> 上顎後縮
+              </td>
+            </tr>
+            <tr>
+              <td><strong>SNB</strong></td>
+              <td class="mono">80° ± 2°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">下顎相對於顱底的前後位置</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ &gt;82°</span> 下顎前突<br>
+                <span class="val-indicator val-low">↓ &lt;78°</span> 下顎後縮
+              </td>
+            </tr>
+            <tr>
+              <td><strong>ANB</strong></td>
+              <td class="mono">2° ± 2°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">上下顎骨的相對前後關係</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-normal">2-4°</span> Class I<br>
+                <span class="val-indicator val-high">&gt;4°</span> Class II<br>
+                <span class="val-indicator val-low">&lt;0°</span> Class III
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Wits Appraisal</strong></td>
+              <td class="mono">♂ 0 ± 1mm<br>♀ -1 ± 1mm</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">AO-BO 距離，不受 N 點影響</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">正值</span> Class II 傾向<br>
+                <span class="val-indicator val-low">負值</span> Class III 傾向
+              </td>
+            </tr>
+            <tr>
+              <td><strong>A-NVert</strong></td>
+              <td class="mono">0 ~ +1 mm</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">A 點到 N 點垂線的距離 (McNamara)</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">正值大</span> 上顎前突<br>
+                <span class="val-indicator val-low">負值</span> 上顎後縮
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Pog-NVert</strong></td>
+              <td class="mono">-2 ~ 0 mm</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">Pog 到 N 點垂線的距離 (McNamara)</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">正值大</span> 下顎前突<br>
+                <span class="val-indicator val-low">負值大</span> 下顎後縮
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="tab-vertical" class="inner-content">
+        <table class="data-table">
+          <thead>
+            <tr><th>測量值</th><th>正常值</th><th>代表意義</th><th>異常判讀</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>MMPA (MxPl-MnPl)</strong></td>
+              <td class="mono">27° ± 4°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">上下顎骨平面的夾角，反映垂直向關係</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ &gt;31°</span> 高角型，後旋生長，開咬傾向<br>
+                <span class="val-indicator val-low">↓ &lt;23°</span> 低角型，前旋生長，深咬傾向
+              </td>
+            </tr>
+            <tr>
+              <td><strong>FMA (FH-MnPl)</strong></td>
+              <td class="mono">25° ± 5°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">Frankfort plane 與 mandibular plane 的夾角</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">&gt;30°</span> 垂直生長型 (vertical pattern)<br>
+                <span class="val-indicator val-low">&lt;20°</span> 水平生長型 (horizontal pattern)
+              </td>
+            </tr>
+            <tr>
+              <td><strong>SN-MnPl</strong></td>
+              <td class="mono">32° ± 5°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">SN 平面與下顎平面的夾角</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ 增大</span> 垂直生長型<br>
+                <span class="val-indicator val-low">↓ 減小</span> 水平生長型
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Facial Proportion<br>(LAFH%)</strong></td>
+              <td class="mono">55% ± 2%</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">下前面高 / 全前面高的比例</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">&gt;57%</span> 長臉型<br>
+                <span class="val-indicator val-low">&lt;53%</span> 短臉型
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Gonial Angle</strong></td>
+              <td class="mono">128° ± 7°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">下顎角角度</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ 增大</span> 垂直生長型<br>
+                <span class="val-indicator val-low">↓ 減小</span> 方形下顎
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="tab-dental" class="inner-content">
+        <table class="data-table">
+          <thead>
+            <tr><th>測量值</th><th>正常值</th><th>代表意義</th><th>異常判讀</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>U1 to MxPl</strong></td>
+              <td class="mono">109° ± 6°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">上顎切牙相對於上顎平面的傾斜角</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ &gt;115°</span> 前傾 (proclined)<br>
+                <span class="val-indicator val-low">↓ &lt;103°</span> 後傾 (retroclined)
+              </td>
+            </tr>
+            <tr>
+              <td><strong>L1 to MnPl (IMPA)</strong></td>
+              <td class="mono">93° ± 6°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">下顎切牙相對於下顎平面的傾斜角</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ &gt;99°</span> 前傾 (proclined)<br>
+                <span class="val-indicator val-low">↓ &lt;87°</span> 後傾 (retroclined)
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Inter-incisal Angle</strong></td>
+              <td class="mono">135° ± 10°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">上下切牙長軸的夾角</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ &gt;145°</span> 切牙後傾 / 深咬<br>
+                <span class="val-indicator val-low">↓ &lt;125°</span> 切牙前傾 / 暴牙
+              </td>
+            </tr>
+            <tr>
+              <td><strong>U1 to NA (角度)</strong></td>
+              <td class="mono">22° ± 5°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">上顎切牙相對於 NA 線的角度</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ 增大</span> 上切牙前傾<br>
+                <span class="val-indicator val-low">↓ 減小</span> 上切牙後傾
+              </td>
+            </tr>
+            <tr>
+              <td><strong>U1 to NA (距離)</strong></td>
+              <td class="mono">4 mm</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">上切牙切緣到 NA 線的距離</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ 增大</span> 上切牙前突 (procumbent)
+              </td>
+            </tr>
+            <tr>
+              <td><strong>L1 to NB (角度)</strong></td>
+              <td class="mono">25° ± 5°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">下顎切牙相對於 NB 線的角度</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ 增大</span> 下切牙前傾<br>
+                <span class="val-indicator val-low">↓ 減小</span> 下切牙後傾
+              </td>
+            </tr>
+            <tr>
+              <td><strong>L1 to NB (距離)</strong></td>
+              <td class="mono">4 mm</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">下切牙切緣到 NB 線的距離</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ 增大</span> 下切牙前突 (procumbent)
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Overjet</strong></td>
+              <td class="mono">2-4 mm</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">水平覆蓋</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ 增大</span> Class II 傾向<br>
+                <span class="val-indicator val-low">↓ 負值</span> Class III / 前牙反咬
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Overbite</strong></td>
+              <td class="mono">2-4 mm</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">垂直覆蓋</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ 增大</span> 深咬 (deep bite)<br>
+                <span class="val-indicator val-low">↓ 負值</span> 開咬 (open bite)
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="tab-soft" class="inner-content">
+        <table class="data-table">
+          <thead>
+            <tr><th>測量值</th><th>正常值</th><th>代表意義</th><th>異常判讀</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Nasolabial Angle</strong></td>
+              <td class="mono">102° ± 8°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">鼻子下緣與上唇的夾角</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ 銳角</span> 上顎後縮 / 上唇後縮<br>
+                <span class="val-indicator val-low">↓ 鈍角</span> 上顎前突 / 上唇前突
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Lower Lip to E-plane</strong></td>
+              <td class="mono">-2 ± 2 mm</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">下唇到 Ricketts E-line (鼻尖-下巴尖) 的距離</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">正值</span> 唇部前突<br>
+                <span class="val-indicator val-low">負值大</span> 唇部後縮
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Upper Lip to S-line</strong></td>
+              <td class="mono">0 mm</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">上唇到 Steiner S-line 的距離</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">正值</span> 上唇前突<br>
+                <span class="val-indicator val-low">負值</span> 上唇後縮
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Soft Tissue Facial Angle</strong></td>
+              <td class="mono">12° ± 4°</td>
+              <td style="font-size:0.82rem;color:var(--text-secondary)">軟組織側貌的凸度</td>
+              <td style="font-size:0.82rem">
+                <span class="val-indicator val-high">↑ 增大</span> 凸面型<br>
+                <span class="val-indicator val-low">↓ 減小或負值</span> 凹面型
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="badge badge-yellow">注意</span> 測量的注意事項</div>
+      <div style="color:var(--text-secondary);font-size:0.88rem;line-height:1.8;">
+        <div class="key-point">
+          <strong style="color:var(--accent-yellow)">⚠ FH Plane 的影響：</strong>拍攝時若頭部有前後傾斜，Frankfort plane (FH) 的角度會改變。若 FH 本身就有傾斜，則以 FH 為基準做的垂線測量（如 A-NVert、Pog-NVert）會受到顯著影響，且距離 N 點越遠的測量（如 Pog-NVert）影響越大。
+        </div>
+        <div class="key-point">
+          <strong style="color:var(--accent-yellow)">⚠ Nasion (N) 點的影響：</strong>N 點位置的偏移會影響所有以 N 為參考的角度測量，包括 SNA、SNB、ANB。若 SNA 明顯偏離正常值，可能需要使用 Wits analysis 來補充判讀。
+        </div>
+        <div class="key-point">
+          <strong style="color:var(--accent-yellow)">⚠ 族群差異：</strong>上述正常值多基於白人族群，亞洲人可能有些許差異（如較大的 SNA、較突出的唇部位置等）。解讀時應考慮患者的種族背景。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ANALYSIS STEPS ===== -->
+  <div id="steps" class="section fade-in">
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">🔬 Cephalometric Analysis 系統性分析步驟</div>
+      <p style="color:var(--text-secondary);font-size:0.88rem;">
+        點擊每個步驟可展開詳細說明。此流程參考梁祐銘醫師的分析邏輯與臨床實務。
+      </p>
+    </div>
+
+    <div class="step" onclick="toggleStep(this)">
+      <div class="step-number">0</div>
+      <div class="step-content">
+        <h3>檢查影像品質與排除病理</h3>
+        <p>在做任何 tracing 之前，先確認影像品質，並仔細檢查是否有意外發現的病變。</p>
+        <div class="step-detail">
+          <div class="key-point"><strong>影像品質</strong>：確認頭部定位正確、無旋轉或傾斜、軟組織輪廓清晰可見</div>
+          <div class="key-point"><strong>病理排除</strong>：檢查有無骨折、腫瘤、囊腫、蝶鞍異常（如擴大）、頸椎異常等</div>
+          <div class="key-point"><strong>蝶鞍 (Sella turcica)</strong>：注意大小和形態是否正常，異常擴大可能暗示腦下垂體病變</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" onclick="toggleStep(this)">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <h3>驗證 Frankfort Horizontal Plane (FH)</h3>
+        <p>確認 FH plane 是否接近水平。如果有傾斜，後續依賴 FH 的測量都需要修正。</p>
+        <div class="step-detail">
+          <div class="key-point">檢查 Vert-FH 角度。正常情況下 FH 應接近水平。若拍攝時抬頭，Vert-FH 角度變小；低頭則變大。</div>
+          <div class="key-point">有些人 FH plane 天生就有傾斜，不一定是定位錯誤。</div>
+          <div class="key-point">如果 FH 有問題，A-NVert 和 Pog-NVert 等數值會變得不準確，越遠離 N 點的影響越大。</div>
+          <div class="key-point" style="border-left-color:var(--accent-red)"><strong style="color:var(--accent-red)">⚠ 若所有數字湊不起來，回去檢查 FH plane 是否畫錯或天生傾斜！</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" onclick="toggleStep(this)">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <h3>驗證 Nasion (N) 點位置</h3>
+        <p>若 FH 正常，接著檢查 N 點是否有上下偏移。N 的偏移會影響所有 SN 相關的測量。</p>
+        <div class="step-detail">
+          <div class="key-point">根據 FH plane 角度來判斷 N 點有無上下偏移</div>
+          <div class="key-point">若 N 點偏移，SNA、SNB、ANB、SNMP、U1-SN 等數值都需要一起修正</div>
+          <div class="key-point">也要確認 Articulare (Ar) 點有無前後偏移。若 Ar-A、Ar-B、SN 長度都偏小，患者可能是 AP 方向的小頭顱</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" onclick="toggleStep(this)">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <h3>前後向分析：骨骼關係 (Sagittal Skeletal)</h3>
+        <p>判斷上下顎骨的前後向關係屬於 Class I、II 還是 III。</p>
+        <div class="step-detail">
+          <div class="key-point"><strong>SNA</strong> (82° ± 2°)：上顎前後位置。增大 = 上顎前突；減小 = 上顎後縮</div>
+          <div class="key-point"><strong>SNB</strong> (80° ± 2°)：下顎前後位置。增大 = 下顎前突；減小 = 下顎後縮</div>
+          <div class="key-point"><strong>ANB</strong> (2° ± 2°)：判斷 skeletal class。2-4° = Class I；&gt;4° = Class II；&lt;0° = Class III</div>
+          <div class="key-point"><strong>Wits Appraisal</strong>：補充 ANB 的不足，不受 N 點位置影響</div>
+          <div class="key-point" style="border-left-color:var(--accent-purple)">根據以上數據找出究竟是上顎骨出問題、下顎骨出問題、還是兩者都有</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" onclick="toggleStep(this)">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <h3>前後向分析：齒性代償 (Dental Compensation)</h3>
+        <p>牙齒角度是否有配合骨骼變化而產生相應的代償性角度變化。</p>
+        <div class="step-detail">
+          <div class="key-point"><strong>U1 to MxPl</strong> (109° ± 6°)：上顎切牙是否因骨骼異常而有代償性傾斜</div>
+          <div class="key-point"><strong>L1 to MnPl</strong> (93° ± 6°)：下顎切牙的傾斜角度</div>
+          <div class="key-point"><strong>Inter-incisal angle</strong> (135° ± 10°)：反映切牙之間的角度關係</div>
+          <div class="key-point" style="border-left-color:var(--accent-green)">
+            <strong>Dental compensation 範例：</strong><br>
+            Class II 患者 → 下顎切牙常代償性前傾 (L1-MnPl ↑)<br>
+            Class III 患者 → 上顎切牙常代償性前傾 (U1-MxPl ↑)，下顎切牙後傾 (L1-MnPl ↓)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" onclick="toggleStep(this)">
+      <div class="step-number">5</div>
+      <div class="step-content">
+        <h3>垂直向分析：骨骼關係 (Vertical Skeletal)</h3>
+        <p>評估上下顎骨的垂直關係，並思考垂直關係是否影響前後向關係。</p>
+        <div class="step-detail">
+          <div class="key-point"><strong>MMPA</strong> (27° ± 4°)：上下顎平面角，反映面部垂直比例</div>
+          <div class="key-point"><strong>FMA</strong> (25° ± 5°)：Frankfort plane 與下顎平面角</div>
+          <div class="key-point"><strong>Facial Proportion (LAFH%)</strong> (55% ± 2%)：下前面高比例</div>
+          <div class="key-point" style="border-left-color:var(--accent-red)">
+            <strong style="color:var(--accent-red)">重要：</strong>當下顎打開（高角型）時，下巴會跟著後縮，因此垂直向異常會影響前後向的判讀！
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" onclick="toggleStep(this)">
+      <div class="step-number">6</div>
+      <div class="step-content">
+        <h3>垂直向分析：齒性關係</h3>
+        <p>確認齒性的垂直關係與骨骼的垂直診斷是否一致。</p>
+        <div class="step-detail">
+          <div class="key-point"><strong>Overbite</strong>：垂直覆蓋。正常 2-4mm</div>
+          <div class="key-point">若骨骼為高角型但 overbite 正常或增加，代表有 dental compensation</div>
+          <div class="key-point">若齒性與骨骼的垂直診斷不一致，檢查測量是否有誤，或是患者確實缺乏 dental compensation</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" onclick="toggleStep(this)">
+      <div class="step-number">7</div>
+      <div class="step-content">
+        <h3>軟組織分析與氣道評估</h3>
+        <p>評估軟組織輪廓和後方氣道空間。</p>
+        <div class="step-detail">
+          <div class="key-point"><strong>Nasolabial angle</strong> (102° ± 8°)：反映上唇與鼻子的關係</div>
+          <div class="key-point"><strong>Lower lip to E-plane</strong> (-2 ± 2mm)：唇部突出度</div>
+          <div class="key-point"><strong>Posterior Airway Space (PAS)</strong>：正常約 11mm，&lt;8mm 需特別注意 OSA 風險</div>
+          <div class="key-point">軟腭長度與厚度也應評估，較長較厚的軟腭可能減少氣道空間</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" onclick="toggleStep(this)">
+      <div class="step-number">8</div>
+      <div class="step-content">
+        <h3>綜合判讀與報告撰寫</h3>
+        <p>整合所有測量結果，撰寫結構化的分析報告。</p>
+        <div class="step-detail">
+          <div class="key-point">
+            <strong>報告架構建議：</strong><br>
+            1. 影像品質描述<br>
+            2. 骨骼分類 (Skeletal classification)<br>
+            3. 前後向骨骼關係 (SNA, SNB, ANB, Wits)<br>
+            4. 垂直向骨骼關係 (MMPA, FMA, LAFH%)<br>
+            5. 齒性關係 (Incisor inclinations, overjet, overbite)<br>
+            6. 軟組織分析<br>
+            7. 氣道評估<br>
+            8. 結論與建議
+          </div>
+          <div class="key-point" style="border-left-color:var(--accent-cyan)">使用下一頁的「報告產生器」來練習撰寫完整的報告！</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== REPORT GENERATOR ===== -->
+  <div id="report" class="section fade-in">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">📝 Cephalometric Analysis 報告產生器</div>
+      <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.5rem;">
+        輸入測量值後自動產生結構化報告，並標示異常值。可複製貼上使用。
+      </p>
+    </div>
+
+    <div class="report-section" style="margin-top:1.2rem;">
+      <div>
+        <!-- Patient info -->
+        <div class="card">
+          <div class="card-title" style="font-size:1rem;">👤 患者資訊</div>
+          <div class="input-row">
+            <div class="input-group">
+              <label>姓名</label>
+              <input type="text" id="ptName" placeholder="Patient Name">
+            </div>
+            <div class="input-group">
+              <label>年齡 / 性別</label>
+              <input type="text" id="ptAge" placeholder="e.g. 25/F">
+            </div>
+          </div>
+          <div class="input-group">
+            <label>檢查日期</label>
+            <input type="date" id="ptDate">
+          </div>
+        </div>
+
+        <!-- Sagittal skeletal -->
+        <div class="card">
+          <div class="card-title" style="font-size:1rem;"><span class="badge badge-cyan">Sagittal</span> 前後向骨骼測量</div>
+          <div class="input-row-3">
+            <div class="input-group">
+              <label>SNA (°)</label>
+              <input type="number" id="vSNA" step="0.1" placeholder="82">
+            </div>
+            <div class="input-group">
+              <label>SNB (°)</label>
+              <input type="number" id="vSNB" step="0.1" placeholder="80">
+            </div>
+            <div class="input-group">
+              <label>ANB (°)</label>
+              <input type="number" id="vANB" step="0.1" placeholder="2">
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="input-group">
+              <label>Wits (mm)</label>
+              <input type="number" id="vWits" step="0.1" placeholder="0">
+            </div>
+            <div class="input-group">
+              <label>A-NVert (mm)</label>
+              <input type="number" id="vANVert" step="0.1" placeholder="0">
+            </div>
+          </div>
+        </div>
+
+        <!-- Vertical -->
+        <div class="card">
+          <div class="card-title" style="font-size:1rem;"><span class="badge badge-purple">Vertical</span> 垂直向測量</div>
+          <div class="input-row-3">
+            <div class="input-group">
+              <label>MMPA (°)</label>
+              <input type="number" id="vMMPA" step="0.1" placeholder="27">
+            </div>
+            <div class="input-group">
+              <label>FMA (°)</label>
+              <input type="number" id="vFMA" step="0.1" placeholder="25">
+            </div>
+            <div class="input-group">
+              <label>LAFH% (%)</label>
+              <input type="number" id="vLAFH" step="0.1" placeholder="55">
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="input-group">
+              <label>SN-MnPl (°)</label>
+              <input type="number" id="vSNMnPl" step="0.1" placeholder="32">
+            </div>
+            <div class="input-group">
+              <label>Gonial Angle (°)</label>
+              <input type="number" id="vGonial" step="0.1" placeholder="128">
+            </div>
+          </div>
+        </div>
+
+        <!-- Dental -->
+        <div class="card">
+          <div class="card-title" style="font-size:1rem;"><span class="badge badge-green">Dental</span> 齒性測量</div>
+          <div class="input-row-3">
+            <div class="input-group">
+              <label>U1-MxPl (°)</label>
+              <input type="number" id="vU1MxPl" step="0.1" placeholder="109">
+            </div>
+            <div class="input-group">
+              <label>L1-MnPl (°)</label>
+              <input type="number" id="vL1MnPl" step="0.1" placeholder="93">
+            </div>
+            <div class="input-group">
+              <label>Inter-incisal (°)</label>
+              <input type="number" id="vInterInc" step="0.1" placeholder="135">
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="input-group">
+              <label>Overjet (mm)</label>
+              <input type="number" id="vOJ" step="0.1" placeholder="3">
+            </div>
+            <div class="input-group">
+              <label>Overbite (mm)</label>
+              <input type="number" id="vOB" step="0.1" placeholder="3">
+            </div>
+          </div>
+        </div>
+
+        <!-- Soft tissue -->
+        <div class="card">
+          <div class="card-title" style="font-size:1rem;"><span class="badge badge-yellow">Soft Tissue</span> 軟組織測量</div>
+          <div class="input-row-3">
+            <div class="input-group">
+              <label>Nasolabial (°)</label>
+              <input type="number" id="vNLA" step="0.1" placeholder="102">
+            </div>
+            <div class="input-group">
+              <label>LL to E-plane (mm)</label>
+              <input type="number" id="vLLE" step="0.1" placeholder="-2">
+            </div>
+            <div class="input-group">
+              <label>PAS (mm)</label>
+              <input type="number" id="vPAS" step="0.1" placeholder="11">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0.8rem;margin-top:0.5rem;">
+          <button class="btn btn-primary" onclick="generateReport()">📋 產生報告</button>
+          <button class="btn btn-secondary" onclick="fillSample()">📥 填入範例值</button>
+          <button class="btn btn-secondary" onclick="clearAll()">🗑️ 清除</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="position:sticky;top:1rem;">
+          <div class="card-title" style="font-size:1rem;">📄 Generated Report</div>
+          <div class="report-wrapper">
+            <button class="copy-btn" onclick="copyReport()">📋 Copy</button>
+            <div class="report-output" id="reportOutput">
+// 輸入測量值後點擊「產生報告」
+
+// 報告將自動產生在此處，包含：
+//   - Skeletal Classification
+//   - Sagittal Relationship
+//   - Vertical Relationship
+//   - Dental Analysis
+//   - Soft Tissue Analysis
+//   - Summary & Impression
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== QUIZ ===== -->
+  <div id="quiz" class="section fade-in">
+    <div class="score-display">
+      <div style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.3rem;">正確率</div>
+      <div class="score-number" id="scoreDisplay">0 / 0</div>
+      <div style="margin-top:0.8rem;">
+        <button class="btn btn-secondary btn-sm" onclick="resetQuiz()">🔄 重新測驗</button>
+        <button class="btn btn-secondary btn-sm" onclick="newQuiz()">🎲 換新題目</button>
+      </div>
+    </div>
+
+    <div id="quizContainer"></div>
+  </div>
+</div>
+
+<script>
+// ============ NAVIGATION ============
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ============ INNER TABS ============
+function showInnerTab(btn, id) {
+  const parent = btn.closest('.card');
+  parent.querySelectorAll('.inner-tab').forEach(t => t.classList.remove('active'));
+  parent.querySelectorAll('.inner-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+// ============ LANDMARK TOOLTIP ============
+const diagramContainer = document.getElementById('diagramContainer');
+const tooltip = document.getElementById('tooltip');
+const ttName = document.getElementById('ttName');
+const ttDesc = document.getElementById('ttDesc');
+
+document.querySelectorAll('.landmark-dot').forEach(dot => {
+  dot.addEventListener('mouseenter', (e) => {
+    ttName.textContent = dot.dataset.name;
+    ttDesc.textContent = dot.dataset.desc;
+    const rect = diagramContainer.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    tooltip.style.left = (x + 15) + 'px';
+    tooltip.style.top = (y - 10) + 'px';
+    if (x > rect.width * 0.6) tooltip.style.left = (x - 310) + 'px';
+    tooltip.classList.add('visible');
+  });
+  dot.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('visible');
+  });
+});
+
+// ============ STEP TOGGLE ============
+function toggleStep(el) {
+  el.classList.toggle('expanded');
+}
+
+// ============ REPORT GENERATOR ============
+function getVal(id) {
+  const v = document.getElementById(id).value;
+  return v === '' ? null : parseFloat(v);
+}
+
+function classify(val, norm, sd, highLabel, lowLabel, normLabel = 'normal') {
+  if (val === null) return { status: 'N/A', label: '' };
+  if (val > norm + sd) return { status: 'high', label: highLabel };
+  if (val < norm - sd) return { status: 'low', label: lowLabel };
+  return { status: 'normal', label: normLabel };
+}
+
+function tag(val, norm, sd) {
+  if (val === null) return '';
+  if (val > norm + sd) return ' ↑';
+  if (val < norm - sd) return ' ↓';
+  return '';
+}
+
+function fillSample() {
+  document.getElementById('ptName').value = 'Wang XX';
+  document.getElementById('ptAge').value = '22/F';
+  document.getElementById('ptDate').value = '2026-02-08';
+  document.getElementById('vSNA').value = '84';
+  document.getElementById('vSNB').value = '77';
+  document.getElementById('vANB').value = '7';
+  document.getElementById('vWits').value = '4';
+  document.getElementById('vANVert').value = '2';
+  document.getElementById('vMMPA').value = '32';
+  document.getElementById('vFMA').value = '30';
+  document.getElementById('vLAFH').value = '58';
+  document.getElementById('vSNMnPl').value = '38';
+  document.getElementById('vGonial').value = '135';
+  document.getElementById('vU1MxPl').value = '112';
+  document.getElementById('vL1MnPl').value = '98';
+  document.getElementById('vInterInc').value = '120';
+  document.getElementById('vOJ').value = '7';
+  document.getElementById('vOB').value = '2';
+  document.getElementById('vNLA').value = '95';
+  document.getElementById('vLLE').value = '1';
+  document.getElementById('vPAS').value = '9';
+}
+
+function clearAll() {
+  document.querySelectorAll('#report input').forEach(i => i.value = '');
+  document.getElementById('reportOutput').innerHTML = '// 已清除所有欄位\n// 輸入測量值後點擊「產生報告」';
+}
+
+function generateReport() {
+  const name = document.getElementById('ptName').value || 'N/A';
+  const age = document.getElementById('ptAge').value || 'N/A';
+  const date = document.getElementById('ptDate').value || 'N/A';
+
+  const sna = getVal('vSNA');
+  const snb = getVal('vSNB');
+  const anb = getVal('vANB');
+  const wits = getVal('vWits');
+  const anvert = getVal('vANVert');
+  const mmpa = getVal('vMMPA');
+  const fma = getVal('vFMA');
+  const lafh = getVal('vLAFH');
+  const snmnpl = getVal('vSNMnPl');
+  const gonial = getVal('vGonial');
+  const u1mxpl = getVal('vU1MxPl');
+  const l1mnpl = getVal('vL1MnPl');
+  const interinc = getVal('vInterInc');
+  const oj = getVal('vOJ');
+  const ob = getVal('vOB');
+  const nla = getVal('vNLA');
+  const lle = getVal('vLLE');
+  const pas = getVal('vPAS');
+
+  // Skeletal classification
+  let skelClass = 'I';
+  let skelDesc = '';
+  if (anb !== null) {
+    if (anb > 4) { skelClass = 'II'; skelDesc = 'The maxilla is positioned anterior to the mandible.'; }
+    else if (anb < 0) { skelClass = 'III'; skelDesc = 'The mandible is positioned anterior to the maxilla.'; }
+    else { skelClass = 'I'; skelDesc = 'Normal anteroposterior relationship between maxilla and mandible.'; }
+  }
+
+  // Maxilla position
+  let mxPos = '';
+  if (sna !== null) {
+    if (sna > 84) mxPos = 'prognathic (anteriorly positioned)';
+    else if (sna < 80) mxPos = 'retrognathic (posteriorly positioned)';
+    else mxPos = 'normally positioned';
+  }
+
+  // Mandible position
+  let mnPos = '';
+  if (snb !== null) {
+    if (snb > 82) mnPos = 'prognathic (anteriorly positioned)';
+    else if (snb < 78) mnPos = 'retrognathic (posteriorly positioned)';
+    else mnPos = 'normally positioned';
+  }
+
+  // Vertical pattern
+  let vertPat = '';
+  if (mmpa !== null) {
+    if (mmpa > 31) vertPat = 'hyperdivergent (high angle / vertical growth pattern)';
+    else if (mmpa < 23) vertPat = 'hypodivergent (low angle / horizontal growth pattern)';
+    else vertPat = 'normodivergent (average growth pattern)';
+  }
+
+  // Dental
+  let u1desc = '';
+  if (u1mxpl !== null) {
+    if (u1mxpl > 115) u1desc = 'proclined';
+    else if (u1mxpl < 103) u1desc = 'retroclined';
+    else u1desc = 'normally inclined';
+  }
+
+  let l1desc = '';
+  if (l1mnpl !== null) {
+    if (l1mnpl > 99) l1desc = 'proclined';
+    else if (l1mnpl < 87) l1desc = 'retroclined';
+    else l1desc = 'normally inclined';
+  }
+
+  function fmt(v) { return v !== null ? v.toFixed(1) : 'N/A'; }
+  function abnMark(v, norm, sd) {
+    if (v === null) return '';
+    if (v > norm + sd) return ' ⬆';
+    if (v < norm - sd) return ' ⬇';
+    return '';
+  }
+
+  const report = `═══════════════════════════════════════════
+  CEPHALOMETRIC ANALYSIS REPORT
+═══════════════════════════════════════════
+Patient: ${name}
+Age/Sex: ${age}
+Date:    ${date}
+
+───────────────────────────────────────────
+1. SKELETAL CLASSIFICATION
+───────────────────────────────────────────
+   Skeletal Class ${skelClass}
+   ${skelDesc}
+
+───────────────────────────────────────────
+2. SAGITTAL (ANTEROPOSTERIOR) RELATIONSHIP
+───────────────────────────────────────────
+                  Measured    Normal       Status
+   SNA            ${fmt(sna).padStart(6)}°     82° ± 2°     ${mxPos}${abnMark(sna,82,2)}
+   SNB            ${fmt(snb).padStart(6)}°     80° ± 2°     ${mnPos}${abnMark(snb,80,2)}
+   ANB            ${fmt(anb).padStart(6)}°      2° ± 2°     Class ${skelClass}${abnMark(anb,2,2)}
+   Wits           ${fmt(wits).padStart(6)}mm     0 ± 1mm    ${wits !== null ? (wits > 1 ? 'Class II tendency' : wits < -1 ? 'Class III tendency' : 'normal') : ''}${abnMark(wits,0,1)}
+   A-NVert        ${fmt(anvert).padStart(6)}mm     0~1mm      ${anvert !== null ? (anvert > 2 ? 'maxillary protrusion' : anvert < -1 ? 'maxillary retrusion' : 'normal') : ''}
+
+   Maxilla: ${mxPos || 'N/A'}
+   Mandible: ${mnPos || 'N/A'}
+
+───────────────────────────────────────────
+3. VERTICAL RELATIONSHIP
+───────────────────────────────────────────
+                  Measured    Normal       Status
+   MMPA           ${fmt(mmpa).padStart(6)}°     27° ± 4°     ${vertPat}${abnMark(mmpa,27,4)}
+   FMA            ${fmt(fma).padStart(6)}°     25° ± 5°     ${fma !== null ? (fma > 30 ? 'vertical pattern' : fma < 20 ? 'horizontal pattern' : 'normal') : ''}${abnMark(fma,25,5)}
+   SN-MnPl        ${fmt(snmnpl).padStart(6)}°     32° ± 5°     ${abnMark(snmnpl,32,5)}
+   LAFH%          ${fmt(lafh).padStart(6)}%     55% ± 2%     ${lafh !== null ? (lafh > 57 ? 'long face' : lafh < 53 ? 'short face' : 'normal proportion') : ''}${abnMark(lafh,55,2)}
+   Gonial Angle   ${fmt(gonial).padStart(6)}°    128° ± 7°    ${abnMark(gonial,128,7)}
+
+   Growth Pattern: ${vertPat || 'N/A'}
+
+───────────────────────────────────────────
+4. DENTAL ANALYSIS
+───────────────────────────────────────────
+                  Measured    Normal       Status
+   U1-MxPl        ${fmt(u1mxpl).padStart(6)}°    109° ± 6°    ${u1desc}${abnMark(u1mxpl,109,6)}
+   L1-MnPl        ${fmt(l1mnpl).padStart(6)}°     93° ± 6°    ${l1desc}${abnMark(l1mnpl,93,6)}
+   Inter-incisal  ${fmt(interinc).padStart(6)}°    135° ± 10°   ${interinc !== null ? (interinc > 145 ? 'reduced proclination' : interinc < 125 ? 'increased proclination' : 'normal') : ''}${abnMark(interinc,135,10)}
+   Overjet         ${fmt(oj).padStart(5)}mm     2-4mm        ${oj !== null ? (oj > 4 ? 'increased' : oj < 2 ? 'reduced/negative' : 'normal') : ''}
+   Overbite        ${fmt(ob).padStart(5)}mm     2-4mm        ${ob !== null ? (ob > 4 ? 'deep bite' : ob < 0 ? 'open bite' : 'normal') : ''}
+
+   Upper Incisors: ${u1desc || 'N/A'}
+   Lower Incisors: ${l1desc || 'N/A'}
+   ${(skelClass === 'II' && l1mnpl > 99) ? '⚠ Dental compensation noted: lower incisors proclined in Class II pattern' : ''}${(skelClass === 'III' && u1mxpl > 115) ? '⚠ Dental compensation noted: upper incisors proclined in Class III pattern' : ''}
+
+───────────────────────────────────────────
+5. SOFT TISSUE ANALYSIS
+───────────────────────────────────────────
+                  Measured    Normal       Status
+   Nasolabial ∠   ${fmt(nla).padStart(6)}°    102° ± 8°    ${nla !== null ? (nla > 110 ? 'obtuse (lip retrusion)' : nla < 94 ? 'acute (lip protrusion)' : 'normal') : ''}${abnMark(nla,102,8)}
+   LL to E-plane  ${fmt(lle).padStart(6)}mm    -2 ± 2mm     ${lle !== null ? (lle > 0 ? 'protrusive lips' : lle < -4 ? 'retrusive lips' : 'normal') : ''}${abnMark(lle,-2,2)}
+   PAS            ${fmt(pas).padStart(6)}mm     ≥11mm       ${pas !== null ? (pas < 8 ? '⚠ NARROWED - evaluate for OSA risk' : pas < 11 ? 'mildly reduced' : 'adequate') : ''}
+
+───────────────────────────────────────────
+6. IMPRESSION
+───────────────────────────────────────────
+   Skeletal Class ${skelClass} pattern with ${mxPos || '?'} maxilla
+   and ${mnPos || '?'} mandible.
+   ${vertPat ? 'Vertical pattern: ' + vertPat + '.' : ''}
+   ${u1desc ? 'Upper incisors are ' + u1desc + '.' : ''}
+   ${l1desc ? 'Lower incisors are ' + l1desc + '.' : ''}
+   ${pas !== null && pas < 8 ? '⚠ Posterior airway space is narrowed; clinical correlation for OSA is recommended.' : ''}
+
+═══════════════════════════════════════════`;
+
+  document.getElementById('reportOutput').textContent = report;
+}
+
+function copyReport() {
+  const text = document.getElementById('reportOutput').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy', 2000);
+  });
+}
+
+// ============ QUIZ ============
+const quizBank = [
+  {
+    q: 'ANB 角度為 6°，代表什麼骨骼分類？',
+    opts: ['Class I', 'Class II', 'Class III', '正常範圍'],
+    correct: 1,
+    exp: 'ANB > 4° 代表 Skeletal Class II，表示上顎相對於下顎較為前突。正常值為 2° ± 2°。'
+  },
+  {
+    q: 'SNA = 78°，此患者的上顎相對於顱底的位置為？',
+    opts: ['上顎前突 (prognathic)', '上顎後縮 (retrognathic)', '正常位置', '無法判斷'],
+    correct: 1,
+    exp: 'SNA 正常值為 82° ± 2°（即 80-84°）。78° < 80°，代表上顎後縮 (maxillary retrognathism)。'
+  },
+  {
+    q: 'MMPA = 35°，FMA = 33°，LAFH% = 59%。此患者最可能的垂直向生長型態為？',
+    opts: ['低角型 (Hypodivergent)', '正常角型 (Normodivergent)', '高角型 (Hyperdivergent)', '無法判斷'],
+    correct: 2,
+    exp: 'MMPA > 31°、FMA > 30°、LAFH% > 57% 均指向高角型 (hyperdivergent/vertical growth pattern)，提示長臉傾向、開咬傾向。要注意高角型會使下巴後縮，影響 AP 判讀。'
+  },
+  {
+    q: 'Skeletal Class II 的患者，下顎切牙常見的代償性變化是？',
+    opts: ['下顎切牙後傾 (retroclined)', '下顎切牙前傾 (proclined)', '下顎切牙正常角度', '上顎切牙前傾'],
+    correct: 1,
+    exp: 'Class II 患者因下顎後縮，下顎切牙常代償性前傾 (dental compensation)，以減少 overjet。L1-MnPl 角度會大於正常值 (>99°)。'
+  },
+  {
+    q: 'Inter-incisal angle = 150°，代表什麼情況？',
+    opts: ['切牙過度前傾', '切牙過度後傾，可能有深咬', '正常', '開咬'],
+    correct: 1,
+    exp: 'Inter-incisal angle 正常為 135° ± 10°。150° > 145° 代表上下切牙過度後傾，通常與深咬 (deep bite) 相關。'
+  },
+  {
+    q: 'Wits analysis 的主要優點是什麼？',
+    opts: ['更精確地定位 Sella 點', '不受 Nasion 點位置的影響', '可同時評估垂直向關係', '可評估軟組織'],
+    correct: 1,
+    exp: 'Wits analysis 使用咬合平面而非 Nasion 作為參考，因此不受 N 點前後位置偏移的影響。這是對 ANB 角的重要補充工具。'
+  },
+  {
+    q: 'PAS (Posterior Airway Space) = 6mm，應如何處置？',
+    opts: ['正常，無需特別處理', '建議臨床評估 OSA 風險', '立即手術', '改善口呼吸即可'],
+    correct: 1,
+    exp: 'PAS 正常值約 ≥11mm，< 8mm 代表氣道明顯狹窄，需建議臨床評估阻塞性睡眠呼吸中止症 (OSA) 的風險。'
+  },
+  {
+    q: '在做 cephalometric tracing 之前，放射科醫師首先應該做什麼？',
+    opts: ['標記 Sella 點', '畫 Frankfort plane', '檢查影像是否有意外的病理發現', '計算 SNA 角度'],
+    correct: 2,
+    exp: '在做任何 tracing 之前，務必先仔細檢查影像是否有意外發現的病變，如腫瘤、囊腫、骨折、蝶鞍異常等。這是放射科醫師最重要的職責之一。'
+  },
+  {
+    q: 'Frankfort Plane 是由哪兩個標記點所構成？',
+    opts: ['Sella → Nasion', 'Porion → Orbitale', 'ANS → PNS', 'Gonion → Menton'],
+    correct: 1,
+    exp: 'Frankfort Plane (FH) 由 Porion (外耳道上方中點) 和 Orbitale (眶下緣最前下方點) 連線構成。正常應接近水平。'
+  },
+  {
+    q: 'ANB = -3°，此患者最可能的骨骼分類是？',
+    opts: ['Class I', 'Class II', 'Class III', '正常範圍'],
+    correct: 2,
+    exp: 'ANB < 0° 代表 Skeletal Class III，表示下顎相對於上顎前突（或上顎後縮、或兩者皆有）。正常值為 2° ± 2°（即 0-4°）。'
+  },
+  {
+    q: '患者 SNA = 86°、SNB = 83°、ANB = 3°，但你覺得數據不太對勁。最可能的原因是？',
+    opts: ['N 點位置偏後', 'N 點位置偏前', 'FH plane 傾斜', 'Sella 點辨認錯誤'],
+    correct: 0,
+    exp: '如果 N 點較正常位置偏後，SNA 和 SNB 會同時偏大。雖然 ANB = 3° 看似正常 (Class I)，但實際上上下顎可能都是前突的。這時 Wits analysis 和 A-NVert 等不依賴 N 的測量特別重要。'
+  },
+  {
+    q: 'Nasolabial angle = 88°，提示什麼？',
+    opts: ['上唇後縮', '上唇前突或上顎前突', '正常', '下巴前突'],
+    correct: 1,
+    exp: 'Nasolabial angle 正常值為 102° ± 8°。88° < 94° (lower limit)，角度過於銳角，提示上唇前突或上顎前突，常見於 Class II Division 1 的患者。'
+  }
+];
+
+let quizQuestions = [];
+let quizScore = 0;
+let quizTotal = 0;
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function newQuiz() {
+  quizScore = 0;
+  quizTotal = 0;
+  document.getElementById('scoreDisplay').textContent = '0 / 0';
+  quizQuestions = shuffleArray(quizBank).slice(0, 8);
+  renderQuiz();
+}
+
+function resetQuiz() {
+  quizScore = 0;
+  quizTotal = 0;
+  document.getElementById('scoreDisplay').textContent = '0 / 0';
+  renderQuiz();
+}
+
+function renderQuiz() {
+  const container = document.getElementById('quizContainer');
+  container.innerHTML = '';
+  quizQuestions.forEach((q, qi) => {
+    const card = document.createElement('div');
+    card.className = 'quiz-card';
+    card.innerHTML = `
+      <div class="quiz-question"><span class="badge badge-cyan" style="margin-right:0.5rem;">Q${qi + 1}</span>${q.q}</div>
+      <div class="quiz-options" id="qopts_${qi}">
+        ${q.opts.map((opt, oi) => `
+          <div class="quiz-option" onclick="checkAnswer(${qi}, ${oi})">${opt}</div>
+        `).join('')}
+      </div>
+      <div class="quiz-explanation" id="qexp_${qi}">${q.exp}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function checkAnswer(qi, oi) {
+  const opts = document.querySelectorAll(`#qopts_${qi} .quiz-option`);
+  const exp = document.getElementById(`qexp_${qi}`);
+  const q = quizQuestions[qi];
+  
+  if (opts[0].classList.contains('disabled')) return;
+  
+  opts.forEach(o => o.classList.add('disabled'));
+  quizTotal++;
+
+  if (oi === q.correct) {
+    opts[oi].classList.add('correct');
+    exp.classList.add('correct-exp');
+    quizScore++;
+  } else {
+    opts[oi].classList.add('wrong');
+    opts[q.correct].classList.add('correct');
+    exp.classList.add('wrong-exp');
+  }
+  
+  exp.classList.add('show');
+  document.getElementById('scoreDisplay').textContent = `${quizScore} / ${quizTotal}`;
+}
+
+// Init quiz on load
+newQuiz();
+
+// Set today's date
+document.getElementById('ptDate').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
