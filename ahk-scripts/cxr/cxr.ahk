@@ -1,4 +1,4 @@
-#NoEnv
+﻿#NoEnv
 SendMode Input
 SetWorkingDir %A_ScriptDir%
 
@@ -38,7 +38,8 @@ Return
 CXR3CreateGUI:
 ; 先銷毀舊的GUI（如果存在）
 Gui, CXR3:Destroy
- 
+Gui, CXR3:Default  ; 設定CXR3為預設GUI
+
 ; 重置變數
 selectedItems := {}
 desc := ""
@@ -48,16 +49,8 @@ buttonTexts := {}  ; 儲存按鈕的完整文字
 hotkeys := ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
  
 ; GUI基本設置
-Gui, CXR3:Font, s12
- 
-; 上方控制區
-Gui, CXR3:Add, Text, x10 y10 w80 h30, 選擇模板:
-Gui, CXR3:Add, DropDownList, x90 y10 w150 h90 vSelectedFile gCXR3FileChanged, %FileList%
-GuiControl, CXR3:, SelectedFile, %currentFile%
-Gui, CXR3:Add, Button, x250 y10 w80 h30 gCXR3LockFile, 鎖定(&L)
-Gui, CXR3:Add, Button, x340 y10 w100 h30 gCXR3out, Copy代碼(&S)
-Gui, CXR3:Add, Button, x450 y10 w80 h30 gCXR3ClearAll, 清空(&C)
- 
+Gui, Font, s12
+
 ; 計算頁籤數量
 tabcount_total := 1
 tab_str := "Tab 1"
@@ -72,11 +65,11 @@ Loop, read, %currentFile%
 }
 
 ; 創建Tab控件 (左側)
-Gui Add, Tab3, x10 y50 w360 h600 vtaba, % tab_str
+Gui, Add, Tab3, x10 y50 w360 h600 vtaba, % tab_str
 
 tabcount := 1
-Gui, CXR3:Tab, %tabcount%
-Gui, CXR3:Add, Text, x1 y90, " " ; 定位用
+Gui, Tab, %tabcount%
+Gui, Add, Text, x1 y90, " " ; 定位用
 yPos := 90
 buttonIndex := 0
 pageButtonIndex := 1  ; 修正：從1開始，不是0
@@ -87,9 +80,9 @@ Loop, read, %currentFile%
     if (InStr(A_LoopReadLine, "--Page--", false)){
         ; 換頁
         tabcount := tabcount + 1
-        Gui, CXR3:Tab, %tabcount%
+        Gui, Tab, %tabcount%
         opt_multi[tabcount] := 0
-        Gui, CXR3:Add, Text, x1 y90, " " ; 定位用
+        Gui, Add, Text, x1 y90, " " ; 定位用
         yPos := 90
         buttonIndex := 0
         pageButtonIndex := 1  ; 重置每頁的按鈕索引，從1開始
@@ -106,7 +99,7 @@ Loop, read, %currentFile%
     else if(InStr(A_LoopReadLine, "NEXT", true)){
         ; 下一頁按鈕 - 使用特殊熱鍵
         yPos += 35
-        Gui, Add, Button, x20 y%yPos% w340 h30 gButtonNext, 下一頁(&N)
+        Gui, Add, Button, x20 y%yPos% w340 h30 gCXR3ButtonNext, 下一頁(&N)
     }
     else if(InStr(A_LoopReadLine, "::", false)){
         ; 縮寫按鈕
@@ -128,11 +121,11 @@ Loop, read, %currentFile%
         
         ; 檢查是否包含 {LtRt} 或類似的選擇標記
         if (InStr(tmpstr[2], "{LtRt}") || InStr(tmpstr[2], "{LungSel}") || InStr(tmpstr[2], "{LungDxSel}")){
-            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClickWithMenu, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gCXR3ButtonClickWithMenu, %buttonLabel%
             buttonTexts[buttonName] := tmpstr[2]
         }
         else {
-            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClick2, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gCXR3ButtonClick2, %buttonLabel%
             buttonTexts[buttonName] := tmpstr[2]
         }
     }
@@ -154,27 +147,35 @@ Loop, read, %currentFile%
         
         ; 檢查是否包含選擇標記
         if (InStr(A_LoopReadLine, "{LtRt}") || InStr(A_LoopReadLine, "{LungSel}") || InStr(A_LoopReadLine, "{LungDxSel}")){
-            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClickWithMenu, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gCXR3ButtonClickWithMenu, %buttonLabel%
             buttonTexts[buttonName] := A_LoopReadLine
         }
         else {
-            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gButtonClick, %buttonLabel%
+            Gui, Add, Button, x20 y%yPos% w340 h30 v%buttonName% gCXR3ButtonClick, %buttonLabel%
             buttonTexts[buttonName] := A_LoopReadLine
         }
     }
 }
 
-Gui Tab  ; 結束Tab控件
+Gui, Tab  ; 結束Tab控件
+
+; 上方控制區（放在Tab之後以確保z-order正確，不被Tab遮擋）
+Gui, Add, Text, x10 y10 w80 h30, 選擇模板:
+Gui, Add, DropDownList, x90 y10 w150 h90 vSelectedFile gCXR3FileChanged, %FileList%
+GuiControl,, SelectedFile, %currentFile%
+Gui, Add, Button, x250 y10 w80 h30 gCXR3LockFile, 鎖定(&L)
+Gui, Add, Button, x340 y10 w100 h30 gCXR3out, Copy代碼(&S)
+Gui, Add, Button, x450 y10 w80 h30 gCXR3ClearAll, 清空(&C)
 
 ; 右側已選擇項目顯示區
 Gui, Add, GroupBox, x380 y50 w250 h600, 已選擇項目
 Gui, Add, Edit, x390 y70 w230 h570 vSelectedDisplay +Multi +ReadOnly +VScroll
 
 ; 設定焦點到第一個Tab
-GuiControl, CXR3:Focus, taba
+GuiControl, Focus, taba
  
 ; 顯示GUI
-Gui, Show, w640 h660, X-ray Report Assistant - %currentFile%
+Gui, Show, w650 h660, X-ray Report Assistant - %currentFile%
 
 ; 啟用數字鍵切換Tab的熱鍵
 Hotkey, IfWinActive, X-ray Report Assistant

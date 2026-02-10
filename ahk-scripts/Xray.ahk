@@ -37,10 +37,13 @@ Gui Add, Button, xp yp+50 w140 h45 gCXR5, 硬化+骨鬆(&9)
 Gui Add, Button, x10 yp+5 w140 h45 gCXR6, 洗腎
 Gui Add, Button, x160 yp w140 h45 gCXR10, 心臟手術術後
 Gui Add, Button, x10 yp+50 w140 h45 gCXR7, 小孩(&K)
-Gui Add, Button, x10 yp+50 w120 h30 gMergeExams, 合併標題(&Z)
-Gui Add, Button, x140 yp w120 h30 gCXR9, 清除選項(&R)
+
+; === 分隔線 ===
+Gui Add, Text, x10 yp+50 w440 h2 0x10
+Gui Add, Button, x10 yp+5 w120 h30 gMergeExams, 合併標題(&Z)
+Gui Add, Button, x140 yp w120 h30 gCXRClean, 清除選項(&R)
 Gui Add, Button, x270 yp w120 h30 gCXRclose, 切換&Spine
-Gui Add, Button, x10 yp+40 w120 h30 gSeeCXRAIforCXR, 看AI報告(&1)
+Gui Add, Button, x10 yp+40 w120 h30 gSeeCXRAI, 看AI報告(&1)
 Gui Add, Button, x140 yp w120 h30 gCopyOld2, 顯示舊報告(&2)
 Gui Add, Button, x270 yp w120 h30 gCopyOldSmart, 複製舊報告(&3)
 
@@ -50,101 +53,91 @@ Gui Add, Edit, x460 y10 w200 h300 vOldReportContent Multi VScroll
 Gui Show, w680 h440, CXR 範例
 Return
 
-CXRcommon:
-Gui, Submit, NoHide
-If(C1){
-	gosub calldate
-	desc := "`r"
-}
+; CXR 共用報告函式
+; pL2: 0=無硬化, 1=有硬化
+; pL3: 0=無骨鬆, 1=骨密低(osteopenia), 2=骨鬆(osteoporosis)
+CXRCommon(pL2 := 0, pL3 := 0) {
+    global desc, L1, L3, L5, L7, C1
+    Gui, 1:Default          ; <-- 加這行確保操作正確的 GUI
+    Gui, Submit, NoHide
+    If(C1){
+        Gosub, calldate
+        desc := "`r"
+    }
+    ; 只檢查 L1 (No active lung lesion) 和心臟大小選項 (L3/L5/L7)
+    If(L1){
+        desc .= "No active lung lesion is noted.`r"
+    }	
+   If(L3){
+        desc .= "Cardiomegaly.`r"
+    }else if(L5){
+        desc .= "Borderline cardiomegaly.`r"
+    }else if(L7){
+        desc .= "Normal heart size.`r"
+    }
 
-; 只檢查 L1 (No active lung lesion) 和心臟大小選項 (L3/L5/L7)
-If(L1){
-	desc .= "No active lung lesion is noted.`r"
+    If(pL2){
+        desc .= "Intimal calcification of aorta.`r"
+        If(pL3){
+            desc .= "Degenerative change and spur formation of spine. "
+            If(pL3=1){
+                desc .= "Suspect osteopenia.`r"
+            }else if(pL3=2){
+                desc .= "Suspect osteoporosis.`r"
+            }
+        } else{
+            desc .= "Mild degenerative change of spine.`r"
+        }
+    }else{
+        desc .= "Unremarkable bony structure.`r"
+    }
 }
-
-If(L3){
-	desc .= "Cardiomegaly.`r"
-}else if(L5){
-    desc .= "Borderline cardiomegaly.`r"
-}else if(L7){
-	desc .= "Normal heart size.`r"
-}
-If(varL1){
-	desc .= "Intimal calcification of aorta.`r"
-}
-
-If(varL2){
-	desc .= "Degenerative change and spur formation of spine.`r"
-}else{
-	desc .= "Unremarkable bony structure.`r"
-}
-If(varL3=1){
-	desc .= "Generalized diminished bone density.`r"
-}else if(varL3=2){
-	desc .= "Osteoporotic change of visible bony structures.`r"
-}
-return
 
 CXR1:
-varL1:=0
-varL2:=0
-varL3:=0
-gosub CXRcommon
+CXRCommon(0, 0)
 gosub CXRFinish
 return
 
 CXR3:
-varL1:=1
-varL2:=1
-varL3:=0
-gosub CXRcommon
+CXRCommon(1, 0)
 gosub CXRFinish
 return
 
-SeeCXRAIforCXR:
-gosub SeeCXRAI
-return
 
 CXR4:
-varL1:=1
-varL2:=1
-varL3:=1
-gosub CXRcommon
+CXRCommon(1, 1)
 gosub CXRFinish
 return
 
 CXR5:
-varL1:=1
-varL2:=1
-varL3:=2
-gosub CXRcommon
+CXRCommon(1, 2)
 gosub CXRFinish
 return
 
 CXR6:
 GuiControl,, L1, 0
 GuiControl,, L5, 1
-
-varL1:=1
-varL2:=1
-varL3:=1
-gosub CXRcommon
+CXRCommon(1, 1)
 desc .= "Mild mediastinal widening.`r"
 desc .= "Status post permcath catheter insertion at _right_left _chest.`r"
 gosub CXRFinish
 return
 
 
-CXR9:
+CXRClean:
 GuiControl,, C1, 0
 GuiControl,, L1, 1
 GuiControl,, L3, 0
 GuiControl,, L5, 0
 GuiControl,, L7, 1
-GuiControl,, OldReportContent,
+desc := ""
+GuiControl,, OldReportContent, %desc% ; 清空 Edit 內容
 return
 
 
+; ============================================
+; 肺部發現按鈕 (單獨輸出文字，類似 spine2)
+; ============================================
 CXR7:
 desc .= "Mild increased lung markings in bilateral perihilar region.`r"
 desc .= "No cardiomegaly.`r"
@@ -154,7 +147,7 @@ return
 
 CXR8:
 desc .= "Insufficient inspiration _and focal atelectasis of both lungs.`r"
-CopyCXRtoHISWithParam(1)
+OutputFinish(1, "CXR 範例", false, false, true)
 return
 
 CXR10:
@@ -166,7 +159,7 @@ desc .= "Cardiomegaly.`rIntimal calcification of aorta.`rMild mediastinal wideni
 desc .= "Status post sternotomy with metallic wire fixation, _CABG, _valvular replacement.`r"
 desc .= "Status post nasogastric tube insertion with tip in stomach.`r"
 desc .= "Status post central venous catheter insertion via right neck.`r"
-CopyCXRtoHISWithParam(1)
+OutputFinish(1, "CXR 範例", false, false, true)
 return
 
 CXR11:
@@ -174,47 +167,39 @@ desc .= "Pulmonary congestion pattern or emphysematous change of both lungs.`r"
 desc .= "Superimposed pneumonia or other occult entities can not be excluded.`r"
 desc .= "_Bilateral minimal pleural effusion or pleural cahnges. `r"
 desc .= "Bilateral hilar fullness, could be vascular shadows or others. `r"
-CopyCXRtoHISWithParam(1)
+OutputFinish(1, "CXR 範例", false, false, true)
 return
 
-; ============================================
-; 肺部發現按鈕 (單獨輸出文字，類似 spine2)
-; ============================================
 BtnApicalPleural:
     desc := "Bilateral apical pleural thickening.`r"
-    gosub CXRFinish
+    OutputFinish(1, "CXR 範例", false, false, true)
 return
 
 BtnEmphysema:
     desc := "Emphysematous change of both lungs.`r"
-    gosub CXRFinish
+    OutputFinish(1, "CXR 範例", false, false, true)
 return
 
 BtnHilarFullness:
     desc := "Bilateral hilar fullness, could be vascular shadows or others.`r"
-    gosub CXRFinish
+    OutputFinish(1, "CXR 範例", false, false, true)
 return
 
 BtnMediastinal:
     desc := "Mild mediastinal widening.`r"
-    gosub CXRFinish
+    OutputFinish(1, "CXR 範例", false, false, true)
 return
 
 BtnCongestion:
     desc := "Mild pulmonary congestion pattern.`r"
-    gosub CXRFinish
+    OutputFinish(1, "CXR 範例", false, false, true)
 return
 
 BtnEff:
     desc := "Bilateral _minimal pleural effusion or pleural cahnges.`r"
-    gosub CXRFinish
+    OutputFinish(1, "CXR 範例", false, false, true)
 return
 
-CXRFinish:
-CopyCXRtoHISWithParam(2)
-WinActivate, CXR 範例
-gosub CXR9
-return
 
 CXRclose:
 Gui, Destroy
@@ -231,8 +216,9 @@ ClipboardBackup := Clipboard ; 保存當前剪貼簿內容
 ; 取得舊報告內容
 dicom := GetDICOMData()
 accessionNum := GetAccessionNumber(dicom)
-oldReport := GetOldReportContent(accessionNum, false) 
-
+dateInfo := GetDICOMDateOnly(dicom)
+oldReport := "Comparison with previous study: " . dateInfo.full . ". _`r"
+oldReport .= GetOldReportContent(accessionNum, false) 
 ; 清理報告格式
 oldReport := RegExReplace(oldReport, "(\r\n|\n|\r)", "`r`n")
 
@@ -241,23 +227,73 @@ GuiControl,, OldReportContent, %oldReport%
 
 ; 恢復原始剪貼簿內容
 Clipboard := ClipboardBackup
-
-varCopyOld = 0
 return
 
 CopyOldSmart:
+Gui, Submit, NoHide  ; <-- 必須有這行才能讀取 Edit 內容
 ; 檢查 OldReportContent 是否有內容
 if (OldReportContent != "") {
     ; 有內容：先輸出日期，再輸出內容
-    gosub calldate
     desc := OldReportContent
     desc := RegExReplace(desc, "(\r\n|\n|\r)", "`n")
-    CopyCXRtoHISWithParam(1)
+	gosub CXRFinish
+	GuiControl,, OldReportContent,  ; 清空 Edit 內容
 } else {
     ; 無內容：呼叫原本的 CopyOld
     gosub CopyOld
 }
 return
+
+CXRFinish:
+   OutputFinish(2, "CXR 範例", false, true, false)
+return
+
+; 統一輸出函式
+; outputMode: 1=只換行, 2=完整移動 呼叫CopyCXRtoHISWithParam的參數
+; windowName: 視窗名稱 ("CXR 範例" 或 "Spine phases")
+; applyDash: 是否套用 dash 格式
+; resetCXR: 是否呼叫 CXR9 重置
+; backWindow 是否回本視窗還是跳到病歷輸入介面
+OutputFinish(outputMode := 2, windowName := "", applyDash := false, resetCXR := false, backWindow := true) {
+    global desc, AddDash
+
+    ; 1. Dash 格式處理 (Spine 專用)
+    if (applyDash) {
+        Gui, Submit, NoHide
+        if (AddDash) {
+            finalDesc := ""
+            Loop, Parse, desc, `n, `r
+            {
+                thisLine := Trim(A_LoopField)
+                if (thisLine = "")
+                    continue
+                if (SubStr(thisLine, 1, 2) != "- " && SubStr(thisLine, 0) != ":") {
+                    thisLine := "- " . thisLine
+                }
+                finalDesc .= thisLine . "`r"
+            }
+            desc := finalDesc
+        }
+    }
+
+    ; 2. 輸出到 HIS
+    CopyCXRtoHISWithParam(outputMode)
+
+    ; 3. 重置 CXR GUI (如果需要)
+    if (resetCXR) {
+        Gosub, CXRClean
+    }
+
+    ; 4. 清空 desc
+    desc := ""
+
+    ; 5. 返回原視窗
+    if (backWindow) {
+        Sleep, 100
+        WinActivate, %windowName%
+    }
+}
+
 
 ::spine2;::
 WinSpine:
@@ -313,51 +349,7 @@ return
 
 SpineOutput:
     Gui, Submit, NoHide
-    
-    ; 1. 處理 Dash (原本 AddDashPrefix 的邏輯)
-    ;if (AddDash) {
-        ; 如果勾選，且字串開頭不是 "- "，就加上去
-    ;    if (SubStr(desc, 1, 2) != "- ")
-    ;        desc := "- " . desc
-    ;}
-	finalDesc := ""
-    
-    ; 使用 Loop Parse 逐行讀取 desc 內容
-    ; `n 是換行符號，`r 是回車符號 (忽略它以確保乾淨)
-    Loop, Parse, desc, `n, `r
-    {
-        thisLine := Trim(A_LoopField) ; 去除前後空白
-        
-        ; 如果是空行，直接保留換行並跳過
-        if (thisLine = "") {
-            ; 這裡不加東西，因為最後組合時會補換行
-            continue 
-        }
-        
-        ; 判斷是否需要加 Dash
-        ; 條件：
-        ; 1. AddDash 被勾選
-        ; 2. 這一行開頭還沒有 "- "
-        ; 3. 這一行不是標題 (標題通常以 ":" 結尾，如 "L-spine:") -> 標題通常不加 Dash
-        
-        if (AddDash && SubStr(thisLine, 1, 2) != "- " && SubStr(thisLine, 0) != ":") {
-            thisLine := "- " . thisLine
-        }
-        
-        ; 重新組合 (每一行後面補一個 Enter)
-        finalDesc .= thisLine . "`r"
-    }
-    
-    ; 更新要輸出的變數
-    desc := finalDesc
-
-    ; 2. 執行輸出 (原本分散在各按鈕的邏輯)
-    CopyCXRtoHISWithParam(1)
-    
-    ; 3. 視窗控制
-    Sleep, 100
-    WinActivate, Spine phases
-	desc := ""
+	OutputFinish(1, "Spine phases", true, false, true)
 return
 
 BtnInsertTitle:

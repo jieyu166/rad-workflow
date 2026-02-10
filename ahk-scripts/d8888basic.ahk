@@ -1,6 +1,4 @@
-﻿
-
-IfHISExist()
+﻿IfHISExist()
 {
 	IfWinExist ahk_exe chk060.exe
 	{
