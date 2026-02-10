@@ -7,10 +7,8 @@ global StoredText
 ; BMD比較資料全局變數（自動從DICOM ResultsTable2擷取）
 global CompHip_PrevDate := ""
 global CompHip_Change := ""
-global CompHip_LSC := 0
 global CompSpine_PrevDate := ""
 global CompSpine_Change := ""
-global CompSpine_LSC := 0
 global HasComparison := 0
 
 ;============================================================================================
@@ -1301,37 +1299,27 @@ PeekNextTable2(ByRef input, ByRef row, ByRef col, ByRef val)
 ; bodyPart: "hip" 或 "spine"
 ParseTable2Data(data, bodyPart)
 {
-	global CompHip_PrevDate, CompHip_Change, CompHip_LSC
-	global CompSpine_PrevDate, CompSpine_Change, CompSpine_LSC
+	global CompHip_PrevDate, CompHip_Change
+	global CompSpine_PrevDate, CompSpine_Change
 	global HasComparison
 
 	; 檢查 Table2 是否存在
 	if(!InStr(data, "IncludeTable2 = true"))
 		return
 
-	; 從 FractureRiskStr 擷取 LSC
-	lsc := 0
-	if(RegExMatch(data, "LSC is (\d+\.?\d*)", lscMatch))
-		lsc := lscMatch1 + 0
-
 	t2data := data
 	prevDate := ""
 	changePrevious := ""
 
 	; 解析 Table2 所有資料
-	; Row 0 = 表頭, Row 1 = 目前掃描, Row 2+ = 之前掃描
+	; Row 0 = 表頭, Row 1 = 目前掃描, Row 2 = 上次掃描, Row 3+ = 忽略
+	; 只需讀取 ResultsTable2[1][5]（BMD Change vs Previous）和 ResultsTable2[2][0]（前次日期）
 	while(PeekNextTable2(t2data, row, col, val) > 0)
 	{
-		if(row = 1)  ; 目前掃描的資料列
-		{
-			if(col = 5)  ; BMD Change vs Previous
-				changePrevious := val
-		}
-		else if(row = 2)  ; 上次掃描（最近的前次）
-		{
-			if(col = 0)  ; Scan Date
-				prevDate := val
-		}
+		if(row = 1 and col = 5)  ; BMD Change vs Previous（可能含 * 表示顯著）
+			changePrevious := val
+		else if(row = 2 and col = 0)  ; 上次掃描日期
+			prevDate := val
 	}
 
 	; 只有在有有效比較資料時才設定
@@ -1342,13 +1330,11 @@ ParseTable2Data(data, bodyPart)
 		{
 			CompHip_PrevDate := prevDate
 			CompHip_Change := changePrevious
-			CompHip_LSC := lsc
 		}
 		else if(bodyPart = "spine")
 		{
 			CompSpine_PrevDate := prevDate
 			CompSpine_Change := changePrevious
-			CompSpine_LSC := lsc
 		}
 	}
 }
@@ -1374,10 +1360,14 @@ FormatDICOMDate(dateStr)
 }
 
 ; 產生自動比較文字（Serial Densitometric assessment）
+; 以 ResultsTable2[1][5] 尾端是否有 "*" 判斷顯著性
+; 有 "*" 且數值為負 → significantly decreased
+; 有 "*" 且數值為正 → significantly increased
+; 全部都沒有 "*" → statistically stationary
 GenerateComparisonText()
 {
-	global CompHip_PrevDate, CompHip_Change, CompHip_LSC
-	global CompSpine_PrevDate, CompSpine_Change, CompSpine_LSC
+	global CompHip_PrevDate, CompHip_Change
+	global CompSpine_PrevDate, CompSpine_Change
 	global HasComparison
 
 	if(!HasComparison)
@@ -1387,54 +1377,48 @@ GenerateComparisonText()
 
 	increasedRegions := ""
 	decreasedRegions := ""
-	stationaryRegions := ""
 	prevDate := ""
+	anySignificant := 0
 
-	; 檢查 Spine
+	; 檢查 Spine — 以 "*" 判斷顯著
 	if(Trim(CompSpine_Change) != "")
 	{
-		spineVal := GetBMDChangeValue(CompSpine_Change)
-		spLSC := CompSpine_LSC + 0
-		if(spLSC > 0 and Abs(spineVal) >= spLSC)
+		if(InStr(CompSpine_Change, "*"))
 		{
+			anySignificant := 1
+			spineVal := GetBMDChangeValue(CompSpine_Change)
 			if(spineVal > 0)
 				increasedRegions .= (increasedRegions != "" ? ", " : "") "L-spine"
 			else
 				decreasedRegions .= (decreasedRegions != "" ? ", " : "") "L-spine"
 		}
-		else
-			stationaryRegions .= (stationaryRegions != "" ? ", " : "") "L-spine"
-
 		if(prevDate = "" and CompSpine_PrevDate != "")
 			prevDate := CompSpine_PrevDate
 	}
 
-	; 檢查 Hip
+	; 檢查 Hip — 以 "*" 判斷顯著
 	if(Trim(CompHip_Change) != "")
 	{
-		hipVal := GetBMDChangeValue(CompHip_Change)
-		hipLSC := CompHip_LSC + 0
-		if(hipLSC > 0 and Abs(hipVal) >= hipLSC)
+		if(InStr(CompHip_Change, "*"))
 		{
+			anySignificant := 1
+			hipVal := GetBMDChangeValue(CompHip_Change)
 			if(hipVal > 0)
 				increasedRegions .= (increasedRegions != "" ? ", " : "") "total hip"
 			else
 				decreasedRegions .= (decreasedRegions != "" ? ", " : "") "total hip"
 		}
-		else
-			stationaryRegions .= (stationaryRegions != "" ? ", " : "") "total hip"
-
 		if(prevDate = "" and CompHip_PrevDate != "")
 			prevDate := CompHip_PrevDate
 	}
 
 	; 產生文字
-	if(stationaryRegions != "")
-		text .= "The interval change of BMD is statistically stationary at " stationaryRegions ".`r"
+	if(!anySignificant)
+		text .= "The interval change of BMD is statistically stationary.`r"
 	if(increasedRegions != "")
-		text .= "The interval change of BMD is statistically significantly increased at " increasedRegions ".`r"
+		text .= "_The interval change of BMD is statistically significantly increased at " increasedRegions ".`r"
 	if(decreasedRegions != "")
-		text .= "The interval change of BMD is statistically significantly decreased at " decreasedRegions ".`r"
+		text .= "_The interval change of BMD is statistically significantly decreased at " decreasedRegions ".`r"
 
 	; 加入比較日期
 	if(prevDate != "")
@@ -1449,16 +1433,14 @@ GenerateComparisonText()
 ; 初始化比較資料全局變數
 InitComparisonData()
 {
-	global CompHip_PrevDate, CompHip_Change, CompHip_LSC
-	global CompSpine_PrevDate, CompSpine_Change, CompSpine_LSC
+	global CompHip_PrevDate, CompHip_Change
+	global CompSpine_PrevDate, CompSpine_Change
 	global HasComparison
 
 	CompHip_PrevDate := ""
 	CompHip_Change := ""
-	CompHip_LSC := 0
 	CompSpine_PrevDate := ""
 	CompSpine_Change := ""
-	CompSpine_LSC := 0
 	HasComparison := 0
 }
 
