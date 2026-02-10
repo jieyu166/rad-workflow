@@ -5,10 +5,11 @@ global BMDStyle:=1
 global StoredText
 
 ; BMD比較資料全局變數（自動從DICOM ResultsTable2擷取）
+global CompHip_Total_Change := ""
+global CompHip_Neck_Change := ""
 global CompHip_PrevDate := ""
-global CompHip_Change := ""
-global CompSpine_PrevDate := ""
 global CompSpine_Change := ""
+global CompSpine_PrevDate := ""
 global HasComparison := 0
 
 ;============================================================================================
@@ -1297,9 +1298,13 @@ PeekNextTable2(ByRef input, ByRef row, ByRef col, ByRef val)
 
 ; 從 DICOM 資料中解析 Table2 比較資料
 ; bodyPart: "hip" 或 "spine"
+; Hip 結構: MAXCOLS2=7, col 6 = "BMD Change vs Previous"
+;   Row 0=表頭, Row 1=Total 目前, Row 2=Total 前次, Row 3=Neck 目前, Row 4=Neck 前次
+; Spine 結構: MAXCOLS2=6, col 5 = "BMD Change vs Previous"
+;   Row 0=表頭, Row 1=目前, Row 2=前次
 ParseTable2Data(data, bodyPart)
 {
-	global CompHip_PrevDate, CompHip_Change
+	global CompHip_Total_Change, CompHip_Neck_Change, CompHip_PrevDate
 	global CompSpine_PrevDate, CompSpine_Change
 	global HasComparison
 
@@ -1307,34 +1312,62 @@ ParseTable2Data(data, bodyPart)
 	if(!InStr(data, "IncludeTable2 = true"))
 		return
 
+	; 先從表頭（row 0）找出 "BMD Change vs Previous" 的欄位
+	changePrevCol := -1
 	t2data := data
-	prevDate := ""
-	changePrevious := ""
-
-	; 解析 Table2 所有資料
-	; Row 0 = 表頭, Row 1 = 目前掃描, Row 2 = 上次掃描, Row 3+ = 忽略
-	; 只需讀取 ResultsTable2[1][5]（BMD Change vs Previous）和 ResultsTable2[2][0]（前次日期）
 	while(PeekNextTable2(t2data, row, col, val) > 0)
 	{
-		if(row = 1 and col = 5)  ; BMD Change vs Previous（可能含 * 表示顯著）
-			changePrevious := val
-		else if(row = 2 and col = 0)  ; 上次掃描日期
-			prevDate := val
-	}
-
-	; 只有在有有效比較資料時才設定
-	if(Trim(changePrevious) != "" and Trim(prevDate) != "")
-	{
-		HasComparison := 1
-		if(bodyPart = "hip")
+		if(row = 0 and InStr(val, "BMD Change vs Previous"))
 		{
-			CompHip_PrevDate := prevDate
-			CompHip_Change := changePrevious
+			changePrevCol := col
+			break
 		}
-		else if(bodyPart = "spine")
+	}
+	if(changePrevCol < 0)
+		return
+
+	; 重新掃描所有資料
+	t2data := data
+	prevDate := ""
+
+	if(bodyPart = "hip")
+	{
+		; Hip: Total=rows 1-2, Neck=rows 3-4
+		totalChange := ""
+		neckChange := ""
+		while(PeekNextTable2(t2data, row, col, val) > 0)
 		{
-			CompSpine_PrevDate := prevDate
+			if(row = 1 and col = changePrevCol)
+				totalChange := val
+			else if(row = 2 and col = 1)  ; Total 前次日期
+				prevDate := val
+			else if(row = 3 and col = changePrevCol)
+				neckChange := val
+		}
+		if(Trim(prevDate) != "" and (Trim(totalChange) != "" or Trim(neckChange) != ""))
+		{
+			HasComparison := 1
+			CompHip_Total_Change := totalChange
+			CompHip_Neck_Change := neckChange
+			CompHip_PrevDate := prevDate
+		}
+	}
+	else if(bodyPart = "spine")
+	{
+		; Spine: row 1=目前, row 2=前次
+		changePrevious := ""
+		while(PeekNextTable2(t2data, row, col, val) > 0)
+		{
+			if(row = 1 and col = changePrevCol)
+				changePrevious := val
+			else if(row = 2 and col = 1)  ; 前次日期（col 1 = Scan Date）
+				prevDate := val
+		}
+		if(Trim(changePrevious) != "" and Trim(prevDate) != "")
+		{
+			HasComparison := 1
 			CompSpine_Change := changePrevious
+			CompSpine_PrevDate := prevDate
 		}
 	}
 }
@@ -1360,13 +1393,14 @@ FormatDICOMDate(dateStr)
 }
 
 ; 產生自動比較文字（Serial Densitometric assessment）
-; 以 ResultsTable2[1][5] 尾端是否有 "*" 判斷顯著性
+; 以 "BMD Change vs Previous" 尾端是否有 "*" 判斷顯著性
+; Hip 有 Total 和 Neck 兩個區域分別判斷
 ; 有 "*" 且數值為負 → significantly decreased
 ; 有 "*" 且數值為正 → significantly increased
 ; 全部都沒有 "*" → statistically stationary
 GenerateComparisonText()
 {
-	global CompHip_PrevDate, CompHip_Change
+	global CompHip_Total_Change, CompHip_Neck_Change, CompHip_PrevDate
 	global CompSpine_PrevDate, CompSpine_Change
 	global HasComparison
 
@@ -1396,17 +1430,33 @@ GenerateComparisonText()
 			prevDate := CompSpine_PrevDate
 	}
 
-	; 檢查 Hip — 以 "*" 判斷顯著
-	if(Trim(CompHip_Change) != "")
+	; 檢查 Hip Total — 以 "*" 判斷顯著
+	if(Trim(CompHip_Total_Change) != "")
 	{
-		if(InStr(CompHip_Change, "*"))
+		if(InStr(CompHip_Total_Change, "*"))
 		{
 			anySignificant := 1
-			hipVal := GetBMDChangeValue(CompHip_Change)
-			if(hipVal > 0)
+			totalVal := GetBMDChangeValue(CompHip_Total_Change)
+			if(totalVal > 0)
 				increasedRegions .= (increasedRegions != "" ? ", " : "") "total hip"
 			else
 				decreasedRegions .= (decreasedRegions != "" ? ", " : "") "total hip"
+		}
+		if(prevDate = "" and CompHip_PrevDate != "")
+			prevDate := CompHip_PrevDate
+	}
+
+	; 檢查 Hip Neck — 以 "*" 判斷顯著（報告為 femoral neck）
+	if(Trim(CompHip_Neck_Change) != "")
+	{
+		if(InStr(CompHip_Neck_Change, "*"))
+		{
+			anySignificant := 1
+			neckVal := GetBMDChangeValue(CompHip_Neck_Change)
+			if(neckVal > 0)
+				increasedRegions .= (increasedRegions != "" ? ", " : "") "femoral neck"
+			else
+				decreasedRegions .= (decreasedRegions != "" ? ", " : "") "femoral neck"
 		}
 		if(prevDate = "" and CompHip_PrevDate != "")
 			prevDate := CompHip_PrevDate
@@ -1433,12 +1483,13 @@ GenerateComparisonText()
 ; 初始化比較資料全局變數
 InitComparisonData()
 {
-	global CompHip_PrevDate, CompHip_Change
+	global CompHip_Total_Change, CompHip_Neck_Change, CompHip_PrevDate
 	global CompSpine_PrevDate, CompSpine_Change
 	global HasComparison
 
+	CompHip_Total_Change := ""
+	CompHip_Neck_Change := ""
 	CompHip_PrevDate := ""
-	CompHip_Change := ""
 	CompSpine_PrevDate := ""
 	CompSpine_Change := ""
 	HasComparison := 0
