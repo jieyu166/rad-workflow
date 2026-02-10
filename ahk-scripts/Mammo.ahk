@@ -1317,7 +1317,7 @@ ParseTable2Data(data, bodyPart)
 	t2data := data
 	while(PeekNextTable2(t2data, row, col, val) > 0)
 	{
-		if(row = 0 and InStr(val, "BMD Change vs Previous"))
+		if(row = 0 and InStr(val, "vs Previous"))
 		{
 			changePrevCol := col
 			break
@@ -1360,7 +1360,7 @@ ParseTable2Data(data, bodyPart)
 		{
 			if(row = 1 and col = changePrevCol)
 				changePrevious := val
-			else if(row = 2 and col = 1)  ; 前次日期（col 1 = Scan Date）
+			else if(row = 2 and col = 0)  ; 前次日期（col 1 = Scan Date）
 				prevDate := val
 		}
 		if(Trim(changePrevious) != "" and Trim(prevDate) != "")
