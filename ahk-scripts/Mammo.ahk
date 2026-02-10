@@ -716,17 +716,16 @@ GetBMD()
 		hasrad:=1
 	}
 	
-	SendBMDJudge2(Gender, useT, Lspine_Z, Lspine_T, Neck_Z, Neck_T, Hip_Z, Hip_T, Radius_Z, Radius_T)
-	SendBMDFormHead2(useT, PtAge, PtGender, MP, haslspine, hasfneck, hasthip, hasrad)
-	SendBMDResult2(PtGender, useT, LspineStr, Lspine_Z, Lspine_T, Lspine_BMD, Neck_Z, Neck_T, Neck_BMD, Hip_Z, Hip_T, Hip_BMD, Radius_Z, Radius_T, Radius_BMD, haslspine, hasfneck, hasthip, hasrad)  ; 傳入 has 變數
-
 	; 自動產生比較文字（如果有前次掃描資料）
 	compText := GenerateComparisonText()
 	if(compText != "")
 	{
-		StoredTextNewLine()
 		StoredTextAdd(compText)
+		StoredTextNewLine()
 	}
+	SendBMDJudge2(Gender, useT, Lspine_Z, Lspine_T, Neck_Z, Neck_T, Hip_Z, Hip_T, Radius_Z, Radius_T)
+	SendBMDFormHead2(useT, PtAge, PtGender, MP, haslspine, hasfneck, hasthip, hasrad)
+	SendBMDResult2(PtGender, useT, LspineStr, Lspine_Z, Lspine_T, Lspine_BMD, Neck_Z, Neck_T, Neck_BMD, Hip_Z, Hip_T, Hip_BMD, Radius_Z, Radius_T, Radius_BMD, haslspine, hasfneck, hasthip, hasrad)  ; 傳入 has 變數
 
 	; Send output
 	ActivateHIS()
@@ -1407,7 +1406,7 @@ GenerateComparisonText()
 	if(!HasComparison)
 		return ""
 
-	text := "Serial Densitometric assessment:`r"
+	text := "Serial Densitometric assessment:`r`n"
 
 	increasedRegions := ""
 	decreasedRegions := ""
@@ -1464,18 +1463,17 @@ GenerateComparisonText()
 
 	; 產生文字
 	if(!anySignificant)
-		text .= "The interval change of BMD is statistically stationary.`r"
+		text .= "The interval change of BMD is statistically stationary."
 	if(increasedRegions != "")
-		text .= "_The interval change of BMD is statistically significantly increased at " increasedRegions ".`r"
+		text .= "The interval change of BMD is statistically significantly increased at " increasedRegions "."
 	if(decreasedRegions != "")
-		text .= "_The interval change of BMD is statistically significantly decreased at " decreasedRegions ".`r"
-
+		text .= "The interval change of BMD is statistically significantly decreased at " decreasedRegions "."
+	text .= "`r`n"
 	; 加入比較日期
-	if(prevDate != "")
-	{
-		formattedDate := FormatDICOMDate(prevDate)
-		text .= "COMPARISON: Previous BMD: " formattedDate ".`r"
-	}
+	;if(prevDate != ""){
+	;	formattedDate := FormatDICOMDate(prevDate)
+	;	text .= "`nCOMPARISON: " formattedDate ".`n"
+	;}
 
 	return text
 }
