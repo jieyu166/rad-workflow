@@ -1,8 +1,16 @@
-﻿#include d8888basic.ahk
+#include d8888basic.ahk
 ; BMD相關全局變數
 global useChinese := 0
 global BMDStyle:=1
 global StoredText
+
+; BMD比較資料全局變數（自動從DICOM ResultsTable2擷取）
+global CompHip_Total_Change := ""
+global CompHip_Neck_Change := ""
+global CompHip_PrevDate := ""
+global CompSpine_Change := ""
+global CompSpine_PrevDate := ""
+global HasComparison := 0
 
 ;============================================================================================
 ; Mammo
@@ -611,6 +619,7 @@ GetBMD()
 	
 	; Global initialize
 	StoredTextClear()
+	InitComparisonData()
 	Hip_Z:=100
 	Hip_T:=100
 	Lspine_Z:=100
@@ -647,11 +656,12 @@ GetBMD()
 			Neck_T:=t
 			Neck_BMD:=bmd
 			GetResultsTable(data, "Total", Hip_Z, Hip_T, Hip_BMD) ;取得hip的total
+			ParseTable2Data(data, "hip")  ; 自動擷取 hip 比較資料
 		}else if(z5!=100){ ; Radius 有成功取得資料
 			Radius_Z:=z5
 			Radius_T:=t5
 			Radius_BMD:=bmd5
-		
+
 		}else{
 			; L spine total or L spine 各測量值
 			GetResultsTable(data, "Total", lz, lt, lbmd)
@@ -660,15 +670,16 @@ GetBMD()
 				Lspine_Z:=lz
 				Lspine_T:=lt
 				Lspine_BMD:=lbmd
-				
+
 				GetResultsTable(data, "L1", z1, t1, bmd1)
 				GetResultsTable(data, "L2", z2, t2, bmd2)
 				GetResultsTable(data, "L3", z3, t3, bmd3)
 				GetResultsTable(data, "L4", z4, t4, bmd4)
-				
+
 				LspineStr:=GetLSpineStr2(t1, t2, t3, t4) ;輸出共有哪幾節spine
 				;desc .= "* L_ is excluded because T-score >1SD different from adjacent vertebra.`r* L_ is excluded because severe osteophyte.`r* L_ is excluded because compression fracture.`r"
-			}			
+				ParseTable2Data(data, "spine")  ; 自動擷取 spine 比較資料
+			}
 		}
 	
 		;ActivatePACS()
@@ -708,7 +719,15 @@ GetBMD()
 	SendBMDJudge2(Gender, useT, Lspine_Z, Lspine_T, Neck_Z, Neck_T, Hip_Z, Hip_T, Radius_Z, Radius_T)
 	SendBMDFormHead2(useT, PtAge, PtGender, MP, haslspine, hasfneck, hasthip, hasrad)
 	SendBMDResult2(PtGender, useT, LspineStr, Lspine_Z, Lspine_T, Lspine_BMD, Neck_Z, Neck_T, Neck_BMD, Hip_Z, Hip_T, Hip_BMD, Radius_Z, Radius_T, Radius_BMD, haslspine, hasfneck, hasthip, hasrad)  ; 傳入 has 變數
-	
+
+	; 自動產生比較文字（如果有前次掃描資料）
+	compText := GenerateComparisonText()
+	if(compText != "")
+	{
+		StoredTextNewLine()
+		StoredTextAdd(compText)
+	}
+
 	; Send output
 	ActivateHIS()
 	SetReportHIS(StoredText)  ;some hacks
@@ -1106,7 +1125,21 @@ SendBMDFormHead2(useT, PtAge, gender, MP, haslspine, hasfneck, hasthip, hasrad)
 	
 	StoredTextAdd("COMPARISON:")
 	StoredTextNewLine()
-	StoredTextAdd("None.")
+	; 自動偵測是否有前次比較資料
+	global HasComparison, CompSpine_PrevDate, CompHip_PrevDate
+	if(HasComparison)
+	{
+		compDate := ""
+		if(CompSpine_PrevDate != "")
+			compDate := FormatDICOMDate(CompSpine_PrevDate)
+		else if(CompHip_PrevDate != "")
+			compDate := FormatDICOMDate(CompHip_PrevDate)
+		StoredTextAdd("Previous BMD: " compDate ".")
+	}
+	else
+	{
+		StoredTextAdd("None.")
+	}
 	StoredTextNewLine()
 	StoredTextNewLine()
 }
@@ -1241,6 +1274,227 @@ MergeStr(raw)
 	return rst
 }
 
+; ============================================================
+; BMD 比較功能 - 自動從 DICOM ResultsTable2 擷取比較資料
+; ============================================================
+
+; 解析 ResultsTable2 中的下一筆資料（類似 PeekNext 但針對 Table2）
+PeekNextTable2(ByRef input, ByRef row, ByRef col, ByRef val)
+{
+	r=ResultsTable2\[\s*(\d+)\]\[\s*(\d+)\]\s*=\s*"([^"]*)"
+	FoundPos := RegExMatch(input, r, match)
+	if(FoundPos=0)
+	{
+		return 0
+	}else
+	{
+		input:=SubStr(input, FoundPos+StrLen(match))
+		row:=match1
+		col:=match2
+		val:=match3
+		return FoundPos
+	}
+}
+
+; 從 DICOM 資料中解析 Table2 比較資料
+; bodyPart: "hip" 或 "spine"
+; Hip 結構: MAXCOLS2=7, col 6 = "BMD Change vs Previous"
+;   Row 0=表頭, Row 1=Total 目前, Row 2=Total 前次, Row 3=Neck 目前, Row 4=Neck 前次
+; Spine 結構: MAXCOLS2=6, col 5 = "BMD Change vs Previous"
+;   Row 0=表頭, Row 1=目前, Row 2=前次
+ParseTable2Data(data, bodyPart)
+{
+	global CompHip_Total_Change, CompHip_Neck_Change, CompHip_PrevDate
+	global CompSpine_PrevDate, CompSpine_Change
+	global HasComparison
+
+	; 檢查 Table2 是否存在
+	if(!InStr(data, "IncludeTable2 = true"))
+		return
+
+	; 先從表頭（row 0）找出 "BMD Change vs Previous" 的欄位
+	changePrevCol := -1
+	t2data := data
+	while(PeekNextTable2(t2data, row, col, val) > 0)
+	{
+		if(row = 0 and InStr(val, "BMD Change vs Previous"))
+		{
+			changePrevCol := col
+			break
+		}
+	}
+	if(changePrevCol < 0)
+		return
+
+	; 重新掃描所有資料
+	t2data := data
+	prevDate := ""
+
+	if(bodyPart = "hip")
+	{
+		; Hip: Total=rows 1-2, Neck=rows 3-4
+		totalChange := ""
+		neckChange := ""
+		while(PeekNextTable2(t2data, row, col, val) > 0)
+		{
+			if(row = 1 and col = changePrevCol)
+				totalChange := val
+			else if(row = 2 and col = 1)  ; Total 前次日期
+				prevDate := val
+			else if(row = 3 and col = changePrevCol)
+				neckChange := val
+		}
+		if(Trim(prevDate) != "" and (Trim(totalChange) != "" or Trim(neckChange) != ""))
+		{
+			HasComparison := 1
+			CompHip_Total_Change := totalChange
+			CompHip_Neck_Change := neckChange
+			CompHip_PrevDate := prevDate
+		}
+	}
+	else if(bodyPart = "spine")
+	{
+		; Spine: row 1=目前, row 2=前次
+		changePrevious := ""
+		while(PeekNextTable2(t2data, row, col, val) > 0)
+		{
+			if(row = 1 and col = changePrevCol)
+				changePrevious := val
+			else if(row = 2 and col = 1)  ; 前次日期（col 1 = Scan Date）
+				prevDate := val
+		}
+		if(Trim(changePrevious) != "" and Trim(prevDate) != "")
+		{
+			HasComparison := 1
+			CompSpine_Change := changePrevious
+			CompSpine_PrevDate := prevDate
+		}
+	}
+}
+
+; 從 BMD 變化字串中擷取數值（如 "-0.027 (-3.1%)" → -0.027）
+GetBMDChangeValue(changeStr)
+{
+	changeStr := Trim(changeStr)
+	if(changeStr = "" or changeStr = " ")
+		return 0
+	if(RegExMatch(changeStr, "^([+-]?\d+\.?\d*)", numMatch))
+		return numMatch1 + 0
+	return 0
+}
+
+; 將 DICOM 日期格式 DD.MM.YYYY 轉換為 YYYY/MM/DD
+FormatDICOMDate(dateStr)
+{
+	dateStr := Trim(dateStr)
+	if(RegExMatch(dateStr, "(\d{2})\.(\d{2})\.(\d{4})", m))
+		return m3 "/" m2 "/" m1
+	return dateStr
+}
+
+; 產生自動比較文字（Serial Densitometric assessment）
+; 以 "BMD Change vs Previous" 尾端是否有 "*" 判斷顯著性
+; Hip 有 Total 和 Neck 兩個區域分別判斷
+; 有 "*" 且數值為負 → significantly decreased
+; 有 "*" 且數值為正 → significantly increased
+; 全部都沒有 "*" → statistically stationary
+GenerateComparisonText()
+{
+	global CompHip_Total_Change, CompHip_Neck_Change, CompHip_PrevDate
+	global CompSpine_PrevDate, CompSpine_Change
+	global HasComparison
+
+	if(!HasComparison)
+		return ""
+
+	text := "Serial Densitometric assessment:`r"
+
+	increasedRegions := ""
+	decreasedRegions := ""
+	prevDate := ""
+	anySignificant := 0
+
+	; 檢查 Spine — 以 "*" 判斷顯著
+	if(Trim(CompSpine_Change) != "")
+	{
+		if(InStr(CompSpine_Change, "*"))
+		{
+			anySignificant := 1
+			spineVal := GetBMDChangeValue(CompSpine_Change)
+			if(spineVal > 0)
+				increasedRegions .= (increasedRegions != "" ? ", " : "") "L-spine"
+			else
+				decreasedRegions .= (decreasedRegions != "" ? ", " : "") "L-spine"
+		}
+		if(prevDate = "" and CompSpine_PrevDate != "")
+			prevDate := CompSpine_PrevDate
+	}
+
+	; 檢查 Hip Total — 以 "*" 判斷顯著
+	if(Trim(CompHip_Total_Change) != "")
+	{
+		if(InStr(CompHip_Total_Change, "*"))
+		{
+			anySignificant := 1
+			totalVal := GetBMDChangeValue(CompHip_Total_Change)
+			if(totalVal > 0)
+				increasedRegions .= (increasedRegions != "" ? ", " : "") "total hip"
+			else
+				decreasedRegions .= (decreasedRegions != "" ? ", " : "") "total hip"
+		}
+		if(prevDate = "" and CompHip_PrevDate != "")
+			prevDate := CompHip_PrevDate
+	}
+
+	; 檢查 Hip Neck — 以 "*" 判斷顯著（報告為 femoral neck）
+	if(Trim(CompHip_Neck_Change) != "")
+	{
+		if(InStr(CompHip_Neck_Change, "*"))
+		{
+			anySignificant := 1
+			neckVal := GetBMDChangeValue(CompHip_Neck_Change)
+			if(neckVal > 0)
+				increasedRegions .= (increasedRegions != "" ? ", " : "") "femoral neck"
+			else
+				decreasedRegions .= (decreasedRegions != "" ? ", " : "") "femoral neck"
+		}
+		if(prevDate = "" and CompHip_PrevDate != "")
+			prevDate := CompHip_PrevDate
+	}
+
+	; 產生文字
+	if(!anySignificant)
+		text .= "The interval change of BMD is statistically stationary.`r"
+	if(increasedRegions != "")
+		text .= "_The interval change of BMD is statistically significantly increased at " increasedRegions ".`r"
+	if(decreasedRegions != "")
+		text .= "_The interval change of BMD is statistically significantly decreased at " decreasedRegions ".`r"
+
+	; 加入比較日期
+	if(prevDate != "")
+	{
+		formattedDate := FormatDICOMDate(prevDate)
+		text .= "COMPARISON: Previous BMD: " formattedDate ".`r"
+	}
+
+	return text
+}
+
+; 初始化比較資料全局變數
+InitComparisonData()
+{
+	global CompHip_Total_Change, CompHip_Neck_Change, CompHip_PrevDate
+	global CompSpine_PrevDate, CompSpine_Change
+	global HasComparison
+
+	CompHip_Total_Change := ""
+	CompHip_Neck_Change := ""
+	CompHip_PrevDate := ""
+	CompSpine_PrevDate := ""
+	CompSpine_Change := ""
+	HasComparison := 0
+}
+
 ::bmdwin::
 ShowBMDWindow:
     WinGet, ActiveId, ID, A ; 記錄目前視窗ID
@@ -1279,26 +1533,37 @@ BMDWin_RunBMD2:
     GetBMD()  ; 呼叫 bmd2 的主要函數
 return
 
-; 按鈕2: 輸出比較舊片文字
+; 按鈕2: 輸出比較舊片文字（自動從 DICOM 擷取）
 BMDWin_CompareOld:
     Gui, BMDWin:Submit, NoHide
-    
-    ; 建立比較舊片的標準文字
-    compareText := "Serial Densitometric assessment:`r"
-    compareText .= "The interval change of BMD is statistically stationary.`r"
-    compareText .= "_The interval change of BMD is statistically significantly increased at __.`r"
-    compareText .= "_The interval change of BMD is statistically significantly decreased at __.`r"
-    compareText .= "`r"
-    compareText .= "COMPARISON:`r"
-    compareText .= "Previous BMD: 20__/__/__.`r"
-    
+
+    ; 檢查是否已有自動擷取的比較資料（來自 GetBMD）
+    if(HasComparison)
+    {
+        compareText := GenerateComparisonText()
+    }
+    else
+    {
+        ; 若尚未執行 BMD 分析，使用手動模板
+        compareText := "Serial Densitometric assessment:`r"
+        compareText .= "The interval change of BMD is statistically stationary.`r"
+        compareText .= "_The interval change of BMD is statistically significantly increased at __.`r"
+        compareText .= "_The interval change of BMD is statistically significantly decreased at __.`r"
+        compareText .= "`r"
+        compareText .= "COMPARISON:`r"
+        compareText .= "Previous BMD: 20__/__/__.`r"
+    }
+
     ; 輸出到 HIS
     ActivateHIS()
     Sleep, 100
     SendInput, %compareText%
-    
+
     ; 提示訊息
-    MsgBox, 64, 完成, 已輸出比較舊片文字到報告中, 2
+    if(HasComparison)
+        MsgBox, 64, 完成, 已自動輸出 DICOM 比較資料到報告中, 2
+    else
+        MsgBox, 48, 提示, 尚未執行 BMD 分析，已輸出手動模板。`n請先按「執行 BMD 分析」以自動擷取比較資料。, 3
 return
 
 ; 按鈕3: L-spine 排除原因
