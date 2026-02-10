@@ -1,4 +1,4 @@
-﻿#include d8888basic.ahk
+#include d8888basic.ahk
 ; BMD相關全局變數
 global useChinese := 0
 global BMDStyle:=1
