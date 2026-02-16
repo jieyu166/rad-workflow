@@ -427,7 +427,7 @@ PosDICOMLU:
     } else if(varWhere=4) {
         MouseMove 3000,-400     ; 第三VS辦公室(柳營)
     } else if(varWhere=5) {
-        MouseMove -2100,170     ; 遠端
+        MouseMove 2250,-1000     ; 遠端
     } else if(varWhere=6) {
         MouseMove 50,30         ; R小房間(Win7)
     } else if(varWhere=7) {
@@ -451,7 +451,7 @@ PosDICOMRU:
     } else if(varWhere=4) {
         MouseMove 4400,-200     ; 第三VS希城
     } else if(varWhere=5) {
-        MouseMove -300,250     ; 遠端
+        MouseMove 4450,-1400     ; 遠端
     } else if(varWhere=6) {
         MouseMove 4400,500      ; R小房間
     } else if(varWhere=7) {
@@ -473,7 +473,7 @@ PosDICOMButton:
     } else if(varWhere=4) {
         MouseMove 4400,-800     ; 第三VS希城
     } else if(varWhere=5) {
-        MouseMove -3760,550      ; 遠端
+        MouseMove 3800,-2055      ; 遠端
     } else if(varWhere=6) {
         MouseMove 4400,145      ; 小房間
     } else if(varWhere=7) {
