@@ -375,17 +375,17 @@
     });
 
     // ===== Read recap JSON =====
-    recapFileInput.addEventListener('change', async function() {␊
-      const f = recapFileInput.files[0];␊
-      if (!f) return;␊
-␊
-      try {␊
-        const text = await readFileAsText(f);␊
+    recapFileInput.addEventListener('change', async function() {
+      const f = recapFileInput.files[0];
+      if (!f) return;
+
+      try {
+        const text = await readFileAsText(f);
         recap = parseRecapJson(text);
-␊
-        if (!recap || !Array.isArray(recap.segments)) {␊
-          throw new Error('JSON 格式錯誤：找不到 segments 陣列');␊
-        }␊
+
+        if (!recap || !Array.isArray(recap.segments)) {
+          throw new Error('JSON 格式錯誤：找不到 segments 陣列');
+        }
 
         normalizeRecapSegments(recap.segments);
         renderRecap(recap);
@@ -729,7 +729,7 @@ copyBtn.addEventListener('click', async (ev) => {
 
       return result;
     }
-}
+
 
     function parseTimeToSec(str) {
       // supports mm:ss or hh:mm:ss

@@ -1,4 +1,4 @@
-::rt::right
+﻿::rt::right
 ::lt::left
 :O:sup::superior
 :O:inf::inferior
