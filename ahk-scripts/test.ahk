@@ -561,8 +561,7 @@ return
         MouseMove 770,50       ; 乳醫
     } else if(varWhere=8) {
         MouseMove 1250,80       ; 第三VS(國勳)
-    }
-    
+    }    
     Send {LButton}
     CoordMode, Mouse, Screen
     DllCall("SetCursorPos", "int", tmpX, "int", tmpY)
