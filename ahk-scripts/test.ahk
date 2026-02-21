@@ -578,10 +578,11 @@ return
 
 ; --- 查看舊報告（開瀏覽器）---
 <#x::
-    MsgBox, 262180, NEXT EXAM, "Open browser and see result?"
-    IfMsgBox, No
-        goto CopyOld
-    gosub SeeOld
+;    MsgBox, 262180, NEXT EXAM, "Open browser and see result?"
+;    IfMsgBox, No
+;        goto CopyOld
+;    gosub SeeOld
+gosub CopyOld2
 return
 
 ; --- 複製舊報告到 HIS ---

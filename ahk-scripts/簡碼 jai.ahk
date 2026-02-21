@@ -408,8 +408,7 @@ return
 
 CopyCXRtoHISWithParam(moveDown := 2) {
     ActivateHIS()
-    WinActivate, ahk_id %ActiveId%
-    
+
     ; 開頭的移動（只在模式 2 時）
     if (moveDown = 2) {
         SendInput {End}{Down}

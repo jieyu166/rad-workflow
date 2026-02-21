@@ -47,10 +47,7 @@ Gui Add, Button, x10 yp+40 w120 h30 gSeeCXRAI, 看AI報告(&1)
 Gui Add, Button, x140 yp w120 h30 gCopyOld2, 顯示舊報告(&2)
 Gui Add, Button, x270 yp w120 h30 gCopyOldSmart, 複製舊報告(&3)
 
-; === 舊報告顯示區 (右側) ===
-Gui Add, Edit, x460 y10 w200 h300 vOldReportContent Multi VScroll
-
-Gui Show, w680 h440, CXR 範例
+Gui Show, w460 h440, CXR 範例
 Return
 
 ; CXR 共用報告函式
@@ -207,9 +204,9 @@ goto WinSpine
 return
 
 
-; 新增 CopyOld2 子程序
+; CopyOld2：彈出新視窗顯示舊報告
 CopyOld2:
-Gui, Submit, NoHide
+Gui, 1:Submit, NoHide
 
 ClipboardBackup := Clipboard ; 保存當前剪貼簿內容
 
@@ -218,30 +215,44 @@ dicom := GetDICOMData()
 accessionNum := GetAccessionNumber(dicom)
 dateInfo := GetDICOMDateOnly(dicom)
 oldReport := "Comparison with previous study: " . dateInfo.full . ". _`r"
-oldReport .= GetOldReportContent(accessionNum, false) 
+oldReport .= GetOldReportContent(accessionNum, false)
 ; 清理報告格式
 oldReport := RegExReplace(oldReport, "(\r\n|\n|\r)", "`r`n")
 
-; 顯示在 Edit 控件中
-GuiControl,, OldReportContent, %oldReport%
-
 ; 恢復原始剪貼簿內容
 Clipboard := ClipboardBackup
+
+; 建立彈出視窗顯示舊報告
+Gui, OldReport:Destroy
+Gui, OldReport:Font, s14
+Gui, OldReport:Add, Edit, x10 y10 w500 h400 vOldReportText ReadOnly Multi VScroll, %oldReport%
+Gui, OldReport:Add, Button, x10 y420 w200 h40 gOldReportCopy, 複製舊報告(&3)
+Gui, OldReport:Show, w520 h470, 舊報告
 return
 
+; 主視窗的複製舊報告按鈕（無彈出視窗時 fallback）
 CopyOldSmart:
-Gui, Submit, NoHide  ; <-- 必須有這行才能讀取 Edit 內容
-; 檢查 OldReportContent 是否有內容
-if (OldReportContent != "") {
-    ; 有內容：先輸出日期，再輸出內容
-    desc := OldReportContent
+Gui, 1:Submit, NoHide
+gosub CopyOld
+return
+
+; 彈出視窗的複製舊報告按鈕
+OldReportCopy:
+Gui, OldReport:Submit, NoHide
+if (OldReportText != "") {
+    desc := OldReportText
     desc := RegExReplace(desc, "(\r\n|\n|\r)", "`n")
-	gosub CXRFinish
-	GuiControl,, OldReportContent,  ; 清空 Edit 內容
+    Gui, OldReport:Destroy
+    gosub CXRFinish
 } else {
-    ; 無內容：呼叫原本的 CopyOld
+    Gui, OldReport:Destroy
     gosub CopyOld
 }
+return
+
+OldReportGuiClose:
+OldReportGUIEscape:
+Gui, OldReport:Destroy
 return
 
 CXRFinish:
