@@ -27,7 +27,7 @@ else if (key == "c")
 else if (key == "d" )
     SendInput, BIRADS density D - The breasts are extremely dense, which lowers the sensitivity of mammography.
 else
-    SendInput, fing%key%
+    SendInput, %key%
 return
 
 

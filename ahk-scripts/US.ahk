@@ -65,13 +65,10 @@ SendInput artery; ATA, Anterior tibial artery; PTA, Posterior tibial artery; DPA
 return
 
 
-::usbreast::
+::usb::
 SendInput Breast sonography study shows:`r
 ;SendInput Breast composition: _`r
 gosub calldate
-SendInput `rLocation       (Srs/Img)  Size(mm)   Change          DDx/Note`r
-SendInput --------       ------------------   ------------    -----------`r
-SendInput _LRt _/_        (1/_)    __x__       _               _ `r`r              
 SendInput - Glandular tissue component: _minimal mild moderate marked .`r
 SendInput - Normal echogenicity of bilateral breast glandular tissue.`r
 SendInput - No abnormal enlarged lymph nodes found in bilateral axillary region.`r
@@ -95,9 +92,10 @@ IfMsgBox, Yes
 
 return
 
+
 :O:bn::_LRt _/_: __*__ mm.(Srs/Img:1/_) _ 
-:O:usb;::
-HotstringMenuV("A","MenuShortcut2","_ subareolar ductal ectasia, _mm.(Srs/Img:1/_) No echogenoc content, favor benign.")
+:O:usb2;::
+HotstringMenuV("A","MenuShortcut2","_ subareolar ductal ectasia, _mm.(Srs/Img:1/_) No echogenoc content, favor benign.","_ prominent duct, _mm.(Srs/Img:1/_)")
 return
 
 :O:ub::Mild urinary bladder wall thickening, could be chronic cystitis, _shrinkaged UB, or others.

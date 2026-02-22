@@ -14,6 +14,8 @@ TrayTip, 快速鍵, [Win]+[R]病歷彙總`n[Win]+[A]按暫存`n[Win]+[S]下一�
 ; --- 視窗啟動函數 ---
 ActivateHIS() {
     WinActivate ahk_exe chk060.exe
+    WinWaitActive ahk_exe chk060.exe,, 1
+    ControlFocus, ThunderRT6TextBox14, ahk_exe chk060.exe
 }
 
 ActivatePACS() {
@@ -592,6 +594,7 @@ CopyOld:
 	accessionNum := GetAccessionNumber(dicom)
     dateInfo := GetDICOMDateOnly(dicom)	
     desc := "Comparison with previous study: " . dateInfo.full . ". _`r"
+	
     CopyCXRtoHISWithParam(1)
 	
 	desc :=  GetOldReportContent(accessionNum, false) 
