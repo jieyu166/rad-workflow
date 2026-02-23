@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Rad Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #242836;
+  --border: #2e3348;
+  --text: #e8eaf0;
+  --text-dim: #8b90a5;
+  --accent: #6c8cff;
+  --accent-glow: rgba(108,140,255,0.15);
+  --success: #4ade80;
+  --success-glow: rgba(74,222,128,0.15);
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --radius: 14px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding: 12px;
+  padding-bottom: 100px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px 16px;
+}
+.header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6c8cff, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+.header .date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* Stats bar */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.stat-card .label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+.stat-card .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+}
+.stat-card .sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+
+/* Input section */
+.input-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.input-section h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Modality pills */
+.modality-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.mod-btn {
+  background: var(--surface2);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 10px 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.mod-btn .emoji { font-size: 20px; display: block; margin-bottom: 2px; }
+.mod-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  box-shadow: 0 0 20px rgba(108,140,255,0.1);
+}
+.mod-btn:active { transform: scale(0.95); }
+
+/* Sub-category chips */
+.sub-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+  min-height: 34px;
+}
+.sub-chip {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text);
+}
+.sub-chip.active {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+/* Number inputs */
+.num-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.num-group label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.num-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.num-input-wrap:focus-within {
+  border-color: var(--accent);
+}
+.num-input-wrap input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 10px 12px;
+  text-align: center;
+  outline: none;
+  width: 100%;
+}
+.num-input-wrap .unit {
+  font-size: 13px;
+  color: var(--text-dim);
+  padding-right: 12px;
+  white-space: nowrap;
+}
+
+/* Quick number buttons */
+.quick-nums {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.quick-nums button {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.quick-nums button:active {
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+/* Note input */
+.note-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  margin-bottom: 16px;
+  resize: none;
+}
+.note-input:focus { border-color: var(--accent); }
+.note-input::placeholder { color: var(--text-dim); }
+
+/* Submit button */
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #6c8cff, #818cf8);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+.submit-btn:active {
+  transform: scale(0.97);
+  filter: brightness(0.9);
+}
+.submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* History log */
+.history {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 12px;
+}
+.history h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.history .export-btn {
+  font-size: 11px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+.log-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  gap: 8px;
+}
+.log-item:last-child { border-bottom: none; }
+.log-item .time {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dim);
+  font-size: 11px;
+  min-width: 45px;
+}
+.log-item .badge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: center;
+}
+.log-item .detail {
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+.log-item .rate {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.log-item .delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.5;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 24px 0;
+}
+
+/* Badge colors by modality */
+.badge-xr { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.badge-ct { background: rgba(249,115,22,0.15); color: #fb923c; }
+.badge-us { background: rgba(34,197,94,0.15); color: #4ade80; }
+.badge-mm { background: rgba(236,72,153,0.15); color: #f472b6; }
+.badge-mr { background: rgba(168,85,247,0.15); color: #c084fc; }
+.badge-other { background: rgba(148,163,184,0.15); color: #94a3b8; }
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--success);
+  color: #0f1117;
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 100;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Daily summary bar */
+.daily-summary {
+  background: linear-gradient(135deg, rgba(108,140,255,0.08), rgba(167,139,250,0.08));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.daily-summary .left .title {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.daily-summary .left .total {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+}
+.daily-summary .right {
+  text-align: right;
+}
+.daily-summary .right .time-spent {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.daily-summary .right .eff {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 Rad Tracker</h1>
+  <div class="date" id="currentDate"></div>
+</div>
+
+<!-- Daily summary -->
+<div class="daily-summary">
+  <div class="left">
+    <div class="title">今日完成</div>
+    <div class="total" id="dailyTotal">0 份</div>
+  </div>
+  <div class="right">
+    <div class="time-spent" id="dailyTime">0 分鐘</div>
+    <div class="eff" id="dailyEff">-</div>
+  </div>
+</div>
+
+<!-- Remaining stats -->
+<div class="stats-bar">
+  <div class="stat-card" onclick="editRemaining('xr')">
+    <div class="label">X光</div>
+    <div class="value" id="rem-xr">0</div>
+    <div class="sub">剩餘</div>
+  </div>
+  <div class="stat-card" onclick="editRemaining('ct')">
+    <div class="label">CT</div>
+    <div class="value" id="rem-ct">0</div>
+    <div class="sub">剩餘</div>
+  </div>
+  <div class="stat-card" onclick="editRemaining('us')">
+    <div class="label">US</div>
+    <div class="value" id="rem-us">0</div>
+    <div class="sub">剩餘</div>
+  </div>
+  <div class="stat-card" onclick="editRemaining('mm')">
+    <div class="label">Mammo</div>
+    <div class="value" id="rem-mm">0</div>
+    <div class="sub">剩餘</div>
+  </div>
+</div>
+
+<!-- Quick input -->
+<div class="input-section">
+  <h2>快速輸入</h2>
+
+  <div class="modality-grid">
+    <div class="mod-btn" data-mod="xr" onclick="selectMod(this)">
+      <span class="emoji">🩻</span>X光
+    </div>
+    <div class="mod-btn" data-mod="ct" onclick="selectMod(this)">
+      <span class="emoji">🧠</span>CT
+    </div>
+    <div class="mod-btn" data-mod="us" onclick="selectMod(this)">
+      <span class="emoji">📡</span>US
+    </div>
+    <div class="mod-btn" data-mod="mm" onclick="selectMod(this)">
+      <span class="emoji">🎯</span>Mammo
+    </div>
+    <div class="mod-btn" data-mod="mr" onclick="selectMod(this)">
+      <span class="emoji">🧲</span>MR
+    </div>
+    <div class="mod-btn" data-mod="ivp" onclick="selectMod(this)">
+      <span class="emoji">💉</span>IVP
+    </div>
+    <div class="mod-btn" data-mod="bmd" onclick="selectMod(this)">
+      <span class="emoji">🦴</span>BMD
+    </div>
+    <div class="mod-btn" data-mod="other" onclick="selectMod(this)">
+      <span class="emoji">📝</span>其他
+    </div>
+  </div>
+
+  <div class="sub-cats" id="subCats"></div>
+
+  <div class="num-row">
+    <div class="num-group">
+      <label>完成數量</label>
+      <div class="num-input-wrap">
+        <input type="number" id="countInput" inputmode="numeric" placeholder="0">
+        <span class="unit">份</span>
+      </div>
+    </div>
+    <div class="num-group">
+      <label>花費時間</label>
+      <div class="num-input-wrap">
+        <input type="number" id="timeInput" inputmode="numeric" placeholder="0">
+        <span class="unit">分鐘</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="quick-nums" id="quickNums">
+    <button onclick="setQuick('count',5)">5份</button>
+    <button onclick="setQuick('count',10)">10份</button>
+    <button onclick="setQuick('count',15)">15份</button>
+    <button onclick="setQuick('count',20)">20份</button>
+    <button onclick="setQuick('count',25)">25份</button>
+    <button onclick="setQuick('time',10)">10m</button>
+    <button onclick="setQuick('time',15)">15m</button>
+    <button onclick="setQuick('time',20)">20m</button>
+    <button onclick="setQuick('time',25)">25m</button>
+    <button onclick="setQuick('time',30)">30m</button>
+  </div>
+
+  <textarea class="note-input" id="noteInput" rows="1" placeholder="備註（選填）"></textarea>
+
+  <button class="submit-btn" id="submitBtn" onclick="submitEntry()">記錄 ✓</button>
+</div>
+
+<!-- Today's log -->
+<div class="history">
+  <h2>
+    今日紀錄
+    <button class="export-btn" onclick="exportCSV()">📤 匯出CSV</button>
+  </h2>
+  <div id="logList"><div class="empty-state">尚無紀錄</div></div>
+</div>
+
+<div class="toast" id="toast">✓ 已記錄</div>
+
+<script>
+// State
+let currentMod = null;
+let currentSub = null;
+let todayLogs = [];
+let remaining = { xr: 0, ct: 0, us: 0, mm: 0 };
+
+// Sub-categories
+const subCatMap = {
+  xr: [
+    { id: 'xr', label: '普通', rate: 40 },
+    { id: 'xr-u', label: '急打', rate: 25 },
+    { id: 'xr-m', label: '中等', rate: 30 },
+    { id: 'xr-h', label: '困難', rate: 20 },
+  ],
+  ct: [
+    { id: 'ct', label: 'Chest/Abd', rate: 3.5 },
+    { id: 'ct-br', label: 'Brain', rate: 7 },
+    { id: 'ct-nk', label: 'Neck/CTA', rate: 3.5 },
+    { id: 'ct-brc', label: 'Brain-C', rate: 3 },
+  ],
+  us: [
+    { id: 'us', label: '一般', rate: 10 },
+    { id: 'us-h', label: '困難', rate: 4 },
+  ],
+  mm: [{ id: 'mm', label: 'Mammo', rate: 17 }],
+  mr: [{ id: 'mr', label: 'MR', rate: 2 }],
+  ivp: [{ id: 'ivp', label: 'IVP', rate: 12 }],
+  bmd: [{ id: 'bmd', label: 'BMD', rate: 60 }],
+  other: [
+    { id: 'clinic', label: '臨床' },
+    { id: 'study', label: '讀書' },
+    { id: 'misc', label: '雜務' },
+  ],
+};
+
+const modColors = {
+  xr: 'badge-xr', ct: 'badge-ct', us: 'badge-us',
+  mm: 'badge-mm', mr: 'badge-mr', ivp: 'badge-other',
+  bmd: 'badge-other', other: 'badge-other'
+};
+
+// Init
+function init() {
+  const now = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  document.getElementById('currentDate').textContent =
+    `${now.getMonth()+1}/${now.getDate()} 週${days[now.getDay()]}`;
+
+  // Load from memory
+  const saved = null; // Could use localStorage in production
+  updateStats();
+}
+
+function selectMod(el) {
+  document.querySelectorAll('.mod-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentMod = el.dataset.mod;
+  currentSub = null;
+
+  const container = document.getElementById('subCats');
+  const subs = subCatMap[currentMod] || [];
+
+  if (subs.length <= 1) {
+    container.innerHTML = '';
+    currentSub = subs[0]?.id || currentMod;
+    return;
+  }
+
+  container.innerHTML = subs.map(s =>
+    `<div class="sub-chip" data-sub="${s.id}" onclick="selectSub(this)">${s.label}</div>`
+  ).join('');
+}
+
+function selectSub(el) {
+  document.querySelectorAll('.sub-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentSub = el.dataset.sub;
+}
+
+function setQuick(type, val) {
+  if (type === 'count') document.getElementById('countInput').value = val;
+  else document.getElementById('timeInput').value = val;
+}
+
+function submitEntry() {
+  const count = parseInt(document.getElementById('countInput').value) || 0;
+  const time = parseInt(document.getElementById('timeInput').value) || 0;
+  const note = document.getElementById('noteInput').value.trim();
+
+  if (!currentMod) { showToast('請選擇模態'); return; }
+  const sub = currentSub || (subCatMap[currentMod]?.[0]?.id) || currentMod;
+  if (currentMod !== 'other' && (count <= 0 || time <= 0)) {
+    showToast('請輸入數量和時間'); return;
+  }
+
+  const now = new Date();
+  const entry = {
+    id: Date.now(),
+    timestamp: `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
+    mod: currentMod,
+    sub: sub,
+    subLabel: getSubLabel(currentMod, sub),
+    count: count,
+    time: time,
+    rate: time > 0 ? (count / (time / 60)).toFixed(1) : '-',
+    note: note,
+  };
+
+  todayLogs.unshift(entry);
+
+  // Update remaining
+  if (['xr','ct','us','mm'].includes(currentMod)) {
+    remaining[currentMod] = Math.max(0, remaining[currentMod] - count);
+    document.getElementById(`rem-${currentMod}`).textContent = remaining[currentMod];
+  }
+
+  // Reset inputs
+  document.getElementById('countInput').value = '';
+  document.getElementById('timeInput').value = '';
+  document.getElementById('noteInput').value = '';
+
+  updateStats();
+  renderLog();
+  showToast(`✓ ${count > 0 ? count + '份 ' : ''}${entry.subLabel} 已記錄`);
+}
+
+function getSubLabel(mod, sub) {
+  const subs = subCatMap[mod] || [];
+  const found = subs.find(s => s.id === sub);
+  return found ? found.label : mod;
+}
+
+function updateStats() {
+  let totalCount = 0, totalTime = 0;
+  todayLogs.forEach(e => {
+    if (e.mod !== 'other') totalCount += e.count;
+    totalTime += e.time;
+  });
+
+  document.getElementById('dailyTotal').textContent = `${totalCount} 份`;
+  document.getElementById('dailyTime').textContent =
+    totalTime >= 60 ? `${(totalTime/60).toFixed(1)} 小時` : `${totalTime} 分鐘`;
+  document.getElementById('dailyEff').textContent =
+    totalTime > 0 ? `效率 ${(totalCount/(totalTime/60)).toFixed(1)} 份/hr` : '-';
+}
+
+function renderLog() {
+  const container = document.getElementById('logList');
+  if (todayLogs.length === 0) {
+    container.innerHTML = '<div class="empty-state">尚無紀錄</div>';
+    return;
+  }
+
+  container.innerHTML = todayLogs.map(e => `
+    <div class="log-item">
+      <span class="time">${e.timestamp}</span>
+      <span class="badge ${modColors[e.mod] || 'badge-other'}">${e.subLabel}</span>
+      <span class="detail">${e.count > 0 ? e.count + '份' : ''} ${e.time}m${e.note ? ' · ' + e.note : ''}</span>
+      <span class="rate">${e.rate !== '-' ? e.rate + '/h' : ''}</span>
+      <button class="delete-btn" onclick="deleteEntry(${e.id})">×</button>
+    </div>
+  `).join('');
+}
+
+function deleteEntry(id) {
+  const entry = todayLogs.find(e => e.id === id);
+  if (entry && ['xr','ct','us','mm'].includes(entry.mod)) {
+    remaining[entry.mod] += entry.count;
+    document.getElementById(`rem-${entry.mod}`).textContent = remaining[entry.mod];
+  }
+  todayLogs = todayLogs.filter(e => e.id !== id);
+  updateStats();
+  renderLog();
+}
+
+function editRemaining(mod) {
+  const labels = { xr: 'X光', ct: 'CT', us: 'US', mm: 'Mammo' };
+  const val = prompt(`設定 ${labels[mod]} 剩餘量：`, remaining[mod]);
+  if (val !== null && !isNaN(parseInt(val))) {
+    remaining[mod] = parseInt(val);
+    document.getElementById(`rem-${mod}`).textContent = remaining[mod];
+  }
+}
+
+function exportCSV() {
+  if (todayLogs.length === 0) { showToast('無紀錄可匯出'); return; }
+
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`;
+  const days = ['日','一','二','三','四','五','六'];
+  const dayStr = days[today.getDay()];
+
+  let csv = '日期,星期,時間,模態,子類別,完成數量,花費時間(分),速率(份/hr),備註\n';
+  todayLogs.slice().reverse().forEach(e => {
+    csv += `${dateStr},${dayStr},${e.timestamp},${e.mod},${e.subLabel},${e.count},${e.time},${e.rate},"${e.note}"\n`;
+  });
+
+  // Copy to clipboard for easy paste
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `rad_log_${dateStr.replace(/\//g,'-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV 已下載');
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+init();
+</script>
+</body>
+</html>
