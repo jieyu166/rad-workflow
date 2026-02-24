@@ -1095,6 +1095,7 @@ XButton1::
     Menu, XB1Menu, Add, 病歷彙總 (&S), XB1_Summary
     Menu, XB1Menu, Add  ; 分隔線
     ; === 第四區：工具 ===
+    Menu, XB1Menu, Add, 複製 Gemini API Key (&K), XB1_CopyGeminiKey
     Menu, XB1Menu, Add, 測試目前座標 (&T), WizTestCurrentCoords
     Menu, XB1Menu, Add  ; 分隔線
     ; === 第五區：系統功能 ===
@@ -1169,6 +1170,16 @@ XB1_Summary:
     ControlSetText, ThunderRT6TextBox9, %ChartNo%, ahk_exe chk060.exe
     ControlClick, ThunderRT6CommandButton31, ahk_exe chk060.exe
     TrayTip, XButton1, 已開啟病歷彙總, 2, 1
+return
+
+; 複製 Gemini API Key 到剪貼簿（供 LDCT 報告工具等網頁使用）
+XB1_CopyGeminiKey:
+    if (API_KEY2 = "") {
+        TrayTip, XButton1, Gemini API Key 未設定！`n請先在設定管理器中設定, 3, 2
+    } else {
+        Clipboard := API_KEY2
+        TrayTip, XButton1, Gemini API Key 已複製到剪貼簿, 2, 1
+    }
 return
 
 ; 新增功能 7：開啟設定管理器
