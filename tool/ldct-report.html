@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LDCT Lung Cancer Screening Report Tool</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a5276 0%, #2e86c1 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #1a5276;
+            margin-bottom: 5px;
+            font-size: 1.6em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 0.9em;
+        }
+        .section {
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px 20px;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #1a5276;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #2e86c1;
+        }
+        /* Form elements */
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .form-group label {
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #444;
+            white-space: nowrap;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"] {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        .form-group input[type="text"] { width: 160px; }
+        .form-group input[type="number"] { width: 80px; }
+        .form-group select {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85em;
+            resize: vertical;
+        }
+        /* Checkbox/radio styling */
+        .check-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            margin: 6px 0;
+        }
+        .check-group label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .check-group input[type="checkbox"],
+        .check-group input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        /* Buttons */
+        .btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+        }
+        .btn:hover { transform: scale(1.03); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .btn-primary { background: #2e86c1; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-danger  { background: #e74c3c; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        /* Nodule table */
+        .nodule-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.85em;
+        }
+        .nodule-table th {
+            background: #2e86c1;
+            color: white;
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 0.85em;
+        }
+        .nodule-table td {
+            padding: 6px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .nodule-table input, .nodule-table select {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.85em;
+            text-align: center;
+        }
+        .nodule-table input[type="number"] { width: 60px; }
+        /* Report preview */
+        .report-preview {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.8em;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        /* Status indicator */
+        .status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            margin: 8px 0;
+            display: none;
+        }
+        .status.show { display: block; }
+        .status.loading { background: #fff3cd; color: #856404; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error   { background: #f8d7da; color: #721c24; }
+        /* API key section */
+        .api-key-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .api-key-row input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-family: monospace;
+        }
+        /* Collapsible */
+        .collapsible-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        .collapsible-header::before {
+            content: '\25BC ';
+            font-size: 0.8em;
+        }
+        .collapsible-header.collapsed::before {
+            content: '\25B6 ';
+        }
+        .sub-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-left: 4px;
+        }
+        /* Nodule finding type highlight */
+        .finding-type-active {
+            background: #e8f4f8;
+            border: 2px solid #2e86c1 !important;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        .indent { margin-left: 24px; }
+        .indent2 { margin-left: 48px; }
+        /* Print styles for PDF */
+        @media print {
+            body { background: white; padding: 0; margin: 0; }
+            .container, .section, .btn-row, #section-input, #section-parsed,
+            #section-output, .subtitle, h1, .api-key-row { display: none !important; }
+            #print-area {
+                display: block !important;
+                font-family: '新細明體', 'PMingLiU', serif;
+                font-size: 14pt;
+                line-height: 1.8;
+                padding: 0;
+                margin: 0;
+            }
+            #print-area .header-kaiti {
+                font-family: '標楷體', 'DFKai-SB', serif;
+            }
+            #print-area .underline {
+                border-bottom: 1px solid #000;
+                padding: 0 4px;
+            }
+            @page {
+                size: A4;
+                margin: 15mm 20mm;
+            }
+        }
+        #print-area { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LDCT Lung Cancer Screening Report</h1>
+        <div class="subtitle">LDCT 肺癌篩檢報告產生工具</div>
+
+        <!-- Section A: Patient & Exam Info -->
+        <div class="section" id="section-patient">
+            <div class="section-title">A. Patient & Exam Info</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" id="patientName" placeholder="WANG DA MING">
+                </div>
+                <div class="form-group">
+                    <label>Sex:</label>
+                    <select id="patientSex">
+                        <option value="">--</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Exam Date:</label>
+                    <input type="text" id="examDate" placeholder="2026/02/24" style="width:120px;">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>CTDIvol:</label>
+                    <input type="number" id="ctdivol" step="0.1" placeholder="0.0">
+                    <span class="sub-label">mGy</span>
+                </div>
+                <div class="form-group">
+                    <label>Total DLP:</label>
+                    <input type="number" id="dlp" step="0.1" placeholder="0.0">
+                    <span class="sub-label">mGy*cm</span>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Prior CT Date:</label>
+                    <input type="text" id="priorDate" placeholder="0000/00/00" style="width:120px;">
+                </div>
+                <div class="check-group">
+                    <label><input type="checkbox" id="noPriorCT"> No prior chest CT available</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section B: Impression Input + AI -->
+        <div class="section" id="section-input">
+            <div class="section-title">B. Impression Input</div>
+            <div class="api-key-row">
+                <label style="font-weight:600;font-size:0.9em;white-space:nowrap;">Gemini API Key:</label>
+                <input type="password" id="apiKey" placeholder="AIza...">
+                <button class="btn btn-secondary" onclick="toggleKeyVisibility()" style="padding:6px 12px;font-size:0.8em;">Show</button>
+            </div>
+            <textarea id="impressionText" rows="8" placeholder="Paste your LDCT impression here...&#10;&#10;Example:&#10;A 4mm solid nodule in RUL (SE:3, IM:45). Calcified granuloma in LLL. Mild coronary artery calcification. Lung-RADS Category 2."></textarea>
+            <div class="btn-row">
+                <button class="btn btn-primary" onclick="parseWithAI()">AI Parse</button>
+                <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+            </div>
+            <div class="status" id="aiStatus"></div>
+        </div>
+
+        <!-- Section C: Structured Results -->
+        <div class="section" id="section-parsed">
+            <div class="section-title">C. Structured Results (Editable)</div>
+
+            <!-- Quality -->
+            <div class="form-row">
+                <label style="font-weight:600;">LDCT Quality:</label>
+                <div class="check-group">
+                    <label><input type="radio" name="quality" value="Good"> Good</label>
+                    <label><input type="radio" name="quality" value="Acceptable" checked> Acceptable</label>
+                    <label><input type="radio" name="quality" value="Not Acceptable"> Not Acceptable</label>
+                </div>
+            </div>
+
+            <!-- Lung-RADS Category -->
+            <div class="form-row">
+                <label style="font-weight:600;">Lung-RADS Category:</label>
+                <select id="lungRadsCategory" onchange="onCategoryChange()">
+                    <option value="">-- Select --</option>
+                    <option value="0">Category 0: Incomplete</option>
+                    <option value="1">Category 1: Negative</option>
+                    <option value="2">Category 2: Benign Appearance</option>
+                    <option value="3">Category 3: Probably Benign</option>
+                    <option value="4A">Category 4A: Suspicious</option>
+                    <option value="4B">Category 4B/4X: Very Suspicious</option>
+                </select>
+            </div>
+            <div class="check-group" style="margin-bottom:6px;">
+                <label><input type="checkbox" id="cat0Inflammatory"> Findings suggestive of inflammatory/infectious process</label>
+            </div>
+            <div class="check-group" style="margin-bottom:6px;">
+                <label><input type="checkbox" id="modifierS"> Modifier S: Clinically significant non-lung-cancer findings</label>
+            </div>
+            <div class="check-group">
+                <label><input type="checkbox" id="suggestClinic"> Suggest clinic visit (請至門診就診)</label>
+            </div>
+
+            <hr style="margin:12px 0;">
+
+            <!-- Nodule Findings -->
+            <div class="section-title" style="font-size:1em;">Lung Nodule Findings</div>
+            <div class="check-group" style="margin-bottom:8px;">
+                <label><input type="radio" name="noduleType" value="none" onchange="onNoduleTypeChange()"> No lung nodule</label>
+                <label><input type="radio" name="noduleType" value="benign" onchange="onNoduleTypeChange()"> Benign features</label>
+                <label><input type="radio" name="noduleType" value="insignificant" onchange="onNoduleTypeChange()" checked> Insignificant (&lt;6mm)</label>
+                <label><input type="radio" name="noduleType" value="juxtapleural" onchange="onNoduleTypeChange()"> Juxtapleural &lt;10mm</label>
+                <label><input type="radio" name="noduleType" value="significant" onchange="onNoduleTypeChange()"> Significant (&ge;6mm)</label>
+            </div>
+
+            <!-- Insignificant details -->
+            <div id="insignificantDetails" class="indent" style="margin-bottom:8px;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>SE:</label>
+                        <input type="text" id="insigSeries" style="width:60px;">
+                    </div>
+                    <div class="form-group">
+                        <label>IM:</label>
+                        <input type="text" id="insigImage" style="width:60px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Significant nodule table -->
+            <div id="significantDetails" style="display:none;">
+                <div class="form-row" style="margin-bottom:4px;">
+                    <label style="font-weight:600;">Number of nodules:</label>
+                    <div class="check-group">
+                        <label><input type="radio" name="noduleCount" value="1" checked> 1</label>
+                        <label><input type="radio" name="noduleCount" value="2"> 2</label>
+                        <label><input type="radio" name="noduleCount" value="3"> 3</label>
+                        <label><input type="radio" name="noduleCount" value="4+"> &ge;4</label>
+                    </div>
+                </div>
+                <div style="font-size:0.85em;color:#666;margin-bottom:6px;">Describe the most worrisome 3 nodules in order:</div>
+                <table class="nodule-table" id="noduleTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Size (mm)</th>
+                            <th>Density</th>
+                            <th>Solid Part (mm)</th>
+                            <th>Lobe</th>
+                            <th>Srs/Img</th>
+                            <th>Change</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="noduleTableBody">
+                    </tbody>
+                </table>
+                <button class="btn btn-secondary" onclick="addNoduleRow()" style="padding:4px 12px;font-size:0.8em;">+ Add Nodule</button>
+
+                <!-- Lung nodules else -->
+                <div class="form-row" style="margin-top:8px;">
+                    <label><input type="checkbox" id="nodulesElse"> Lung nodules else</label>
+                    <div class="check-group" id="nodulesElseLobes" style="display:none;">
+                        <label><input type="checkbox" class="elseLobes" value="RUL"> RUL</label>
+                        <label><input type="checkbox" class="elseLobes" value="RML"> RML</label>
+                        <label><input type="checkbox" class="elseLobes" value="RLL"> RLL</label>
+                        <label><input type="checkbox" class="elseLobes" value="LUL"> LUL</label>
+                        <label><input type="checkbox" class="elseLobes" value="LLL"> LLL</label>
+                        <div class="form-group">
+                            <label>Srs/Img:</label>
+                            <input type="text" id="elseSrsImg" style="width:80px;" placeholder="_/_">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="margin:12px 0;">
+
+            <!-- Airway Nodule -->
+            <div style="margin-bottom:8px;">
+                <label><input type="checkbox" id="airwayNodule" onchange="toggleAirway()"> Airway nodule</label>
+                <div id="airwayDetails" class="indent" style="display:none;margin-top:4px;">
+                    <div class="check-group">
+                        <label><input type="radio" name="airwayType" value="subsegmental"> Subsegmental (Cat 2)</label>
+                        <label><input type="radio" name="airwayType" value="segmental"> Segmental or more proximal</label>
+                    </div>
+                    <div id="airwaySegmentalDetails" class="indent" style="display:none;margin-top:4px;">
+                        <div class="check-group">
+                            <label><input type="radio" name="airwaySegType" value="secretions"> Favor secretions (Cat 2)</label>
+                            <label><input type="radio" name="airwaySegType" value="baseline"> At baseline (Cat 4A)</label>
+                            <label><input type="radio" name="airwaySegType" value="growing"> Stable or growing (Cat 4B)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Atypical Cyst -->
+            <div style="margin-bottom:8px;">
+                <label><input type="checkbox" id="atypicalCyst" onchange="toggleCyst()"> Atypical pulmonary cyst</label>
+                <div id="cystDetails" class="indent" style="display:none;margin-top:4px;">
+                    <div class="check-group">
+                        <label><input type="radio" name="cystCat" value="3"> Cat 3</label>
+                        <label><input type="radio" name="cystCat" value="4A"> Cat 4A</label>
+                        <label><input type="radio" name="cystCat" value="4B"> Cat 4B</label>
+                    </div>
+                    <div class="form-row" style="margin-top:4px;">
+                        <div class="check-group">
+                            <label><input type="checkbox" class="cystLobes" value="RUL"> RUL</label>
+                            <label><input type="checkbox" class="cystLobes" value="RML"> RML</label>
+                            <label><input type="checkbox" class="cystLobes" value="RLL"> RLL</label>
+                            <label><input type="checkbox" class="cystLobes" value="LUL"> LUL</label>
+                            <label><input type="checkbox" class="cystLobes" value="LLL"> LLL</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Srs/Img:</label>
+                            <input type="text" id="cystSrsImg" style="width:80px;" placeholder="_/_">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metastases pattern -->
+            <div class="check-group" style="margin-bottom:8px;">
+                <label><input type="checkbox" id="metastasesPattern"> The pattern of lung nodules has the possibility of metastases</label>
+            </div>
+
+            <hr style="margin:12px 0;">
+
+            <!-- Other Lung Findings -->
+            <div class="section-title" style="font-size:1em;">Other Lung Findings</div>
+            <div class="check-group">
+                <label><input type="checkbox" id="emphysema"> Emphysema</label>
+                <label><input type="checkbox" id="bronchiectasis"> Bronchiectasis</label>
+                <label><input type="checkbox" id="bronchitis"> Bronchitis/bronchiolitis</label>
+                <label><input type="checkbox" id="treeInBud"> Tree-in-bud</label>
+                <label><input type="checkbox" id="centrilobular"> Centrilobular nodules</label>
+                <label><input type="checkbox" id="oldTB"> Old pulmonary TB</label>
+                <label><input type="checkbox" id="ild"> ILD</label>
+            </div>
+            <div class="form-group" style="margin-top:6px;">
+                <label>Other:</label>
+                <input type="text" id="otherLungText" style="width:300px;" placeholder="">
+            </div>
+
+            <hr style="margin:12px 0;">
+
+            <!-- Other Findings -->
+            <div class="section-title" style="font-size:1em;">Other Findings</div>
+            <div style="margin-bottom:6px;">
+                <label><input type="checkbox" id="lymphNodes"> Enlarged lymph nodes</label>
+                <div class="form-group indent" id="lymphNodesDetail" style="display:none;">
+                    <label>Location:</label>
+                    <input type="text" id="lymphNodesLoc" style="width:200px;">
+                </div>
+            </div>
+            <div style="margin-bottom:6px;">
+                <label><input type="checkbox" id="coronaryCalcification"> Coronary artery calcification</label>
+                <div class="form-group indent" id="coronaryDetail" style="display:none;">
+                    <input type="text" id="coronaryDesc" style="width:200px;" placeholder="mild / moderate / severe">
+                </div>
+            </div>
+            <div style="margin-bottom:6px;">
+                <label><input type="checkbox" id="otherChest"> Other significant abnormal chest findings</label>
+                <div class="form-group indent" id="otherChestDetail" style="display:none;">
+                    <input type="text" id="otherChestDesc" style="width:300px;">
+                </div>
+            </div>
+            <div style="margin-bottom:6px;">
+                <label><input type="checkbox" id="otherAbdNeck"> Other significant abnormal abdominal or neck findings</label>
+                <div class="form-group indent" id="otherAbdNeckDetail" style="display:none;">
+                    <input type="text" id="otherAbdNeckDesc" style="width:300px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Section D: Output -->
+        <div class="section" id="section-output">
+            <div class="section-title">D. Report Output</div>
+            <div class="btn-row" style="margin-bottom:10px;">
+                <button class="btn btn-success" onclick="copyReport()">Copy Text Report</button>
+                <button class="btn btn-warning" id="btnPDF" onclick="generatePDF()">Print Patient Notification (PDF)</button>
+                <button class="btn btn-primary" onclick="updatePreview()">Refresh Preview</button>
+            </div>
+            <!-- PDF-specific fields -->
+            <div style="border:1px dashed #f39c12;border-radius:8px;padding:10px 15px;margin-bottom:10px;background:#fffdf0;">
+                <div style="font-weight:600;font-size:0.9em;color:#f39c12;margin-bottom:6px;">PDF Patient Notification Fields (Cat 1-2)</div>
+                <div class="form-group" style="margin-bottom:8px;">
+                    <label style="font-weight:600;font-size:0.9em;">其他發現 (Other):</label>
+                    <input type="text" id="pdfOtherText" style="width:350px;" placeholder="自由填寫其他發現項目">
+                </div>
+                <div style="margin-bottom:4px;">
+                    <label style="font-weight:600;font-size:0.9em;">附註 (Doctor's Notes):</label>
+                </div>
+                <textarea id="pdfNote" rows="3" style="font-family:'Segoe UI',sans-serif;font-size:0.9em;" placeholder="醫師附註，列印在通知單下方..."></textarea>
+            </div>
+            <div class="report-preview" id="reportPreview">Click "Refresh Preview" or change any field to see the report...</div>
+        </div>
+    </div>
+
+    <!-- Hidden print area for PDF -->
+    <div id="print-area"></div>
+
+    <script>
+    // ================================================================
+    // State & Initialization
+    // ================================================================
+    const CHECK = '\u25A0';  // ■
+    const UNCHECK = '\u25A1'; // □
+
+    function cb(condition) { return condition ? CHECK : UNCHECK; }
+
+    // URL parameter parsing
+    function initFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('name')) document.getElementById('patientName').value = params.get('name');
+        if (params.get('sex')) document.getElementById('patientSex').value = params.get('sex');
+        if (params.get('date')) {
+            // Convert YYYY.MM.DD to YYYY/MM/DD
+            document.getElementById('examDate').value = params.get('date').replace(/\./g, '/');
+        }
+        if (params.get('key')) {
+            document.getElementById('apiKey').value = params.get('key');
+            localStorage.setItem('ldct_gemini_key', params.get('key'));
+        }
+    }
+
+    // Load API key from localStorage
+    function initAPIKey() {
+        const saved = localStorage.getItem('ldct_gemini_key');
+        const field = document.getElementById('apiKey');
+        if (!field.value && saved) field.value = saved;
+    }
+
+    function toggleKeyVisibility() {
+        const field = document.getElementById('apiKey');
+        field.type = field.type === 'password' ? 'text' : 'password';
+    }
+
+    // ================================================================
+    // UI Interactions
+    // ================================================================
+    function onNoduleTypeChange() {
+        const val = document.querySelector('input[name="noduleType"]:checked')?.value;
+        document.getElementById('insignificantDetails').style.display = (val === 'insignificant') ? 'block' : 'none';
+        document.getElementById('significantDetails').style.display = (val === 'significant') ? 'block' : 'none';
+        updatePreview();
+    }
+
+    function onCategoryChange() {
+        const cat = document.getElementById('lungRadsCategory').value;
+        const btnPDF = document.getElementById('btnPDF');
+        btnPDF.disabled = !['1','2'].includes(cat);
+        btnPDF.title = ['1','2'].includes(cat) ? '' : 'PDF is only for Category 1-2';
+        updatePreview();
+    }
+
+    function toggleAirway() {
+        const checked = document.getElementById('airwayNodule').checked;
+        document.getElementById('airwayDetails').style.display = checked ? 'block' : 'none';
+        updatePreview();
+    }
+
+    function toggleCyst() {
+        const checked = document.getElementById('atypicalCyst').checked;
+        document.getElementById('cystDetails').style.display = checked ? 'block' : 'none';
+        updatePreview();
+    }
+
+    // Toggle detail fields when checkboxes change
+    document.addEventListener('change', function(e) {
+        const toggleMap = {
+            'nodulesElse': 'nodulesElseLobes',
+            'lymphNodes': 'lymphNodesDetail',
+            'coronaryCalcification': 'coronaryDetail',
+            'otherChest': 'otherChestDetail',
+            'otherAbdNeck': 'otherAbdNeckDetail'
+        };
+        if (toggleMap[e.target.id]) {
+            document.getElementById(toggleMap[e.target.id]).style.display = e.target.checked ? 'flex' : 'none';
+        }
+        // Airway segmental details
+        if (e.target.name === 'airwayType') {
+            document.getElementById('airwaySegmentalDetails').style.display =
+                e.target.value === 'segmental' ? 'block' : 'none';
+        }
+        // Auto-update preview on any change
+        updatePreview();
+    });
+    document.addEventListener('input', function(e) {
+        if (e.target.closest('#section-parsed') || e.target.closest('#section-patient')) {
+            updatePreview();
+        }
+    });
+
+    // ================================================================
+    // Nodule Table Management
+    // ================================================================
+    let noduleData = [];
+
+    function addNoduleRow(data = {}) {
+        if (noduleData.length >= 3) return;
+        noduleData.push({
+            size: data.size || '',
+            density: data.density || 'solid',
+            solidPart: data.solidPart || '',
+            lobe: data.lobe || '',
+            srsImg: data.srsImg || '',
+            change: data.change || 'no_prior'
+        });
+        renderNoduleTable();
+        updatePreview();
+    }
+
+    function removeNoduleRow(idx) {
+        noduleData.splice(idx, 1);
+        renderNoduleTable();
+        updatePreview();
+    }
+
+    function renderNoduleTable() {
+        const tbody = document.getElementById('noduleTableBody');
+        tbody.innerHTML = '';
+        noduleData.forEach((n, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${i + 1}</td>
+                <td><input type="number" value="${n.size}" onchange="noduleData[${i}].size=this.value;updatePreview();" step="0.1"></td>
+                <td><select onchange="noduleData[${i}].density=this.value;updatePreview();">
+                    <option value="non-solid" ${n.density==='non-solid'?'selected':''}>Non-solid</option>
+                    <option value="part-solid" ${n.density==='part-solid'?'selected':''}>Part-solid</option>
+                    <option value="solid" ${n.density==='solid'?'selected':''}>Solid</option>
+                </select></td>
+                <td><input type="number" value="${n.solidPart}" onchange="noduleData[${i}].solidPart=this.value;updatePreview();" step="0.1" placeholder="${n.density==='part-solid'?'mm':'-'}" ${n.density!=='part-solid'?'disabled':''}></td>
+                <td><select onchange="noduleData[${i}].lobe=this.value;updatePreview();">
+                    <option value="">--</option>
+                    <option value="RUL" ${n.lobe==='RUL'?'selected':''}>RUL</option>
+                    <option value="RML" ${n.lobe==='RML'?'selected':''}>RML</option>
+                    <option value="RLL" ${n.lobe==='RLL'?'selected':''}>RLL</option>
+                    <option value="LUL" ${n.lobe==='LUL'?'selected':''}>LUL</option>
+                    <option value="LLL" ${n.lobe==='LLL'?'selected':''}>LLL</option>
+                </select></td>
+                <td><input type="text" value="${n.srsImg}" onchange="noduleData[${i}].srsImg=this.value;updatePreview();" placeholder="_/_" style="width:70px;"></td>
+                <td><select onchange="noduleData[${i}].change=this.value;updatePreview();">
+                    <option value="unchanged" ${n.change==='unchanged'?'selected':''}>Unchanged</option>
+                    <option value="enlarging" ${n.change==='enlarging'?'selected':''}>Enlarging (&gt;1.5mm)</option>
+                    <option value="new" ${n.change==='new'?'selected':''}>Newly found (&ge;4mm)</option>
+                    <option value="no_prior" ${n.change==='no_prior'?'selected':''}>No prior CT</option>
+                </select></td>
+                <td><button class="btn btn-danger" onclick="removeNoduleRow(${i})" style="padding:2px 8px;font-size:0.75em;">X</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ================================================================
+    // Text Report Generation (Attachment 1)
+    // ================================================================
+    function getFormState() {
+        const quality = document.querySelector('input[name="quality"]:checked')?.value || 'Acceptable';
+        const cat = document.getElementById('lungRadsCategory').value;
+        const noduleType = document.querySelector('input[name="noduleType"]:checked')?.value || 'none';
+        const ctdivol = document.getElementById('ctdivol').value || '__';
+        const dlp = document.getElementById('dlp').value || '__';
+        const priorDate = document.getElementById('priorDate').value || '0000/00/00';
+        const noPrior = document.getElementById('noPriorCT').checked;
+
+        return { quality, cat, noduleType, ctdivol, dlp, priorDate, noPrior };
+    }
+
+    function generateTextReport() {
+        const s = getFormState();
+        const lines = [];
+
+        // Quality line
+        lines.push(`LDCT Quality: ${cb(s.quality==='Good')}Good ${cb(s.quality==='Acceptable')}Acceptable ${cb(s.quality==='Not Acceptable')}Not Acceptable`);
+
+        // Dose
+        lines.push(`CTDIvol: ${s.ctdivol} mGy Total DLP: ${s.dlp} mGy*cm`);
+
+        // Prior comparison: single checkbox for "No prior chest CT available"
+        lines.push(`In comparison with the prior CT, Date ${s.priorDate} ${cb(s.noPrior)}No prior chest CT avilable`);
+
+        // --- Lung nodule findings ---
+        lines.push(`Lung nodule findings related to cancer screening`);
+
+        const nt = s.noduleType;
+        // No lung nodule
+        lines.push(`${cb(nt==='none')}No lung nodule`);
+        // Benign
+        lines.push(`${cb(nt==='benign')}Nodule with benign features.`);
+        // Insignificant
+        const insigSE = document.getElementById('insigSeries').value || '_';
+        const insigIM = document.getElementById('insigImage').value || '__';
+        lines.push(`${cb(nt==='insignificant')}Insignificant(<6 mm) (SE:${insigSE}, IM:${insigIM})`);
+        // Juxtapleural
+        lines.push(`${cb(nt==='juxtapleural')}Juxtapleural nodule(s) <10mm`);
+        lines.push(`("早期肺癌"可能以"非特異性微小結節"潛伏存在數年的時間而沒有臨床上有意義的腫瘤增長，考量不必要引起受檢者無謂的驚慌，定期追蹤這類結節是目前安全的策略，或您可與您的醫師討論。)`);
+
+        // Significant nodules
+        const sigCount = document.querySelector('input[name="noduleCount"]:checked')?.value || '1';
+        const hasSig = (nt === 'significant');
+        lines.push(`${cb(hasSig)}Lung nodule(s) (≧6 mm or enlarging>1.5mm or new≧4mm) ${cb(hasSig && sigCount==='1')}1 ${cb(hasSig && sigCount==='2')}2 ${cb(hasSig && sigCount==='3')}3 ${cb(hasSig && sigCount==='4+')}≧4, and described as followings:`);
+        lines.push(`請依序描述最懷疑之肺結節(至多 3 個) (Describe the most worrisome 3 nodules in order)`);
+
+        // Nodule details (up to 3)
+        for (let i = 0; i < 3; i++) {
+            const n = (hasSig && noduleData[i]) ? noduleData[i] : null;
+            const hasN = !!n;
+            lines.push(`  ${cb(hasN)}Lung nodule ${i+1} (size, character and location)`);
+            if (hasN) {
+                lines.push(`    Entire Nodule: ${n.size || '____'} mm`);
+                lines.push(`    Density:${cb(n.density==='non-solid')}non-solid ${cb(n.density==='part-solid')}part-solid (solid part: ${n.solidPart||'____'} mm) ${cb(n.density==='solid')}solid`);
+                const srsImg = n.srsImg || '_/_';
+                lines.push(`    Lobe: (Srs/Img:${srsImg}) ${cb(n.lobe==='RUL')}RUL ${cb(n.lobe==='RML')}RML ${cb(n.lobe==='RLL')}RLL  ${cb(n.lobe==='LUL')}LUL ${cb(n.lobe==='LLL')}LLL`);
+                lines.push(`    The nodule is ${cb(n.change==='unchanged')}unchanged ${cb(n.change==='enlarging')}enlarging (>1.5 mm)`);
+                lines.push(`                  ${cb(n.change==='new')}newly found (≧4 mm) in follow-up`);
+                lines.push(`                  ${cb(n.change==='no_prior')}No prior chest CT comparison.`);
+            }
+        }
+
+        // Nodules else
+        const nodulesElse = document.getElementById('nodulesElse').checked;
+        if (nodulesElse) {
+            const elseLobes = [...document.querySelectorAll('.elseLobes:checked')].map(e => e.value);
+            const elseSrsImg = document.getElementById('elseSrsImg').value || '_/_';
+            lines.push(`${CHECK}Lung nodules else ${cb(elseLobes.includes('RUL'))}RUL ${cb(elseLobes.includes('RML'))}RML ${cb(elseLobes.includes('RLL'))}RLL  ${cb(elseLobes.includes('LUL'))}LUL ${cb(elseLobes.includes('LLL'))}LLL (Srs/Img:${elseSrsImg})`);
+        } else {
+            lines.push(`${UNCHECK}Lung nodules else ${UNCHECK}RUL ${UNCHECK}RML ${UNCHECK}RLL  ${UNCHECK}LUL ${UNCHECK}LLL (Srs/Img:_/_)`);
+        }
+
+        // Airway nodule
+        const hasAirway = document.getElementById('airwayNodule').checked;
+        lines.push(`${cb(hasAirway)}Airway nodule`);
+        if (hasAirway) {
+            const airType = document.querySelector('input[name="airwayType"]:checked')?.value || '';
+            lines.push(`  ${cb(airType==='subsegmental')}Subsegmental (Category 2)`);
+            lines.push(`  ${cb(airType==='segmental')}Segmental or more proximal`);
+            if (airType === 'segmental') {
+                const segType = document.querySelector('input[name="airwaySegType"]:checked')?.value || '';
+                lines.push(`    ${cb(segType==='secretions')}Favor secretions (Category 2)`);
+                lines.push(`    ${cb(segType==='baseline')}At baseline (Category 4A)`);
+                lines.push(`    ${cb(segType==='growing')}Stable or growing (Category 4B)`);
+            }
+        }
+
+        // Atypical cyst
+        const hasCyst = document.getElementById('atypicalCyst').checked;
+        lines.push(`${cb(hasCyst)}Atypical pulmonary cyst`);
+        if (hasCyst) {
+            const cystCat = document.querySelector('input[name="cystCat"]:checked')?.value || '';
+            const cystLobes = [...document.querySelectorAll('.cystLobes:checked')].map(e => e.value);
+            const cystSrsImg = document.getElementById('cystSrsImg').value || '_/_';
+            const lobeStr = `(Srs/Img:${cystSrsImg}) ${cb(cystLobes.includes('RUL'))}RUL ${cb(cystLobes.includes('RML'))}RML ${cb(cystLobes.includes('RLL'))}RLL  ${cb(cystLobes.includes('LUL'))}LUL ${cb(cystLobes.includes('LLL'))}LLL`;
+            lines.push(`  ${cb(cystCat==='3')}Category 3.  Lobe: ${lobeStr}`);
+            lines.push(`  ${cb(cystCat==='4A')}Category 4A. Lobe: ${lobeStr}`);
+            lines.push(`  ${cb(cystCat==='4B')}Category 4B. Lobe: ${lobeStr}`);
+        }
+
+        // Metastases
+        lines.push(`${cb(document.getElementById('metastasesPattern').checked)}The pattern of lung nodules has the possibility of metastases`);
+
+        // --- Other Lung Findings ---
+        lines.push(`Other Lung Findings`);
+        const lungFindings = [
+            ['emphysema', 'Emphysema'], ['bronchiectasis', 'Bronchiectasis'],
+            ['bronchitis', 'Bronchitis/bronchiolitis'], ['treeInBud', 'Tree-in-bud pattern'],
+            ['centrilobular', 'Centrilobular nodules'], ['oldTB', 'Old pulmonary TB'],
+            ['ild', 'interstitial lung disease(ILD)']
+        ];
+        const lfLine = lungFindings.map(([id, label]) =>
+            `${cb(document.getElementById(id).checked)}${label}`
+        ).join('  ');
+        lines.push(lfLine);
+        const otherLungText = document.getElementById('otherLungText').value;
+        if (otherLungText) {
+            lines.push(`${CHECK}Other ${otherLungText}`);
+        } else {
+            lines.push(`${UNCHECK}Other ____________`);
+        }
+
+        // --- Other Findings ---
+        lines.push(`Other Findings`);
+        const lymph = document.getElementById('lymphNodes').checked;
+        const lymphLoc = document.getElementById('lymphNodesLoc').value || '____________';
+        lines.push(`${cb(lymph)}Enlarged lymph nodes, location ${lymphLoc}`);
+
+        const coronary = document.getElementById('coronaryCalcification').checked;
+        const coronaryDesc = document.getElementById('coronaryDesc').value || '____________';
+        lines.push(`${cb(coronary)}Coronary artery calcification  ${coronaryDesc}`);
+
+        const otherChest = document.getElementById('otherChest').checked;
+        const otherChestDesc = document.getElementById('otherChestDesc').value || '____________';
+        lines.push(`${cb(otherChest)}Other significant abnormal chest findings ${otherChestDesc}`);
+
+        const otherAbdNeck = document.getElementById('otherAbdNeck').checked;
+        const otherAbdNeckDesc = document.getElementById('otherAbdNeckDesc').value || '';
+        lines.push(`${cb(otherAbdNeck)}Other significant abnormal abdominal or neck findings in this chest CT scan`);
+        if (otherAbdNeckDesc) lines.push(otherAbdNeckDesc);
+        else lines.push(`____________`);
+
+        // Non-contrast disclaimer
+        lines.push(`*This is a Non contrast medium injection image.`);
+        lines.push(`Limited evalution for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey.`);
+
+        // --- Overall Recommendation ---
+        lines.push(`Overall recommendation`);
+        lines.push(`Lung-RADS v2022`);
+
+        const cat0Inflam = document.getElementById('cat0Inflammatory').checked;
+        lines.push(`${cb(s.cat==='0')}Category 0: Incomplete Study`);
+        if (s.cat === '0') {
+            lines.push(`  ${cb(cat0Inflam)}Findings suggestive of an inflammatory/infectious process.`);
+        }
+        lines.push(`${cb(s.cat==='1')}Category 1: Negative. No nodule(s) and definitely benign nodule(s). Continue regular screening with low dose CT.`);
+        lines.push(`${cb(s.cat==='2')}Category 2: Benign Appearance or Behavior. Nodule(s) with a very low likelihood of becoming a clinically active cancer due to size or lack of growth. Continue regular screening with low dose CT.`);
+        lines.push(`${cb(s.cat==='3')}Category 3: Probably Benign Finding(s). Short term follow up suggested; includes nodule(s) with a low likelihood of becoming a clinically active cancer.`);
+        lines.push(`${cb(s.cat==='4A')}Category 4A: Suspicious findings for which additional diagnostic testing is recommended.`);
+        lines.push(`${cb(s.cat==='4B')}Category 4B/4X: Very suspicious findings for which additional diagnostic testing and/or tissue sampling is recommended.`);
+
+        const modS = document.getElementById('modifierS').checked;
+        lines.push(`${cb(modS)}Modifier S: Other. Clinically significant or potentially clinically significant findings (non lung cancer).`);
+
+        const suggestClinic = document.getElementById('suggestClinic').checked;
+        lines.push(`${cb(suggestClinic)}請至門診就診`);
+
+        return lines.join('\n');
+    }
+
+    function updatePreview() {
+        document.getElementById('reportPreview').textContent = generateTextReport();
+    }
+
+    function copyReport() {
+        const text = generateTextReport();
+        navigator.clipboard.writeText(text).then(() => {
+            showStatus('Report copied to clipboard!', 'success');
+        }).catch(() => {
+            // Fallback
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showStatus('Report copied to clipboard!', 'success');
+        });
+    }
+
+    // ================================================================
+    // PDF Generation (Attachment 2 - Patient Notification)
+    // ================================================================
+    function generatePDF() {
+        const cat = document.getElementById('lungRadsCategory').value;
+        if (!['1', '2'].includes(cat)) {
+            alert('Patient notification PDF is only generated for Category 1 and 2.');
+            return;
+        }
+
+        const name = document.getElementById('patientName').value || '___';
+        const sex = document.getElementById('patientSex').value;
+        const examDate = document.getElementById('examDate').value || '____/____/____';
+
+        // Parse date parts
+        const dateParts = examDate.split('/');
+        const year = dateParts[0] || '____';
+        const month = dateParts[1] || '__';
+        const day = dateParts[2] || '__';
+
+        // Honorific based on sex
+        const honorific = sex === 'F' ? '女士' : '先生';
+
+        // Category result text
+        const modS = document.getElementById('modifierS').checked;
+        const catDisplay = cat + (modS ? 'S' : '');
+        const resultText = cat === '1' ? '無異常發現。' : '無顯著異常。';
+        const riskText = '小於1%';
+
+        // Other findings for notification
+        const otherItems = [];
+        if (document.getElementById('coronaryCalcification').checked) otherItems.push('coronary');
+        if (document.getElementById('emphysema').checked) otherItems.push('emphysema');
+        if (document.getElementById('bronchiectasis').checked) otherItems.push('bronchiectasis');
+        // Check for additional modifier S items from other findings
+        const otherChestDesc = document.getElementById('otherChestDesc').value.toLowerCase();
+        const otherAbdNeckDesc = document.getElementById('otherAbdNeckDesc').value.toLowerCase();
+
+        const hasGallstones = otherChestDesc.includes('gallstone') || otherAbdNeckDesc.includes('gallstone');
+        const hasKidneyStones = otherChestDesc.includes('kidney stone') || otherChestDesc.includes('renal stone') || otherAbdNeckDesc.includes('kidney stone') || otherAbdNeckDesc.includes('renal stone');
+        const hasThyroid = otherChestDesc.includes('thyroid') || otherAbdNeckDesc.includes('thyroid');
+        const hasTumor = otherChestDesc.includes('tumor') || otherChestDesc.includes('mass') || otherAbdNeckDesc.includes('tumor') || otherAbdNeckDesc.includes('mass');
+
+        const pdfOtherText = document.getElementById('pdfOtherText').value.trim();
+        const pdfNote = document.getElementById('pdfNote').value.trim();
+        const hasPdfOther = pdfOtherText.length > 0;
+
+        const noOtherFindings = otherItems.length === 0 && !hasGallstones && !hasKidneyStones && !hasThyroid && !hasTumor && !hasPdfOther;
+
+        const printArea = document.getElementById('print-area');
+        printArea.innerHTML = `
+            <div style="text-align:center;margin-bottom:20px;">
+                <div class="header-kaiti" style="font-size:20pt;font-weight:bold;">奇美醫療財團法人 佳里奇美醫院</div>
+                <div class="header-kaiti" style="font-size:18pt;font-weight:bold;margin-top:8px;">國民健康署LDCT 肺癌篩檢 結果通知</div>
+            </div>
+            <div style="font-size:14pt;margin-bottom:20px;">
+                <span style="border-bottom:1px solid #000;padding:0 8px;">${name}</span>
+                <span style="margin-left:4px;">${honorific}</span>
+                <span style="margin-left:30px;">檢查日期:</span>
+                <span style="border-bottom:1px solid #000;padding:0 4px;">${year}</span>年
+                <span style="border-bottom:1px solid #000;padding:0 4px;">${month}</span>月
+                <span style="border-bottom:1px solid #000;padding:0 4px;">${day}</span>日
+            </div>
+            <div style="font-size:14pt;margin-bottom:20px;">
+                <span>肺癌篩檢判讀結果: </span>
+                <span class="header-kaiti" style="font-weight:bold;">${resultText}</span>
+                <span> Lung\u2013RADS分類:</span>
+                <span style="border-bottom:1px solid #000;padding:0 8px;">${catDisplay}</span>
+            </div>
+            <div style="font-size:13pt;margin-bottom:25px;line-height:2;">
+                依據國民健康署及國外相關的醫學標準，您目前有活躍性肺癌
+                (clinical active lung cancer) 的機會，${riskText}。您不須立即回診，可根據個人的罹癌風險，
+                或徵詢醫師意見，間隔1-2年，再接受下一次的低劑量電腦斷層(LDCT)肺癌篩檢。
+            </div>
+            <div style="font-size:14pt;margin-bottom:10px;font-weight:bold;">其他相關發現:</div>
+            <div style="font-size:13pt;line-height:2.2;">
+                ${cb(noOtherFindings)} 無<br>
+                ${cb(otherItems.includes('coronary'))} 冠狀動脈鈣化，可就診心臟內科<br>
+                ${cb(otherItems.includes('emphysema'))} 肺氣腫，可就診胸腔科<br>
+                ${cb(otherItems.includes('bronchiectasis'))} 支氣管擴張，可就診胸腔科<br>
+                ${cb(hasGallstones)} 膽結石，可就診胃腸科<br>
+                ${cb(hasKidneyStones)} 腎結石，可就診泌尿科<br>
+                ${cb(hasThyroid)} 甲狀腺腫大，請就診新陳代謝科<br>
+                ${cb(hasTumor)} 疑似腫瘤，請就診血液腫瘤科<br>
+                ${cb(hasPdfOther)} 其他: ${hasPdfOther ? pdfOtherText : '____________'}
+            </div>
+            ${pdfNote ? `
+            <div style="font-size:14pt;margin-top:20px;margin-bottom:8px;font-weight:bold;">附註:</div>
+            <div style="font-size:13pt;line-height:1.8;white-space:pre-wrap;">${pdfNote}</div>
+            ` : ''}
+        `;
+
+        window.print();
+    }
+
+    // ================================================================
+    // AI Parsing (Gemini API)
+    // ================================================================
+    const SYSTEM_PROMPT = `You are a radiology AI assistant specializing in LDCT lung cancer screening reports (Lung-RADS v2022).
+
+Parse the following LDCT impression text into structured JSON. Follow these rules:
+1. Extract the Lung-RADS category exactly as stated (0, 1, 2, 3, 4A, 4B)
+2. Determine the LDCT quality if mentioned (good, acceptable, not_acceptable), default "acceptable"
+3. Determine if prior CT is available and its date
+4. Classify nodule findings into one of: "none", "benign", "insignificant", "juxtapleural", "significant"
+   - "insignificant" = nodules < 6mm
+   - "significant" = nodules >= 6mm, or enlarging >1.5mm, or new >= 4mm
+5. For insignificant nodules, extract the series and image numbers if provided
+6. For significant nodules, extract details for each (up to 3): size, density (non-solid/part-solid/solid), solid part size if part-solid, lobe (RUL/RML/RLL/LUL/LLL), series/image, change status (unchanged/enlarging/new/no_prior)
+7. Count the number of significant nodules
+8. Check for airway nodules and atypical cysts
+9. Extract other lung findings: emphysema, bronchiectasis, bronchitis, tree_in_bud, centrilobular, old_tb, ild
+10. Extract other findings: lymph_nodes (with location), coronary_calcification (with description), other_chest, other_abdomen_neck
+11. Determine if Modifier S applies (clinically significant non-lung-cancer findings)
+12. Check for metastases pattern
+
+Return ONLY valid JSON with this exact structure:
+{
+  "lung_rads_category": "2",
+  "quality": "acceptable",
+  "prior_available": false,
+  "prior_date": "",
+  "nodule_type": "insignificant",
+  "insignificant_series": "3",
+  "insignificant_image": "45",
+  "significant_count": "0",
+  "significant_nodules": [],
+  "nodules_else": false,
+  "nodules_else_lobes": [],
+  "airway_nodule": false,
+  "airway_type": "",
+  "airway_seg_type": "",
+  "atypical_cyst": false,
+  "cyst_category": "",
+  "cyst_lobes": [],
+  "metastases_pattern": false,
+  "emphysema": false,
+  "bronchiectasis": false,
+  "bronchitis": false,
+  "tree_in_bud": false,
+  "centrilobular": false,
+  "old_tb": false,
+  "ild": false,
+  "other_lung": "",
+  "lymph_nodes": false,
+  "lymph_nodes_location": "",
+  "coronary_calcification": false,
+  "coronary_description": "",
+  "other_chest": false,
+  "other_chest_desc": "",
+  "other_abd_neck": false,
+  "other_abd_neck_desc": "",
+  "modifier_s": false,
+  "suggest_clinic": false
+}
+
+For significant_nodules array, each nodule should be:
+{
+  "size": "8",
+  "density": "solid",
+  "solid_part": "",
+  "lobe": "RUL",
+  "srs_img": "5/120",
+  "change": "no_prior"
+}
+
+change can be: "unchanged", "enlarging", "new", "no_prior"`;
+
+    async function parseWithAI() {
+        const impression = document.getElementById('impressionText').value.trim();
+        if (!impression) {
+            showStatus('Please paste an impression first.', 'error');
+            return;
+        }
+
+        let apiKey = document.getElementById('apiKey').value.trim();
+        if (!apiKey) {
+            showStatus('Please enter Gemini API Key.', 'error');
+            return;
+        }
+        // Save key to localStorage
+        localStorage.setItem('ldct_gemini_key', apiKey);
+
+        showStatus('Parsing with Gemini AI...', 'loading');
+
+        try {
+            const modelId = 'gemini-2.5-flash';
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{
+                    parts: [{
+                        text: SYSTEM_PROMPT + "\n\nIMPRESSION TEXT:\n" + impression
+                    }]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            };
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errText}`);
+            }
+
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error('No content in API response');
+
+            const parsed = JSON.parse(text);
+            applyParsedData(parsed);
+            showStatus('AI parsing complete! Review and edit the results below.', 'success');
+        } catch (err) {
+            showStatus(`AI parsing failed: ${err.message}`, 'error');
+            console.error(err);
+        }
+    }
+
+    function applyParsedData(d) {
+        // Category
+        if (d.lung_rads_category) {
+            document.getElementById('lungRadsCategory').value = d.lung_rads_category;
+            onCategoryChange();
+        }
+
+        // Quality
+        if (d.quality) {
+            const qMap = { 'good': 'Good', 'acceptable': 'Acceptable', 'not_acceptable': 'Not Acceptable' };
+            const qVal = qMap[d.quality.toLowerCase()] || 'Acceptable';
+            const qRadio = document.querySelector(`input[name="quality"][value="${qVal}"]`);
+            if (qRadio) qRadio.checked = true;
+        }
+
+        // Prior CT
+        if (d.prior_available) {
+            document.getElementById('noPriorCT').checked = false;
+            if (d.prior_date) document.getElementById('priorDate').value = d.prior_date;
+        } else {
+            document.getElementById('noPriorCT').checked = true;
+        }
+
+        // Nodule type
+        if (d.nodule_type) {
+            const ntRadio = document.querySelector(`input[name="noduleType"][value="${d.nodule_type}"]`);
+            if (ntRadio) { ntRadio.checked = true; onNoduleTypeChange(); }
+        }
+
+        // Insignificant details
+        if (d.insignificant_series) document.getElementById('insigSeries').value = d.insignificant_series;
+        if (d.insignificant_image) document.getElementById('insigImage').value = d.insignificant_image;
+
+        // Significant nodules
+        if (d.significant_count) {
+            const cRadio = document.querySelector(`input[name="noduleCount"][value="${d.significant_count === '4+' || parseInt(d.significant_count) >= 4 ? '4+' : d.significant_count}"]`);
+            if (cRadio) cRadio.checked = true;
+        }
+
+        noduleData = [];
+        if (d.significant_nodules && d.significant_nodules.length > 0) {
+            d.significant_nodules.forEach(n => {
+                addNoduleRow({
+                    size: n.size || '',
+                    density: n.density || 'solid',
+                    solidPart: n.solid_part || '',
+                    lobe: n.lobe || '',
+                    srsImg: n.srs_img || '',
+                    change: n.change || 'no_prior'
+                });
+            });
+        }
+
+        // Nodules else
+        if (d.nodules_else) {
+            document.getElementById('nodulesElse').checked = true;
+            document.getElementById('nodulesElseLobes').style.display = 'flex';
+            if (d.nodules_else_lobes) {
+                d.nodules_else_lobes.forEach(l => {
+                    const cb = document.querySelector(`.elseLobes[value="${l}"]`);
+                    if (cb) cb.checked = true;
+                });
+            }
+        }
+
+        // Airway
+        if (d.airway_nodule) {
+            document.getElementById('airwayNodule').checked = true;
+            toggleAirway();
+            if (d.airway_type) {
+                const ar = document.querySelector(`input[name="airwayType"][value="${d.airway_type}"]`);
+                if (ar) { ar.checked = true; ar.dispatchEvent(new Event('change', { bubbles: true })); }
+            }
+            if (d.airway_seg_type) {
+                const asr = document.querySelector(`input[name="airwaySegType"][value="${d.airway_seg_type}"]`);
+                if (asr) asr.checked = true;
+            }
+        }
+
+        // Atypical cyst
+        if (d.atypical_cyst) {
+            document.getElementById('atypicalCyst').checked = true;
+            toggleCyst();
+            if (d.cyst_category) {
+                const cr = document.querySelector(`input[name="cystCat"][value="${d.cyst_category}"]`);
+                if (cr) cr.checked = true;
+            }
+            if (d.cyst_lobes) {
+                d.cyst_lobes.forEach(l => {
+                    const cb = document.querySelector(`.cystLobes[value="${l}"]`);
+                    if (cb) cb.checked = true;
+                });
+            }
+        }
+
+        // Metastases
+        if (d.metastases_pattern) document.getElementById('metastasesPattern').checked = true;
+
+        // Lung findings
+        const lungMap = ['emphysema','bronchiectasis','bronchitis','tree_in_bud','centrilobular','old_tb','ild'];
+        const lungIdMap = { 'tree_in_bud': 'treeInBud', 'old_tb': 'oldTB' };
+        lungMap.forEach(key => {
+            const id = lungIdMap[key] || key;
+            if (d[key]) document.getElementById(id).checked = true;
+        });
+        if (d.other_lung) document.getElementById('otherLungText').value = d.other_lung;
+
+        // Other findings
+        if (d.lymph_nodes) {
+            document.getElementById('lymphNodes').checked = true;
+            document.getElementById('lymphNodesDetail').style.display = 'flex';
+            if (d.lymph_nodes_location) document.getElementById('lymphNodesLoc').value = d.lymph_nodes_location;
+        }
+        if (d.coronary_calcification) {
+            document.getElementById('coronaryCalcification').checked = true;
+            document.getElementById('coronaryDetail').style.display = 'flex';
+            if (d.coronary_description) document.getElementById('coronaryDesc').value = d.coronary_description;
+        }
+        if (d.other_chest) {
+            document.getElementById('otherChest').checked = true;
+            document.getElementById('otherChestDetail').style.display = 'flex';
+            if (d.other_chest_desc) document.getElementById('otherChestDesc').value = d.other_chest_desc;
+        }
+        if (d.other_abd_neck) {
+            document.getElementById('otherAbdNeck').checked = true;
+            document.getElementById('otherAbdNeckDetail').style.display = 'flex';
+            if (d.other_abd_neck_desc) document.getElementById('otherAbdNeckDesc').value = d.other_abd_neck_desc;
+        }
+
+        // Modifier S
+        if (d.modifier_s) document.getElementById('modifierS').checked = true;
+        if (d.suggest_clinic) document.getElementById('suggestClinic').checked = true;
+
+        updatePreview();
+    }
+
+    // ================================================================
+    // Utility Functions
+    // ================================================================
+    function showStatus(msg, type) {
+        const el = document.getElementById('aiStatus');
+        el.textContent = msg;
+        el.className = 'status show ' + type;
+        if (type === 'success') {
+            setTimeout(() => { el.className = 'status'; }, 5000);
+        }
+    }
+
+    function clearAll() {
+        // Reset all form fields
+        document.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(el => el.value = '');
+        document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+        document.querySelector('input[name="quality"][value="Acceptable"]').checked = true;
+        document.querySelector('input[name="noduleType"][value="insignificant"]').checked = true;
+        document.getElementById('lungRadsCategory').value = '';
+        noduleData = [];
+        renderNoduleTable();
+        onNoduleTypeChange();
+        onCategoryChange();
+        // Hide detail sections
+        ['nodulesElseLobes','lymphNodesDetail','coronaryDetail','otherChestDetail','otherAbdNeckDetail','airwayDetails','cystDetails'].forEach(id => {
+            document.getElementById(id).style.display = 'none';
+        });
+        updatePreview();
+    }
+
+    // ================================================================
+    // Initialization
+    // ================================================================
+    window.addEventListener('DOMContentLoaded', function() {
+        initFromURL();
+        initAPIKey();
+        addNoduleRow(); // Start with one empty row
+        onNoduleTypeChange();
+        onCategoryChange();
+        updatePreview();
+    });
+    </script>
+</body>
+</html>

@@ -134,6 +134,40 @@ _N/A
 ** LDCT is only limited in detection and follow-up of pulmonary nodules. It is not suitable to replace HRCT to evaluate interstitial lung disease, nor to be used for soft tissue lesions in chest wall, mediastinum and upper abdomen.
 )
 
+; --- LDCT 篩檢報告工具 ---
+::ldctool::
+    ; 從 DICOM header 取得病人資料
+    dicomData := GetDICOMData()
+    patientName := GetDICOMLineData("Patient's Name", dicomData)
+    patientSex := GetDICOMLineData("Patient's Sex", dicomData)
+    dateInfo := GetDICOMDateOnly(dicomData)
+
+    ; URL encode patient name
+    encodedName := LDCTUriEncode(patientName)
+
+    ; Build URL with file:/// protocol so ? is treated as query string
+    toolPath := A_ScriptDir . "\..\tool\ldct-report.html"
+    StringReplace, toolPathFwd, toolPath, \, /, All
+    url := "file:///" . toolPathFwd . "?name=" . encodedName . "&sex=" . patientSex . "&date=" . dateInfo.date
+    Run, msedge.exe "%url%"
+return
+
+LDCTUriEncode(str) {
+    res := ""
+    Loop, Parse, str
+    {
+        if A_LoopField is alnum
+            res .= A_LoopField
+        else if (A_LoopField = "-" || A_LoopField = "_" || A_LoopField = "." || A_LoopField = "~")
+            res .= A_LoopField
+        else {
+            code := Asc(A_LoopField)
+            res .= "%" . Format("{:02X}", code)
+        }
+    }
+    return res
+}
+
 ::zabdct3n::
 (
 CT study of abdomen (_) without and with contrast medium:
@@ -629,3 +663,77 @@ Left buccal cancer, pT4N1M0, s/p wide excision with partial maxillectomy,
 
 )
 
+
+::jyyldct::
+(
+LDCT Quality: □Good ■Acceptable □Not Acceptable
+CTDIvol: __ mGy Total DLP: __ mGy*cm
+In comparison with the prior CT, Date 0000/00/00 ■□No prior chest CT avilable
+
+Lung nodule findings related to cancer screening
+□No lung nodule
+□Nodule with benign features.
+■Insignificant(<6 mm) (選填 SE:_, IM:__) 
+□Juxtapleural nodule(s) <10mm
+(“早期肺癌”可能以“非特異性微小結節”潛伏存在數年的時間而沒有臨床上有意義的腫瘤增長，考量不必要引起受檢者無謂的驚慌，定期追蹤這類結節是目前安全的策略，或您可與您的醫師討論。)
+
+□Lung nodule(s) (≧6 mm or enlarging>1.5mm or new≧4mm) □1 □2 □3 □≧4, and described as followings:
+請依序描述最懷疑之肺結節(至多 3 個) (Describe the most worrisome 3 nodules in order)
+
+  □Lung nodule 1 (size, character and location) 
+    Entire Nodule: ____ mm
+    Density:□non-solid □part-solid (solid part: ____ mm) □solid
+    Lobe: (Srs/Img:_/_) □RUL □RML □RLL  □LUL □LLL
+    The nodule is □unchanged □enlarging (>1.5 mm) 
+                  □newly found (≧4 mm) in follow-up 
+                  □No prior chest CT comparison.
+
+  □Lung nodule 2 (size, character and location)
+  □Lung nodule 3 (size, character and location) 
+
+□Lung nodules else □RUL □RML □RLL  □LUL □LLL (Srs/Img:_/_)
+
+□Airway nodule
+  □Subsegmental (Category 2)
+  □Segmental or more proximal 
+    □Favor secretions (Category 2)
+    □At baseline (Category 4A)
+    □Stable or growing (Category 4B)
+
+□Atypical pulmonary cyst
+  □Category 3.  Lobe: (Srs/Img:_/_) □RUL □RML □RLL  □LUL □LLL
+  □Category 4A. Lobe: (Srs/Img:_/_) □RUL □RML □RLL  □LUL □LLL
+  □Category 4B. Lobe: (Srs/Img:_/_) □RUL □RML □RLL  □LUL □LLL
+
+□The pattern of lung nodules has the possibility of metastases
+
+Other Lung Findings
+□Emphysema  □Bronchiectasis  □Bronchitis/bronchiolitis
+□Tree-in-bud pattern □Centrilobular nodules 
+□Old pulmonary TB    □interstitial lung disease(ILD)  
+□Other ____________
+
+Other Findings
+□Enlarged lymph nodes, location ____________
+□Coronary artery calcification  ____________
+□Other significant abnormal chest findings ____________
+□Other significant abnormal abdominal or neck findings in this chest CT scan
+____________
+
+*This is a Non contrast medium injection image.
+Limited evalution for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey. 
+
+
+■ □
+Overall recommendation
+Lung-RADS v2022
+□Category 0: Incomplete Study
+  □Findings suggestive of an inflammatory/infectious process.
+□Category 1: Negative. No nodule(s) and definitely benign nodule(s). Continue regular screening with low dose CT.
+■Category 2: Benign Appearance or Behavior. Nodule(s) with a very low likelihood of becoming a clinically active cancer due to size or lack of growth. Continue regular screening with low dose CT.
+□Category 3: Probably Benign Finding(s). Short term follow up suggested; includes nodule(s) with a low likelihood of becoming a clinically active cancer. 
+□Category 4A: Suspicious findings for which additional diagnostic testing is recommended.
+□Category 4B/4X: Very suspicious findings for which additional diagnostic testing and/or tissue sampling is recommended.
+□Modifier S: Other. Clinically significant or potentially clinically significant findings (non lung cancer).
+□請至門診就診
+)

@@ -214,7 +214,8 @@ ClipboardBackup := Clipboard ; 保存當前剪貼簿內容
 dicom := GetDICOMData()
 accessionNum := GetAccessionNumber(dicom)
 dateInfo := GetDICOMDateOnly(dicom)
-oldReport := "Comparison with previous study: " . dateInfo.full . ". _`r"
+dateInfo := "Comparison with previous study: " . dateInfo.full . ". _`r"
+oldReport := dateInfo
 oldReport .= GetOldReportContent(accessionNum, false)
 ; 清理報告格式
 oldReport := RegExReplace(oldReport, "(\r\n|\n|\r)", "`r`n")
@@ -226,7 +227,8 @@ Clipboard := ClipboardBackup
 Gui, OldReport:Destroy
 Gui, OldReport:Font, s14
 Gui, OldReport:Add, Edit, x10 y10 w500 h400 vOldReportText ReadOnly Multi VScroll, %oldReport%
-Gui, OldReport:Add, Button, x10 y420 w200 h40 gOldReportCopy, 複製舊報告(&3)
+Gui, OldReport:Add, Button, x10 y420 w200 h40 gOldReportCopy, 複製舊報告(&1)
+Gui, OldReport:Add, Button, x220 yp w200 h40 gOldReportCopyDate, 複製日期&2)
 Gui, OldReport:Show, w520 h470, 舊報告
 return
 
@@ -249,6 +251,20 @@ if (OldReportText != "") {
     gosub CopyOld
 }
 return
+
+OldReportCopyDate:
+Gui, OldReport:Submit, NoHide
+if (dateInfo != "") {
+    desc := dateInfo
+    desc := RegExReplace(desc, "(\r\n|\n|\r)", "`n")
+    Gui, OldReport:Destroy
+    gosub CXRFinish
+} else {
+    Gui, OldReport:Destroy
+    gosub CopyOld
+}
+return
+
 
 OldReportGuiClose:
 OldReportGUIEscape:

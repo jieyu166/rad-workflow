@@ -122,7 +122,7 @@ HotstringMenuV("A","MenuShortcut","Left renal cyst","Right renal cyst","BRK", "B
 return
 
 :O:stone;::
-HotstringMenuV("A","MenuShortcut","Left renal stone, _ cm","Right renal stone, _ cm","BRK", "Bilateral renal stones, up to _cm", "Left renal stones, up to _ cm", "Right renal stones, up to _ cm","BRK","Gallstone or right renal stone or other.","Right renal stone or bowel content or other.","BRK","A right _upper_middle_lower third ureteral stone, _ cm. ","_Right/_Left _ third ureteral stone, about _cm in diameter, complicated with hydronephrosis_hydroureteronephrosis and perinephric_periureteric infiltration", "_ upper ureteral stone at _ level can not be excluded.")
+HotstringMenuV("A","MenuShortcut","Left renal stone, _ cm","Right renal stone, _ cm","BRK", "Bilateral renal stones, up to _cm", "Left renal stones, up to _ cm", "Right renal stones, up to _ cm","BRK","Gallstone or right renal stone or other.","Right renal stone or bowel content or other.","BRK","A right _upper_middle_lower third ureteral stone, _ cm. ","_Right/_Left _ third ureteral stone, about _cm in diameter, complicated with hydronephrosis_hydroureteronephrosis and perinephric_periureteric infiltration", "No obvious radiopaque urotract stones","_ upper ureteral stone at _ level can not be excluded.")
 return
 
 ::emphy;::

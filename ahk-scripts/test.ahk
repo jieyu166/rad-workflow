@@ -3,9 +3,20 @@
 F5::LWin
 #If
 
+^XButton1::Send ^{Right}
+^XButton2::Send ^{Left}
+
+
+XButton1 & WheelUp::Send ^{Left}
+XButton1 & WheelDown::Send ^{Right}
+
+;#If GetKeyState("XButton1","P")
+;WheelUp::Send ^{Right}
+;WheelDown::Send ^{Left}
+;#If
 
 ; 系統提示訊息
-TrayTip, 快速鍵, [Win]+[R]病歷彙總`n[Win]+[A]按暫存`n[Win]+[S]下一個`n[Win]+[D]Copy報告/比較(佳里)`n[Win]+[F]Copy報告/比較`n[Win]+[Z]Copy 上次檢查日期(DICOM)`n[Win]+[X]抓上次報告(佳里)`n[Win]+[V]開影像`n[Win]+[M]Copy 上次檢查日期`n[Win]+[P]比較兩column, 20, 17
+TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告`n[Win]+[C/Ctrl+F3] 複製舊報告日期`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[Q] 複製影像序列`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[XButton1] 多功能選單`n[XButton2] 依視窗切換
 
 ; ============================================================================
 ; 基礎功能函數區
@@ -16,6 +27,15 @@ ActivateHIS() {
     WinActivate ahk_exe chk060.exe
     WinWaitActive ahk_exe chk060.exe,, 1
     ControlFocus, ThunderRT6TextBox14, ahk_exe chk060.exe
+    ; 用 ControlGetPos 自動取得控件螢幕座標並點擊，確保焦點在報告欄位
+    ControlGetPos, cx, cy, cw, ch, ThunderRT6TextBox14, ahk_exe chk060.exe
+    WinGetPos, wx, wy,,, ahk_exe chk060.exe
+    clickX := wx + cx + cw -100
+    clickY := wy + cy + ch -100
+    MouseGetPos, origX, origY
+    Click, %clickX%, %clickY%
+    DllCall("SetCursorPos", "int", origX, "int", origY)
+    SendInput, {End}
 }
 
 ActivatePACS() {
@@ -429,7 +449,7 @@ PosDICOMLU:
     } else if(varWhere=4) {
         MouseMove 3000,-400     ; 第三VS辦公室(柳營)
     } else if(varWhere=5) {
-        MouseMove 2250,-1000     ; 遠端
+        MouseMove 2250,-1700     ; 遠端
     } else if(varWhere=6) {
         MouseMove 50,30         ; R小房間(Win7)
     } else if(varWhere=7) {
@@ -453,7 +473,7 @@ PosDICOMRU:
     } else if(varWhere=4) {
         MouseMove 4400,-200     ; 第三VS希城
     } else if(varWhere=5) {
-        MouseMove 4450,-1400     ; 遠端
+        MouseMove 4300,-1250     ; 遠端
     } else if(varWhere=6) {
         MouseMove 4400,500      ; R小房間
     } else if(varWhere=7) {
@@ -556,7 +576,7 @@ return
         ;MouseMove 620,40       ; 佳里100%
 		MouseMove 770,50       ; 佳里125%
     } else if(varWhere=5) {
-        MouseMove 1245,80       ; 遠端
+        MouseMove 1245,75       ; 遠端
     } else if(varWhere=6) {
         MouseMove 580,30       ; R小房間
     } else if(varWhere=7) {
@@ -1246,6 +1266,7 @@ XButton1::
 	Menu, XB1Menu, Add, 腹部US AI (&A), AI_FindOpen
 	Menu, XB1Menu, Add, 乳房US AI (&B), ShowUSAIGUI
     Menu, XB1Menu, Add, 設定管理器 (&G), XB1_OpenConfig
+    Menu, XB1Menu, Add, 顯示快速鍵 (&H), XB1_ShowHotkeys
     Menu, XB1Menu, Add, 重新載入腳本 (&E), XB1_Reload
     
     ; 顯示選單
@@ -1317,6 +1338,11 @@ return
 ; 新增功能 7：開啟設定管理器
 XB1_OpenConfig:
     CreateConfigManager()
+return
+
+; 顯示快速鍵提示
+XB1_ShowHotkeys:
+    TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告`n[Win]+[C/Ctrl+F3] 複製舊報告日期`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[Q] 複製影像序列`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[XButton1] 多功能選單`n[XButton2] 依視窗切換, 20, 17
 return
 
 ; 新增功能 8：重新載入腳本
