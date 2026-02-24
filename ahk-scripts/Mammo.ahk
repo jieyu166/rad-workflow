@@ -692,7 +692,7 @@ GetBMD()
 	useT := CheckUseTScore(Gender, data, MP, PtAge, PtGender)
 	
 	; Send Data
-	ActivateHIS()
+	ActivateHISLight()
 	sleep 200
 	
 	haslspine:=0
@@ -728,7 +728,7 @@ GetBMD()
 	SendBMDResult2(PtGender, useT, LspineStr, Lspine_Z, Lspine_T, Lspine_BMD, Neck_Z, Neck_T, Neck_BMD, Hip_Z, Hip_T, Hip_BMD, Radius_Z, Radius_T, Radius_BMD, haslspine, hasfneck, hasthip, hasrad)  ; 傳入 has 變數
 
 	; Send output
-	ActivateHIS()
+	ActivateHISLight()
 	SetReportHIS(StoredText)  ;some hacks
 	StoredTextClear()
 }

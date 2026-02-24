@@ -23,15 +23,21 @@ TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總`n[W
 ; ============================================================================
 
 ; --- 視窗啟動函數 ---
-ActivateHIS() {
+; 輕量版：只啟動 HIS 視窗，不點擊編輯區（用於送出暫存、點按鈕等不需焦點在編輯區的場景）
+ActivateHISLight() {
     WinActivate ahk_exe chk060.exe
     WinWaitActive ahk_exe chk060.exe,, 1
+}
+
+; 完整版：啟動 HIS 視窗並確保焦點在報告編輯區（用於 SendInput 輸出報告文字）
+ActivateHIS() {
+    ActivateHISLight()
     ControlFocus, ThunderRT6TextBox14, ahk_exe chk060.exe
     ; 用 ControlGetPos 自動取得控件螢幕座標並點擊，確保焦點在報告欄位
     ControlGetPos, cx, cy, cw, ch, ThunderRT6TextBox14, ahk_exe chk060.exe
     WinGetPos, wx, wy,,, ahk_exe chk060.exe
-    clickX := wx + cx + cw -100
-    clickY := wy + cy + ch -100
+    clickX := wx + cx + cw - 10
+    clickY := wy + cy + ch - 10
     MouseGetPos, origX, origY
     Click, %clickX%, %clickY%
     DllCall("SetCursorPos", "int", origX, "int", origY)
@@ -505,6 +511,27 @@ PosDICOMButton:
     }
 return
 
+; HIS 下一個檢查按鈕位置（CoordMode Window）
+PosNextExam:
+    CoordMode, Mouse, Window
+    if(varWhere=1) {
+        MouseMove 770, 43       ; R辦公室
+    } else if(varWhere=3 or varWhere=4) {
+        MouseMove 780,50       ; 第三VS
+    } else if(varWhere=2) {
+        MouseMove 770,50       ; 佳里125%
+    } else if(varWhere=5) {
+        MouseMove 1245,75       ; 遠端
+    } else if(varWhere=6) {
+        MouseMove 580,30       ; R小房間
+    } else if(varWhere=7) {
+        MouseMove 770,50       ; 乳醫
+    } else if(varWhere=8) {
+        MouseMove 1250,80       ; 第三VS(國勳)
+    }
+    CoordMode, Mouse, Screen
+return
+
 ; ============================================================================
 ; 核心操作子程序
 ; ============================================================================
@@ -555,46 +582,28 @@ return
 ; --- 送出檢查並開啟下一個 ---
 *F12::
 <#a::
-    ActivateHIS()
+    ActivateHISLight()
     Send !t
     Send !a
-    
+
     MsgBox, 262180, NEXT EXAM, "Would you like to continue next exam?"
     IfMsgBox, No
         return
-    
-    ActivateHIS()
+
+    ActivateHISLight()
     MouseGetPos, tmpX, tmpY
-    CoordMode, Mouse, Window
-    
-    ; 根據不同地點調整滑鼠位置
-    if(varWhere=1) {
-        MouseMove 770, 43       ; R辦公室
-    } else if(varWhere=3 or varWhere=4) {
-        MouseMove 780,50       ; 第三VS
-    } else if(varWhere=2) {
-        ;MouseMove 620,40       ; 佳里100%
-		MouseMove 770,50       ; 佳里125%
-    } else if(varWhere=5) {
-        MouseMove 1245,75       ; 遠端
-    } else if(varWhere=6) {
-        MouseMove 580,30       ; R小房間
-    } else if(varWhere=7) {
-        MouseMove 770,50       ; 乳醫
-    } else if(varWhere=8) {
-        MouseMove 1250,80       ; 第三VS(國勳)
-    }    
+    Gosub, PosNextExam
     Send {LButton}
-    CoordMode, Mouse, Screen
     DllCall("SetCursorPos", "int", tmpX, "int", tmpY)
 return
 
-; --- 查看病歷彙總 ---
+; --- 查看病歷彙總（經由 HIS 控件觸發）---
 <#r::
+    ActivateHISLight()
     ControlGetText, ExamNo, ThunderRT6TextBox9, ahk_exe chk060.exe
     ChartNo := SubStr(ExamNo, 1, 8)
-    url := "http://jlmrs.chimei.org.tw/EPR/sub_entry.asp?ihosp=14&ipatient=" . ChartNo . "&imode=&ftype=&iclass=0&from=4130&multiscreen="
-    Run, msedge.exe %url%
+    ControlSetText, ThunderRT6TextBox9, %ChartNo%, ahk_exe chk060.exe
+    ControlClick, ThunderRT6CommandButton31, ahk_exe chk060.exe
 return
 
 
@@ -920,302 +929,125 @@ ClickRow(WinTitle, RowNumber) {
     StartCoordinateWizard()
 return
 
-; 主要的座標收集精靈函數
+; 主要的座標工具函數
 StartCoordinateWizard() {
-    ; 先詢問工作地點
-    Gui, LocSelect:New, +AlwaysOnTop, 選擇工作地點
-    Gui, LocSelect:Font, s12
-    
-    Gui, LocSelect:Add, Text, x10 y10, 請選擇您的工作地點：
-    Gui, LocSelect:Add, Radio, x10 y40 w200 vLoc1, 1: R辦公室(Win11)
-    Gui, LocSelect:Add, Radio, x10 y70 w200 vLoc2 Checked, 2: 佳里座位
-    Gui, LocSelect:Add, Radio, x10 y100 w200 vLoc3, 3: 第三VS辦公室(佳里)
-    Gui, LocSelect:Add, Radio, x10 y130 w200 vLoc4, 4: 第三VS辦公室(柳營)
-    Gui, LocSelect:Add, Radio, x10 y160 w200 vLoc5, 5: 遠端從家
-    Gui, LocSelect:Add, Radio, x10 y190 w200 vLoc6, 6: R小房間(Win7)
-    Gui, LocSelect:Add, Radio, x10 y220 w200 vLoc7, 7: 12F乳醫(Win7)
-    Gui, LocSelect:Add, Radio, x10 y250 w200 vLoc8, 8: 永康3樓(國勳)
-    Gui, LocSelect:Add, Radio, x10 y280 w200 vLoc9, 9: 新增位置
-    
-    Gui, LocSelect:Add, Button, x10 y320 w100 h30 gStartCollection, 開始收集
-    Gui, LocSelect:Add, Button, x120 y320 w100 h30 gLocSelectCancel, 取消
-    
-    Gui, LocSelect:Show, w240 h370
+    Gui, CoordWiz:New, +AlwaysOnTop, 座標工具
+    Gui, CoordWiz:Font, s12
+
+    Gui, CoordWiz:Add, Text, x10 y10, 目前工作地點: %varWhere%
+    Gui, CoordWiz:Add, Text, x10 y35 w280 h2 0x10  ; 分隔線
+
+    Gui, CoordWiz:Add, Button, x10 y45 w130 h35 gWizTestCurrentCoords, 測試目前座標(&T)
+    Gui, CoordWiz:Add, Button, x150 yp w130 h35 gWizStartCollect, 收集新座標(&C)
+    Gui, CoordWiz:Add, Button, x10 y90 w130 h35 gCoordWizClose, 關閉
+
+    Gui, CoordWiz:Show, w290 h135
 }
 return
 
-StartCollection:
-    Gui, LocSelect:Submit
-    
-    ; 判斷選擇的位置
-    Loop, 9 {
-        if (Loc%A_Index% = 1) {
-            CurrentLocation := A_Index
-            break
-        }
+; 測試目前工作地點的座標設定
+WizTestCurrentCoords:
+    Gui, CoordWiz:Hide
+    MsgBox, 4, 測試座標, 即將依序移動滑鼠到目前 varWhere=%varWhere% 的各個座標位置。`n`n要繼續嗎？
+    IfMsgBox No
+    {
+        Gui, CoordWiz:Show
+        return
     }
-    
-    ; 初始化收集的座標
-    CollectedCoords := {Location: CurrentLocation
-        , DICOMLU: {x: 0, y: 0}
-        , DICOMRU: {x: 0, y: 0}
-        , DICOMButton: {x: 0, y: 0}
-        , NextExamBase: {x: 0, y: 0}
-        , NextExamButton: {x: 0, y: 0}}
-    
-    ; 開始收集座標流程
-    CollectDICOMLU()
+
+    TrayTip, 測試中, PosDICOMLU (DICOM 左螢幕)..., 2
+    Gosub, PosDICOMLU
+    Sleep, 2000
+
+    TrayTip, 測試中, PosDICOMRU (DICOM 右螢幕)..., 2
+    Gosub, PosDICOMRU
+    Sleep, 2000
+
+    TrayTip, 測試中, PosDICOMButton (DICOM 按鈕)..., 2
+    Gosub, PosDICOMButton
+    Sleep, 2000
+
+    TrayTip, 測試中, PosNextExam (下一個檢查按鈕)..., 2
+    ActivateHISLight()
+    Gosub, PosNextExam
+    Sleep, 2000
+
+    TrayTip, 測試完成, 座標測試完成！, 3
+    Gui, CoordWiz:Show
 return
 
-; 收集 DICOM 左螢幕位置
-CollectDICOMLU() {
-    MsgBox, 0, 收集 DICOM 左螢幕座標, 
-    (
-請將滑鼠移到 DICOM 左螢幕的位置
-(通常是左側影像顯示區域的中心)
+; 開始收集新座標
+WizStartCollect:
+    Gui, CoordWiz:Destroy
 
-移到位置後按「確定」
-    ), 10
-    
+    ; 初始化收集的座標
+    CollectedCoords := {DICOMLU: {x: 0, y: 0}
+        , DICOMRU: {x: 0, y: 0}
+        , DICOMButton: {x: 0, y: 0}
+        , NextExamButton: {x: 0, y: 0}}
+
+    ; 依序收集 4 個座標
+    MsgBox, 0, 1/4 DICOM 左螢幕, 請將滑鼠移到 DICOM 左螢幕位置`n按「確定」記錄
     MouseGetPos, x, y
     CollectedCoords.DICOMLU.x := x
     CollectedCoords.DICOMLU.y := y
-    
-    TrayTip, 座標已記錄, DICOM左螢幕: X=%x% Y=%y%, 3
-    Sleep, 1000
-    
-    ; 繼續下一個
-    CollectDICOMRU()
-}
+    TrayTip, 已記錄, DICOM左螢幕: %x%`, %y%, 2
+    Sleep, 800
 
-; 收集 DICOM 右螢幕位置
-CollectDICOMRU() {
-    MsgBox, 0, 收集 DICOM 右螢幕座標, 
-    (
-請將滑鼠移到 DICOM 右螢幕的位置
-(通常是右側影像顯示區域的中心)
-
-移到位置後按「確定」
-    ), 10
-    
+    MsgBox, 0, 2/4 DICOM 右螢幕, 請將滑鼠移到 DICOM 右螢幕位置`n按「確定」記錄
     MouseGetPos, x, y
     CollectedCoords.DICOMRU.x := x
     CollectedCoords.DICOMRU.y := y
-    
-    TrayTip, 座標已記錄, DICOM右螢幕: X=%x% Y=%y%, 3
-    Sleep, 1000
-    
-    ; 繼續下一個
-    CollectDICOMButton()
-}
+    TrayTip, 已記錄, DICOM右螢幕: %x%`, %y%, 2
+    Sleep, 800
 
-; 收集 DICOM 按鈕位置
-CollectDICOMButton() {
-    MsgBox, 0, 收集 DICOM 按鈕座標, 
-    (
-請將滑鼠移到 DICOM 檔頭訊息按鈕的位置
-(用於開啟 DICOM 資訊的按鈕)
-
-移到位置後按「確定」
-    ), 10
-    
+    MsgBox, 0, 3/4 DICOM 按鈕, 請將滑鼠移到 DICOM 檔頭訊息按鈕位置`n按「確定」記錄
     MouseGetPos, x, y
     CollectedCoords.DICOMButton.x := x
     CollectedCoords.DICOMButton.y := y
-    
-    TrayTip, 座標已記錄, DICOM按鈕: X=%x% Y=%y%, 3
-    Sleep, 1000
-    
-    ; 繼續下一個
-    CollectNextExamCoords()
-}
+    TrayTip, 已記錄, DICOM按鈕: %x%`, %y%, 2
+    Sleep, 800
 
-; 收集下一個檢查的座標（相對座標）
-CollectNextExamCoords() {
-    ; 先確認HIS視窗存在
-    if !WinExist("ahk_exe chk060.exe") {
-        MsgBox, 48, 錯誤, 請先開啟 HIS 系統 (chk060.exe)
-        return
-    }
-    
-    ; 啟動HIS視窗
-    WinActivate, ahk_exe chk060.exe
-    WinWaitActive, ahk_exe chk060.exe
-    
-    ; 步驟1：取得視窗基準點
-    MsgBox, 0, 收集視窗基準點, 
-    (
-請將滑鼠移到 HIS 視窗的左上角
-(視窗標題列的最左邊)
+    MsgBox, 0, 4/4 下一個檢查按鈕, 請將滑鼠移到 HIS「下一個檢查」按鈕位置`n(CoordMode Window 相對座標)`n按「確定」記錄
+    CoordMode, Mouse, Window
+    MouseGetPos, x, y
+    CoordMode, Mouse, Screen
+    CollectedCoords.NextExamButton.x := x
+    CollectedCoords.NextExamButton.y := y
+    TrayTip, 已記錄, 下一個檢查(Window): %x%`, %y%, 2
+    Sleep, 800
 
-這將作為相對座標的基準點(0,0)
-
-移到位置後按「確定」
-    ), 10
-    
-    MouseGetPos, baseX, baseY
-    CollectedCoords.NextExamBase.x := baseX
-    CollectedCoords.NextExamBase.y := baseY
-    
-    TrayTip, 座標已記錄, 基準點: X=%baseX% Y=%baseY%, 3
-    Sleep, 1000
-    
-    ; 步驟2：取得按鈕位置
-    MsgBox, 0, 收集下一個檢查按鈕座標, 
-    (
-現在請將滑鼠移到「下一個檢查」按鈕的位置
-(通常在 HIS 視窗的上方工具列)
-
-移到位置後按「確定」
-    ), 10
-    
-    MouseGetPos, btnX, btnY
-    
-    ; 計算相對座標
-    relX := btnX - baseX
-    relY := btnY - baseY
-    
-    CollectedCoords.NextExamButton.x := relX
-    CollectedCoords.NextExamButton.y := relY
-    
-    TrayTip, 座標已記錄, 下一個檢查按鈕 (相對): X=%relX% Y=%relY%, 3
-    Sleep, 1000
-    
     ; 顯示結果
-    ShowCollectedResults()
-}
+    resultText := "PosDICOMLU:      MouseMove " . CollectedCoords.DICOMLU.x . ", " . CollectedCoords.DICOMLU.y . "`r`n"
+    resultText .= "PosDICOMRU:      MouseMove " . CollectedCoords.DICOMRU.x . ", " . CollectedCoords.DICOMRU.y . "`r`n"
+    resultText .= "PosDICOMButton:  MouseMove " . CollectedCoords.DICOMButton.x . ", " . CollectedCoords.DICOMButton.y . "`r`n"
+    resultText .= "NextExam(Window): MouseMove " . CollectedCoords.NextExamButton.x . ", " . CollectedCoords.NextExamButton.y . "`r`n"
 
-; 顯示收集的結果
-ShowCollectedResults() {
-    locationNames := {1: "R辦公室(Win11)"
-        , 2: "佳里座位"
-        , 3: "第三VS辦公室(佳里)"
-        , 4: "第三VS辦公室(柳營)"
-        , 5: "遠端從家"
-        , 6: "R小房間(Win7)"
-        , 7: "12F乳醫(Win7)"
-        , 8: "永康3樓(國勳)"
-        , 9: "新增位置"}
-    
-    locName := locationNames[CurrentLocation]
-    
-    ; 建立結果顯示GUI
-    Gui, Results:New, +AlwaysOnTop, 座標收集結果
-    Gui, Results:Font, s10, Consolas
-    
-    Gui, Results:Add, Text, x10 y10, % "工作地點: " . locName
-    Gui, Results:Add, Text, x10 y30, % "====================================="
-    
-    resultText := "收集的座標數據：`r`n`r`n"
-    resultText .= "PosDICOMLU:`r`n"
-    resultText .= "    MouseMove " . CollectedCoords.DICOMLU.x . ", " . CollectedCoords.DICOMLU.y . "`r`n`r`n"
-    resultText .= "PosDICOMRU:`r`n"
-    resultText .= "    MouseMove " . CollectedCoords.DICOMRU.x . ", " . CollectedCoords.DICOMRU.y . "`r`n`r`n"
-    resultText .= "PosDICOMButton:`r`n"
-    resultText .= "    MouseMove " . CollectedCoords.DICOMButton.x . ", " . CollectedCoords.DICOMButton.y . "`r`n`r`n"
-    resultText .= "下一個檢查按鈕 (相對座標):`r`n"
-    resultText .= "    MouseMove " . CollectedCoords.NextExamButton.x . ", " . CollectedCoords.NextExamButton.y . "`r`n"
-    
-    Gui, Results:Add, Edit, x10 y60 w500 h250 vResultEdit ReadOnly, %resultText%
-    
-    ; 產生程式碼
-    codeText := GenerateCode()
-    Gui, Results:Add, Text, x10 y320, 產生的程式碼：
-    Gui, Results:Add, Edit, x10 y340 w500 h200 vCodeEdit ReadOnly, %codeText%
-    
-    Gui, Results:Add, Button, x10 y550 w100 h30 gCopyResults, 複製程式碼
-    Gui, Results:Add, Button, x120 y550 w100 h30 gSaveResults, 儲存到檔案
-    Gui, Results:Add, Button, x230 y550 w100 h30 gTestCoords, 測試座標
-    Gui, Results:Add, Button, x340 y550 w100 h30 gResultsClose, 關閉
-    
-    Gui, Results:Show, w520 h590
-}
-
-; 產生程式碼片段
-GenerateCode() {
-    loc := CurrentLocation
-    LU_X := CollectedCoords.DICOMLU.x
-    LU_Y := CollectedCoords.DICOMLU.y
-    RU_X := CollectedCoords.DICOMRU.x
-    RU_Y := CollectedCoords.DICOMRU.y
-    Btn_X := CollectedCoords.DICOMButton.x
-    Btn_Y := CollectedCoords.DICOMButton.y
-    Next_X := CollectedCoords.NextExamButton.x
-    Next_Y := CollectedCoords.NextExamButton.y
-    
-    code = 
-(
-`; 位置 %loc% 的座標設定
-else if(varWhere=%loc%) {
-    `; PosDICOMLU
-    MouseMove %LU_X%, %LU_Y%
-    `; PosDICOMRU
-    `; MouseMove %RU_X%, %RU_Y%
-    `; PosDICOMButton
-    `; MouseMove %Btn_X%, %Btn_Y%
-    `; 下一個檢查 (F12)
-    `; MouseMove %Next_X%, %Next_Y%
-}
-)
-    
-    return code
-}
+    Gui, Results:New, +AlwaysOnTop, 收集結果
+    Gui, Results:Font, s11, Consolas
+    Gui, Results:Add, Edit, x10 y10 w480 h120 vResultEdit ReadOnly, %resultText%
+    Gui, Results:Add, Button, x10 y140 w120 h30 gCopyResults, 複製到剪貼簿
+    Gui, Results:Add, Button, x140 y140 w120 h30 gResultsClose, 關閉
+    Gui, Results:Show, w500 h180
+return
 
 ; 複製結果到剪貼簿
 CopyResults:
     Gui, Results:Submit, NoHide
-    Clipboard := CodeEdit
-    MsgBox, 64, 完成, 程式碼已複製到剪貼簿！
-return
-
-; 儲存結果到檔案
-SaveResults:
-    FormatTime, timeStr, , yyyyMMdd_HHmmss
-    fileName := "座標收集_位置" . CurrentLocation . "_" . timeStr . ".txt"
-    
-    FileSelectFile, savePath, S16, %fileName%, 儲存座標資料, Text Files (*.txt)
-    if (savePath = "")
-        return
-    
-    Gui, Results:Submit, NoHide
-    
-    FileDelete, %savePath%
-    FileAppend, %ResultEdit%`r`n`r`n, %savePath%
-    FileAppend, %CodeEdit%, %savePath%
-    
-    MsgBox, 64, 完成, 座標資料已儲存到：`n%savePath%
-return
-
-; 測試收集的座標
-TestCoords:
-    MsgBox, 4, 測試座標, 即將測試收集的座標。`n滑鼠會依序移動到各個位置。`n`n要繼續嗎？
-    IfMsgBox No
-        return
-    
-    ; 測試各個座標
-    TrayTip, 測試中, 移動到 DICOM 左螢幕..., 2
-    MouseMove, % CollectedCoords.DICOMLU.x, % CollectedCoords.DICOMLU.y
-    Sleep, 1500
-    
-    TrayTip, 測試中, 移動到 DICOM 右螢幕..., 2
-    MouseMove, % CollectedCoords.DICOMRU.x, % CollectedCoords.DICOMRU.y
-    Sleep, 1500
-    
-    TrayTip, 測試中, 移動到 DICOM 按鈕..., 2
-    MouseMove, % CollectedCoords.DICOMButton.x, % CollectedCoords.DICOMButton.y
-    Sleep, 1500
-    
-    TrayTip, 測試完成, 座標測試完成！, 3
+    Clipboard := ResultEdit
+    TrayTip, 完成, 座標數據已複製到剪貼簿, 2
 return
 
 ; 關閉視窗
-LocSelectCancel:
-LocSelectGuiClose:
-    Gui, LocSelect:Destroy
+CoordWizClose:
+CoordWizGuiClose:
+CoordWizGuiEscape:
+    Gui, CoordWiz:Destroy
 return
 
 ResultsClose:
 ResultsGuiClose:
+ResultsGuiEscape:
     Gui, Results:Destroy
 return
 
@@ -1261,6 +1093,9 @@ XButton1::
 	; === 第三區：查詢功能 ===
     Menu, XB1Menu, Add, 開啟舊報告網頁 (&W), XB1_OpenWeb
     Menu, XB1Menu, Add, 病歷彙總 (&S), XB1_Summary
+    Menu, XB1Menu, Add  ; 分隔線
+    ; === 第四區：工具 ===
+    Menu, XB1Menu, Add, 測試目前座標 (&T), WizTestCurrentCoords
     Menu, XB1Menu, Add  ; 分隔線
     ; === 第五區：系統功能 ===
 	Menu, XB1Menu, Add, 腹部US AI (&A), AI_FindOpen
@@ -1314,10 +1149,10 @@ XB1_CopyDate:
     TrayTip, XButton1, 檢查日期已輸出, 2, 1
 return
 
-; 功能 4：日期 + 舊報告
+; 功能 4：日期 + 舊報告（開啟彈出視窗，同 Win+X）
 XB1_CopyOldReport:
-    Gosub, CopyOld
-    TrayTip, XButton1, 日期和舊報告已輸出, 2, 1
+    Gosub, CopyOld2
+    TrayTip, XButton1, 已開啟舊報告視窗, 2, 1
 return
 
 ; 功能 5：開啟舊報告網頁
@@ -1326,12 +1161,13 @@ XB1_OpenWeb:
     TrayTip, XButton1, 已開啟舊報告網頁, 2, 1
 return
 
-; 功能 6：病歷彙總
+; 功能 6：病歷彙總（經由 HIS 控件觸發）
 XB1_Summary:
+    ActivateHISLight()
     ControlGetText, ExamNo, ThunderRT6TextBox9, ahk_exe chk060.exe
     ChartNo := SubStr(ExamNo, 1, 8)
-    url := "http://jlmrs.chimei.org.tw/EPR/sub_entry.asp?ihosp=14&ipatient=" . ChartNo . "&imode=&ftype=&iclass=0&from=4130&multiscreen="
-    Run, msedge.exe %url%
+    ControlSetText, ThunderRT6TextBox9, %ChartNo%, ahk_exe chk060.exe
+    ControlClick, ThunderRT6CommandButton31, ahk_exe chk060.exe
     TrayTip, XButton1, 已開啟病歷彙總, 2, 1
 return
 
@@ -1342,7 +1178,7 @@ return
 
 ; 顯示快速鍵提示
 XB1_ShowHotkeys:
-    TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告`n[Win]+[C/Ctrl+F3] 複製舊報告日期`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[Q] 複製影像序列`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[XButton1] 多功能選單`n[XButton2] 依視窗切換, 20, 17
+    TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總(HIS)`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告視窗`n[Win]+[C/Ctrl+F3] 複製舊報告日期`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[Q] 複製影像序列`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[XButton1] 多功能選單`n[XButton2] 依視窗切換, 20, 17
 return
 
 ; 新增功能 8：重新載入腳本
