@@ -92,23 +92,23 @@ CXRCommon(pL2 := 0, pL3 := 0) {
 
 CXR1:
 CXRCommon(0, 0)
-gosub CXRFinish
+OutputFinish(2, "CXR 範例", false, true, false)
 return
 
 CXR3:
 CXRCommon(1, 0)
-gosub CXRFinish
+OutputFinish(2, "CXR 範例", false, true, false)
 return
 
 
 CXR4:
 CXRCommon(1, 1)
-gosub CXRFinish
+OutputFinish(2, "CXR 範例", false, true, false)
 return
 
 CXR5:
 CXRCommon(1, 2)
-gosub CXRFinish
+OutputFinish(2, "CXR 範例", false, true, false)
 return
 
 CXR6:
@@ -117,7 +117,7 @@ GuiControl,, L5, 1
 CXRCommon(1, 1)
 desc .= "Mild mediastinal widening.`r"
 desc .= "Status post permcath catheter insertion at _right_left _chest.`r"
-gosub CXRFinish
+OutputFinish(2, "CXR 範例", false, true, false)
 return
 
 
@@ -139,7 +139,7 @@ CXR7:
 desc .= "Mild increased lung markings in bilateral perihilar region.`r"
 desc .= "No cardiomegaly.`r"
 desc .= "The bony structure is unremarkable.`r"
-CopyCXRtoHISWithParam(1)
+OutputFinish(1, "CXR 範例", false, false, true)
 return
 
 CXR8:
@@ -245,7 +245,7 @@ if (OldReportText != "") {
     desc := OldReportText
     desc := RegExReplace(desc, "(\r\n|\n|\r)", "`n")
     Gui, OldReport:Destroy
-    gosub CXRFinish
+    CopyCXRtoHISWithParam(2)
 } else {
     Gui, OldReport:Destroy
     gosub CopyOld
@@ -258,7 +258,7 @@ if (dateInfo != "") {
     desc := dateInfo
     desc := RegExReplace(desc, "(\r\n|\n|\r)", "`n")
     Gui, OldReport:Destroy
-    gosub CXRFinish
+    CopyCXRtoHISWithParam(0)
 } else {
     Gui, OldReport:Destroy
     gosub CopyOld
@@ -334,8 +334,8 @@ Gui Add, CheckBox, x10 y10 w120 h23 vLTitle, 包含標題(&T)
 ; [新增] 部位選擇 Radio Button
 ; 預設不勾選，保留彈性；若選了就會固定輸出該部位
 Gui Add, Radio, x140 y10 w90 h23 vSpineLoc1, C-spine
-Gui Add, Radio, x240 y10 w90 h23 vSpineLoc2, L-spine
-Gui Add, CheckBox, x340 y10 w120 h23 vAddDash Checked1, 項目符號(-)
+Gui Add, Radio, x240 y10 w90 h23 checked1 vSpineLoc2, L-spine
+Gui Add, CheckBox, x340 y10 w120 h23 vAddDash, 項目符號(-)
 
 ; 第二排按鈕
 Gui Add, Button, x10 yp+50 w150 h50 gLspineDefault, L-spine 預設(&L)
@@ -530,7 +530,7 @@ CopyOldFromSpine:
 		} else if (SpineLoc2) { 	; 選擇了 L-spine
 			desc := "L-spine:`r`r"
 		}
-		CopyCXRtoHISWithParam(0)
+		CopyCXRtoHISWithParam(2)
     }
     dicom := GetDICOMData()
     accessionNum := GetAccessionNumber(dicom)
@@ -538,7 +538,7 @@ CopyOldFromSpine:
     
     ; 先輸出比較日期
     desc := "Comparison with previous study: " . dateInfo.full . ". _`r"
-    CopyCXRtoHISWithParam(0)
+    CopyCXRtoHISWithParam(1)
     
     ; 取得舊報告內容
     desc := GetOldReportContent(accessionNum, false) 

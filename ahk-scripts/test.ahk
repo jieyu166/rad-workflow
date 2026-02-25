@@ -1089,20 +1089,20 @@ XButton1::
 	; === 第二區：日期與報告 ===
     Menu, XB1Menu, Add, 複製檢查日期 (&D), XB1_CopyDate
     Menu, XB1Menu, Add, 日期 + 舊報告 (&O), XB1_CopyOldReport
+    Menu, XB1Menu, Add, 開啟舊報告網頁 (&W), XB1_OpenWeb
     Menu, XB1Menu, Add  ; 分隔線
 	; === 第三區：查詢功能 ===
-    Menu, XB1Menu, Add, 開啟舊報告網頁 (&W), XB1_OpenWeb
     Menu, XB1Menu, Add, 病歷彙總 (&S), XB1_Summary
     Menu, XB1Menu, Add  ; 分隔線
     ; === 第四區：工具 ===
-    Menu, XB1Menu, Add, 複製 Gemini API Key (&K), XB1_CopyGeminiKey
-    Menu, XB1Menu, Add, 測試目前座標 (&T), WizTestCurrentCoords
+    Menu, XB1Menu, Add, 腹部US AI (&A), AI_FindOpen
+    Menu, XB1Menu, Add, 乳房US AI (&B), ShowUSAIGUI
     Menu, XB1Menu, Add  ; 分隔線
     ; === 第五區：系統功能 ===
-	Menu, XB1Menu, Add, 腹部US AI (&A), AI_FindOpen
-	Menu, XB1Menu, Add, 乳房US AI (&B), ShowUSAIGUI
     Menu, XB1Menu, Add, 設定管理器 (&G), XB1_OpenConfig
+    Menu, XB1Menu, Add, 測試目前座標 (&T), WizTestCurrentCoords
     Menu, XB1Menu, Add, 顯示快速鍵 (&H), XB1_ShowHotkeys
+    Menu, XB1Menu, Add, 複製 Gemini API Key (&K), XB1_CopyGeminiKey
     Menu, XB1Menu, Add, 重新載入腳本 (&E), XB1_Reload
     
     ; 顯示選單
@@ -1189,7 +1189,7 @@ return
 
 ; 顯示快速鍵提示
 XB1_ShowHotkeys:
-    TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總(HIS)`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告視窗`n[Win]+[C/Ctrl+F3] 複製舊報告日期`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[Q] 複製影像序列`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[XButton1] 多功能選單`n[XButton2] 依視窗切換, 20, 17
+    TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告視窗`n[Win]+[C] 複製舊報告日期`n[Win]+[Q] 複製影像序列`n[XButton1] 多功能選單`n[XButton2] 依視窗切換`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[R] 病歷彙總(HIS), 20, 17
 return
 
 ; 新增功能 8：重新載入腳本
