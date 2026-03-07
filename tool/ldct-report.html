@@ -694,7 +694,7 @@
     function onCategoryChange() {
         const cat = document.getElementById('lungRadsCategory').value;
         const btnPDF = document.getElementById('btnPDF');
-        btnPDF.disabled = !['1','2'].includes(cat);
+        btnPDF.disabled = false;
         btnPDF.title = ['1','2'].includes(cat) ? '' : 'PDF is only for Category 1-2';
         updatePreview();
     }
@@ -1040,6 +1040,28 @@
         const tumorLabel = '\u7591\u4f3c\u816b\u7624\uff0c\u8acb\u5c31\u8a3a\u8840\u6db2\u816b\u7624\u79d1';
         const otherLabel = '\u5176\u4ed6:';
         const riskParagraph = '\u4f9d\u64da\u570b\u6c11\u5065\u5eb7\u7f72\u53ca\u570b\u5916\u76f8\u95dc\u7684\u91ab\u5b78\u6a19\u6e96\uff0c\u60a8\u76ee\u524d\u6709\u6d3b\u8e8d\u6027\u80ba\u764c (clinical active lung cancer) \u7684\u6a5f\u6703\uff0c' + riskText + '\u3002\u60a8\u4e0d\u9808\u7acb\u5373\u56de\u8a3a\uff0c\u53ef\u6839\u64da\u500b\u4eba\u7684\u7f79\u764c\u98a8\u96aa\uff0c\u6216\u5fb5\u8a62\u91ab\u5e2b\u610f\u898b\uff0c\u9593\u96941-2\u5e74\uff0c\u518d\u63a5\u53d7\u4e0b\u4e00\u6b21\u7684\u4f4e\u5291\u91cf\u96fb\u8166\u65b7\u5c64(LDCT)\u80ba\u764c\u7be9\u6aa2\u3002';
+
+        const otherItems = [];
+        if (document.getElementById('coronaryCalcification').checked) otherItems.push('coronary');
+        if (document.getElementById('emphysema').checked) otherItems.push('emphysema');
+        if (document.getElementById('bronchiectasis').checked) otherItems.push('bronchiectasis');
+
+        const otherChestDesc = document.getElementById('otherChestDesc').value.toLowerCase();
+        const otherAbdNeckDesc = document.getElementById('otherAbdNeckDesc').value.toLowerCase();
+        const hasGallstones = otherChestDesc.includes('gallstone') || otherAbdNeckDesc.includes('gallstone');
+        const hasKidneyStones = otherChestDesc.includes('kidney stone') || otherChestDesc.includes('renal stone') || otherAbdNeckDesc.includes('kidney stone') || otherAbdNeckDesc.includes('renal stone');
+        const hasThyroid = otherChestDesc.includes('thyroid') || otherAbdNeckDesc.includes('thyroid');
+        const hasTumor = otherChestDesc.includes('tumor') || otherChestDesc.includes('mass') || otherAbdNeckDesc.includes('tumor') || otherAbdNeckDesc.includes('mass');
+
+        const pdfOtherText = document.getElementById('pdfOtherText').value.trim();
+        const pdfNote = document.getElementById('pdfNote').value.trim();
+        const hasPdfOther = pdfOtherText.length > 0;
+        const noOtherFindings = otherItems.length === 0 && !hasGallstones && !hasKidneyStones && !hasThyroid && !hasTumor && !hasPdfOther;
+
+        const safeName = escapeHtml(name);
+        const safeCatDisplay = escapeHtml(catDisplay);
+        const safePdfOtherText = escapeHtml(pdfOtherText);
+        const safePdfNote = escapeHtml(pdfNote).replace(/\n/g, '<br>');
 
         return `
             <div style="text-align:center;margin-bottom:20px;">
