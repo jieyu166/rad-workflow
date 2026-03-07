@@ -234,31 +234,106 @@
             #section-output, .subtitle, h1, .api-key-row { display: none !important; }
             #print-area {
                 display: block !important;
-                font-family: '新細明體', 'PMingLiU', serif;
+                font-family: 'PMingLiU', serif;
                 font-size: 14pt;
                 line-height: 1.8;
                 padding: 0;
                 margin: 0;
             }
             #print-area .header-kaiti {
-                font-family: '標楷體', 'DFKai-SB', serif;
+                font-family: 'DFKai-SB', serif;
             }
             #print-area .underline {
                 border-bottom: 1px solid #000;
                 padding: 0 4px;
             }
+            #print-area [style*="font-size:20pt"] { font-size: 22pt !important; }
+            #print-area [style*="font-size:18pt"] { font-size: 20pt !important; }
+            #print-area [style*="font-size:14pt"] { font-size: 16pt !important; }
+            #print-area [style*="font-size:13pt"] { font-size: 15pt !important; }
             @page {
                 size: A4;
                 margin: 15mm 20mm;
             }
         }
         #print-area { display: none; }
+        .pdf-editor-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+        .pdf-editor-dialog {
+            width: min(900px, 100%);
+            max-height: 90vh;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 18px 48px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .pdf-editor-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid #e6e6e6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .pdf-editor-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1a5276;
+        }
+        .pdf-editor-note {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        .pdf-editor-body {
+            padding: 16px 18px;
+            overflow: auto;
+            background: #f7f9fb;
+        }
+        .pdf-editor-canvas {
+            min-height: 560px;
+            background: #fff;
+            border: 1px solid #d9e2ec;
+            border-radius: 10px;
+            padding: 24px 28px;
+            font-family: 'PMingLiU', serif;
+            font-size: 14pt;
+            line-height: 1.8;
+            outline: none;
+        }
+        .pdf-editor-canvas .header-kaiti {
+            font-family: 'DFKai-SB', serif;
+        }
+        .pdf-editor-actions {
+            padding: 14px 18px;
+            border-top: 1px solid #e6e6e6;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            background: #fff;
+        }
+        .pdf-editor-overlay.show {
+            display: flex;
+        }
+        @media print {
+            .pdf-editor-overlay { display: none !important; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>LDCT Lung Cancer Screening Report</h1>
-        <div class="subtitle">LDCT 肺癌篩檢報告產生工具</div>
+        <div class="subtitle">LDCT &#32954;&#30284;&#31721;&#27298;&#22577;&#21578;&#29986;&#29983;&#24037;&#20855;</div>
 
         <!-- Section A: Patient & Exam Info -->
         <div class="section" id="section-patient">
@@ -354,7 +429,7 @@
                 <label><input type="checkbox" id="modifierS"> Modifier S: Clinically significant non-lung-cancer findings</label>
             </div>
             <div class="check-group">
-                <label><input type="checkbox" id="suggestClinic"> Suggest clinic visit (請至門診就診)</label>
+                <label><input type="checkbox" id="suggestClinic"> Suggest clinic visit (&#35531;&#33267;&#38272;&#35386;&#23601;&#35386;)</label>
             </div>
 
             <hr style="margin:12px 0;">
@@ -362,11 +437,14 @@
             <!-- Nodule Findings -->
             <div class="section-title" style="font-size:1em;">Lung Nodule Findings</div>
             <div class="check-group" style="margin-bottom:8px;">
-                <label><input type="radio" name="noduleType" value="none" onchange="onNoduleTypeChange()"> No lung nodule</label>
-                <label><input type="radio" name="noduleType" value="benign" onchange="onNoduleTypeChange()"> Benign features</label>
-                <label><input type="radio" name="noduleType" value="insignificant" onchange="onNoduleTypeChange()" checked> Insignificant (&lt;6mm)</label>
-                <label><input type="radio" name="noduleType" value="juxtapleural" onchange="onNoduleTypeChange()"> Juxtapleural &lt;10mm</label>
-                <label><input type="radio" name="noduleType" value="significant" onchange="onNoduleTypeChange()"> Significant (&ge;6mm)</label>
+                <label><input type="radio" name="nodulePrimary" value="none" onchange="onNoduleTypeChange()"> No lung nodule</label>
+                <label><input type="radio" name="nodulePrimary" value="benign" onchange="onNoduleTypeChange()"> Benign features</label>
+                <label><input type="radio" name="nodulePrimary" value="other" onchange="onNoduleTypeChange()" checked> Other nodule findings</label>
+            </div>
+            <div class="check-group indent" style="margin-bottom:8px;">
+                <label><input type="checkbox" id="noduleInsignificant" onchange="onNoduleTypeChange()" checked> Insignificant (&lt;6mm)</label>
+                <label><input type="checkbox" id="noduleJuxtapleural" onchange="onNoduleTypeChange()"> Juxtapleural &lt;10mm</label>
+                <label><input type="checkbox" id="noduleSignificant" onchange="onNoduleTypeChange()"> Significant (&ge;6mm)</label>
             </div>
 
             <!-- Insignificant details -->
@@ -534,20 +612,20 @@
             <div class="section-title">D. Report Output</div>
             <div class="btn-row" style="margin-bottom:10px;">
                 <button class="btn btn-success" onclick="copyReport()">Copy Text Report</button>
-                <button class="btn btn-warning" id="btnPDF" onclick="generatePDF()">Print Patient Notification (PDF)</button>
+                <button class="btn btn-warning" id="btnPDF" onclick="openPDFEditor()">Print Patient Notification (PDF)</button>
                 <button class="btn btn-primary" onclick="updatePreview()">Refresh Preview</button>
             </div>
             <!-- PDF-specific fields -->
             <div style="border:1px dashed #f39c12;border-radius:8px;padding:10px 15px;margin-bottom:10px;background:#fffdf0;">
                 <div style="font-weight:600;font-size:0.9em;color:#f39c12;margin-bottom:6px;">PDF Patient Notification Fields (Cat 1-2)</div>
                 <div class="form-group" style="margin-bottom:8px;">
-                    <label style="font-weight:600;font-size:0.9em;">其他發現 (Other):</label>
-                    <input type="text" id="pdfOtherText" style="width:350px;" placeholder="自由填寫其他發現項目">
+                    <label style="font-weight:600;font-size:0.9em;">&#20854;&#20182;&#30332;&#29694; (Other):</label>
+                    <input type="text" id="pdfOtherText" style="width:350px;" placeholder="&#33258;&#30001;&#22635;&#23531;&#20854;&#20182;&#30332;&#29694;&#38917;&#30446;">
                 </div>
                 <div style="margin-bottom:4px;">
-                    <label style="font-weight:600;font-size:0.9em;">附註 (Doctor's Notes):</label>
+                    <label style="font-weight:600;font-size:0.9em;">&#38468;&#35387; (Doctor's Notes):</label>
                 </div>
-                <textarea id="pdfNote" rows="3" style="font-family:'Segoe UI',sans-serif;font-size:0.9em;" placeholder="醫師附註，列印在通知單下方..."></textarea>
+                <textarea id="pdfNote" rows="3" style="font-family:'Segoe UI',sans-serif;font-size:0.9em;" placeholder="&#37291;&#24107;&#38468;&#35387;&#65292;&#21015;&#21360;&#22312;&#36890;&#30693;&#21934;&#19979;&#26041;..."></textarea>
             </div>
             <div class="report-preview" id="reportPreview">Click "Refresh Preview" or change any field to see the report...</div>
         </div>
@@ -555,13 +633,31 @@
 
     <!-- Hidden print area for PDF -->
     <div id="print-area"></div>
+    <div class="pdf-editor-overlay" id="pdfEditorOverlay">
+        <div class="pdf-editor-dialog">
+            <div class="pdf-editor-header">
+                <div>
+                    <div class="pdf-editor-title">Patient Notification Editor</div>
+                    <div class="pdf-editor-note">&#20808;&#20462;&#25913;&#36890;&#30693;&#20839;&#23481;&#65292;&#20877;&#36865;&#20986;&#21015;&#21360;&#38928;&#35261;&#12290;</div>
+                </div>
+            </div>
+            <div class="pdf-editor-body">
+                <div id="pdfEditorCanvas" class="pdf-editor-canvas" contenteditable="true"></div>
+            </div>
+            <div class="pdf-editor-actions">
+                <button class="btn btn-secondary" onclick="refreshPDFEditor()">Regenerate</button>
+                <button class="btn btn-secondary" onclick="closePDFEditor()">Close</button>
+                <button class="btn btn-warning" onclick="printEditedPDF()">Preview Print</button>
+            </div>
+        </div>
+    </div>
 
     <script>
     // ================================================================
     // State & Initialization
     // ================================================================
-    const CHECK = '\u25A0';  // ■
-    const UNCHECK = '\u25A1'; // □
+    const CHECK = '\u25A0';  // filled box
+    const UNCHECK = '\u25A1'; // empty box
 
     function cb(condition) { return condition ? CHECK : UNCHECK; }
 
@@ -574,18 +670,8 @@
             // Convert YYYY.MM.DD to YYYY/MM/DD
             document.getElementById('examDate').value = params.get('date').replace(/\./g, '/');
         }
-        if (params.get('key')) {
-            document.getElementById('apiKey').value = params.get('key');
-            localStorage.setItem('ldct_gemini_key', params.get('key'));
-        }
     }
 
-    // Load API key from localStorage
-    function initAPIKey() {
-        const saved = localStorage.getItem('ldct_gemini_key');
-        const field = document.getElementById('apiKey');
-        if (!field.value && saved) field.value = saved;
-    }
 
     function toggleKeyVisibility() {
         const field = document.getElementById('apiKey');
@@ -596,9 +682,12 @@
     // UI Interactions
     // ================================================================
     function onNoduleTypeChange() {
-        const val = document.querySelector('input[name="noduleType"]:checked')?.value;
-        document.getElementById('insignificantDetails').style.display = (val === 'insignificant') ? 'block' : 'none';
-        document.getElementById('significantDetails').style.display = (val === 'significant') ? 'block' : 'none';
+        const primary = document.querySelector('input[name="nodulePrimary"]:checked')?.value || 'other';
+        const isOther = primary === 'other';
+        const hasInsignificant = isOther && document.getElementById('noduleInsignificant').checked;
+        const hasSignificant = isOther && document.getElementById('noduleSignificant').checked;
+        document.getElementById('insignificantDetails').style.display = hasInsignificant ? 'block' : 'none';
+        document.getElementById('significantDetails').style.display = hasSignificant ? 'block' : 'none';
         updatePreview();
     }
 
@@ -714,13 +803,16 @@
     function getFormState() {
         const quality = document.querySelector('input[name="quality"]:checked')?.value || 'Acceptable';
         const cat = document.getElementById('lungRadsCategory').value;
-        const noduleType = document.querySelector('input[name="noduleType"]:checked')?.value || 'none';
+        const nodulePrimary = document.querySelector('input[name="nodulePrimary"]:checked')?.value || 'other';
+        const hasInsignificant = nodulePrimary === 'other' && document.getElementById('noduleInsignificant').checked;
+        const hasJuxtapleural = nodulePrimary === 'other' && document.getElementById('noduleJuxtapleural').checked;
+        const hasSignificant = nodulePrimary === 'other' && document.getElementById('noduleSignificant').checked;
         const ctdivol = document.getElementById('ctdivol').value || '__';
         const dlp = document.getElementById('dlp').value || '__';
         const priorDate = document.getElementById('priorDate').value || '0000/00/00';
         const noPrior = document.getElementById('noPriorCT').checked;
 
-        return { quality, cat, noduleType, ctdivol, dlp, priorDate, noPrior };
+        return { quality, cat, nodulePrimary, hasInsignificant, hasJuxtapleural, hasSignificant, ctdivol, dlp, priorDate, noPrior };
     }
 
     function generateTextReport() {
@@ -739,28 +831,22 @@
         // --- Lung nodule findings ---
         lines.push(`Lung nodule findings related to cancer screening`);
 
-        const nt = s.noduleType;
-        // No lung nodule
-        lines.push(`${cb(nt==='none')}No lung nodule`);
-        // Benign
-        lines.push(`${cb(nt==='benign')}Nodule with benign features.`);
-        // Insignificant
+        const primary = s.nodulePrimary;
+        const hasInsignificant = s.hasInsignificant;
+        const hasJuxtapleural = s.hasJuxtapleural;
+        const hasSignificant = s.hasSignificant;
+        lines.push(`${cb(primary==='none')}No lung nodule`);
+        lines.push(`${cb(primary==='benign')}Nodule with benign features.`);
         const insigSE = document.getElementById('insigSeries').value || '_';
         const insigIM = document.getElementById('insigImage').value || '__';
-        lines.push(`${cb(nt==='insignificant')}Insignificant(<6 mm) (SE:${insigSE}, IM:${insigIM})`);
-        // Juxtapleural
-        lines.push(`${cb(nt==='juxtapleural')}Juxtapleural nodule(s) <10mm`);
-        lines.push(`("早期肺癌"可能以"非特異性微小結節"潛伏存在數年的時間而沒有臨床上有意義的腫瘤增長，考量不必要引起受檢者無謂的驚慌，定期追蹤這類結節是目前安全的策略，或您可與您的醫師討論。)`);
-
-        // Significant nodules
+        lines.push(`${cb(hasInsignificant)}Insignificant(<6 mm) (SE:${insigSE}, IM:${insigIM})`);
+        lines.push(`${cb(hasJuxtapleural)}Juxtapleural nodule(s) <10mm`);
+        lines.push(`(\u201c\u65e9\u671f\u80ba\u764c\u201d\u53ef\u80fd\u4ee5\u201c\u975e\u7279\u7570\u6027\u5fae\u5c0f\u7d50\u7bc0\u201d\u6f5b\u4f0f\u5b58\u5728\u6578\u5e74\u7684\u6642\u9593\u800c\u6c92\u6709\u81e8\u5e8a\u4e0a\u6709\u610f\u7fa9\u7684\u816b\u7624\u589e\u9577\uff0c\u8003\u91cf\u4e0d\u5fc5\u8981\u5f15\u8d77\u53d7\u6aa2\u8005\u7121\u8b02\u7684\u9a5a\u614c\uff0c\u5b9a\u671f\u8ffd\u8e64\u9019\u985e\u7d50\u7bc0\u662f\u76ee\u524d\u5b89\u5168\u7684\u7b56\u7565\uff0c\u6216\u60a8\u53ef\u8207\u60a8\u7684\u91ab\u5e2b\u8a0e\u8ad6\u3002)`);
         const sigCount = document.querySelector('input[name="noduleCount"]:checked')?.value || '1';
-        const hasSig = (nt === 'significant');
-        lines.push(`${cb(hasSig)}Lung nodule(s) (≧6 mm or enlarging>1.5mm or new≧4mm) ${cb(hasSig && sigCount==='1')}1 ${cb(hasSig && sigCount==='2')}2 ${cb(hasSig && sigCount==='3')}3 ${cb(hasSig && sigCount==='4+')}≧4, and described as followings:`);
-        lines.push(`請依序描述最懷疑之肺結節(至多 3 個) (Describe the most worrisome 3 nodules in order)`);
-
-        // Nodule details (up to 3)
+        lines.push(`${cb(hasSignificant)}Lung nodule(s) (\u22676 mm or enlarging>1.5mm or new\u22674mm) ${cb(hasSignificant && sigCount==='1')}1 ${cb(hasSignificant && sigCount==='2')}2 ${cb(hasSignificant && sigCount==='3')}3 ${cb(hasSignificant && sigCount==='4+')}\u22674, and described as followings:`);
+        lines.push(`\u8acb\u4f9d\u5e8f\u63cf\u8ff0\u6700\u61f7\u7591\u4e4b\u80ba\u7d50\u7bc0(\u81f3\u591a 3 \u500b) (Describe the most worrisome 3 nodules in order)`);
         for (let i = 0; i < 3; i++) {
-            const n = (hasSig && noduleData[i]) ? noduleData[i] : null;
+            const n = (hasSignificant && noduleData[i]) ? noduleData[i] : null;
             const hasN = !!n;
             lines.push(`  ${cb(hasN)}Lung nodule ${i+1} (size, character and location)`);
             if (hasN) {
@@ -769,11 +855,10 @@
                 const srsImg = n.srsImg || '_/_';
                 lines.push(`    Lobe: (Srs/Img:${srsImg}) ${cb(n.lobe==='RUL')}RUL ${cb(n.lobe==='RML')}RML ${cb(n.lobe==='RLL')}RLL  ${cb(n.lobe==='LUL')}LUL ${cb(n.lobe==='LLL')}LLL`);
                 lines.push(`    The nodule is ${cb(n.change==='unchanged')}unchanged ${cb(n.change==='enlarging')}enlarging (>1.5 mm)`);
-                lines.push(`                  ${cb(n.change==='new')}newly found (≧4 mm) in follow-up`);
+                lines.push(`                  ${cb(n.change==='new')}newly found (\u22674 mm) in follow-up`);
                 lines.push(`                  ${cb(n.change==='no_prior')}No prior chest CT comparison.`);
             }
         }
-
         // Nodules else
         const nodulesElse = document.getElementById('nodulesElse').checked;
         if (nodulesElse) {
@@ -877,7 +962,7 @@
         lines.push(`${cb(modS)}Modifier S: Other. Clinically significant or potentially clinically significant findings (non lung cancer).`);
 
         const suggestClinic = document.getElementById('suggestClinic').checked;
-        lines.push(`${cb(suggestClinic)}請至門診就診`);
+        lines.push(`${cb(suggestClinic)}\u8acb\u81f3\u9580\u8a3a\u5c31\u8a3a`);
 
         return lines.join('\n');
     }
@@ -905,95 +990,121 @@
     // ================================================================
     // PDF Generation (Attachment 2 - Patient Notification)
     // ================================================================
-    function generatePDF() {
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function buildPatientNotificationHTML() {
         const cat = document.getElementById('lungRadsCategory').value;
         if (!['1', '2'].includes(cat)) {
             alert('Patient notification PDF is only generated for Category 1 and 2.');
-            return;
+            return null;
         }
 
         const name = document.getElementById('patientName').value || '___';
         const sex = document.getElementById('patientSex').value;
         const examDate = document.getElementById('examDate').value || '____/____/____';
 
-        // Parse date parts
         const dateParts = examDate.split('/');
         const year = dateParts[0] || '____';
         const month = dateParts[1] || '__';
         const day = dateParts[2] || '__';
 
-        // Honorific based on sex
-        const honorific = sex === 'F' ? '女士' : '先生';
-
-        // Category result text
+        const honorific = sex === 'F' ? '\u5973\u58eb' : '\u5148\u751f';
         const modS = document.getElementById('modifierS').checked;
         const catDisplay = cat + (modS ? 'S' : '');
-        const resultText = cat === '1' ? '無異常發現。' : '無顯著異常。';
-        const riskText = '小於1%';
+        const resultText = cat === '1' ? '\u7121\u7570\u5e38\u767c\u73fe\u3002' : '\u7121\u986f\u8457\u7570\u5e38\u3002';
+        const riskText = '\u5c0f\u65bc1%';
+        const hospitalTitle = '\u5947\u7f8e\u91ab\u7642\u8ca1\u5718\u6cd5\u4eba \u4f73\u91cc\u5947\u7f8e\u91ab\u9662';
+        const noticeTitle = '\u570b\u6c11\u5065\u5eb7\u7f72LDCT \u80ba\u764c\u7be9\u6aa2 \u7d50\u679c\u901a\u77e5';
+        const examDateLabel = '\u6aa2\u67e5\u65e5\u671f:';
+        const resultLabel = '\u80ba\u764c\u7be9\u6aa2\u5224\u8b80\u7d50\u679c:';
+        const radsLabel = 'Lung\u2013RADS\u5206\u985e:';
+        const findingsLabel = '\u5176\u4ed6\u76f8\u95dc\u767c\u73fe:';
+        const noteLabel = '\u9644\u8a3b:';
+        const yearLabel = '\u5e74';
+        const monthLabel = '\u6708';
+        const dayLabel = '\u65e5';
+        const noneLabel = '\u7121';
+        const coronaryLabel = '\u51a0\u72c0\u52d5\u8108\u9219\u5316\uff0c\u53ef\u5c31\u8a3a\u5fc3\u81df\u5167\u79d1';
+        const emphysemaLabel = '\u80ba\u6c23\u816b\uff0c\u53ef\u5c31\u8a3a\u80f8\u8154\u79d1';
+        const bronchiectasisLabel = '\u652f\u6c23\u7ba1\u64f4\u5f35\uff0c\u53ef\u5c31\u8a3a\u80f8\u8154\u79d1';
+        const gallstonesLabel = '\u81bd\u7d50\u77f3\uff0c\u53ef\u5c31\u8a3a\u80c3\u8178\u79d1';
+        const kidneyStonesLabel = '\u814e\u7d50\u77f3\uff0c\u53ef\u5c31\u8a3a\u6ccc\u5c3f\u79d1';
+        const thyroidLabel = '\u7532\u72c0\u817a\u8174\u5927\uff0c\u8acb\u5c31\u8a3a\u65b0\u9673\u4ee3\u8b1d\u79d1';
+        const tumorLabel = '\u7591\u4f3c\u816b\u7624\uff0c\u8acb\u5c31\u8a3a\u8840\u6db2\u816b\u7624\u79d1';
+        const otherLabel = '\u5176\u4ed6:';
+        const riskParagraph = '\u4f9d\u64da\u570b\u6c11\u5065\u5eb7\u7f72\u53ca\u570b\u5916\u76f8\u95dc\u7684\u91ab\u5b78\u6a19\u6e96\uff0c\u60a8\u76ee\u524d\u6709\u6d3b\u8e8d\u6027\u80ba\u764c (clinical active lung cancer) \u7684\u6a5f\u6703\uff0c' + riskText + '\u3002\u60a8\u4e0d\u9808\u7acb\u5373\u56de\u8a3a\uff0c\u53ef\u6839\u64da\u500b\u4eba\u7684\u7f79\u764c\u98a8\u96aa\uff0c\u6216\u5fb5\u8a62\u91ab\u5e2b\u610f\u898b\uff0c\u9593\u96941-2\u5e74\uff0c\u518d\u63a5\u53d7\u4e0b\u4e00\u6b21\u7684\u4f4e\u5291\u91cf\u96fb\u8166\u65b7\u5c64(LDCT)\u80ba\u764c\u7be9\u6aa2\u3002';
 
-        // Other findings for notification
-        const otherItems = [];
-        if (document.getElementById('coronaryCalcification').checked) otherItems.push('coronary');
-        if (document.getElementById('emphysema').checked) otherItems.push('emphysema');
-        if (document.getElementById('bronchiectasis').checked) otherItems.push('bronchiectasis');
-        // Check for additional modifier S items from other findings
-        const otherChestDesc = document.getElementById('otherChestDesc').value.toLowerCase();
-        const otherAbdNeckDesc = document.getElementById('otherAbdNeckDesc').value.toLowerCase();
-
-        const hasGallstones = otherChestDesc.includes('gallstone') || otherAbdNeckDesc.includes('gallstone');
-        const hasKidneyStones = otherChestDesc.includes('kidney stone') || otherChestDesc.includes('renal stone') || otherAbdNeckDesc.includes('kidney stone') || otherAbdNeckDesc.includes('renal stone');
-        const hasThyroid = otherChestDesc.includes('thyroid') || otherAbdNeckDesc.includes('thyroid');
-        const hasTumor = otherChestDesc.includes('tumor') || otherChestDesc.includes('mass') || otherAbdNeckDesc.includes('tumor') || otherAbdNeckDesc.includes('mass');
-
-        const pdfOtherText = document.getElementById('pdfOtherText').value.trim();
-        const pdfNote = document.getElementById('pdfNote').value.trim();
-        const hasPdfOther = pdfOtherText.length > 0;
-
-        const noOtherFindings = otherItems.length === 0 && !hasGallstones && !hasKidneyStones && !hasThyroid && !hasTumor && !hasPdfOther;
-
-        const printArea = document.getElementById('print-area');
-        printArea.innerHTML = `
+        return `
             <div style="text-align:center;margin-bottom:20px;">
-                <div class="header-kaiti" style="font-size:20pt;font-weight:bold;">奇美醫療財團法人 佳里奇美醫院</div>
-                <div class="header-kaiti" style="font-size:18pt;font-weight:bold;margin-top:8px;">國民健康署LDCT 肺癌篩檢 結果通知</div>
+                <div class="header-kaiti" style="font-size:20pt;font-weight:bold;">${hospitalTitle}</div>
+                <div class="header-kaiti" style="font-size:18pt;font-weight:bold;margin-top:8px;">${noticeTitle}</div>
             </div>
             <div style="font-size:14pt;margin-bottom:20px;">
-                <span style="border-bottom:1px solid #000;padding:0 8px;">${name}</span>
+                <span style="border-bottom:1px solid #000;padding:0 8px;">${safeName}</span>
                 <span style="margin-left:4px;">${honorific}</span>
-                <span style="margin-left:30px;">檢查日期:</span>
-                <span style="border-bottom:1px solid #000;padding:0 4px;">${year}</span>年
-                <span style="border-bottom:1px solid #000;padding:0 4px;">${month}</span>月
-                <span style="border-bottom:1px solid #000;padding:0 4px;">${day}</span>日
+                <span style="margin-left:30px;">${examDateLabel}</span>
+                <span style="border-bottom:1px solid #000;padding:0 4px;">${year}</span>${yearLabel}
+                <span style="border-bottom:1px solid #000;padding:0 4px;">${month}</span>${monthLabel}
+                <span style="border-bottom:1px solid #000;padding:0 4px;">${day}</span>${dayLabel}
             </div>
             <div style="font-size:14pt;margin-bottom:20px;">
-                <span>肺癌篩檢判讀結果: </span>
+                <span>${resultLabel} </span>
                 <span class="header-kaiti" style="font-weight:bold;">${resultText}</span>
-                <span> Lung\u2013RADS分類:</span>
-                <span style="border-bottom:1px solid #000;padding:0 8px;">${catDisplay}</span>
+                <span> ${radsLabel}</span>
+                <span style="border-bottom:1px solid #000;padding:0 8px;">${safeCatDisplay}</span>
             </div>
             <div style="font-size:13pt;margin-bottom:25px;line-height:2;">
-                依據國民健康署及國外相關的醫學標準，您目前有活躍性肺癌
-                (clinical active lung cancer) 的機會，${riskText}。您不須立即回診，可根據個人的罹癌風險，
-                或徵詢醫師意見，間隔1-2年，再接受下一次的低劑量電腦斷層(LDCT)肺癌篩檢。
+                ${riskParagraph}
             </div>
-            <div style="font-size:14pt;margin-bottom:10px;font-weight:bold;">其他相關發現:</div>
+            <div style="font-size:14pt;margin-bottom:10px;font-weight:bold;">${findingsLabel}</div>
             <div style="font-size:13pt;line-height:2.2;">
-                ${cb(noOtherFindings)} 無<br>
-                ${cb(otherItems.includes('coronary'))} 冠狀動脈鈣化，可就診心臟內科<br>
-                ${cb(otherItems.includes('emphysema'))} 肺氣腫，可就診胸腔科<br>
-                ${cb(otherItems.includes('bronchiectasis'))} 支氣管擴張，可就診胸腔科<br>
-                ${cb(hasGallstones)} 膽結石，可就診胃腸科<br>
-                ${cb(hasKidneyStones)} 腎結石，可就診泌尿科<br>
-                ${cb(hasThyroid)} 甲狀腺腫大，請就診新陳代謝科<br>
-                ${cb(hasTumor)} 疑似腫瘤，請就診血液腫瘤科<br>
-                ${cb(hasPdfOther)} 其他: ${hasPdfOther ? pdfOtherText : '____________'}
+                ${cb(noOtherFindings)} ${noneLabel}<br>
+                ${cb(otherItems.includes('coronary'))} ${coronaryLabel}<br>
+                ${cb(otherItems.includes('emphysema'))} ${emphysemaLabel}<br>
+                ${cb(otherItems.includes('bronchiectasis'))} ${bronchiectasisLabel}<br>
+                ${cb(hasGallstones)} ${gallstonesLabel}<br>
+                ${cb(hasKidneyStones)} ${kidneyStonesLabel}<br>
+                ${cb(hasThyroid)} ${thyroidLabel}<br>
+                ${cb(hasTumor)} ${tumorLabel}<br>
+                ${cb(hasPdfOther)} ${otherLabel} ${hasPdfOther ? safePdfOtherText : '____________'}
             </div>
             ${pdfNote ? `
-            <div style="font-size:14pt;margin-top:20px;margin-bottom:8px;font-weight:bold;">附註:</div>
-            <div style="font-size:13pt;line-height:1.8;white-space:pre-wrap;">${pdfNote}</div>
+            <div style="font-size:14pt;margin-top:20px;margin-bottom:8px;font-weight:bold;">${noteLabel}</div>
+            <div style="font-size:13pt;line-height:1.8;">${safePdfNote}</div>
             ` : ''}
         `;
+    }
 
+    function openPDFEditor() {
+        const html = buildPatientNotificationHTML();
+        if (!html) return;
+        document.getElementById('pdfEditorCanvas').innerHTML = html;
+        document.getElementById('pdfEditorOverlay').classList.add('show');
+        showStatus('Patient notification ready for final editing.', 'success');
+    }
+
+    function refreshPDFEditor() {
+        const html = buildPatientNotificationHTML();
+        if (!html) return;
+        document.getElementById('pdfEditorCanvas').innerHTML = html;
+    }
+
+    function closePDFEditor() {
+        document.getElementById('pdfEditorOverlay').classList.remove('show');
+    }
+
+    function printEditedPDF() {
+        const editor = document.getElementById('pdfEditorCanvas');
+        const printArea = document.getElementById('print-area');
+        printArea.innerHTML = editor.innerHTML;
+        closePDFEditor();
         window.print();
     }
 
@@ -1006,8 +1117,8 @@ Parse the following LDCT impression text into structured JSON. Follow these rule
 1. Extract the Lung-RADS category exactly as stated (0, 1, 2, 3, 4A, 4B)
 2. Determine the LDCT quality if mentioned (good, acceptable, not_acceptable), default "acceptable"
 3. Determine if prior CT is available and its date
-4. Classify nodule findings into one of: "none", "benign", "insignificant", "juxtapleural", "significant"
-   - "insignificant" = nodules < 6mm
+4. Determine whether nodule findings include any of these flags: no_nodule, benign_features, insignificant_nodules, juxtapleural_nodules, has_significant_nodules
+   - If the impression says no significant nodule or no suspicious nodule, set no_nodule = true unless a real nodule is explicitly described
    - "significant" = nodules >= 6mm, or enlarging >1.5mm, or new >= 4mm
 5. For insignificant nodules, extract the series and image numbers if provided
 6. For significant nodules, extract details for each (up to 3): size, density (non-solid/part-solid/solid), solid part size if part-solid, lobe (RUL/RML/RLL/LUL/LLL), series/image, change status (unchanged/enlarging/new/no_prior)
@@ -1015,6 +1126,9 @@ Parse the following LDCT impression text into structured JSON. Follow these rule
 8. Check for airway nodules and atypical cysts
 9. Extract other lung findings: emphysema, bronchiectasis, bronchitis, tree_in_bud, centrilobular, old_tb, ild
 10. Extract other findings: lymph_nodes (with location), coronary_calcification (with description), other_chest, other_abdomen_neck
+    - Set coronary_calcification = true only when the impression explicitly mentions coronary arteries, coronary artery calcification, or named coronary vessels such as LAD, LCx, RCA, left main/LM
+    - If coronary_calcification = true, coronary_description should contain only the named coronary vessel(s), for example "LAD, LCx"
+    - Do NOT set coronary_calcification for isolated aortic, great vessel, or other non-coronary atherosclerotic/calcific change
 11. Determine if Modifier S applies (clinically significant non-lung-cancer findings)
 12. Check for metastases pattern
 
@@ -1024,19 +1138,25 @@ Return ONLY valid JSON with this exact structure:
   "quality": "acceptable",
   "prior_available": false,
   "prior_date": "",
-  "nodule_type": "insignificant",
+  "no_nodule": false,
+  "benign_features": false,
+  "insignificant_nodules": true,
+  "juxtapleural_nodules": false,
+  "has_significant_nodules": false,
   "insignificant_series": "3",
   "insignificant_image": "45",
   "significant_count": "0",
   "significant_nodules": [],
   "nodules_else": false,
   "nodules_else_lobes": [],
+  "nodules_else_srs_img": "",
   "airway_nodule": false,
   "airway_type": "",
   "airway_seg_type": "",
   "atypical_cyst": false,
   "cyst_category": "",
   "cyst_lobes": [],
+  "cyst_srs_img": "",
   "metastases_pattern": false,
   "emphysema": false,
   "bronchiectasis": false,
@@ -1070,6 +1190,34 @@ For significant_nodules array, each nodule should be:
 
 change can be: "unchanged", "enlarging", "new", "no_prior"`;
 
+    function mentionsCoronaryArteries(text) {
+        return /\b(coronary|lad|lcx|rca|left main|lm)\b/i.test(text);
+    }
+
+    function extractCoronaryVessels(text) {
+        const vessels = [];
+        const upper = text.toUpperCase();
+        if (/\bLAD\b/.test(upper)) vessels.push('LAD');
+        if (/\bLCX\b/.test(upper)) vessels.push('LCx');
+        if (/\bRCA\b/.test(upper)) vessels.push('RCA');
+        if (/\bLEFT MAIN\b|\bLM\b/.test(upper)) vessels.push('LM');
+        return vessels;
+    }
+
+    function enforceCoronaryRule(parsed, impression) {
+        if (!parsed || typeof parsed !== 'object') return parsed;
+        const vessels = extractCoronaryVessels(impression);
+        if (!mentionsCoronaryArteries(impression)) {
+            parsed.coronary_calcification = false;
+            parsed.coronary_description = "";
+            return parsed;
+        }
+        if (parsed.coronary_calcification) {
+            parsed.coronary_description = vessels.length ? vessels.join(', ') : "";
+        }
+        return parsed;
+    }
+
     async function parseWithAI() {
         const impression = document.getElementById('impressionText').value.trim();
         if (!impression) {
@@ -1082,8 +1230,6 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
             showStatus('Please enter Gemini API Key.', 'error');
             return;
         }
-        // Save key to localStorage
-        localStorage.setItem('ldct_gemini_key', apiKey);
 
         showStatus('Parsing with Gemini AI...', 'loading');
 
@@ -1117,7 +1263,7 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (!text) throw new Error('No content in API response');
 
-            const parsed = JSON.parse(text);
+            const parsed = enforceCoronaryRule(JSON.parse(text), impression);
             applyParsedData(parsed);
             showStatus('AI parsing complete! Review and edit the results below.', 'success');
         } catch (err) {
@@ -1147,13 +1293,17 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
             if (d.prior_date) document.getElementById('priorDate').value = d.prior_date;
         } else {
             document.getElementById('noPriorCT').checked = true;
+            document.getElementById('priorDate').value = '';
         }
 
-        // Nodule type
-        if (d.nodule_type) {
-            const ntRadio = document.querySelector(`input[name="noduleType"][value="${d.nodule_type}"]`);
-            if (ntRadio) { ntRadio.checked = true; onNoduleTypeChange(); }
-        }
+        // Nodule flags
+        const primaryValue = d.no_nodule ? 'none' : (d.benign_features ? 'benign' : 'other');
+        const primaryRadio = document.querySelector(`input[name="nodulePrimary"][value="${primaryValue}"]`);
+        if (primaryRadio) primaryRadio.checked = true;
+        document.getElementById('noduleInsignificant').checked = !!d.insignificant_nodules;
+        document.getElementById('noduleJuxtapleural').checked = !!d.juxtapleural_nodules;
+        document.getElementById('noduleSignificant').checked = !!d.has_significant_nodules;
+        onNoduleTypeChange();
 
         // Insignificant details
         if (d.insignificant_series) document.getElementById('insigSeries').value = d.insignificant_series;
@@ -1189,6 +1339,9 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
                     if (cb) cb.checked = true;
                 });
             }
+            if (d.nodules_else_srs_img) {
+                document.getElementById('elseSrsImg').value = d.nodules_else_srs_img;
+            }
         }
 
         // Airway
@@ -1218,6 +1371,9 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
                     const cb = document.querySelector(`.cystLobes[value="${l}"]`);
                     if (cb) cb.checked = true;
                 });
+            }
+            if (d.cyst_srs_img) {
+                document.getElementById('cystSrsImg').value = d.cyst_srs_img;
             }
         }
 
@@ -1279,7 +1435,10 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
         document.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(el => el.value = '');
         document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
         document.querySelector('input[name="quality"][value="Acceptable"]').checked = true;
-        document.querySelector('input[name="noduleType"][value="insignificant"]').checked = true;
+        document.querySelector('input[name="nodulePrimary"][value="other"]').checked = true;
+        document.getElementById('noduleInsignificant').checked = true;
+        document.getElementById('noduleJuxtapleural').checked = false;
+        document.getElementById('noduleSignificant').checked = false;
         document.getElementById('lungRadsCategory').value = '';
         noduleData = [];
         renderNoduleTable();
@@ -1297,7 +1456,6 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
     // ================================================================
     window.addEventListener('DOMContentLoaded', function() {
         initFromURL();
-        initAPIKey();
         addNoduleRow(); // Start with one empty row
         onNoduleTypeChange();
         onCategoryChange();
@@ -1306,3 +1464,12 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+

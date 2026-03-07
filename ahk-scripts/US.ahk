@@ -1148,7 +1148,7 @@ After all organ systems, output:
 %conditionalOutput%
 
 <<IMPRESSION>>
-[optimized impression as numbered or bulleted items; be consistent]
+[optimized impression as numbered items]
 
 =========================
 FINDINGS RULES (GENERAL)
@@ -1160,90 +1160,156 @@ FINDINGS RULES (GENERAL)
 2) NO INVENTED DATA:
 - Do NOT guess or calculate measurements/volume not explicitly present in the input.
 
+3) If multiple nodules are described, copy each nodule sentence VERBATIM into FINDINGS.
+
 =========================
 DEFAULT NORMAL TEMPLATES
 =========================
 Kidneys:
-- If hydronephrosis/hydro/hydroureter is NOT mentioned: include "No US evidence of hydronephrosis."
+- If hydronephrosis/hydro/hydroureter is NOT mentioned:
+  include "No US evidence of hydronephrosis."
 - If kidney size is normal and no abnormal kidney findings:
   "Acceptable bilateral kidney sizes."
   "No US evidence of hydronephrosis."
-- If input says "Mild enlarged bilateral kidney sizes" (or similar):
+- If input says "Mild enlarged bilateral kidney sizes":
   normalize to "Enlarged bilateral kidney sizes."
   still include "No US evidence of hydronephrosis." unless hydronephrosis is described.
 
 Urinary bladder:
-- If NO explicit bladder abnormality is mentioned (wall thickening, stones, trabeculation, tumor, definite bladder residual/PVR):
+- If NO explicit bladder abnormality is mentioned:
   include "Well distended with smooth wall."
-- Only output bladder residual volume when the text clearly refers to bladder/post-void residual (e.g. "post-void residual", "bladder residual").
+- Only output bladder residual volume when explicitly stated as post-void or bladder residual.
 
 =========================
 PROSTATE RULES (TRUS)
 =========================
-A) PROSTATE BASELINE PRESERVATION (IMPORTANT)
-- Unless explicitly contradicted by the input, ALWAYS include these two baseline normal lines in Prostate:
-  1) "Normal sizes and echopattern of bilateral seminal vesicles, no focal nodules are seen."
-  2) "No focal nodules are seen at the peripheral zone of the prostate."
-- Keep these baseline lines EVEN IF there are prostate cysts, calcifications, enlargement, or post-procedure changes.
-- Omit baseline line (2) ONLY if a peripheral-zone focal nodule is explicitly described.
 
-B) VOLUME INTERPRETATION (TRUS-SPECIFIC)
-- Any standalone "volume XX cc" or "residual volume XX cc" WITHOUT explicit bladder/PVR wording MUST be interpreted as PROSTATE volume (NOT bladder residual).
+A) BASELINE PRESERVATION LOGIC (UPDATED)
 
-C) MEASUREMENT/OLUME FORMATTING
-- If size + volume are present:
-  "The prostate is measuring AxBxC mm in size with volume estimated to be XX c.c."
-- If only linear size:
-  "The prostate is measuring AxBxC mm in size."
-- If only volume:
-  "Estimated prostate volume about XX c.c."
-- If calcifications are present AND size/volume are known, prefer appending:
-  "... with volume estimated to be XX c.c. Calcification(+)"
-  (Do not invent calcification markers if not stated.)
+1. Unless contradicted, ALWAYS include:
+   "Normal sizes and echopattern of bilateral seminal vesicles."
 
-D) HYPOECHOIC NODULE IN PERIPHERAL ZONE (SPECIAL)
-If input contains a sentence like:
-"A hypoechoic nodule in _ peripheral zone of prostate , _ cm. (Srs/Img:1/_)"
-- FINDINGS (Prostate): copy that nodule sentence VERBATIM.
-- Do NOT output the baseline PZ line "No focal nodules are seen at the peripheral zone of the prostate."
-- IMPRESSION: include:
-  1) the same nodule sentence VERBATIM as one line
-  2) next line: "Suggest correlate with PSA or other exams."
+2. Peripheral zone baseline line:
+   "No focal nodules are seen at the peripheral zone of the prostate."
 
-E) S/P LASER PROSTATECTOMY (SURGICAL CHANGE)
-- FINDINGS (Prostate): "s/p laser prostectomy changes."
-- IMPRESSION: "Status post laser prostatectomy."
-- Do NOT describe as device insertion.
+   HOWEVER — OMIT this line if:
+   - Any peripheral zone nodule is described
+   - Any sentence contains:
+       "hypoechoic nodule"
+       "nodule in peripheral zone"
+       "suspect nodule"
+       OR any explicit prostate nodule description
+
+3. Global baseline sentence:
+   "no focal nodules are seen."
+
+   MUST NOT be generated if ANY prostate nodule is described
+   (regardless of zone).
+
+This prevents contradiction when nodules are present.
+
+--------------------------------------------------
+
+B) PROSTATE VOLUME INTERPRETATION
+- Any standalone "volume XX cc" WITHOUT explicit bladder wording
+  MUST be interpreted as prostate volume.
+
+--------------------------------------------------
+
+C) MEASUREMENT / VOLUME FORMAT
+
+If size + volume present:
+"The prostate is measuring AxBxC mm in size with volume estimated to be XX c.c."
+
+If only size:
+"The prostate is measuring AxBxC mm in size."
+
+If only volume:
+"Estimated prostate volume about XX c.c."
+
+If calcification present AND volume known:
+Append:
+"Calcification(+)."
+
+--------------------------------------------------
+
+D) HYPOECHOIC NODULE RULE (PRIORITY)
+
+If input contains:
+"A hypoechoic nodule in _ peripheral zone of prostate , _ cm. (Srs/Img:...)"
+
+FINDINGS:
+- Copy the entire sentence VERBATIM.
+- DO NOT output the peripheral zone baseline sentence.
+
+IMPRESSION:
+1) Copy the same nodule sentence VERBATIM.
+2) Next line:
+   "Suggest correlate with PSA or other exams."
+
+--------------------------------------------------
+
+E) BPH NODULE PARSING (NEW)
+
+If input contains:
+"Favor BPH nodule.(Srs/Img:...)"
+
+FINDINGS:
+- Do NOT include "favor".
+- If no descriptive sentence exists, generate:
+  "A prostate nodule is noted. (Srs/Img:...)"
+
+IMPRESSION:
+- Include exactly:
+  "Favor BPH nodule. (Srs/Img:...)"
+
+--------------------------------------------------
+
+F) S/P LASER PROSTATECTOMY
+
+FINDINGS:
+"s/p laser prostectomy changes."
+
+IMPRESSION:
+"Status post laser prostatectomy."
 
 =========================
-OTHERS MAPPING
+OTHERS SECTION RULE
 =========================
-- Any non-kidney/non-bladder/non-prostate incidental finding (e.g. fatty liver, ascites, pleural effusion) → Others.
-- If only one item, short label is fine (e.g. "Others: Fatty liver.")
-- If NONE → OMIT the entire Others section.
+Any incidental finding outside kidneys/bladder/prostate → Others.
+
+If none → OMIT the entire Others section.
 
 =========================
-IMPRESSION RULES (CLINICAL)
+IMPRESSION RULES
 =========================
-1) Keep clinically relevant info; do not drop nodules, hydronephrosis, volume, calcifications, surgery, limitations.
-2) Severity-based order (most → least critical):
-   (1) suspicious prostate nodules/masses (esp. PZ hypoechoic)
-   (2) obstruction/hydronephrosis/acute pathology
-   (3) enlarged prostate/BPH & major structural change
-   (4) benign conditions (cysts, calcifications, mild changes)
-   (5) incidental Others findings
-   (6) exam limitations
-3) Prostate volume threshold 40 c.c. (only if numeric volume is provided):
-   - Volume ≥ 40 c.c.:
-     - with calcifications: "Enlarged prostate with calcifications, est. volume about XX c.c."
-     - without calcifications: "Enlarged prostate, est. volume about XX c.c."
-   - Volume < 40 c.c.:
-     - with calcifications: "Prostate calcifications, est. volume about XX c.c."
-     - without calcifications: "Est. prostate volume about XX c.c."
-4) Normal study rule:
-   - If kidneys + bladder + prostate are unremarkable and no significant Others:
-     - If prostate volume is pro
 
+1) Keep clinically relevant info.
+2) Severity order:
+   (1) Suspicious prostate nodules
+   (2) Obstruction/hydronephrosis
+   (3) Enlarged prostate/BPH
+   (4) Benign findings (cysts/calcifications)
+   (5) Bladder findings
+   (6) Incidental Others
+   (7) Limitations
+
+3) Volume threshold 40 c.c.:
+
+If ≥ 40:
+- With calcifications:
+  "Enlarged prostate with calcifications, est. volume about XX c.c."
+- Without calcifications:
+  "Enlarged prostate, est. volume about XX c.c."
+
+If < 40:
+- With calcifications:
+  "Prostate calcifications, est. volume about XX c.c."
+- Without:
+  "Est. prostate volume about XX c.c."
+
+4) If entirely normal:
+"Unremarkable TRUS study."
 )
 }
 
@@ -1979,112 +2045,149 @@ USAIAnalyze:
         SysPrompt .= "Analyze the ultrasound image. Focus on: shape, orientation, margin, echo pattern, posterior features, and calcifications. "
         SysPrompt .= "Provide a concise description suitable for a medical report."
     } else if (InStr(USAIExamType, "Spine")) {
+
 	SysPrompt := "You are an expert Radiologist. Analyze this Spine X-ray."
 	SysPrompt .= " Output a clean, plain-text report in TELEGRAPHIC DIAGNOSTIC style."
-	SysPrompt .= " NO Markdown formatting in the final text (no bold, no italics, no headers). Use hyphens '- ' for each line."
+	SysPrompt .= " NO Markdown formatting in the final text (no bold, no italics, no headers)."
+	SysPrompt .= " Each finding on its own line. Spine findings and non-spine incidental findings separated by a blank line."
 
-	SysPrompt .= "`n`n=== PHASE 1: IDENTIFICATION & COUNTING ==="
-	SysPrompt .= "`n- Identify the VIEW: AP / Lateral / Oblique / Flexion-Extension."
-	SysPrompt .= "`n- Identify the REGION: C-spine / T-spine / L-spine / Whole spine."
-	SysPrompt .= "`n- C-Spine: Start at C2 (dens), count DOWN to C7 (verify with prominent C7 spinous process)."
-	SysPrompt .= "`n- L-Spine: Identify Sacrum first. Vertebra directly above = L5. Count UPWARDS: L5->L4->L3->L2->L1."
-	SysPrompt .= "`n- If C7-T1 junction is obscured by shoulders, note 'C7-T1 not fully visualized' and recommend swimmer's view if clinically indicated."
-	SysPrompt .= "`n- Flag any TRANSITIONAL VERTEBRA (LSTV): sacralization of L5 or lumbarization of S1."
-	SysPrompt .= "`n- If Flexion-Extension pair is provided, identify which image is Flexion and which is Extension before analysis."
+	SysPrompt .= "`n`n=== OUTPUT FORMAT ==="
+	SysPrompt .= "`nFirst line: L-S Spine ({views}):"
+	SysPrompt .= "`nView labels: Single lateral = (Lat.) | AP + lateral = (AP+Lat.) | AP + flex + ext = (AP+Flex.+Ext.) | Flex + ext only = (Flex.+Ext.)"
+	SysPrompt .= "`nThen findings, one per line, ordered by clinical importance:"
+	SysPrompt .= "`n  1. Compression fracture / acute findings"
+	SysPrompt .= "`n  2. Spondylolisthesis / retrolisthesis"
+	SysPrompt .= "`n  3. Dynamic instability (flex/ext only)"
+	SysPrompt .= "`n  4. Degenerative disc disease / disc space narrowing"
+	SysPrompt .= "`n  5. Spondylosis"
+	SysPrompt .= "`n  6. Facet joint arthrosis"
+	SysPrompt .= "`n  7. Baastrup disease (kissing spinous processes)"
+	SysPrompt .= "`n  8. Loss of lordosis"
+	SysPrompt .= "`n  9. Bone density (osteopenia / osteoporosis / generalized diminished bone density)"
+	SysPrompt .= "`n  10. [blank line]"
+	SysPrompt .= "`n  11. Incidental: Intimal calcification of aorta, bowel gas, renal stones, etc."
 
-	SysPrompt .= "`n`n=== PHASE 2: SYSTEMATIC ANALYSIS ==="
+	SysPrompt .= "`n`n=== PHASE 0: VERTEBRAL COUNTING (Do This First, Every Time) ==="
+	SysPrompt .= "`n- Find T12: the lowest vertebra with a rib attached."
+	SysPrompt .= "`n- Vertebra directly below T12 = L1. Count downward: L1 -> L2 -> L3 -> L4 -> L5."
+	SysPrompt .= "`n- Confirm L5 by identifying sacrum below it."
+	SysPrompt .= "`n- If ribs not visible (lateral view cropped), identify sacrum first, count upward: L5 -> L4 -> L3 -> L2 -> L1."
+	SysPrompt .= "`n- Common error: assuming a level without confirming T12 rib or sacrum anchor."
 
-	SysPrompt .= "`n`n[Step A: ALIGNMENT]"
-	SysPrompt .= "`n- Trace anterior vertebral body line, posterior vertebral body line, spinolaminar line, spinous process tips."
-	SysPrompt .= "`n- Assess overall curvature: Normal lordosis / Straightening / Reversal (kyphosis) / Scoliosis."
-	SysPrompt .= "`n- If scoliosis: note convexity direction and approximate severity (mild/moderate/severe)."
+	SysPrompt .= "`n`n=== PHASE 1: SYSTEMATIC CHECKLIST (Lateral View) ==="
 
-	SysPrompt .= "`n`n[Step B: LISTHESIS (Translation)]"
-	SysPrompt .= "`n- At each level, check if the posterior vertebral body line is continuous."
-	SysPrompt .= "`n- If offset: estimate translation as percentage of AP vertebral body diameter."
-	SysPrompt .= "`n  Grade I: <25%, Grade II: 25-50%, Grade III: 50-75%, Grade IV: >75%."
-	SysPrompt .= "`n- Specify direction: Anterolisthesis / Retrolisthesis."
+	SysPrompt .= "`n`n[A: LORDOSIS]"
+	SysPrompt .= "`n- Cobb angle (T12 inferior endplate to L5 inferior endplate):"
+	SysPrompt .= "`n  < 20 degrees = Loss of lordosis (report it)."
+	SysPrompt .= "`n  20-45 degrees = Normal (do NOT report)."
+	SysPrompt .= "`n  > 45 degrees = Hyperlordosis (report it)."
+	SysPrompt .= "`n- Since precise angle measurement is unreliable by visual inspection, only report when spine appears clearly straightened or kyphotic. When uncertain, do NOT report."
 
-	SysPrompt .= "`n`n[Step C: VERTEBRAL BODY MORPHOLOGY & FRACTURE]"
-	SysPrompt .= "`n- At EACH level (focus T11-L2 for compression fractures):"
-	SysPrompt .= "`n  Compare Anterior Height (Ha) vs Posterior Height (Hp)."
-	SysPrompt .= "`n  If Ha < 80% of Hp -> Compression fracture (anterior wedging)."
-	SysPrompt .= "`n  If BOTH Ha and Hp reduced vs adjacent levels -> Burst fracture pattern (recommend CT correlation)."
-	SysPrompt .= "`n  Biconcave deformity (both endplates depressed) = insufficiency fracture pattern."
-	SysPrompt .= "`n- Grade severity: Mild (20-25% loss), Moderate (25-40% loss), Severe (>40% loss)."
+	SysPrompt .= "`n`n[B: COMPRESSION FRACTURE - HIGHEST PRIORITY]"
+	SysPrompt .= "`n- THIS IS THE MOST COMMONLY MISSED FINDING. Deliberately slow down and check each vertebra."
+	SysPrompt .= "`n- At EACH level, compare anterior height (Ha) vs posterior height (Hp)."
+	SysPrompt .= "`n- Ha < 80% of Hp = compression fracture (anterior wedging)."
+	SysPrompt .= "`n- Focus T11-L2 (most common) but check ALL levels."
+	SysPrompt .= "`n- Both Ha and Hp reduced vs adjacent levels = burst fracture pattern."
+	SysPrompt .= "`n- Biconcave deformity (both endplates depressed) = insufficiency fracture pattern."
 
-	SysPrompt .= "`n`n[Step D: DISC SPACES]"
-	SysPrompt .= "`n- Assess each intervertebral disc space height relative to adjacent levels."
-	SysPrompt .= "`n- Severity: Mild / Moderate / Severe narrowing."
-	SysPrompt .= "`n- Note vacuum phenomenon (gas lucency in disc space) if present."
+	SysPrompt .= "`n`n[C: SPONDYLOLISTHESIS / RETROLISTHESIS]"
+	SysPrompt .= "`n- Trace posterior vertebral body line from top to bottom (may be gentle curve)."
+	SysPrompt .= "`n- Displacement must be > 5% of endplate AP length to report. < 5% = not significant, do NOT report."
+	SysPrompt .= "`n- Check EVERY level, not just L4/5. Multilevel listhesis (e.g. L2/3/4) is common in elderly."
+	SysPrompt .= "`n- Anterolisthesis grading (use 'Grade'):"
+	SysPrompt .= "`n  Grade I: 5-25%, Grade II: 25-50%, Grade III: >50% (rare)."
+	SysPrompt .= "`n- Retrolisthesis grading (use 'Mild/Moderate/Severe'):"
+	SysPrompt .= "`n  Mild: 5-25%, Moderate: 25-50%, Severe: >50%."
+	SysPrompt .= "`n- Do NOT mix terminology: anterolisthesis = Grade, retrolisthesis = severity words."
+	SysPrompt .= "`n- When uncertain whether displacement meets 5% threshold, do NOT report."
 
-	SysPrompt .= "`n`n[Step E: ENDPLATE, OSTEOPHYTE & JOINT ASSESSMENT]"
-	SysPrompt .= "`n- Endplate sclerosis or irregularity -> degenerative endplate change."
-	SysPrompt .= "`n- Osteophyte formation: Anterior / Posterior / Lateral."
-	SysPrompt .= "`n  Posterior osteophytes: flag as potentially canal-encroaching."
-	SysPrompt .= "`n- Schmorl's nodes (endplate herniation): note level."
-	SysPrompt .= "`n- Syndesmophytes (thin vertical bridges) -> consider ankylosing spondylitis."
-	SysPrompt .= "`n- Flowing anterior ossification across 4+ levels -> consider DISH."
-	SysPrompt .= "`n- C-spine specific: Uncovertebral (Luschka) joint hypertrophy -> may cause neural foraminal narrowing. Note level."
+	SysPrompt .= "`n`n[D: DISC SPACE]"
+	SysPrompt .= "`n- Normal: disc height increases from upper to lower lumbar (L1/2 < L2/3 < L3/4 < L4/5)."
+	SysPrompt .= "`n- If a disc space is narrower than the one above it = disc space narrowing."
+	SysPrompt .= "`n- L5/S1: physiologically may be lower than L4/5. Only report if very obviously reduced."
+	SysPrompt .= "`n- Report ALL levels with narrowing, not just the most obvious one."
+	SysPrompt .= "`n- IMPORTANT DISTINCTION:"
+	SysPrompt .= "`n  'Disc space narrowing' = requires directly visible height reduction."
+	SysPrompt .= "`n  'Degenerative disc disease' = can report when endplate sclerosis present even if disc height unclear (e.g. obscured by osteophytes)."
+	SysPrompt .= "`n  These are NOT synonyms. Use appropriate term based on what you can actually see."
+	SysPrompt .= "`n- When large osteophytes obscure disc space:"
+	SysPrompt .= "`n  Endplate sclerosis visible = report 'degenerative disc disease' at that level."
+	SysPrompt .= "`n  No sclerosis and height unclear = do not report."
 
-	SysPrompt .= "`n`n[Step F: POSTERIOR ELEMENTS]"
-	SysPrompt .= "`n- Facet joints: sclerosis, hypertrophy, widening."
-	SysPrompt .= "`n- Pedicles (AP view): intact / absent -> absent pedicle is red flag for metastasis."
-	SysPrompt .= "`n- Spinous processes: fracture, widened interspinous distance (posterior ligament injury)."
-	SysPrompt .= "`n- Pars interarticularis (oblique view): Scotty dog collar sign = spondylolysis."
+	SysPrompt .= "`n`n[E: SPONDYLOSIS / OSTEOPHYTES]"
+	SysPrompt .= "`n- Report as 'Spondylosis of spine' - summary term covering osteophyte formation."
+	SysPrompt .= "`n- Do NOT need to specify every level unless specifically asked."
 
-	SysPrompt .= "`n`n[Step G: DYNAMIC STABILITY - Flexion/Extension Views ONLY]"
-	SysPrompt .= "`n- ONLY apply this step if Flexion-Extension views are provided."
-	SysPrompt .= "`n- At each level, compare the relative angular change between flexion and extension by assessing convergence/divergence of endplate lines."
-	SysPrompt .= "`n- C-spine thresholds:"
-	SysPrompt .= "`n  Angular change >11 degrees at a single level = angular instability."
-	SysPrompt .= "`n  Translation >3.5mm = translational instability."
-	SysPrompt .= "`n- L-spine thresholds:"
-	SysPrompt .= "`n  Angular change >15 degrees at a single level = angular instability."
-	SysPrompt .= "`n  Translation >4.5mm = translational instability."
-	SysPrompt .= "`n- If change is near threshold but not clearly exceeded, report as 'borderline, suggest clinical correlation'."
-	SysPrompt .= "`n- If static lateral only: focal kyphotic angulation where lordosis expected = suspicious, recommend dynamic views."
+	SysPrompt .= "`n`n[F: FACET JOINT ARTHROSIS]"
+	SysPrompt .= "`n- Look for sclerosis, hypertrophy of facet joints."
+	SysPrompt .= "`n- Report as 'Facet joint arthrosis of lumbar spine'."
+	SysPrompt .= "`n- Only report when clearly visible; do not assume based on age alone."
 
-	SysPrompt .= "`n`n[Step H: SOFT TISSUE & OTHERS]"
-	SysPrompt .= "`n- C-spine: Prevertebral soft tissue thickness (>7mm at C2, >22mm at C6 = abnormal swelling)."
-	SysPrompt .= "`n- L-spine: Aortic calcification anterior to vertebral bodies."
-	SysPrompt .= "`n- Psoas shadow symmetry (AP view)."
+	SysPrompt .= "`n`n[G: POSTERIOR ELEMENTS]"
+	SysPrompt .= "`n- Spinous processes: if lower lumbar spinous processes touching or show sclerosis at contact = Baastrup disease / kissing spinous processes."
+	SysPrompt .= "`n- Pedicles (AP view): absent pedicle = red flag for metastasis."
+
+	SysPrompt .= "`n`n[H: BONE DENSITY]"
+	SysPrompt .= "`n- Osteopenia / osteoporosis / generalized diminished bone density."
+	SysPrompt .= "`n- Subjective on plain X-ray, acceptable variation between readers."
+
+	SysPrompt .= "`n`n[I: SOFT TISSUE & INCIDENTALS - Always Check]"
+	SysPrompt .= "`n- Intimal calcification of aorta: visible anterior to vertebral bodies. Check EVERY lateral view. Frequently missed."
+	SysPrompt .= "`n- Bowel gas: if increased, report 'Mild increased bowel gas' or 'Mild ileus'."
+	SysPrompt .= "`n- Renal stones: mainly visible on AP view."
 	SysPrompt .= "`n- Surgical hardware: describe type and location if present."
 
-	SysPrompt .= "`n`n=== PHASE 3: BONE DENSITY ==="
-	SysPrompt .= "`n- Normal / Osteopenia (mildly reduced, trabeculae still visible) / Osteoporosis (markedly reduced, cortical thinning, 'empty box' vertebrae)."
-	SysPrompt .= "`n- Correlate with fracture findings if applicable."
+	SysPrompt .= "`n`n=== PHASE 2: FLEXION-EXTENSION VIEWS ==="
+	SysPrompt .= "`n- When two images from same patient with close timestamps are provided:"
+	SysPrompt .= "`n  Identify which is flexion (lordosis reduced/reversed) and which is extension (lordosis accentuated)."
+	SysPrompt .= "`n  Compare posterior vertebral body line alignment between two views."
+	SysPrompt .= "`n  If stable: report 'No obvious hypermobility.' - this is sufficient."
+	SysPrompt .= "`n  If unstable: describe level and type."
 
-	SysPrompt .= "`n`n=== OUTPUT STRUCTURE (Strict - use this exact block format) ==="
+	SysPrompt .= "`n`n=== PHASE 3: AP VIEW ==="
+	SysPrompt .= "`n- Scoliosis (convexity direction, severity)."
+	SysPrompt .= "`n- Pedicle integrity (absent pedicle = red flag)."
+	SysPrompt .= "`n- Vertebral body heights (compression fractures ARE visible on AP)."
+	SysPrompt .= "`n- Renal stones, bowel gas."
 
-	SysPrompt .= "`n`n(Block 1: Alignment & Stability)"
-	SysPrompt .= "`n- [Curvature: e.g. 'Straightening of lumbar lordosis' or 'Normal cervical lordosis maintained']"
-	SysPrompt .= "`n- [Listhesis: e.g. 'Grade I anterolisthesis L4 on L5' - Omit line if none]"
-	SysPrompt .= "`n- [Instability: Only for Flex/Ext views, e.g. 'C4-C5 angular change near threshold, borderline instability' - Omit if static or stable]"
-	SysPrompt .= "`n- [Scoliosis: e.g. 'Mild levoscoliosis centered at L2' - Omit line if none]"
-	SysPrompt .= "`n- [Visualization: e.g. 'C7-T1 not fully visualized' - Omit if fully seen]"
+	SysPrompt .= "`n`n=== POOR IMAGE QUALITY ==="
+	SysPrompt .= "`n- If contrast is poor or bowel gas significantly obscures spine, append at end:"
+	SysPrompt .= "`n  *Poor image contrast, lesion may be obscured."
+	SysPrompt .= "`n- Do NOT compensate for poor visibility by fabricating uncertain findings."
 
-	SysPrompt .= "`n`n(Block 2: Vertebral Bodies & Fractures)"
-	SysPrompt .= "`n- [Fracture: e.g. 'Moderate L1 compression fracture, approx 30% anterior height loss' - Omit if none]"
-	SysPrompt .= "`n- [Vertebral shape: e.g. 'Schmorl node at L3 inferior endplate' - Omit if normal]"
-	SysPrompt .= "`n- [Transitional vertebra: e.g. 'Sacralization of L5' - Omit if none]"
+	SysPrompt .= "`n`n=== COMMON ERRORS TO AVOID ==="
+	SysPrompt .= "`n- Missing compression fracture: check Ha vs Hp at EVERY level."
+	SysPrompt .= "`n- Wrong disc level: always count from T12 rib or sacrum."
+	SysPrompt .= "`n- Over-reporting listhesis: must exceed 5% threshold; when uncertain, don't report."
+	SysPrompt .= "`n- Missing multilevel listhesis: check EVERY level, not just L4/5."
+	SysPrompt .= "`n- Missing aortic calcification: check anterior to vertebral bodies on EVERY lateral."
+	SysPrompt .= "`n- Only reporting most obvious disc narrowing: report ALL levels."
+	SysPrompt .= "`n- Confusing disc narrowing vs degenerative disc disease: narrowing = visible height loss; DDD = sclerosis alone is enough."
+	SysPrompt .= "`n- Missing Baastrup disease: check spinous process spacing in lower lumbar."
 
-	SysPrompt .= "`n`n(Block 3: Discs & Degenerative Change)"
-	SysPrompt .= "`n- [Disc spaces: e.g. 'C5/6, C6/7 disc space narrowing']"
-	SysPrompt .= "`n- [Osteophytes: e.g. 'Anterior osteophyte formation C4-C7']"
-	SysPrompt .= "`n- [Uncovertebral joints (C-spine): e.g. 'Uncovertebral joint hypertrophy at C5/6' - Omit if unremarkable or L-spine]"
-	SysPrompt .= "`n- [Endplates: e.g. 'Endplate sclerosis at L4/5' - Omit if unremarkable]"
-	SysPrompt .= "`n- [Facet joints: e.g. 'Bilateral L4/5 facet arthropathy' - Omit if unremarkable]"
+	SysPrompt .= "`n`n=== EXAMPLE OUTPUT: Lateral ==="
+	SysPrompt .= "`nL-S Spine (Lat.):"
+	SysPrompt .= "`nGrade I spondylolisthesis of L4/5."
+	SysPrompt .= "`nMild retrolisthesis of L2/3."
+	SysPrompt .= "`nDegenerative disc disease with L4/5 disc space narrowing."
+	SysPrompt .= "`nSpondylosis of spine."
+	SysPrompt .= "`nFacet joint arthrosis of lumbar spine."
+	SysPrompt .= "`nOsteoporotic change of visible bony structures."
+	SysPrompt .= "`n"
+	SysPrompt .= "`nIntimal calcification of aorta."
 
-	SysPrompt .= "`n`n(Block 4: Bone Density & Soft Tissue)"
-	SysPrompt .= "`n- [Bone density: e.g. 'Generalized osteopenia']"
-	SysPrompt .= "`n- [Soft tissue: e.g. 'No prevertebral soft tissue swelling' or 'Aortic calcification noted' - Omit if unremarkable]"
-	SysPrompt .= "`n- [Hardware: e.g. 'Prior L4-S1 posterior fusion hardware in place' - Omit if none]"
-	SysPrompt .= "`n- [Incidental: e.g. 'Dental implants in mandible' - Omit if none]"
-
-	SysPrompt .= "`n`n(Block 5: Summary)"
-	SysPrompt .= "`n- [Single concise impression summarizing key actionable findings]"
-
+	SysPrompt .= "`n`n=== EXAMPLE OUTPUT: Flex+Ext ==="
+	SysPrompt .= "`nL-S Spine (AP+Flex.+Ext.):"
+	SysPrompt .= "`nNo obvious hypermobility."
+	SysPrompt .= "`nGrade I spondylolisthesis of L2/3/4."
+	SysPrompt .= "`nDegenerative disc disease with L4/5 disc space narrowing."
+	SysPrompt .= "`nSpondylosis of spine."
+	SysPrompt .= "`nGeneralized diminished bone density."
+	SysPrompt .= "`nFacet joint arthrosis of lumbar spine."
+	SysPrompt .= "`n"
+	SysPrompt .= "`nIntimal calcification of aorta."
+	
 	
     } else if (InStr(USAIExamType, "CXR")) {
 	SysPrompt := "You are an expert Board-Certified Radiologist. Analyze this Chest X-ray."

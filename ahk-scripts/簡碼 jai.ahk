@@ -118,7 +118,7 @@ return
 ; "hypodense lesion without post-contrast enhancement _, about _cm in diameter, favor _cyst","hypodense lesions without post-contrast enhancement in _, up to _cm in diameter, favor _cysts."
 
 :O:cyst;::
-HotstringMenuV("A","MenuShortcut","Left renal cyst","Right renal cyst","BRK", "Bilateral renal cysts", "Left renal cysts, up to _ cm", "Right renal cysts, up to _ cm","BRK","_ breast cysts","Bilateral breast cysts","BRK","_Bilateral thyroid cysts","BRK", "A hepatic cyst in _ of liver, _ cm","Hepatic cysts, up to _ cm","Hepatic cysts in both lobes of liver, up to _ cm. ","Hepatic cysts","BRK","A midline neck cyst, _cm, could be thyroglossal duct cyst or other.(Srs/Img:1/_)","A midline prostate cyst, _cm, could be utricle cyst, Mullerian duct cyst or others.(Srs/Img:1/_)")
+HotstringMenuV("A","MenuShortcut","Left renal cyst","Right renal cyst","BRK", "Bilateral renal cysts", "Left renal cysts, up to _ cm", "Right renal cysts, up to _ cm","BRK","_ breast cysts","Bilateral breast cysts","BRK","_Bilateral thyroid cysts","BRK", "Hepatic cyst or hypodense lesion in _both lobes of liver.(Srs/Img:2/65)","Hepatic cysts in both lobes of liver, up to _ cm. ","Hepatic cysts","BRK","A midline neck cyst, _cm, could be thyroglossal duct cyst or other.(Srs/Img:1/_)","A midline prostate cyst, _cm, could be utricle cyst, Mullerian duct cyst or others.(Srs/Img:1/_)")
 return
 
 :O:stone;::
@@ -160,6 +160,9 @@ HotstringMenuV("A","MenuShortcut","* Compared with prior film on","* Limited int
 return
 
 
+::no;::
+HotstringMenuV("A","MenuShortcut","No significant >3mm lung nodules found in both lungs.", "No obvious radiopaque urotract stones.","No aortic dissection.", "No definite CT evidence of major pulmonary embolism was noted. *However, small branches embolism may be obscured.")
+return
 
 ::nodule;::
 HotstringMenuV("A","MenuShortcut","A _hyperechoic nodule in _left lobe of liver, _ cm.(Srs/Img:_/_)", "A _hypoechoic nodule in _left lobe of liver, _ cm.(Srs/Img:_/_)","A _hyperechoic nodule in _left kidney, _ cm.(Srs/Img:_/_)","A hypoechoic nodule in _ peripheral zone of prostate , _ cm. (Srs/Img:1/_) ","BRK","A solid nodule in _, mean diameter _mm .(Srs/Img:_/_)","A partsolid nodule in _, solid part _mm, total _mm.(Srs/Img:_/_)","A ground-glass nodule in _, _ mm.(Srs/Img:_/_)","<6mm _solid_partsolid_ground-glass nodules in _.(Srs/Img:_/_)","_subsegmental airway nodules.(Srs/Img:_/_)")
@@ -413,7 +416,7 @@ CopyCXRtoHISWithParam(moveDown := 2) {
         ActivateHISLight()
 
     ; 開頭的移動（只在模式 2 時）
-    if (moveDown = 2) {
+    if (moveDown = 3) {
         SendInput {End}{Down}
         SendInput {End}{Down}
     }

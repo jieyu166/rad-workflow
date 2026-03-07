@@ -1,0 +1,96 @@
+{
+  "weeks": [
+    {
+      "week_id": "2026-W08",
+      "date_range": "2026/2/16 ~ 2/22",
+      "source": "GPT 對話記錄（手動整理）",
+      "tracking": {
+        "start": {"xr": 487, "ct": 16, "us": 18, "mammo": 0},
+        "end": {"xr": 518, "ct": 22, "us": 25, "mammo": 8},
+        "net_change": {"xr": 31, "ct": 6, "us": 7, "mammo": 8}
+      },
+      "completed": {
+        "xr": 446, "ct": 32, "us": 38, "mammo": 34, "mr": 0, "ivp": 3, "bmd": 15
+      },
+      "time": {
+        "report_hr": 22.3,
+        "clinical_hr": null,
+        "study_hr": 0
+      },
+      "efficiency": {
+        "xr_overall": 38.0,
+        "ct_brain": 8.6,
+        "us_hard": 7.2,
+        "mammo": 20.0
+      },
+      "notes": "第一週使用 GPT 追蹤，數據為手動整理，精確度有限"
+    },
+    {
+      "week_id": "2026-W09",
+      "date_range": "2026/2/23 ~ 3/1",
+      "source": "radiology_tracker.xlsx（一~六有 CSV，週日遺失）",
+      "tracking": {
+        "start": {"xr": 617, "ct": 16, "us": 9, "mammo": 76},
+        "mid_wed": {"xr": 698, "ct": 18, "us": 63, "mammo": 74},
+        "end": {"xr": 464, "ct": 15, "us": 42, "mammo": 22},
+        "net_change": {"xr": -153, "ct": -1, "us": 33, "mammo": -54},
+        "total_net": -175
+      },
+      "completed_csv": {
+        "xr": 489, "ct": 21, "us": 33, "mammo": 56, "mr": 1, "bmd": 13,
+        "note": "週日未記錄，實際完成 > CSV 數字"
+      },
+      "added_estimated": {
+        "xr": ">=336", "ct": ">=20", "us": ">=66", "mammo": ">=2"
+      },
+      "time": {
+        "report_hr": 21.5,
+        "clinical_hr": 3.0,
+        "misc_hr": 1.0,
+        "study_hr": 0
+      },
+      "efficiency": {
+        "xr_normal": 60.2,
+        "xr_urgent": 37.5,
+        "xr_medium": 33.9,
+        "xr_hard": 12.0,
+        "ct_chest_abd": 3.2,
+        "ct_brain": 10.0,
+        "ct_neck_cta": 2.8,
+        "us_normal": 18.2,
+        "us_hard": 5.0,
+        "mammo": 23.8,
+        "mr": 2.0
+      },
+      "daily": {
+        "mon": {"total": 76, "report_hr": 3.7, "xr": 64, "ct": 5, "note": "至凌晨3:25"},
+        "tue": {"total": 129, "report_hr": 4.2, "xr": 76, "us": 12, "mammo": 35},
+        "wed": {"total": 156, "report_hr": 5.7, "xr": 147, "ct": 8, "mr": 1, "note": "值班+雜務1h"},
+        "thu": {"total": 126, "report_hr": 4.7, "clinical_hr": 3.0, "xr": 81, "ct": 3, "us": 21, "mammo": 21},
+        "fri": {"total": 8, "report_hr": 0.3, "xr": 8},
+        "sat": {"total": 118, "report_hr": 2.9, "xr": 113, "ct": 5, "note": "至凌晨1:50"},
+        "sun": {"total": "unknown", "note": "電腦重開，CSV遺失"}
+      },
+      "targets": {
+        "daily_xr_100": "2-3/6天",
+        "daily_total_100": "4/6天",
+        "remaining_control": "達成（-175）",
+        "study": "未執行（0hr）"
+      },
+      "key_findings": [
+        "全週淨消化175份，整體趨勢正向",
+        "US 唯一淨增加模態（+33），需下週集中處理",
+        "X光中等困難 150 份整週未消化",
+        "X光普通/急打效率大幅超基準（+72%/+50%），建議更新基準",
+        "讀書連續兩週零進度",
+        "首次記錄臨床工作時間（週四3hr）"
+      ],
+      "baseline_update_suggestions": {
+        "xr_normal": {"current": 35, "suggested": 50, "reason": "連續兩週實測 >55"},
+        "xr_urgent": {"current": 25, "suggested": 35, "reason": "連續兩週實測 >35"},
+        "us_normal": {"current": 10, "suggested": 18, "reason": "實測穩定 18-21"},
+        "mammo": {"current": 17, "suggested": 22, "reason": "連續兩週實測 >20"}
+      }
+    }
+  ]
+}

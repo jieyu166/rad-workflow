@@ -137,13 +137,18 @@ _N/A
 ; --- LDCT 篩檢報告工具 ---
 ::ldctool::
     ; 從 DICOM header 取得病人資料
+    ActivatePACSForLDCT()
     dicomData := GetDICOMData()
     patientName := GetDICOMLineData("Patient's Name", dicomData)
+    patientNameZh := GetPACSPatientChineseName()
+    if (patientNameZh != "")
+        patientName := patientNameZh
     patientSex := GetDICOMLineData("Patient's Sex", dicomData)
+    patientSex := NormalizePatientSex(patientSex)
     dateInfo := GetDICOMDateOnly(dicomData)
 
     ; URL encode patient name
-    encodedName := LDCTUriEncode(patientName)
+    encodedName := LDCTUriEncodeUTF8(patientName)
 
     ; Build URL with file:/// protocol so ? is treated as query string
     toolPath := A_ScriptDir . "\..\tool\ldct-report.html"
@@ -152,20 +157,126 @@ _N/A
     Run, msedge.exe "%url%"
 return
 
-LDCTUriEncode(str) {
+LDCTUriEncodeUTF8(str) {
     res := ""
-    Loop, Parse, str
+    VarSetCapacity(buf, StrPut(str, "UTF-8"), 0)
+    len := StrPut(str, &buf, "UTF-8") - 1
+    Loop, %len%
     {
-        if A_LoopField is alnum
-            res .= A_LoopField
-        else if (A_LoopField = "-" || A_LoopField = "_" || A_LoopField = "." || A_LoopField = "~")
-            res .= A_LoopField
-        else {
-            code := Asc(A_LoopField)
+        code := NumGet(buf, A_Index - 1, "UChar")
+        if ((code >= 0x30 && code <= 0x39)
+         || (code >= 0x41 && code <= 0x5A)
+         || (code >= 0x61 && code <= 0x7A)
+         || code = 0x2D || code = 0x5F || code = 0x2E || code = 0x7E) {
+            res .= Chr(code)
+        } else {
             res .= "%" . Format("{:02X}", code)
         }
     }
     return res
+}
+
+
+
+
+
+ActivatePACSForLDCT() {
+    WinGet, id, list, INFINITT PACS
+    if (id < 1)
+        return false
+    thisId := id1
+    WinActivate, ahk_id %thisId%
+    WinWaitActive, ahk_id %thisId%,, 1
+    return true
+}
+
+GetPACSPatientChineseName() {
+    WinGet, pacsIds, list, INFINITT PACS
+    if (pacsIds < 1)
+        return ""
+
+    Loop, %pacsIds%
+    {
+        thisId := pacsIds%A_Index%
+        winSpec := "ahk_id " . thisId
+        name := GetPACSPatientChineseNameFromWindow(winSpec)
+        if (name != "")
+            return name
+    }
+    return ""
+}
+
+GetPACSPatientChineseNameFromWindow(winSpec) {
+    controls := ["ComboBox49", "ComboBox2", "RichEdit20W2", "AfxWnd140u22"]
+    for _, ctrl in controls {
+        ControlGetText, ctrlText, %ctrl%, %winSpec%
+        if (ctrlText = "")
+            continue
+        name := ExtractChinesePatientName(ctrlText)
+        if (name != "")
+            return name
+    }
+
+    WinGet, controlList, ControlList, %winSpec%
+    Loop, Parse, controlList, `n
+    {
+        ctrl := A_LoopField
+        if (ctrl = "")
+            continue
+        if !(InStr(ctrl, "ComboBox") || InStr(ctrl, "RichEdit") || InStr(ctrl, "AfxWnd"))
+            continue
+
+        ControlGetText, ctrlText, %ctrl%, %winSpec%
+        if (ctrlText = "")
+            continue
+        name := ExtractChinesePatientName(ctrlText)
+        if (name != "")
+            return name
+    }
+    return ""
+}
+
+
+ExtractChinesePatientName(text) {
+    text := RegExReplace(text, "[`r`n`t]", " ")
+    text := RegExReplace(text, "\s+", " ")
+    text := Trim(text)
+
+    if RegExMatch(text, "(姓名|病人|患者|Name)\s*[:：]?\s*([一-龥]{2,6})", m)
+        return m2
+
+    if RegExMatch(text, "([一-龥]{2,6})", m2) {
+        candidate := m21
+        if (!IsExcludedChineseName(candidate, text))
+            return candidate
+    }
+
+    return ""
+}
+
+IsExcludedChineseName(name, line) {
+    excludeWords := ["醫師", "主治", "住院醫師", "總醫師", "DR", "DOCTOR", "REPORT", "放射", "RADIATION"]
+    upperLine := line
+    StringUpper, upperLine, upperLine
+    for _, word in excludeWords {
+        if (InStr(upperLine, word))
+            return true
+    }
+    if (name = "醫師" || name = "主治醫師")
+        return true
+    return false
+}
+
+NormalizePatientSex(sex) {
+    sex := Trim(sex)
+    StringUpper, sex, sex
+
+    if (sex = "M" || sex = "MALE")
+        return "M"
+    if (sex = "F" || sex = "FEMALE")
+        return "F"
+
+    return ""
 }
 
 ::zabdct3n::

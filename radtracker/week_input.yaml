@@ -1,0 +1,13 @@
+﻿week: "2026-W09"
+date_range: "02/23 ~ 03/01"
+
+remaining:
+  start: {XR: 617, CT: 16, US: 9, Mammo: 76}
+  end:   {XR: 464, CT: 15, US: 42, Mammo: 22}
+
+duty_day: ""
+class_day: ""
+class_time: "13:00~17:00"
+notes: []
+
+study: []

@@ -1,0 +1,22 @@
+# week_input.yaml — 每週使用者手動輸入
+# 只需填寫 remaining 區段的 8 個數字 + 選填備註
+
+week: "2026-W09"              # ISO 週次
+date_range: "02/23 ~ 03/01"   # 顯示用日期範圍
+
+# 必填：期初/期末剩餘量（四大模態）
+remaining:
+  start: {XR: 617, CT: 16, US: 9, Mammo: 76}
+  end:   {XR: 464, CT: 15, US: 42, Mammo: 22}
+
+# 選填
+duty_day: "三"                 # 值班日（星期幾）
+class_day: "五"                # 上課日
+class_time: "13:00~17:00"      # 上課時段
+notes:                         # 特殊備註
+  - "週三值班"
+  # - "週日電腦重開，部分資料遺失"
+
+# 選填：讀書紀錄
+study: []
+  # - {date: "02/25", hours: 2, topic: "Chest CT patterns"}

@@ -27,13 +27,14 @@ TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總`n[W
 ActivateHISLight() {
     WinActivate ahk_exe chk060.exe
     WinWaitActive ahk_exe chk060.exe,, 1
+    ControlFocus, ThunderRT6TextBox14, ahk_exe chk060.exe
+    ; 用 ControlGetPos 自動取得控件螢幕座標並點擊，確保焦點在報告欄位
+
 }
 
 ; 完整版：啟動 HIS 視窗並確保焦點在報告編輯區（用於 SendInput 輸出報告文字）
 ActivateHIS() {
     ActivateHISLight()
-    ControlFocus, ThunderRT6TextBox14, ahk_exe chk060.exe
-    ; 用 ControlGetPos 自動取得控件螢幕座標並點擊，確保焦點在報告欄位
     ControlGetPos, cx, cy, cw, ch, ThunderRT6TextBox14, ahk_exe chk060.exe
     WinGetPos, wx, wy,,, ahk_exe chk060.exe
     clickX := wx + cx + cw - 10

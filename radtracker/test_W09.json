@@ -1,0 +1,227 @@
+{
+  "metadata": {
+    "week": "2026-W09",
+    "date_range": "02/23 ~ 03/01",
+    "source": "csv",
+    "csv_files": [
+      "202602.csv"
+    ],
+    "reporter_id": "A80748",
+    "total_csv_rows": 2660,
+    "filtered_rows": 706,
+    "total_cases": 500
+  },
+  "daily": {
+    "一": {
+      "cases": 76,
+      "points": 241.9,
+      "active_hr": 2.1,
+      "span_hr": 23.5,
+      "sessions": 10,
+      "report_count": 76,
+      "XR": 64,
+      "CT": 5,
+      "BMD": 7,
+      "xr_sub": {
+        "中等": 11,
+        "急打": 20,
+        "普通": 31,
+        "困難": 2
+      },
+      "ct_sub": {
+        "Chest/Abd": 5
+      }
+    },
+    "二": {
+      "cases": 129,
+      "points": 624.1,
+      "active_hr": 5.6,
+      "span_hr": 23.3,
+      "sessions": 7,
+      "report_count": 129,
+      "XR": 76,
+      "US": 12,
+      "Mammo": 35,
+      "BMD": 6,
+      "xr_sub": {
+        "普通": 66,
+        "中等": 4,
+        "困難": 1,
+        "急打": 5
+      },
+      "us_sub": {
+        "困難": 7,
+        "一般": 5
+      }
+    },
+    "三": {
+      "cases": 72,
+      "points": 168.8,
+      "active_hr": 2.1,
+      "span_hr": 8.8,
+      "sessions": 5,
+      "report_count": 72,
+      "XR": 72,
+      "xr_sub": {
+        "困難": 1,
+        "中等": 11,
+        "普通": 2,
+        "急打": 58
+      }
+    },
+    "四": {
+      "cases": 130,
+      "points": 763.6,
+      "active_hr": 4.7,
+      "span_hr": 13.9,
+      "sessions": 8,
+      "report_count": 130,
+      "XR": 85,
+      "CT": 3,
+      "US": 21,
+      "Mammo": 21,
+      "xr_sub": {
+        "普通": 51,
+        "急打": 34
+      },
+      "ct_sub": {
+        "Chest/Abd": 2,
+        "Neck/CTA": 1
+      },
+      "us_sub": {
+        "困難": 11,
+        "一般": 10
+      }
+    },
+    "五": {
+      "cases": 8,
+      "points": 20.2,
+      "active_hr": 0.3,
+      "span_hr": 1.1,
+      "sessions": 2,
+      "report_count": 8,
+      "XR": 8,
+      "xr_sub": {
+        "中等": 2,
+        "普通": 6
+      }
+    },
+    "六": {
+      "cases": 85,
+      "points": 177.6,
+      "active_hr": 1.9,
+      "span_hr": 9.7,
+      "sessions": 5,
+      "report_count": 85,
+      "XR": 80,
+      "CT": 5,
+      "xr_sub": {
+        "普通": 80
+      },
+      "ct_sub": {
+        "Chest/Abd": 5
+      }
+    },
+    "日": {
+      "cases": 0,
+      "points": 0,
+      "active_hr": 0,
+      "span_hr": 0,
+      "sessions": 0,
+      "report_count": 0
+    }
+  },
+  "totals": {
+    "mods": {
+      "XR": 385,
+      "CT": 13,
+      "US": 33,
+      "Mammo": 56,
+      "BMD": 13
+    },
+    "cases": 500,
+    "points": 1996.2,
+    "active_hr": 16.7,
+    "grand_total": 487
+  },
+  "sub_counts": {
+    "XR(中等)": {
+      "count": 28,
+      "points": 0
+    },
+    "XR(急打)": {
+      "count": 117,
+      "points": 0
+    },
+    "XR(普通)": {
+      "count": 236,
+      "points": 0
+    },
+    "XR(困難)": {
+      "count": 4,
+      "points": 0
+    },
+    "CT(Chest/Abd)": {
+      "count": 12,
+      "points": 0
+    },
+    "BMD": {
+      "count": 13,
+      "points": 0
+    },
+    "US(困難)": {
+      "count": 18,
+      "points": 0
+    },
+    "US(一般)": {
+      "count": 15,
+      "points": 0
+    },
+    "Mammo": {
+      "count": 56,
+      "points": 0
+    },
+    "CT(Neck/CTA)": {
+      "count": 1,
+      "points": 0
+    }
+  },
+  "efficiency_daily": {
+    "一": {
+      "cases": 76,
+      "active_hr": 2.1,
+      "rate": 36.2,
+      "estimated": true
+    },
+    "二": {
+      "cases": 129,
+      "active_hr": 5.6,
+      "rate": 23.0,
+      "estimated": true
+    },
+    "三": {
+      "cases": 72,
+      "active_hr": 2.1,
+      "rate": 34.3,
+      "estimated": true
+    },
+    "四": {
+      "cases": 130,
+      "active_hr": 4.7,
+      "rate": 27.7,
+      "estimated": true
+    },
+    "五": {
+      "cases": 8,
+      "active_hr": 0.3,
+      "rate": 26.7,
+      "estimated": true
+    },
+    "六": {
+      "cases": 85,
+      "active_hr": 1.9,
+      "rate": 44.7,
+      "estimated": true
+    }
+  }
+}

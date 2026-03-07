@@ -1,0 +1,323 @@
+{
+  "source": "csv",
+  "metadata": {
+    "week": "2026-W09",
+    "date_range": "02/23 ~ 03/01",
+    "source": "csv",
+    "csv_files": [
+      "202602.csv"
+    ],
+    "reporter_id": "A80748",
+    "total_csv_rows": 2660,
+    "filtered_rows": 706,
+    "total_cases": 500
+  },
+  "tracking": {
+    "X光": {
+      "start": 617,
+      "end": 464,
+      "completed": 385,
+      "added": 232,
+      "net": -153,
+      "digest_rate": 45.3
+    },
+    "CT": {
+      "start": 16,
+      "end": 15,
+      "completed": 13,
+      "added": 12,
+      "net": -1,
+      "digest_rate": 46.4
+    },
+    "US": {
+      "start": 9,
+      "end": 42,
+      "completed": 33,
+      "added": 66,
+      "net": 33,
+      "digest_rate": 44.0
+    },
+    "Mammo": {
+      "start": 76,
+      "end": 22,
+      "completed": 56,
+      "added": 2,
+      "net": -54,
+      "digest_rate": 71.8
+    }
+  },
+  "totals": {
+    "mods": {
+      "X光": 385,
+      "CT": 13,
+      "US": 33,
+      "Mammo": 56,
+      "BMD": 13
+    },
+    "report_min": 1002.0,
+    "active_hr": 16.7,
+    "clinical_min": 0,
+    "misc_min": 0,
+    "grand_total": 487,
+    "points": 1996.2
+  },
+  "efficiency": {
+    "X光(中等)": {
+      "count": 28,
+      "mins": null,
+      "actual_rate": null,
+      "baseline": 30,
+      "diff_pct": null,
+      "estimated": true
+    },
+    "X光(急打)": {
+      "count": 117,
+      "mins": null,
+      "actual_rate": null,
+      "baseline": 35,
+      "diff_pct": null,
+      "estimated": true
+    },
+    "X光(普通)": {
+      "count": 236,
+      "mins": null,
+      "actual_rate": null,
+      "baseline": 50,
+      "diff_pct": null,
+      "estimated": true
+    },
+    "X光(困難)": {
+      "count": 4,
+      "mins": null,
+      "actual_rate": null,
+      "baseline": 20,
+      "diff_pct": null,
+      "estimated": true
+    },
+    "CT(Chest/Abd)": {
+      "count": 12,
+      "mins": null,
+      "actual_rate": null,
+      "baseline": 3.5,
+      "diff_pct": null,
+      "estimated": true
+    },
+    "BMD": {
+      "count": 13,
+      "mins": null,
+      "actual_rate": null,
+      "baseline": 60,
+      "diff_pct": null,
+      "estimated": true
+    },
+    "US(困難)": {
+      "count": 18,
+      "mins": null,
+      "actual_rate": null,
+      "baseline": 4,
+      "diff_pct": null,
+      "estimated": true
+    },
+    "US(一般)": {
+      "count": 15,
+      "mins": null,
+      "actual_rate": null,
+      "baseline": 18,
+      "diff_pct": null,
+      "estimated": true
+    },
+    "Mammo": {
+      "count": 56,
+      "mins": null,
+      "actual_rate": null,
+      "baseline": 22,
+      "diff_pct": null,
+      "estimated": true
+    },
+    "CT(Neck/CTA)": {
+      "count": 1,
+      "mins": null,
+      "actual_rate": null,
+      "baseline": 3.5,
+      "diff_pct": null,
+      "estimated": true
+    }
+  },
+  "efficiency_daily": {
+    "一": {
+      "cases": 76,
+      "active_hr": 2.1,
+      "rate": 36.2,
+      "estimated": true
+    },
+    "二": {
+      "cases": 129,
+      "active_hr": 5.6,
+      "rate": 23.0,
+      "estimated": true
+    },
+    "三": {
+      "cases": 72,
+      "active_hr": 2.1,
+      "rate": 34.3,
+      "estimated": true
+    },
+    "四": {
+      "cases": 130,
+      "active_hr": 4.7,
+      "rate": 27.7,
+      "estimated": true
+    },
+    "五": {
+      "cases": 8,
+      "active_hr": 0.3,
+      "rate": 26.7,
+      "estimated": true
+    },
+    "六": {
+      "cases": 85,
+      "active_hr": 1.9,
+      "rate": 44.7,
+      "estimated": true
+    }
+  },
+  "daily": {
+    "一": {
+      "total": 76,
+      "report_min": 126.0,
+      "active_hr": 2.1,
+      "span_hr": 23.5,
+      "sessions": 10,
+      "points": 241.9,
+      "clinical_min": 0,
+      "X光": 64,
+      "CT": 5,
+      "BMD": 7,
+      "xr_sub": {
+        "中等": 11,
+        "急打": 20,
+        "普通": 31,
+        "困難": 2
+      },
+      "ct_sub": {
+        "Chest/Abd": 5
+      }
+    },
+    "二": {
+      "total": 129,
+      "report_min": 336.0,
+      "active_hr": 5.6,
+      "span_hr": 23.3,
+      "sessions": 7,
+      "points": 624.1,
+      "clinical_min": 0,
+      "X光": 76,
+      "US": 12,
+      "Mammo": 35,
+      "BMD": 6,
+      "xr_sub": {
+        "普通": 66,
+        "中等": 4,
+        "困難": 1,
+        "急打": 5
+      },
+      "us_sub": {
+        "困難": 7,
+        "一般": 5
+      }
+    },
+    "三": {
+      "total": 72,
+      "report_min": 126.0,
+      "active_hr": 2.1,
+      "span_hr": 8.8,
+      "sessions": 5,
+      "points": 168.8,
+      "clinical_min": 0,
+      "X光": 72,
+      "xr_sub": {
+        "困難": 1,
+        "中等": 11,
+        "普通": 2,
+        "急打": 58
+      }
+    },
+    "四": {
+      "total": 130,
+      "report_min": 282.0,
+      "active_hr": 4.7,
+      "span_hr": 13.9,
+      "sessions": 8,
+      "points": 763.6,
+      "clinical_min": 0,
+      "X光": 85,
+      "CT": 3,
+      "US": 21,
+      "Mammo": 21,
+      "xr_sub": {
+        "普通": 51,
+        "急打": 34
+      },
+      "ct_sub": {
+        "Chest/Abd": 2,
+        "Neck/CTA": 1
+      },
+      "us_sub": {
+        "困難": 11,
+        "一般": 10
+      }
+    },
+    "五": {
+      "total": 8,
+      "report_min": 18.0,
+      "active_hr": 0.3,
+      "span_hr": 1.1,
+      "sessions": 2,
+      "points": 20.2,
+      "clinical_min": 0,
+      "X光": 8,
+      "xr_sub": {
+        "中等": 2,
+        "普通": 6
+      }
+    },
+    "六": {
+      "total": 85,
+      "report_min": 114.0,
+      "active_hr": 1.9,
+      "span_hr": 9.7,
+      "sessions": 5,
+      "points": 177.6,
+      "clinical_min": 0,
+      "X光": 80,
+      "CT": 5,
+      "xr_sub": {
+        "普通": 80
+      },
+      "ct_sub": {
+        "Chest/Abd": 5
+      }
+    },
+    "日": {
+      "total": 0,
+      "report_min": 0,
+      "active_hr": 0,
+      "span_hr": 0,
+      "sessions": 0,
+      "points": 0,
+      "clinical_min": 0
+    }
+  },
+  "work_points": {
+    "daily": {
+      "一": 241.9,
+      "二": 624.1,
+      "三": 168.8,
+      "四": 763.6,
+      "五": 20.2,
+      "六": 177.6,
+      "日": 0
+    },
+    "total": 1996.2
+  }
+}

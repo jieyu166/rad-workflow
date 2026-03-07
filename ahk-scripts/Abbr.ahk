@@ -40,10 +40,14 @@
 :O:dsn::disc space narrowing.
 :O:avn::avascular necrosis
 :O:mcp::metacarpophalangeal (MCP)
+:O:mtp::metatarsophalangeal(MTP)
 :O:pip::proximal interphalangeal (PIP)
 :O:dip::distal interphalangeal (DIP)
-:O:ip:: interphalangeal (IP)
+:O:ip:: interphalangeal (PIP, DIP)
 :O:cmc::carpometacarpal (CMC)
+:O:mp::
+HotstringMenuV("A","MenuShortcut","middle phalanx","metacarpophalangeal (MCP)","metatarsophalangeal(MTP)")
+return
 :O:oci::otitis condensa ilii
 :O:ocp::otitis condensa pubis
 :O:opll::ossification of posterior longitudinal ligament (OPLL)
@@ -56,7 +60,6 @@
 ::fr.::fracture
 :O:cfr::compression fracture. 
 :O:dp::distal phalanx
-:O:mp::middle phalanx
 :O:pp::proximal phalanx
 :O:dish;::Diffuse idiopathic skeletal hyperostosis (DISH)
 
