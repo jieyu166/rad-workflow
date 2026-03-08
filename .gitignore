@@ -1,8 +1,8 @@
-# 機密設定檔
-ahk-scripts/radiologist_settings.ini
+﻿# 璈?閮剖?瑼?ahk-scripts/radiologist_settings.ini
 ahk-scripts/remote.txt
+ahk-scripts/test3_name_debug.txt
 
-# 其他常見忽略項目
+# ?嗡?撣貉?敹賜?
 *.log
 *.tmp
 .DS_Store
