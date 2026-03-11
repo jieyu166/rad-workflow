@@ -94,7 +94,10 @@ ActivateHISLight() {
 }
 
 GetDICOMData() {
-    gosub CallDICOMWin
+    if (varWhere = 5)
+        gosub CallDICOMWinL
+    else
+        gosub CallDICOMWin
     return clipboard
 }
 

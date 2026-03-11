@@ -59,7 +59,10 @@ ActivatePACS() {
 ; --- DICOM 資料取得函數 ---
 GetDICOMData() {
     ; 取得 DICOM 檔頭資訊並返回
-    gosub CallDICOMWin
+    if (varWhere = 5)
+        gosub CallDICOMWinL
+    else
+        gosub CallDICOMWin
     return clipboard
 }
 GetDICOMLineData(Attrib := "", text := ""){
@@ -112,7 +115,7 @@ GetAccessionNumber(text := "") {
 	if(text = ""){
 		text := GetDICOMData()
 	}
-	accessionNum:=GetDICOMLineData("accession number", clipboard)
+	accessionNum:=GetDICOMLineData("accession number", text)
     accessionNum := RegExReplace(accessionNum, "\D")  ; \D = 非數字
     Clipboard := ClipboardBackup
     return accessionNum
@@ -456,7 +459,7 @@ PosDICOMLU:
     } else if(varWhere=4) {
         MouseMove 3000,-400     ; 第三VS辦公室(柳營)
     } else if(varWhere=5) {
-        MouseMove 2250,-1700     ; 遠端
+        MouseMove 3700,-250     ; 遠端
     } else if(varWhere=6) {
         MouseMove 50,30         ; R小房間(Win7)
     } else if(varWhere=7) {
@@ -480,7 +483,7 @@ PosDICOMRU:
     } else if(varWhere=4) {
         MouseMove 4400,-200     ; 第三VS希城
     } else if(varWhere=5) {
-        MouseMove 4300,-1250     ; 遠端
+        MouseMove 2200,-2600     ; 遠端
     } else if(varWhere=6) {
         MouseMove 4400,500      ; R小房間
     } else if(varWhere=7) {
@@ -502,7 +505,7 @@ PosDICOMButton:
     } else if(varWhere=4) {
         MouseMove 4400,-800     ; 第三VS希城
     } else if(varWhere=5) {
-        MouseMove 3800,-2055      ; 遠端
+        MouseMove 3500,-840      ; 遠端
     } else if(varWhere=6) {
         MouseMove 4400,145      ; 小房間
     } else if(varWhere=7) {
@@ -522,7 +525,7 @@ PosNextExam:
     } else if(varWhere=2) {
         MouseMove 770,50       ; 佳里125%
     } else if(varWhere=5) {
-        MouseMove 1245,75       ; 遠端
+        MouseMove 1260,75       ; 遠端
     } else if(varWhere=6) {
         MouseMove 580,30       ; R小房間
     } else if(varWhere=7) {
@@ -1197,4 +1200,5 @@ return
 XB1_Reload:
     Reload
 return
+
 

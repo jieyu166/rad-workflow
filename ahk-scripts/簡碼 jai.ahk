@@ -108,7 +108,7 @@ return
 
 
 ::eff;::
-HotstringMenuV("A","MenuShortcut", "_Mild suprapatellar effusion","{LtRt} pleural effusion","{LtRt} minimal pleural effusion or pleural cahnges.")
+HotstringMenuV("A","MenuShortcut", "_Mild suprapatellar effusion","{LtRt} pleural effusion","{LtRt} minimal pleural effusion or pleural changes.")
 return
 
 
