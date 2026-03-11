@@ -95,10 +95,10 @@ return
 
 :O:bn::_LRt _/_: __*__ mm.(Srs/Img:1/_) _ 
 :O:usb2;::
-HotstringMenuV("A","MenuShortcut2","_ subareolar ductal ectasia, _mm.(Srs/Img:1/_) No echogenoc content, favor benign.","_ prominent duct, _mm.(Srs/Img:1/_)")
+HotstringMenuV("A","MenuShortcut2","_ subareolar ductal ectasia, _mm.(Srs/Img:1/_) No echogenic content, favor benign.","_ prominent duct, _mm.(Srs/Img:1/_)")
 return
 
-:O:ub::Mild urinary bladder wall thickening, could be chronic cystitis, _shrinkaged UB, or others.
+:O:ub::Mild urinary bladder wall thickening, could be chronic cystitis, shrunken UB, or others.
 :O:ub2::Mild urinary bladder wall irregular thickening, could be cystitis, or others. Occult entities can not be excluded. Suggest correlate with urine cytology or other exams.
 
 ::usbx::
@@ -580,7 +580,7 @@ return
 
 
 :O:usadd::
-HotstringMenuV("A","MenuShortcut", "Mild enlarged bilateral kidney sizes.","Coarse echotexture of the liver with uneven surface, suggesting cirrhosis of liver. ","No US evidence of hydronephrosis.","* Gas block/Poor visualization of _pancreas_right lobe of liver from subcostal area. Lesion may be obscured.`r")
+HotstringMenuV("A","MenuShortcut", "Mild enlarged bilateral kidney sizes. Could be related to DM or other chronic renal parenchyma disease.","Coarse echotexture of the liver with uneven surface, suggesting cirrhosis of liver. ","No US evidence of hydronephrosis.","* Gas block/Poor visualization of _pancreas_right lobe of liver from subcostal area. Lesion may be obscured.`r")
 return
 
 
@@ -749,7 +749,7 @@ return
 (
 Ultrasonography of %tSideLow% shoulder:
 
-Biceps tendon lond head:
+Biceps tendon long head:
 - unremarkable morphology and echogenicities
 
 Subscapularis muscle and tendon:
@@ -2305,7 +2305,7 @@ USAIAnalyze:
 
 	SysPrompt .= " `n`n**(IF ANKLE):**"
 	SysPrompt .= " `n1. **Malleoli:** Check Medial, Lateral, and Posterior malleoli."
-	SysPrompt .= " `n2. **Talar Dome:** Check for Osteochondral lesions (OCD) or 'Vagus deformity'."
+	SysPrompt .= " `n2. **Talar Dome:** Check for Osteochondral lesions (OCD) or 'Valgus deformity'."
 	SysPrompt .= " `n3. **Accessory Bones:** Distinguish 'Os trigonum' or 'Os subfibulare' from fractures."
 	SysPrompt .= " `n4. **Soft Tissue:** Report location of swelling (e.g., 'Soft tissue swelling around lateral malleolus')."
 
@@ -2739,10 +2739,8 @@ BitmapToBase64_GDIPlus(hBitmap) {
     ; 讀取檔案並轉換為 base64
     base64 := B64EncodeFile(tempFile)
     
-    ; 調試：保留一份圖片供檢查（可選）
-    debugImageFile := A_Temp . "\usai_debug_image.png"
-    FileCopy, %tempFile%, %debugImageFile%, 1
-    
+
+
     ; 清理臨時檔案
     FileDelete, %tempFile%
     

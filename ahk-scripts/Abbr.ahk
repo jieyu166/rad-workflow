@@ -48,8 +48,8 @@
 :O:mp::
 HotstringMenuV("A","MenuShortcut","middle phalanx","metacarpophalangeal (MCP)","metatarsophalangeal(MTP)")
 return
-:O:oci::otitis condensa ilii
-:O:ocp::otitis condensa pubis
+:O:oci::osteitis condensans ilii
+:O:ocp::osteitis condensans pubis
 :O:opll::ossification of posterior longitudinal ligament (OPLL)
 :O:oall::ossification of anterior longitudinal ligament (OALL)
 :O:as;::ankylosing spondylitis (AS)

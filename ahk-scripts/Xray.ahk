@@ -162,7 +162,7 @@ return
 CXR11:
 desc .= "Pulmonary congestion pattern or emphysematous change of both lungs.`r"
 desc .= "Superimposed pneumonia or other occult entities can not be excluded.`r"
-desc .= "_Bilateral minimal pleural effusion or pleural cahnges. `r"
+desc .= "_Bilateral minimal pleural effusion or pleural changes. `r"
 desc .= "Bilateral hilar fullness, could be vascular shadows or others. `r"
 OutputFinish(1, "CXR 範例", false, false, true)
 return
@@ -193,7 +193,7 @@ BtnCongestion:
 return
 
 BtnEff:
-    desc := "Bilateral _minimal pleural effusion or pleural cahnges.`r"
+    desc := "Bilateral _minimal pleural effusion or pleural changes.`r"
     OutputFinish(1, "CXR 範例", false, false, true)
 return
 
@@ -418,7 +418,7 @@ LspineDefault:
     }
     
     desc .= "Degenerative disc disease with _ disc space narrowing.`r"
-    desc .= "Loss lordosis of spine.`r"
+    desc .= "Loss of lordosis of spine.`r"
     desc .= "Spondylosis of spine.`r"
     gosub SpineOutput 
 return
@@ -435,11 +435,11 @@ CspineDefault:
     }
     
     desc .= "Degenerative disc disease with _ disc space narrowing.`r"
-    desc .= "Loss lordosis of spine.`r"
+    desc .= "Loss of lordosis of spine.`r"
     desc .= "Spondylosis of spine.`r"
     desc .= "`r*Below C_ couldn't be evaluated at lateral view.`r"
     desc .= "The atlantoaxial distance is within normal limit.`r"
-    desc .= "No widening of retropharngeal and retrotracheal space.`r"
+    desc .= "No widening of retropharyngeal and retrotracheal space.`r"
 	gosub SpineOutput     
 return
 
@@ -786,7 +786,7 @@ return
 :O:dego::Degenerative and osteoporotic change of spine.`
 
 :O:spine;::
-HotstringMenuV("A","MenuShortcut2","Cspine|AP and lateral views of C-spine show:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharngeal and retrotracheal space.","Lspine|AP and lateral views of L-spine show:","T/L|AP and lateral views of T/L-spine show:","L/S|AP and lateral views of L/S-spine show:","BRK","4 views of C-spine:","Flexion and Extension views of C-spine:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharngeal and retrotracheal space.`rNo obvious hypermobility.", "Flexion and Extension views of L-spine:`rNo obvious hypermobility.")
+HotstringMenuV("A","MenuShortcut2","Cspine|AP and lateral views of C-spine show:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharyngeal and retrotracheal space.","Lspine|AP and lateral views of L-spine show:","T/L|AP and lateral views of T/L-spine show:","L/S|AP and lateral views of L/S-spine show:","BRK","4 views of C-spine:","Flexion and Extension views of C-spine:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharyngeal and retrotracheal space.`rNo obvious hypermobility.", "Flexion and Extension views of L-spine:`rNo obvious hypermobility.")
 SendInput `rNo definite bony fracture.`rNo joint subluxation or dislocation.`r
 SendInput Normal alignment.`rNormal disc spaces.`r
 SendInput ___Uncovertebral joint hypertrophy and facet joint arthrosis of ___lower cervical __lumbar spine.
@@ -843,20 +843,20 @@ Fracture or dislocation is not seen.
     Gui, Knee:Add, GroupBox, x10 y140 w320 h250, 其他發現
     
     ; Row 1
-    Gui, Knee:Add, Button, x20 y165 w145 h35 gBtnNormal, 正常 (&N)
-    Gui, Knee:Add, Button, x175 y165 w145 h35 gBtnEffusion, 積液 (&E)
+    Gui, Knee:Add, Button, x20 y165 w145 h35 gBtnEffusion, 積液 (&E)
+    Gui, Knee:Add, Button, x175 y165 w145 h35 gBtnNormal, 正常 (&N)
 
     ; Row 2
-    Gui, Knee:Add, Button, x20 y205 w145 h35 gBtnOsteoporosis, 骨質疏鬆 (&O)
-    Gui, Knee:Add, Button, x175 y205 w145 h35 gBtnPatellaTilt, 髕骨傾斜 (&P)
+    Gui, Knee:Add, Button, x20 y205 w145 h35 gBtnPatellaTilt, 髕骨傾斜 (&P)
+    Gui, Knee:Add, Button, x175 y205 w145 h35 gBtnOsteoporosis, 骨質疏鬆 (&O)
 
     ; Row 3
     Gui, Knee:Add, Button, x20 y245 w145 h35 gBtnSwelling, 軟組織腫脹 (&S)
     Gui, Knee:Add, Button, x175 y245 w145 h35 gBtnVarum, 膝內翻 (&V)
 
     ; Row 4
-    Gui, Knee:Add, Button, x20 y285 w145 h35 gBtnEnthesopathy, 肌腱鈣化
-    Gui, Knee:Add, Button, x175 y285 w145 h35 gBtnChondro, 軟骨鈣化 CPPD
+    Gui, Knee:Add, Button, x20 y285 w145 h35 gBtnChondro, 軟骨鈣化 CPPD
+    Gui, Knee:Add, Button, x175 y285 w145 h35 gBtnEnthesopathy, 肌腱鈣化
 
     ; Row 5
     Gui, Knee:Add, Button, x20 y325 w145 h35 gBtnTKA, TKA (&T)
@@ -889,7 +889,7 @@ BtnGenerateOA:
     else
         K_Roman := "II-III"
     
-    desc := "OA in _ knee. Kellgren & Lawrence system, grade " . K_Roman . ". _Osteophyte formation of patellofemoral joint."
+    desc := "Joint space narrowing in favor of osteoarthritis with or without meniscal tear. Kellgren and Lawrence grade " . K_Roman . ".(1-4)"
     CopyCXRtoHISWithParam(1)
 return
 

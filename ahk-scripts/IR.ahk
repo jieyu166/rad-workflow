@@ -34,7 +34,7 @@ Clinical information: %tSideCap% moderate hydronephrosis, requested for PCN inse
 
 - Presence of _moderate hydronephrosis of %tSideLow% kidney.
 
-- Under sono-guidance and fluoroscopy, a 8 Fr. pigtail drainage catheter _with self-locking is inserted into %tSideLow% renal pelvis via posteriolateral and calyx approach.
+- Under sono-guidance and fluoroscopy, a 8 Fr. pigtail drainage catheter _with self-locking is inserted into %tSideLow% renal pelvis via posterolateral and calyx approach.
 - _ mL urine was aspirated _and sent for further evaluation.
 - The procedure was smooth and the patient stood it. No immediate complication
   was noticed.

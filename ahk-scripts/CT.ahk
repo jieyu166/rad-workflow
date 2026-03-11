@@ -11,18 +11,18 @@
 )
 
 :O:ctadd::
-HotstringMenuV("A","MenuShortcut2","NoC|*This is a Non contrast medium injection image.`rLimited evalution for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey","CTA|*Some venous phase enhanced lesions/mass could be obscured due to the protocol is specially designed for aorta arterial phase, either benign or early malignancy was reported","Low dose|*LDCT is only limited in detection and follow-up of pulmonary nodules. It is not suitable to replace HRCT to evaluate interstitial lung disease, nor to be used for soft tissue lesions in chest wall, mediastinum and upper abdomen","BRK","*Motion artifact may interfere with interpretation","*Metallic artifact may interfere with interpretation", "The dental fillings and the opaque material within the teeth obscure the area due to beam hardening artifact","BRK","This screening abdominal MRI is focusing on upper abdomen, thus, subtle lesion arising from GI tract, urotract and reproductive system could be underestimated", "Other supplementary survey such as tumor markers, urine analysis, urotract sonography, Panendoscopy and Colonoscopy should be considered","Semi-quantitative fibrosis estimation is subjective and may be different in different observers","Beam-hardening artifacts, skull base lesions may be obscured.")
+HotstringMenuV("A","MenuShortcut2","NoC|*This is a Non contrast medium injection image.`rLimited evaluation for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey","CTA|*Some venous phase enhanced lesions/mass could be obscured due to the protocol is specially designed for aorta arterial phase, either benign or early malignancy was reported","Low dose|*LDCT is only limited in detection and follow-up of pulmonary nodules. It is not suitable to replace HRCT to evaluate interstitial lung disease, nor to be used for soft tissue lesions in chest wall, mediastinum and upper abdomen","BRK","*Motion artifact may interfere with interpretation","*Metallic artifact may interfere with interpretation", "The dental fillings and the opaque material within the teeth obscure the area due to beam hardening artifact","BRK","This screening abdominal MRI is focusing on upper abdomen, thus, subtle lesion arising from GI tract, urotract and reproductive system could be underestimated", "Other supplementary survey such as tumor markers, urine analysis, urotract sonography, Panendoscopy and Colonoscopy should be considered","Semi-quantitative fibrosis estimation is subjective and may be different in different observers","Beam-hardening artifacts, skull base lesions may be obscured.")
 return
 
 :O:ctpren::
 SendInput Other details are mentioned as followings:`r----------------------------------------------------------------------`r
 HotstringMenuV("A","MenuShortcut2","Abd-C|CT study of abdomen (_) without contrast medium:`r  Pre-contrast scans: 5 mm slice thickness from diaphragm to pubic symphysis","NCCT of the brain with axial, coronal, sagittal sections showed:","Chest CT-c|CT study of the thorax was performed with a multi-slice CT scanner.`rMETHOD: (1) HRCT (2) Noncontrast survey were performed`rSCAN RANGE: lower neck to adrenal gland`rINDICATION: _")
-SendInput `r`r`r*This is a Non contrast medium injection image.`rLimited evalution for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey;
+SendInput `r`r`r*This is a Non contrast medium injection image.`rLimited evaluation for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey;
 return
 
 :O:ctprec::
 SendInput Other details are mentioned as followings:`r----------------------------------------------------------------------`r
-HotstringMenuV("A","MenuShortcut2","Abd+C|CT study of abdomen (_) without and with contrast medium:`r  Pre-contrast and post-contrast venous and delayed scans: 5 mm slice thickness from diaphragm to pubis symphysis","NCCT and CECT of the brain with axial, coronal, sagittal sections showed:","Chest CT+c|CT study of the thorax was performed with a multi-slice CT scanner.`rMETHOD: (1) HRCT (2) Noncontrast survey (3) contrast enhancement were performed`rSCAN RANGE: lower neck to adrenal gland`rINDICATION: _","CTA|Spiral CTA of aorta was performed with a multi-slice CT scanner.`rMETHOD: (1) Noncontrast survey (2) CE-CTA with MPR were performed.  `rSCAN RANGE: lower neck to hip.`rINDICATION: _","BRK","CTPAOD|CT and CT arteriography of lower extremity without and with contrast medium:`r  Pre- and post- contrast scans: 7 mm slice thickness from diaphragm to plantar.")
+HotstringMenuV("A","MenuShortcut2","Abd+C|CT study of abdomen (_) without and with contrast medium:`r  Pre-contrast and post-contrast venous and delayed scans: 5 mm slice thickness from diaphragm to pubic symphysis","NCCT and CECT of the brain with axial, coronal, sagittal sections showed:","Chest CT+c|CT study of the thorax was performed with a multi-slice CT scanner.`rMETHOD: (1) HRCT (2) Noncontrast survey (3) contrast enhancement were performed`rSCAN RANGE: lower neck to adrenal gland`rINDICATION: _","CTA|Spiral CTA of aorta was performed with a multi-slice CT scanner.`rMETHOD: (1) Noncontrast survey (2) CE-CTA with MPR were performed.  `rSCAN RANGE: lower neck to hip.`rINDICATION: _","BRK","CTPAOD|CT and CT arteriography of lower extremity without and with contrast medium:`r  Pre- and post- contrast scans: 7 mm slice thickness from diaphragm to plantar.")
 SendInput `rBefore and after the administration of intravenous contrast there was no adverse effect.`r`r
 return
 
@@ -91,15 +91,15 @@ NCCT _and CECT of the neck with axial, coronal, sagittal sections showed:
 
 Imaging findings :
 1. Nasopharynx:
-- Unremarkble nasopharynx.
+- Unremarkable nasopharynx.
 2. Oropharynx, Oral cavity:
-- Unremarkble tongue and floor of mouth, oropharynx.
+- unremarkable tongue and floor of mouth, oropharynx.
 3. Hypopharynx, Larynx:
-- Unremarkble supraglottic, glottic and subglottic larynx, hypopharynx.
+- unremarkable supraglottic, glottic and subglottic larynx, hypopharynx.
 4. Lymph nodes: 
 - Visible LNs short-axis <1cm.
 5. Salivary glands:
-- Unremarkble parotid, submandibular and sublingual glands.
+- unremarkable parotid, submandibular and sublingual glands.
 6. Thyroid: Unremarkable.
 7. Vessels and carotid space: Unremarkable.
 8. Bony structures: Unremarkable.
@@ -375,7 +375,7 @@ A. IMH--Ulcer like projection: No
 B. IMH--Intramural arteriolar tear: No
 C. Pericardium: Not unusual
 D. Pleural effusion: No
-Branch type/malperfusion syndrome [Gaxotte''s classifcation]:
+Branch type/malperfusion syndrome [Gaxotte''s classification]:
 A. Arch: not involved
 B. Celiac: not involved
 C  SMA: not involved
@@ -460,7 +460,7 @@ Parameters:
 1) T2WI FS axial images and TruFISP coronal images.
 2) T1WI axial images.
 3) In-phase and opposed-phase axial images.
-4) Dynamic constrast enhanced axial images.
+4) Dynamic contrast enhanced axial images.
 5) Delay phase contrast enhanced T1WI axial images.
 6) DWI and ADC.
 
@@ -546,7 +546,7 @@ Parameters:
 1) T2WI FS axial images and TruFISP coronal images.
 2) T1WI axial images.
 3) In-phase and opposed-phase axial images.
-4) Dynamic constrast enhanced axial images.
+4) Dynamic contrast enhanced axial images.
 5) Delay phase contrast enhanced T1WI axial images.
 6) DWI and ADC.
 7) Coronal heavy T2WI with MIP reconstruction.
@@ -589,10 +589,10 @@ Delayed phase : 5 mm slice thickness from skull base to vertex with MPRs 3D volu
 No previous CTA is available for comparison.
 ----------------------------------------------------------------------
 [Imaging findings]
-1. Vasular structures:
+1. Vascular structures:
 - No definite CTA evidence of large vessel occlusion (LVO).
-- CT perufsion: ( calculated for _left hemisphere ) .
-  The infact core = _ ml. The hypoerfusion  = _ ml.
+- CT perfusion: ( calculated for _left hemisphere ) .
+  The infarct core = _ ml. The hypoperfusion  = _ ml.
   The mismatch ratio = _
 - Intracranial atherosclerosis change.
 2. Brain parenchyma:
@@ -634,7 +634,7 @@ _______Old insults_____________
 
 
 _______Acute trauma_____________
-_- Bilateral frontal _subdural efffusion with thickness up to 6mm.
+_- Bilateral frontal _subdural effusion with thickness up to 6mm.
 _- Suspicious left temporal traumatic SAH. 
 
 
@@ -740,13 +740,13 @@ _________ Infection Abscess____________
 - Rt peritonsillar abscess with surrounding fat stranding/ edema.
 - Hypodense lesion (24*13mm) within enlarged Lt palatine tonsil with peripheral rim enhancement and surrounding fat stranding/ edema.
 
-- Enlargement of Rt parotid gland with heterogeneous enhancement as compared witht Lt parotid gland.
+- Enlargement of Rt parotid gland with heterogeneous enhancement as compared with Lt parotid gland.
 - Mild enlargement of Rt submandibular gland with mild surrounding fat stranding.
 - Probably Rt submandibular sialadenitis.
 
 
 - Some borderline enlarged lymph nodes at bil. neck level _. Probably reactive lymph nodes.
-- One enlarged lymph node at Rt neck level II (19mm) with surroundin fat stranding. Probably pyogenic lymphadenitis. DDx: reactive LN.
+- One enlarged lymph node at Rt neck level II (19mm) with surrounding fat stranding. Probably pyogenic lymphadenitis. DDx: reactive LN.
 - Clustered small LNs (<1cm) at Rt neck level II, III, and IV.
 Stable the residual lymph nodes (up to 2cm) in bilateral neck level II-V. 
 
@@ -757,10 +757,10 @@ _________ Cancer ____________
 
 
 Left buccal cancer, pT4N1M0, s/p wide excision with partial maxillectomy, 
- marginal resection of left zygoam and left mandible, selective neck 
+ marginal resection of left zygoma and left mandible, selective neck 
  dissection with flap repair, and CCRT.
 1.Left buccal cancer s/p wide excision, left partial maxillectomy and marginal
-  resection of left zygoam and left mandible, and left selective neck dissection 
+  resection of left zygoma and left mandible, and left selective neck dissection 
   (level I,II,III,IV), and flap repair. No evidence of local tumor recurrence or 
   neck nodal metastasis.
 
@@ -779,7 +779,7 @@ Left buccal cancer, pT4N1M0, s/p wide excision with partial maxillectomy,
 (
 LDCT Quality: □Good ■Acceptable □Not Acceptable
 CTDIvol: __ mGy Total DLP: __ mGy*cm
-In comparison with the prior CT, Date 0000/00/00 ■□No prior chest CT avilable
+In comparison with the prior CT, Date 0000/00/00 ■□No prior chest CT available
 
 Lung nodule findings related to cancer screening
 □No lung nodule
@@ -832,7 +832,7 @@ Other Findings
 ____________
 
 *This is a Non contrast medium injection image.
-Limited evalution for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey. 
+Limited evaluation for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey. 
 
 
 ■ □

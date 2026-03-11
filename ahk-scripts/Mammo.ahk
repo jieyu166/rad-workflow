@@ -128,9 +128,9 @@ desc := ""
 If (mammoT1){
 	desc .= "Screening mammography of bilateral breast with CC and MLO views:"
 }else if (mammoT2){
-	desc .= "Diagnostic mammography of _ breast with spot maginification ML, CC views:"
+	desc .= "Diagnostic mammography of _ breast with spot magnification ML, CC views:"
 }else if (mammoT3){
-	desc .= "Screening with subsequently immediate diagnostic mammography of bilateral breasts with CC, MLO, spot maginification views:"
+	desc .= "Screening with subsequently immediate diagnostic mammography of bilateral breasts with CC, MLO, spot magnification views:"
 }else{
 	desc .= "Special screening mammography of _bilateral breast with CC and MLO views:`rScreening 3D mammography (DBT) of bilateral breasts with CC and MLO views:\nBoth 2D (synthesized) images and 3D thin slices are reviewed."
 }
@@ -168,7 +168,7 @@ If (mammoB1){
 	desc .= "BI-RADS assessment:`r(BI-RADS category 2, benign)`r`rRecommendation: Annual screening mammography`r`rIMP: __`r`r"
 }else if(mammoB3){
 	If (mammoT1){ 
-		desc .= "Screening mammo is not suitble for BI-RADS3."
+		desc .= "Screening mammo is not suitable for BI-RADS3."
 	}else{
 		desc .= "___`r`rBI-RADS assessment:`r(BI-RADS category 3, probably benign, suggest 6 months follow up)`r`r"
 		desc .= "Recommendation: 6-months follow up with mammography.`r`r"
@@ -176,7 +176,7 @@ If (mammoB1){
 	}
 }else if(mammoB4){
 	If (mammoT1){ 
-		desc .= "Screening mammo is not suitble for BI-RADS4."
+		desc .= "Screening mammo is not suitable for BI-RADS4."
 	}else{
 		desc .= "___`r`rBI-RADS assessment:`r__`r`r"
 		desc .= "Recommendation: tissue proof by __`r`r"
@@ -184,7 +184,7 @@ If (mammoB1){
 	}
 }else if(mammoB5){
 	If (mammoT1){ 
-		desc .= "Screening mammo is not suitble for BI-RADS5."
+		desc .= "Screening mammo is not suitable for BI-RADS5."
 	}else{
 		desc .= "___`r`rBI-RADS assessment:`r(BI-RADS category 5, highly suggestive of malignancy, recommend tissue proof)`r`r"
 		desc .= "Recommendation: tissue proof by __`r`r"
@@ -192,7 +192,7 @@ If (mammoB1){
 	}
 }else if(mammoB6){
 	If (mammoT1 OR mammoT3){ 
-		desc .= "Screening mammo is not suitble for BI-RADS6."
+		desc .= "Screening mammo is not suitable for BI-RADS6."
 	}else{
 		desc .= "___, compatible with ___ by previous core biopsy.`r___`r`rBI-RADS assessment:`r(BI-RADS category 6, known biopsy proven cancer)`r`r"
 		desc .= "Recommendation: appropriate treatment should be taken`r`r"
@@ -200,12 +200,12 @@ If (mammoB1){
 	}
 }else if(mammoB0){
 	If (mammoT1){
-		desc .= "The screen is not normal, and I stronly suggest further diagnostic `rexamination. Additional recommended imaging studies are listed below.`rAbnormalities:`r__`r`r"
+		desc .= "The screen is not normal, and I strongly suggest further diagnostic `rexamination. Additional recommended imaging studies are listed below.`rAbnormalities:`r__`r`r"
 		desc .= "Recommended additional studies: __`r`r"
 		desc .= "BI-RADS assessment:`r(BI-RADS category 0, need additional imaging evaluation)`r`r"
 		desc .= "IMP: Abnormal screening mammography on __ breast, suggest __."
 	}else{
-		desc .= "Diagnostic mammo is not suitble for BI-RADS0."
+		desc .= "Diagnostic mammo is not suitable for BI-RADS0."
 	}
 }
 
@@ -458,36 +458,36 @@ Translate(english)
 		}
 		if(english="t0m")
 		{
-			return "Assessment: Based on ISCD critieria, the BMD of the patient is normal (T >= -1)"
+			return "Assessment: Based on ISCD criteria, the BMD of the patient is normal (T >= -1)"
 		}
 		if(english="t1m")
 		{
-			return "Assessment: Based on ISCD critieria, the patient has low bone mass (osteopenia) (-2.5<T<-1)"
+			return "Assessment: Based on ISCD criteria, the patient has low bone mass (osteopenia) (-2.5<T<-1)"
 		}
 		if(english="t2m")
 		{
-			return "Assessment: Based on ISCD critieria, the patient has osteoporosis (T <= -2.5)."
+			return "Assessment: Based on ISCD criteria, the patient has osteoporosis (T <= -2.5)."
 		}
 		
 		if(english="t0f")
 		{
-			return "Assessment: Based on WHO critieria, the BMD of the patient is normal (T >= -1)."
+			return "Assessment: Based on WHO criteria, the BMD of the patient is normal (T >= -1)."
 		}
 		if(english="t1f")
 		{
-			return "Assessment: Based on WHO critieria, the patient has low bone mass (osteopenia) (-2.5<T<-1)."
+			return "Assessment: Based on WHO criteria, the patient has low bone mass (osteopenia) (-2.5<T<-1)."
 		}
 		if(english="t2f")
 		{
-			return "Assessment: Based on WHO critieria, the patient has osteoporosis (T <= -2.5)."
+			return "Assessment: Based on WHO criteria, the patient has osteoporosis (T <= -2.5)."
 		}
 		if(english="z0")
 		{
-			return "Assessment: Based on ISCD critieria, the BMD is within the expected range of age (Z >-2)."
+			return "Assessment: Based on ISCD criteria, the BMD is within the expected range of age (Z >-2)."
 		}
 		if(english="z1")
 		{
-			return "Assessment: Based on ISCD critieria, the BMD is below the expected range of age (Z <= -2)."
+			return "Assessment: Based on ISCD criteria, the BMD is below the expected range of age (Z <= -2)."
 		}
 		
 		if(english="tfx")
