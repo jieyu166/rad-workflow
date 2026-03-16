@@ -1426,76 +1426,145 @@ return
 global USAI_CurrentImage := ""
 global USAI_PreviousImage := ""
 global USAI_APIKey := API_KEY2
+global USAI_BackendMode := "Gemini"       ; "Gemini" or "VertexAI"
+global USAI_VertexProjectID := ""
+global USAI_VertexRegion := "us-central1"
+global USAI_VertexEndpointID := ""
+global USAI_VertexDedicatedDNS := ""     ; 專屬端點 DNS (e.g. 336116856320425984.us-central1-944001176350.prediction.vertexai.goog)
+global USAI_VertexToken := ""             ; Bearer token (手動或 gcloud)
 
 ; 熱字串觸發
 ::usaigui::
 ShowUSAIGUI:  ; 修改 ShowUSAIGUI 標籤，使用雙欄式佈局
-	Gui, USAIG:New, , 超音波 AI 分析 (Gemini 1.5 Pro)
+	Gui, USAIG:New, , 超音波 AI 分析 (Gemini / MedGemma)
     Gui, USAIG:Font, s10
-    
-    ; === 左側面板 (保持不變) ===
-    Gui, USAIG:Add, GroupBox, x10 y10 w470 h60, API 設定 (Google Gemini)
-    Gui, USAIG:Add, Text, x20 y30 w60, API Key:
-    Gui, USAIG:Add, Edit, x85 y30 w380 h20 vUSAIAPIKey Password, %API_KEY2%
-    
-    ; ... (中間影像與 OCR 部分保持不變，略過以節省篇幅，請保留原本代碼 ...) ...
-    Gui, USAIG:Add, GroupBox, x10 y80 w470 h100, 影像狀態
-    Gui, USAIG:Add, Text, x20 y100 w220 h40 vUSAIImage1Status Center, 本次影像：未上傳`n點擊下方按鈕貼上影像
-    Gui, USAIG:Add, Text, x250 y100 w220 h40 vUSAIImage2Status Center, 前次影像：未上傳`n點擊下方按鈕貼上影像
-    Gui, USAIG:Add, Text, x20 y145 w220 h30 vUSAIOCR1Status, OCR: 尚未執行
-    Gui, USAIG:Add, Text, x250 y145 w220 h30 vUSAIOCR2Status, OCR: 尚未執行
-    Gui, USAIG:Add, Button, x20 y190 w220 h35 gUSAIPasteImage1, 貼上本次影像 (Ctrl+V)
-    Gui, USAIG:Add, Button, x250 y190 w220 h35 gUSAIPasteImage2, 貼上前次影像 (Ctrl+V)
-    Gui, USAIG:Add, Button, x20 y230 w220 h30 gUSAIExecuteOCR1, 執行 OCR (本次)
-    Gui, USAIG:Add, Button, x250 y230 w220 h30 gUSAIExecuteOCR2, 執行 OCR (前次)
-    Gui, USAIG:Add, GroupBox, x10 y270 w470 h250, OCR 辨識結果
-    Gui, USAIG:Add, Edit, x20 y290 w220 h180 vUSAIOCR1Result Multi WantReturn VScroll
-    Gui, USAIG:Add, Edit, x250 y290 w220 h180 vUSAIOCR2Result Multi WantReturn VScroll
-    Gui, USAIG:Add, Button, x20 y475 w105 h30 gUSAICopyOCR1, 複製 OCR 1
-    Gui, USAIG:Add, Button, x135 y475 w105 h30 gUSAIClearOCR1, 清除 OCR 1
-    Gui, USAIG:Add, Button, x250 y475 w105 h30 gUSAICopyOCR2, 複製 OCR 2
-    Gui, USAIG:Add, Button, x365 y475 w105 h30 gUSAIClearOCR2, 清除 OCR 2
 
-; === 右側面板 (修改處) ===
-	Gui, USAIG:Add, GroupBox, x490 y10 w400 h160, 分析選項 ; 高度稍微增加
-    
-    ; 1. 修改下拉選單：加入 gUSAIExamTypeChanged 標籤
+    ; === 左側面板 ===
+    Gui, USAIG:Add, GroupBox, x10 y10 w470 h157, API / Backend 設定
+    Gui, USAIG:Add, Text, x20 y30 w60 vUSAIAPIKeyLbl, API Key:
+    Gui, USAIG:Add, Edit, x85 y30 w380 h20 vUSAIAPIKey Password, %API_KEY2%
+    ; Backend 選擇
+    Gui, USAIG:Add, Text, x20 y58 w60, Backend:
+    Gui, USAIG:Add, Radio, x85 y58 w120 vUSAIBackendGemini gUSAIBackendChanged Checked, Gemini API
+    Gui, USAIG:Add, Radio, x210 y58 w250 vUSAIBackendVertex gUSAIBackendChanged, Vertex AI (MedGemma)
+    ; GCP 設定欄位 (預設隱藏)
+    Gui, USAIG:Add, Text, x20 y83 w65 vUSAIVertexLbl1 Hidden, Project ID:
+    Gui, USAIG:Add, Edit, x90 y81 w155 h20 vUSAIVertexProjectEdit Hidden, %USAI_VertexProjectID%
+    Gui, USAIG:Add, Text, x255 y83 w45 vUSAIVertexLbl2 Hidden, Region:
+    Gui, USAIG:Add, Edit, x305 y81 w80 h20 vUSAIVertexRegionEdit Hidden, %USAI_VertexRegion%
+    Gui, USAIG:Add, Text, x20 y105 w70 vUSAIVertexLbl3 Hidden, Endpoint ID:
+    Gui, USAIG:Add, Edit, x90 y103 w370 h20 vUSAIVertexEndpointEdit Hidden, %USAI_VertexEndpointID%
+    Gui, USAIG:Add, Text, x20 y127 w70 vUSAIVertexLbl5 Hidden, 專屬 DNS:
+    Gui, USAIG:Add, Edit, x90 y125 w370 h20 vUSAIVertexDNSEdit Hidden, %USAI_VertexDedicatedDNS%
+    Gui, USAIG:Add, Text, x20 y149 w55 vUSAIVertexLbl4 Hidden, Token:
+    Gui, USAIG:Add, Edit, x75 y147 w235 h20 vUSAIVertexTokenEdit Hidden,
+    Gui, USAIG:Add, Button, x315 y146 w70 h22 gUSAIRefreshToken vUSAIRefreshTokenBtn Hidden, gcloud
+
+    Gui, USAIG:Add, GroupBox, x10 y177 w470 h100, 影像狀態
+    Gui, USAIG:Add, Text, x20 y197 w220 h40 vUSAIImage1Status Center, 本次影像：未上傳`n點擊下方按鈕貼上影像
+    Gui, USAIG:Add, Text, x250 y197 w220 h40 vUSAIImage2Status Center, 前次影像：未上傳`n點擊下方按鈕貼上影像
+    Gui, USAIG:Add, Text, x20 y242 w220 h30 vUSAIOCR1Status, OCR: 尚未執行
+    Gui, USAIG:Add, Text, x250 y242 w220 h30 vUSAIOCR2Status, OCR: 尚未執行
+    Gui, USAIG:Add, Button, x20 y287 w220 h35 gUSAIPasteImage1, 貼上本次影像 (Ctrl+V)
+    Gui, USAIG:Add, Button, x250 y287 w220 h35 gUSAIPasteImage2, 貼上前次影像 (Ctrl+V)
+    Gui, USAIG:Add, Button, x20 y327 w220 h30 gUSAIExecuteOCR1, 執行 OCR (本次)
+    Gui, USAIG:Add, Button, x250 y327 w220 h30 gUSAIExecuteOCR2, 執行 OCR (前次)
+    Gui, USAIG:Add, GroupBox, x10 y367 w470 h250, OCR 辨識結果
+    Gui, USAIG:Add, Edit, x20 y387 w220 h180 vUSAIOCR1Result Multi WantReturn VScroll
+    Gui, USAIG:Add, Edit, x250 y387 w220 h180 vUSAIOCR2Result Multi WantReturn VScroll
+    Gui, USAIG:Add, Button, x20 y572 w105 h30 gUSAICopyOCR1, 複製 OCR 1
+    Gui, USAIG:Add, Button, x135 y572 w105 h30 gUSAIClearOCR1, 清除 OCR 1
+    Gui, USAIG:Add, Button, x250 y572 w105 h30 gUSAICopyOCR2, 複製 OCR 2
+    Gui, USAIG:Add, Button, x365 y572 w105 h30 gUSAIClearOCR2, 清除 OCR 2
+
+; === 右側面板 ===
+	Gui, USAIG:Add, GroupBox, x490 y10 w400 h160, 分析選項
+
     Gui, USAIG:Add, Text, x500 y30 w80 h23, 檢查部位:
     Gui, USAIG:Add, DropDownList, x580 y27 w300 vUSAIExamType gUSAIExamTypeChanged Choose1, Gemini 3 Thinking (Breast)||脊椎 (Spine, Thinking)|Ankle Foot 陳主任風格 Thinking| Chest x-ray (Thinking)|Knee Thinking|一般描述 (General)
 
-    ; 2. 新增裁切選項 CheckBox (預設勾選，因為預設是 Breast)
     Gui, USAIG:Add, CheckBox, x580 y60 w250 h23 vUSAICropImage Checked, 啟用影像裁切 (去除上方資訊)
 
-    ; 3. 原有的 Radio Buttons (位置稍微下移)
     Gui, USAIG:Add, Radio, x500 y90 w380 vUSAIChoice1 Checked, 僅本次影像
     Gui, USAIG:Add, Radio, x500 y110 w380 vUSAIChoice2, 同一病灶比較 (兩張)
     Gui, USAIG:Add, Radio, x500 y130 w380 vUSAIChoice3, 大小變化比較 (兩張)
-    
-    ; 分析按鈕位置下移
-    Gui, USAIG:Add, Button, x590 y150 w200 h40 gUSAIAnalyze Default, 開始 Gemini 分析
-    
-    ; 分析結果框位置下移
-    Gui, USAIG:Add, GroupBox, x490 y200 w400 h320, 分析結果
-    Gui, USAIG:Add, Edit, x500 y220 w380 h290 vUSAIResult Multi WantReturn VScroll
-    
-    ; 結果操作按鈕 (位置微調)
-    Gui, USAIG:Add, Button, x530 y530 w100 h35 gUSAIInsertResult, 插入報告
-    Gui, USAIG:Add, Button, x640 y530 w100 h35 gUSAICopyResult, 複製結果
-    Gui, USAIG:Add, Button, x750 y530 w100 h35 gUSAIClearResult, 清除結果
-    
-    Gui, USAIG:Add, Text, x10 y580 w880 h20 vUSAIStatus Center, 就緒 (Model: Gemini 1.5 Pro)
-    
-    Gui, USAIG:Show, w900 h610
+
+    Gui, USAIG:Add, Button, x590 y150 w200 h40 gUSAIAnalyze Default vUSAIAnalyzeBtn, 開始 Gemini 分析
+
+    Gui, USAIG:Add, GroupBox, x490 y200 w400 h370, 分析結果
+    Gui, USAIG:Add, Edit, x500 y220 w380 h340 vUSAIResult Multi WantReturn VScroll
+
+    Gui, USAIG:Add, Button, x530 y602 w100 h35 gUSAIInsertResult, 插入報告
+    Gui, USAIG:Add, Button, x640 y602 w100 h35 gUSAICopyResult, 複製結果
+    Gui, USAIG:Add, Button, x750 y602 w100 h35 gUSAIClearResult, 清除結果
+
+    Gui, USAIG:Add, Text, x10 y677 w880 h20 vUSAIStatus Center, 就緒 (Backend: Gemini API)
+
+    Gui, USAIG:Show, w900 h707
 return
 
 USAIExamTypeChanged:
     Gui, USAIG:Submit, NoHide
-    
+
     ; 判斷邏輯：如果是 Breast 或 Thyroid 通常需要裁切，其他則預設不裁切
     if (InStr(USAIExamType, "Breast") || InStr(USAIExamType, "Thyroid")) {
         GuiControl, USAIG:, USAICropImage, 1  ; 勾選
     } else {
         GuiControl, USAIG:, USAICropImage, 0  ; 取消勾選
+    }
+return
+
+USAIBackendChanged:
+    Gui, USAIG:Submit, NoHide
+
+    if (USAIBackendGemini = 1) {
+        USAI_BackendMode := "Gemini"
+        ; 顯示 API Key，隱藏 Vertex 欄位
+        GuiControl, USAIG:Show, USAIAPIKeyLbl
+        GuiControl, USAIG:Show, USAIAPIKey
+        GuiControl, USAIG:Hide, USAIVertexLbl1
+        GuiControl, USAIG:Hide, USAIVertexProjectEdit
+        GuiControl, USAIG:Hide, USAIVertexLbl2
+        GuiControl, USAIG:Hide, USAIVertexRegionEdit
+        GuiControl, USAIG:Hide, USAIVertexLbl3
+        GuiControl, USAIG:Hide, USAIVertexEndpointEdit
+        GuiControl, USAIG:Hide, USAIVertexLbl5
+        GuiControl, USAIG:Hide, USAIVertexDNSEdit
+        GuiControl, USAIG:Hide, USAIVertexLbl4
+        GuiControl, USAIG:Hide, USAIVertexTokenEdit
+        GuiControl, USAIG:Hide, USAIRefreshTokenBtn
+        GuiControl, USAIG:, USAIAnalyzeBtn, 開始 Gemini 分析
+        GuiControl, USAIG:, USAIStatus, Backend: Gemini Developer API
+    } else {
+        USAI_BackendMode := "VertexAI"
+        ; 隱藏 API Key，顯示 Vertex 欄位
+        GuiControl, USAIG:Hide, USAIAPIKeyLbl
+        GuiControl, USAIG:Hide, USAIAPIKey
+        GuiControl, USAIG:Show, USAIVertexLbl1
+        GuiControl, USAIG:Show, USAIVertexProjectEdit
+        GuiControl, USAIG:Show, USAIVertexLbl2
+        GuiControl, USAIG:Show, USAIVertexRegionEdit
+        GuiControl, USAIG:Show, USAIVertexLbl3
+        GuiControl, USAIG:Show, USAIVertexEndpointEdit
+        GuiControl, USAIG:Show, USAIVertexLbl5
+        GuiControl, USAIG:Show, USAIVertexDNSEdit
+        GuiControl, USAIG:Show, USAIVertexLbl4
+        GuiControl, USAIG:Show, USAIVertexTokenEdit
+        GuiControl, USAIG:Show, USAIRefreshTokenBtn
+        GuiControl, USAIG:, USAIAnalyzeBtn, 開始 MedGemma 分析
+        GuiControl, USAIG:, USAIStatus, Backend: Vertex AI MedGemma
+    }
+return
+
+USAIRefreshToken:
+    ; 嘗試透過 gcloud CLI 取得 token
+    GuiControl, USAIG:, USAIStatus, 正在取得 GCP Token...
+    token := GetGCloudAccessToken()
+    if (token != "") {
+        GuiControl, USAIG:, USAIVertexTokenEdit, %token%
+        GuiControl, USAIG:, USAIStatus, Token 取得成功 (有效期約 1 小時)
+    } else {
+        GuiControl, USAIG:, USAIStatus, 無法取得 Token。請手動從 GCP 控制台複製貼上，或安裝 gcloud CLI。
     }
 return
 
@@ -2009,12 +2078,32 @@ if (RegExMatch(input, "is)Dist\s*A\s*([\d.]+)\s*mm.*?Dist\s*B\s*([\d.]+)\s*mm", 
 ; 開始分析 (整合 OCR 結果)
 USAIAnalyze:
 	Gui, USAIG:Submit, NoHide
-    
-    if (USAIAPIKey = "") {
-        GuiControl, USAIG:, USAIStatus, 錯誤：請輸入 Google API Key
-        return
+
+    ; Backend-aware 驗證
+    if (USAI_BackendMode = "Gemini") {
+        if (USAIAPIKey = "") {
+            GuiControl, USAIG:, USAIStatus, 錯誤：請輸入 Google API Key
+            return
+        }
+    } else {
+        ; Vertex AI 模式：讀取 GUI 欄位到全域變數
+        USAI_VertexProjectID := USAIVertexProjectEdit
+        USAI_VertexRegion := USAIVertexRegionEdit
+        USAI_VertexEndpointID := USAIVertexEndpointEdit
+        USAI_VertexDedicatedDNS := USAIVertexDNSEdit
+        USAI_VertexToken := USAIVertexTokenEdit
+        ; 儲存 Vertex AI 設定到 INI (下次自動載入)
+        SaveSettingsToFile()
+        if (USAI_VertexProjectID = "" || USAI_VertexEndpointID = "") {
+            GuiControl, USAIG:, USAIStatus, 錯誤：請輸入 Project ID 和 Endpoint ID
+            return
+        }
+        if (USAI_VertexToken = "") {
+            GuiControl, USAIG:, USAIStatus, 錯誤：請輸入 Access Token (點 gcloud 按鈕或手動貼上)
+            return
+        }
     }
-        
+
     ; 檢查影像
     if (USAIChoice1 && USAI_CurrentImage = "") {
         GuiControl, USAIG:, USAIStatus, 錯誤：請先貼上本次影像
@@ -2024,9 +2113,15 @@ USAIAnalyze:
         GuiControl, USAIG:, USAIStatus, 錯誤：請先貼上兩張影像
         return
     }
-    
-    GuiControl, USAIG:Disable, 開始 Gemini 分析
-    GuiControl, USAIG:, USAIStatus, 正在呼叫 Gemini 3 Thinking...
+
+    ; Backend-aware 按鈕與狀態
+    if (USAI_BackendMode = "Gemini") {
+        GuiControl, USAIG:Disable, USAIAnalyzeBtn
+        GuiControl, USAIG:, USAIStatus, 正在呼叫 Gemini 3 Thinking...
+    } else {
+        GuiControl, USAIG:Disable, USAIAnalyzeBtn
+        GuiControl, USAIG:, USAIStatus, 正在取得 GCP Token 並呼叫 MedGemma...
+    }
     
     ; === 1. 設定 Prompt 與 Thinking 模式 ===
     SysPrompt := ""
@@ -2038,6 +2133,11 @@ USAIAnalyze:
         SysPrompt := "Analyze the image with high reasoning effort."
     } else {
         SysPrompt := ""
+    }
+
+    ; MedGemma 不支援 Thinking 模式，自動忽略
+    if (USAI_BackendMode = "VertexAI") {
+        useThinking := false
     }
     
     if (InStr(USAIExamType, "Breast")) {
@@ -2389,17 +2489,23 @@ USAIAnalyze:
 	; === 2. 構建 User Prompt ===
     UserPrompt := ""
     images := []
-    
-    ; 構建 UserPrompt 的邏輯 (包含 OCR) 保持不變
-	if (USAIChoice1) {
-        UserPrompt := SysPrompt . "`n`nPlease analyze this image."
+
+    ; Vertex AI: SysPrompt 不併入 UserPrompt (會作為獨立 system message)
+    if (USAI_BackendMode = "VertexAI") {
+        promptPrefix := ""
+    } else {
+        promptPrefix := SysPrompt
+    }
+
+    if (USAIChoice1) {
+        UserPrompt := promptPrefix . "`n`nPlease analyze this image."
         if (USAI_CurrentOCRText != "") {
             UserPrompt .= "`nOCR Data: " . USAI_CurrentOCRText
         }
         UserPrompt .= "`nOutput format: Location, Size, Description, Impression. (In English)"
         images.Push(USAI_CurrentImage)
     } else if (USAIChoice2) {
-        UserPrompt := SysPrompt . "`n`nAnalyze these TWO images of the SAME lesion."
+        UserPrompt := promptPrefix . "`n`nAnalyze these TWO images of the SAME lesion."
         if (USAI_CurrentOCRText != "" || USAI_PreviousOCRText != "") {
              UserPrompt .= "`nOCR Data - Current: " . USAI_CurrentOCRText . ", Previous: " . USAI_PreviousOCRText
         }
@@ -2407,7 +2513,7 @@ USAIAnalyze:
         images.Push(USAI_CurrentImage)
         images.Push(USAI_PreviousImage)
     } else if (USAIChoice3) {
-        UserPrompt := SysPrompt . "`n`nCompare size change. Image 1 is PREVIOUS, Image 2 is CURRENT."
+        UserPrompt := promptPrefix . "`n`nCompare size change. Image 1 is PREVIOUS, Image 2 is CURRENT."
         if (USAI_CurrentOCRText != "" || USAI_PreviousOCRText != "") {
              UserPrompt .= "`nOCR Data - Previous: " . USAI_PreviousOCRText . ", Current: " . USAI_CurrentOCRText
         }
@@ -2415,12 +2521,14 @@ USAIAnalyze:
         images.Push(USAI_PreviousImage)
         images.Push(USAI_CurrentImage)
     }
-	
-    ; === 3. 呼叫 Gemini API (傳入 useThinking 參數)(非同步) ===
-    ; 注意：這裡我們改用 gemini-2.0-flash-thinking-exp (或 gemini-3.0-pro-exp)
-    modelID := "gemini-3-pro-preview"
-    ; 呼叫背景工作函數
-    StartGeminiBackgroundJob(USAIAPIKey, modelID, UserPrompt, images, useThinking)
+
+    ; === 3. 呼叫 API (非同步) ===
+    if (USAI_BackendMode = "Gemini") {
+        modelID := "gemini-3-pro-preview"
+        StartGeminiBackgroundJob(USAIAPIKey, modelID, UserPrompt, images, useThinking)
+    } else {
+        StartVertexAIBackgroundJob(USAI_VertexProjectID, USAI_VertexRegion, USAI_VertexEndpointID, USAI_VertexDedicatedDNS, USAI_VertexToken, SysPrompt, UserPrompt, images)
+    }
     
     ; 啟動計時器，每 1 秒檢查一次結果
     SetTimer, CheckGeminiResult, 1000
@@ -2447,12 +2555,16 @@ CheckGeminiResult:
         ; 讀取結果 (指定 UTF-8 編碼)
         FileRead, resultText, *P65001 %resultFile%
         
-        ; 更新 GUI
-        GuiControl, USAIG:Enable, 開始 Gemini 分析
-        
+        ; 更新 GUI (Backend-aware)
+        GuiControl, USAIG:Enable, USAIAnalyzeBtn
+
         if (resultText != "" && !InStr(resultText, "API Error")) {
-            ; 嘗試解析 JSON 回應 (如果是直接存文字則不需要)
-            finalResult := ParseGeminiResponse(resultText)
+            ; 根據 Backend 選擇正確的解析器
+            if (USAI_BackendMode = "VertexAI") {
+                finalResult := ParseVertexAIResponse(resultText)
+            } else {
+                finalResult := ParseGeminiResponse(resultText)
+            }
             
             ; 如果解析失敗(可能背景腳本直接寫入了錯誤訊息)，直接顯示原文
             if (finalResult = "Error parsing response")
@@ -2469,6 +2581,9 @@ CheckGeminiResult:
         FileDelete, %resultFile%
         FileDelete, %A_Temp%\gemini_request.json
         FileDelete, %A_Temp%\gemini_worker.ahk
+        FileDelete, %A_Temp%\vertex_request.json
+        FileDelete, %A_Temp%\vertex_worker.ahk
+        FileDelete, %A_Temp%\gcloud_token.txt
     }
     else {
         ; 更新狀態文字讓使用者知道還在跑 (可選)
@@ -2526,6 +2641,146 @@ StartGeminiBackgroundJob(apiKey, modelID, prompt, images, useThinking) {
     Run, "%A_AhkPath%" "%workerScriptPath%"
 }
 
+; ============================================================================
+; Vertex AI / MedGemma 相關函數
+; ============================================================================
+
+GetGCloudAccessToken() {
+    ; 透過 gcloud CLI 取得 OAuth2 Access Token
+    tokenFile := A_Temp . "\gcloud_token.txt"
+    FileDelete, %tokenFile%
+    RunWait, %comspec% /c chcp 65001 >nul & gcloud auth print-access-token > "%tokenFile%" 2>&1, , Hide
+    FileRead, token, *P65001 %tokenFile%
+    FileDelete, %tokenFile%
+    token := Trim(token, " `t`r`n")
+    ; gcloud access token 必須以 "ya29." 開頭且只含 ASCII
+    if (token = "" || InStr(token, "ERROR") || InStr(token, "error") || SubStr(token, 1, 5) != "ya29.") {
+        return ""
+    }
+    return token
+}
+
+BuildVertexAIJSON(sysPrompt, userPrompt, images) {
+    ; 構建 OpenAI Chat Completions 格式 (Vertex AI MedGemma vLLM)
+    cleanSysPrompt := EscapeJSONString(sysPrompt)
+    cleanUserPrompt := EscapeJSONString(userPrompt)
+
+    json := "{""model"":""medgemma-multimodal"","
+    json .= """messages"":["
+
+    ; System message
+    json .= "{""role"":""system"",""content"":""" . cleanSysPrompt . """},"
+
+    ; User message (multimodal content array)
+    json .= "{""role"":""user"",""content"":["
+
+    ; 圖片 (image_url type with data URI)
+    isFirst := true
+    for index, imgData in images {
+        if (!isFirst)
+            json .= ","
+        isFirst := false
+
+        ; 提取 base64 原始資料
+        if (InStr(imgData, "base64,"))
+            imgRaw := SubStr(imgData, InStr(imgData, "base64,") + 7)
+        else
+            imgRaw := imgData
+
+        json .= "{""type"":""image_url"",""image_url"":{""url"":""data:image/png;base64," . imgRaw . """}}"
+    }
+
+    ; 文字提示
+    if (!isFirst)
+        json .= ","
+    json .= "{""type"":""text"",""text"":""" . cleanUserPrompt . """}"
+
+    json .= "]}],"  ; 結束 content array 和 messages array
+
+    ; 生成參數
+    json .= """temperature"":1.0,"
+    json .= """max_tokens"":8192"
+
+    json .= "}"
+    return json
+}
+
+StartVertexAIBackgroundJob(projectID, region, endpointID, dedicatedDNS, token, sysPrompt, userPrompt, images) {
+    ; Token 已從 GUI 傳入 (手動貼上或 gcloud 按鈕取得)
+
+    ; 1. 構建 JSON
+    jsonBody := BuildVertexAIJSON(sysPrompt, userPrompt, images)
+
+    ; 3. 寫入臨時檔案
+    requestFile := A_Temp . "\vertex_request.json"
+    FileDelete, %requestFile%
+    FileAppend, %jsonBody%, %requestFile%, UTF-8
+
+    ; 4. 準備結果檔案 (與 Gemini 共用路徑，讓 CheckGeminiResult 可以偵測)
+    resultFile := A_Temp . "\gemini_response.txt"
+    FileDelete, %resultFile%
+
+    ; 5. 構建 Vertex AI endpoint URL
+    if (dedicatedDNS != "") {
+        ; 專屬端點: host = dedicatedDNS, path 仍用 endpointID
+        endpoint := "https://" . dedicatedDNS . "/v1/projects/" . projectID . "/locations/" . region . "/endpoints/" . endpointID . ":rawPredict"
+    } else {
+        ; 標準端點: 使用 aiplatform.googleapis.com
+        endpoint := "https://" . region . "-aiplatform.googleapis.com/v1/projects/" . projectID . "/locations/" . region . "/endpoints/" . endpointID . ":rawPredict"
+    }
+
+    ; 6. 建立背景 Worker 腳本
+    workerScriptPath := A_Temp . "\vertex_worker.ahk"
+    FileDelete, %workerScriptPath%
+
+    workerCode =
+    (
+    #NoTrayIcon
+    FileRead, jsonBody, *P65001 %requestFile%
+
+    url := "%endpoint%"
+    bearerToken := "%token%"
+
+    whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+    whr.Open("POST", url, false)
+    whr.SetRequestHeader("Content-Type", "application/json")
+    whr.SetRequestHeader("Authorization", "Bearer " . bearerToken)
+    whr.SetTimeouts(30000, 60000, 30000, 180000) ; 180 秒超時 (MedGemma)
+
+    try {
+        whr.Send(jsonBody)
+        FileAppend, `% whr.ResponseText, %resultFile%, UTF-8
+    } catch e {
+        err := "API Error: " . e.Message
+        FileAppend, `% err, %resultFile%, UTF-8
+    }
+    ExitApp
+    )
+
+    FileAppend, %workerCode%, %workerScriptPath%, UTF-8
+
+    ; 7. 執行背景腳本
+    Run, "%A_AhkPath%" "%workerScriptPath%"
+}
+
+ParseVertexAIResponse(responseText) {
+    ; Vertex AI MedGemma 回傳 OpenAI Chat Completions 格式:
+    ; {"choices":[{"message":{"content":"THE ANSWER"}}]}
+    ; 提取 choices[0].message.content
+
+    if (RegExMatch(responseText, """choices"".*?""message"".*?""content""\s*:\s*""((?:\\.|[^""\\])*)""", match)) {
+        result := match1
+        ; JSON unescape
+        result := StrReplace(result, "\""", """")
+        result := StrReplace(result, "\n", "`n")
+        result := StrReplace(result, "\r", "`r")
+        result := StrReplace(result, "\t", "`t")
+        result := StrReplace(result, "\\", "\")
+        return result
+    }
+
+    return "Error parsing Vertex AI response: " . SubStr(responseText, 1, 500)
+}
 
 ; 插入結果到報告
 USAIInsertResult:

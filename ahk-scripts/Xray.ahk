@@ -718,6 +718,11 @@ SendInput Normal heart size.`r
 SendInput _Unremarkable bony structure.`r
 return
 
+
+:O:kub;::
+HotstringMenuV("A","MenuShortcut","Mild sclerotic change around bilateral SI joints, could be related to arthritis or others.","Gallstone or right renal stone or other.","Suspect right renal stones","BRK","Mild both hips osteoarthritis (OA)")
+return
+
 :O:kub2::
 (
 - No obvious abnormal radiopaque density can be depicted.

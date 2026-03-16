@@ -8,11 +8,14 @@
 :O:bil::bilateral
 :O:fu;::follow up.
 :O:lc::Limited change.
-:O:olc::Otherwise limited change.
+:O:olc::
+HotstringMenuV("A","MenuShortcut","Otherwise limited change.","Overall limited change.")
+return
 :O:ou::Otherwise unremarkable. 
-:O:ln;::lymph node
+:O:ln;::
+HotstringMenuV("A","MenuShortcut","lymph node", "Visible LNs short axis <1cm.","BRK","<6mm nodules in both lungs.(Arrows in Srs:_)","solid nodule","ground-glass nodule", "part-solid nodule") 
+return
 :O:lap;::lymphadenopathy
-:O:cg;::calcified granuloma
 
 
 :O:---+::----------------------------------------------------------------------`r
@@ -21,8 +24,8 @@
 ;============================================================================================
 ; MSK
 ;============================================================================================
-:O:spon::spondylolisthesis of _ ;on _.
-:O:retro::retrolisthesis of _ ;on _.
+:O:spon::Grade I spondylolisthesis of _ ;on _.
+:O:retro::Mild retrolisthesis of _ ;on _.
 :O:acl::anterior cruciate ligament (ACL)
 :O:pcl::posterior cruciate ligament (PCL)
 :O:mcl::medial collateral ligament (MCL)
@@ -32,7 +35,7 @@
 :O:ghj::glenohumeral joint
 :O:ac::acromio-clavicular
 :O:gh::gleno-humeral
-:O:oa::osteoarthritis
+:O:oa::osteoarthritis (OA)
 :O:fai::femoroacetabular impingement (FAI)
 :O:ifi::ischiofemoral impingement (IFI)
 :O:ddd::degenerative disc disease

@@ -108,7 +108,7 @@ return
 
 
 ::eff;::
-HotstringMenuV("A","MenuShortcut", "_Mild suprapatellar effusion","{LtRt} pleural effusion","{LtRt} minimal pleural effusion or pleural changes.")
+HotstringMenuV("A","MenuShortcut", "_Mild suprapatellar effusion","{LtRt} pleural effusion","{LtRt} minimal pleural effusion or pleural changes.","Pericardial effusion can not be excluded.")
 return
 
 
@@ -376,6 +376,11 @@ SaveSettingsToFile() {
     IniWrite, %vExamLoc%, %settingsFile%, Server, ExamLocation
     IniWrite, %API_KEY%, %settingsFile%, AI, APIKey      ; 存 GPT Key
     IniWrite, %API_KEY2%, %settingsFile%, AI, APIKey2    ; 存 Gemini Key
+    ; Vertex AI / MedGemma 設定
+    IniWrite, %USAI_VertexProjectID%, %settingsFile%, VertexAI, ProjectID
+    IniWrite, %USAI_VertexRegion%, %settingsFile%, VertexAI, Region
+    IniWrite, %USAI_VertexEndpointID%, %settingsFile%, VertexAI, EndpointID
+    IniWrite, %USAI_VertexDedicatedDNS%, %settingsFile%, VertexAI, DedicatedDNS
 }
 
 ; 從檔案載入設定 (實際應用時可自行實作)
@@ -388,6 +393,11 @@ LoadSettingsFromFile() {
         IniRead, vExamLoc, %settingsFile%, Server, ExamLocation, %vExamLoc%
         IniRead, API_KEY, %settingsFile%, AI, APIKey, %API_KEY%
         IniRead, API_KEY2, %settingsFile%, AI, APIKey2, %API_KEY2% ; 讀取 Gemini Key
+        ; Vertex AI / MedGemma 設定
+        IniRead, USAI_VertexProjectID, %settingsFile%, VertexAI, ProjectID, %USAI_VertexProjectID%
+        IniRead, USAI_VertexRegion, %settingsFile%, VertexAI, Region, %USAI_VertexRegion%
+        IniRead, USAI_VertexEndpointID, %settingsFile%, VertexAI, EndpointID, %USAI_VertexEndpointID%
+        IniRead, USAI_VertexDedicatedDNS, %settingsFile%, VertexAI, DedicatedDNS, %USAI_VertexDedicatedDNS%
     }
 }
 

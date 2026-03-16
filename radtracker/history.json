@@ -91,6 +91,88 @@
         "us_normal": {"current": 10, "suggested": 18, "reason": "實測穩定 18-21"},
         "mammo": {"current": 17, "suggested": 22, "reason": "連續兩週實測 >20"}
       }
+    },
+    {
+      "week_id": "2026-W10",
+      "date_range": "2026/3/2 ~ 3/8",
+      "source": "w11_schedule.html (W10 actuals referenced), no JSON preserved",
+      "tracking": {
+        "start": {"xr": 464, "ct": 15, "us": 42, "mammo": 22},
+        "end": {"xr": 515, "ct": 34, "us": 24, "mammo": 47},
+        "net_change": {"xr": 51, "ct": 19, "us": -18, "mammo": 25},
+        "total_net": 77
+      },
+      "completed": {
+        "xr": 362, "ct": 24, "us": 64, "mammo": 70, "bmd": 13,
+        "note": "from w11_schedule W10 vs W11 comparison table"
+      },
+      "added_estimated": {
+        "xr": ">=413", "ct": ">=43", "us": ">=46", "mammo": ">=95"
+      },
+      "time": {
+        "report_hr": 22.3,
+        "clinical_hr": null,
+        "study_hr": 0
+      },
+      "totals": {
+        "grand_total": 535,
+        "points": null
+      },
+      "notes": "無值班週。XR/CT/Mammo 剩餘均上升，僅 US 下降。W10 JSON 未保存，數據從 w11_schedule.html 回推。"
+    },
+    {
+      "week_id": "2026-W11",
+      "date_range": "2026/3/9 ~ 3/15",
+      "source": "1150316_jie.csv (renamed 202603.csv), CSV mode",
+      "tracking": {
+        "start": {"xr": 515, "ct": 34, "us": 24, "mammo": 47},
+        "end": {"xr": 426, "ct": 29, "us": 20, "mammo": 74},
+        "net_change": {"xr": -89, "ct": -5, "us": -4, "mammo": 27},
+        "total_net": -71
+      },
+      "completed": {
+        "xr": 438, "ct": 31, "us": 50, "mammo": 79, "bmd": 7
+      },
+      "added_estimated": {
+        "xr": ">=349", "ct": ">=26", "us": ">=46", "mammo": ">=106"
+      },
+      "time": {
+        "report_hr": 22.7,
+        "clinical_hr": null,
+        "study_hr": 0
+      },
+      "totals": {
+        "grand_total": 605,
+        "points": 2819.1
+      },
+      "efficiency_daily_avg": {
+        "cases_per_hr": 26.7,
+        "points_per_hr": 124.2
+      },
+      "daily": {
+        "mon": {"total": 81, "active_hr": 2.8, "xr": 58, "ct": 4, "us": 14, "bmd": 5, "points": 339.1},
+        "tue": {"total": 141, "active_hr": 4.1, "xr": 105, "ct": 3, "us": 4, "mammo": 28, "bmd": 1, "points": 564.1},
+        "wed": {"total": 80, "active_hr": 3.5, "xr": 35, "ct": 4, "us": 10, "mammo": 31, "points": 650.6, "note": "急打XR 33"},
+        "thu": {"total": 86, "active_hr": 4.2, "xr": 54, "ct": 6, "us": 6, "mammo": 19, "bmd": 1, "points": 455.1, "note": "急打XR 30"},
+        "fri": {"total": 45, "active_hr": 1.9, "xr": 41, "ct": 4, "points": 124.9, "note": "上課日"},
+        "sat": {"total": 143, "active_hr": 4.8, "xr": 121, "ct": 5, "us": 16, "mammo": 1, "points": 541.8, "note": "本週最高量日"},
+        "sun": {"total": 29, "active_hr": 1.4, "xr": 24, "ct": 5, "points": 143.4}
+      },
+      "schedule_comparison": {
+        "plan_total": 843, "actual_total": 605, "achievement": "72%",
+        "plan_hr": 36.0, "actual_hr": 22.7, "time_utilization": "63%",
+        "key_gap": "Mammo plan 143 vs actual 79 (55%); time was main bottleneck"
+      },
+      "key_findings": [
+        "XR 剩餘大幅下降 89 份（515->426），完成 438 份",
+        "Mammo 剩餘持續積壓 +27（47->74），新增 106 vs 完成 79",
+        "CT 意外超標（計畫 29 實際 31），新增量低於預期",
+        "US 消化率最高 71.4%，剩餘 24->20",
+        "週六爆發力 143 案 / 4.8hr，週二次高 141 案 / 4.1hr",
+        "速率 26.7 cases/hr 高於計畫假設，時間不足是主因",
+        "週三/四急打 XR 63 份，非值班但有大量急診/住院來源"
+      ],
+      "notes": "無值班週。排程計畫 vs 實際差距主要來自時間投入不足（63%），非速率問題。"
     }
   ]
 }
