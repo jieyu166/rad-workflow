@@ -9,17 +9,23 @@
 ## 專案結構
 ```
 radtracker/
+├── parse_csv.py               ← CSV 解析引擎（支援 ROC 日曆檔名自動偵測）
+├── generate_report.py         ← 產出週報 JSON（支援 --csv/--xlsx/--mid 模式）
+├── update_history.py          ← 自動更新 history.json
+├── archive_week.py            ← 自動歸檔 output/ 至 W{nn}/
 ├── claude.md                  ← 你正在讀的這份（固定規則）
 ├── weekly_review_prompt.md    ← 標準化週報 prompt（8個固定輸出區段）
-├── parse_csv.py               ← CSV 解析引擎（核心）
-├── generate_report.py         ← 產出週報 JSON（支援 --csv 和 --xlsx 模式）
-├── week_input_template.yaml   ← 使用者每週輸入模板（YAML 格式）
-├── radiology_tracker.xlsx     ← [Legacy] 手動逐筆工作紀錄
+├── week_input.yaml            ← 當前週使用者輸入
+├── week_input_template.yaml   ← 使用者每週輸入模板（含 mid-week 欄位）
 ├── history.json               ← 歷史週報摘要（跨週趨勢）
-├── 202602.csv                 ← 醫院匯出：佳里院區月報表
-├── 202602YK.csv               ← 醫院匯出：永康院區值班月報表
+├── csv_input/                 ← 所有 CSV 輸入（.gitignore）
+│   ├── 202602.csv, 202603.csv ← 醫院月報表（YYYYMM.csv）
+│   ├── 1150319_JL.csv         ← ROC 日曆格式（115MMDD_*.csv）
+│   └── legacy/
+│       └── radiology_tracker.xlsx
 └── output/
-    └── weekly_report.json     ← 產出的週報 JSON
+    ├── W09/, W10/, W11/       ← 歷史週報歸檔
+    └── (當前週產出)
 ```
 
 ---
@@ -256,19 +262,36 @@ study: []
 ### CSV 模式（推薦）
 ```bash
 # 1. 使用者填寫 week_input.yaml（8 個數字 + 備註）
-# 2. 執行報告產生
-python generate_report.py --csv 202602.csv --input week_input.yaml -o output/weekly_report.json
+# 2. CSV 放入 csv_input/ 目錄（ROC 日曆檔名如 1150319_JL.csv 可自動偵測週次）
+
+# 3. 產出完整週報
+python generate_report.py --csv csv_input/202603.csv --input week_input.yaml -o output/weekly_report.json
 
 # 含永康院區值班資料
-python generate_report.py --csv 202602.csv --yk 202602YK.csv --input week_input.yaml
+python generate_report.py --csv csv_input/202603.csv --yk csv_input/202603YK.csv --input week_input.yaml
 
-# 3. 更新歷史記錄
-python update_history.py history.json output/weekly_report.json
+# 4. 期中分析（需在 week_input.yaml 加 remaining.mid 欄位）
+python generate_report.py --csv csv_input/1150319_JL.csv csv_input/1150319_YK.csv --input week_input.yaml --mid
+
+# 5. 更新歷史記錄
+python update_history.py output/weekly_report.json
+
+# 6. 歸檔（週報完成後）
+python archive_week.py
+```
+
+### parse_csv.py 單獨使用
+```bash
+# 自動偵測 ROC 日曆檔名的週次（--week 可省略）
+python parse_csv.py csv_input/1150319_JL.csv csv_input/1150319_YK.csv -o output/parsed.json
+
+# 明確指定週次
+python parse_csv.py csv_input/202603.csv --week 2026-W12 -o output/parsed.json
 ```
 
 ### [Legacy] XLSX 模式
 ```bash
-python generate_report.py --xlsx radiology_tracker.xlsx --input week_input.md -o output/weekly_report.json
+python generate_report.py --xlsx csv_input/legacy/radiology_tracker.xlsx --input week_input.md
 ```
 
 ### 資料解析注意事項

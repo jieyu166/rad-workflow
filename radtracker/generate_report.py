@@ -518,6 +518,8 @@ Examples:
     parser.add_argument('--yk', help='YK campus duty CSV (optional, CSV mode only)')
     parser.add_argument('--input', required=True, help='week_input.yaml or week_input.md')
     parser.add_argument('--reporter', default='A80748', help='Reporter ID (CSV mode)')
+    parser.add_argument('--mid', action='store_true',
+                        help='Mid-week mode: use remaining.mid instead of remaining.end')
     parser.add_argument('-o', '--output', default='output/weekly_report.json',
                         help='Output JSON path')
 
@@ -531,6 +533,19 @@ Examples:
         else:
             week_input = parse_week_input_md(input_path)
 
+        # Mid-week mode: swap remaining.mid -> remaining.end
+        if args.mid:
+            remaining = week_input.get('remaining', {})
+            mid = remaining.get('mid', None)
+            if mid:
+                remaining['end'] = mid
+                week_input['remaining'] = remaining
+                print("Mid-week mode: using remaining.mid as end values", file=sys.stderr)
+            else:
+                print("Warning: --mid specified but no remaining.mid in week_input.yaml",
+                      file=sys.stderr)
+            week_input['mode'] = 'midweek'
+
         week_str = week_input.get('week', '')
         if not week_str:
             print("Error: week_input must contain 'week' field (e.g., '2026-W09')",
@@ -539,6 +554,10 @@ Examples:
 
         csv_data = load_csv_data(args.csv, args.yk, week_str, args.reporter)
         report_data = csv_to_report_data(csv_data, week_input)
+
+        # Tag midweek mode in output
+        if args.mid:
+            report_data['mode'] = 'midweek'
     else:
         # ── Legacy XLSX Mode ──
         entries = parse_xlsx(args.xlsx)

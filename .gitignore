@@ -11,10 +11,9 @@ Thumbs.db
 .claude/
 
 # Radtracker data files (patient data, not for version control)
-radtracker/*.csv
-radtracker/csv_archive/
+radtracker/csv_input/
 radtracker/__pycache__/
 radtracker/output/*.html
 radtracker/output/*.csv
+radtracker/output/*.json
 radtracker/output/W*/
-radtracker/output/w*_schedule.html

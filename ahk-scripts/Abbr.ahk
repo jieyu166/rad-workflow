@@ -13,7 +13,7 @@ HotstringMenuV("A","MenuShortcut","Otherwise limited change.","Overall limited c
 return
 :O:ou::Otherwise unremarkable. 
 :O:ln;::
-HotstringMenuV("A","MenuShortcut","lymph node", "Visible LNs short axis <1cm.","BRK","<6mm nodules in both lungs.(Arrows in Srs:_)","solid nodule","ground-glass nodule", "part-solid nodule") 
+HotstringMenuV("A","MenuShortcut","lymph node", "Visible LNs short axis <1cm.","BRK","<6mm nodules in both lungs.(Arrows in Srs:_)"," Nonspecific tiny nodules in both lungs, <_mm.","solid nodule","ground-glass nodule", "part-solid nodule") 
 return
 :O:lap;::lymphadenopathy
 
@@ -61,7 +61,7 @@ return
 :O:crct::chronic rotator cuff tear
 :O:sai::subacromial impingement
 :O:cfr::compression fracture
-::fr.::
+::fr.::fracture
 ::fr;::
 HotstringMenuV("A","MenuShortcut","fracture.","old fracture with _ deformity.","old fracture with _ deformity and _ degenerative change.","old fracture.","BRK","compression fracture.","healing fracture.","pathologic fracture.","Nondisplaced fracture.","stress fracture.","avulsion fracture.")
 return
@@ -111,4 +111,8 @@ HotstringMenuV("A","MenuShortcut","focal atelectasis.","BRK","fibroadenoma","FA"
 return
 :O:ggo::ground-glass opacity
 :O:api;::Bilateral apical pleural thickening.
+:O:aah;::atypical adenomatous hyperplasia
+:O:aas;::adenocarcinoma in situ
+:O:mia;::minimally invasive adenocarcinoma
+
 :O:clip;::Clips at _RUQ abdomen.

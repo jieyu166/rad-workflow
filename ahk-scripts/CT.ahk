@@ -27,7 +27,7 @@ SendInput `rBefore and after the administration of intravenous contrast there wa
 return
 
 :O:ca;::
-HotstringMenuV("A","MenuShortcut","Calcified granulomas in both lungs", "Calcified tendinitis in _","calcified granuloma","BRK","Dystrophic calcification in _.")
+HotstringMenuV("A","MenuShortcut","Calcified granulomas in both lungs", "calcified granuloma","Calcified tendinitis in _","calcified tendinitis","BRK","Dystrophic calcification in _.")
 return
 
 

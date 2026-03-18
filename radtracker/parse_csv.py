@@ -12,6 +12,7 @@ CSV 格式：cp950 (Big5) 編碼，Tab 分隔，31 欄
 import argparse
 import csv
 import json
+import re
 import sys
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -519,12 +520,43 @@ def process_csvs(csv_paths: list[str], week_str: str,
 
 # ── CLI ───────────────────────────────────────────────────────────────────
 
+def infer_week_from_filename(filepath):
+    """Infer ISO week from ROC calendar filename like 1150319_JL.csv.
+    ROC year 115 = 2026, so 1150319 = 2026/03/19 -> that date's ISO week."""
+    name = Path(filepath).stem  # e.g., "1150319_JL"
+    m = re.match(r'^(\d{3})(\d{2})(\d{2})', name)
+    if m:
+        roc_year = int(m.group(1))
+        month = int(m.group(2))
+        day = int(m.group(3))
+        west_year = roc_year + 1911
+        try:
+            dt = datetime(west_year, month, day)
+            iso_cal = dt.isocalendar()
+            return f"{iso_cal[0]}-W{iso_cal[1]:02d}"
+        except ValueError:
+            pass
+    # Also handle YYYYMM.csv -> use last day of month to get latest week
+    m2 = re.match(r'^(\d{4})(\d{2})', name)
+    if m2:
+        year = int(m2.group(1))
+        month = int(m2.group(2))
+        # Last day of month
+        if month == 12:
+            last_day = datetime(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            last_day = datetime(year, month + 1, 1) - timedelta(days=1)
+        iso_cal = last_day.isocalendar()
+        return f"{iso_cal[0]}-W{iso_cal[1]:02d}"
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Parse hospital CSV exports for radiology weekly report')
     parser.add_argument('csv', nargs='+', help='CSV file(s) to parse (main + optional YK)')
-    parser.add_argument('--week', required=True,
-                        help='ISO week string, e.g., 2026-W09')
+    parser.add_argument('--week', default=None,
+                        help='ISO week string, e.g., 2026-W09 (auto-inferred from ROC filename if omitted)')
     parser.add_argument('--reporter', default='A80748',
                         help='Reporter ID to filter (default: A80748)')
     parser.add_argument('-o', '--output', default=None,
@@ -532,7 +564,19 @@ def main():
 
     args = parser.parse_args()
 
-    result = process_csvs(args.csv, args.week, args.reporter)
+    # Auto-infer week from filename if not provided
+    week = args.week
+    if not week:
+        for csv_path in args.csv:
+            week = infer_week_from_filename(csv_path)
+            if week:
+                print(f"Auto-detected week: {week} (from {Path(csv_path).name})", file=sys.stderr)
+                break
+    if not week:
+        print("Error: --week is required when week cannot be inferred from filename", file=sys.stderr)
+        sys.exit(1)
+
+    result = process_csvs(args.csv, week, args.reporter)
 
     # Print summary to stderr
     t = result['totals']
