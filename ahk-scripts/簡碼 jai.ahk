@@ -130,9 +130,9 @@ HotstringMenuV("A","MenuShortcut2","Emphysematous change of both lungs", "Centri
 return
 
 
-
 ::athero;::
-HotstringMenuV("A","MenuShortcut","Atherosclerotic change of abdominal aorta and its major branches","Atherosclerotic change of coronary arteries, abdominal aorta, and its major branches","BRK","Atherosclerotic change of aorta and its major branches","Atherosclerotic change of coronary arteries, aorta and its major branches","BRK","Intimal calcification of aorta","Tortuous aorta with intimal calcification","Atherosclerosis of arteries", "Elongation of aorta with intimal calcification.")
+::ath;::
+HotstringMenuV("A","MenuShortcut","Atherosclerotic change of abdominal aorta and its major branches","Atherosclerotic change of coronary arteries, abdominal aorta, and its major branches","BRK","Atherosclerotic change of aorta and its major branches","Atherosclerotic change of coronary arteries, aorta and its major branches","BRK","Intimal calcification of aorta","Tortuous aorta with intimal calcification","Atherosclerosis of arteries", "Elongation of aorta with intimal calcification.","BRK","abdominal total hysterectomy")
 return
 
 ::car;::
@@ -144,7 +144,7 @@ HotstringMenuV("A","MenuShortcut2","Mild mediastinal widening","Obvious mediasti
 return
 
 ::sug;::
-HotstringMenuV("A","MenuShortcut2","Suggest follow up","Suggest clinical correlation","Suggest short-term follow up","Suggest _ further evaluation","Suggest correlate with other studies","Suggest abdominal correlation.")
+HotstringMenuV("A","MenuShortcut2","Suggest follow up","Suggest clinical correlation","Suggest short-term follow up","Suggest _ further evaluation","Suggest correlate with other studies","Suggest abdominal correlation.","BRK","Suggest breast US correlation.","Suggest diagnostic mammography with spot magnification for further evaluation.","Suggest 6-month follow-up mammography.")
 return
 
 ::bow;::
@@ -152,6 +152,7 @@ HotstringMenuV("A","MenuShortcut2","Unremarkable bowel gas","Mild increased bowe
 return
 
 ::osteo;::
+::ost;::
 HotstringMenuV("A","MenuShortcut","Suspect osteopenia.","Suspect osteoporosis.","Disuse osteoporosis.","Grade _ wedging compression fracture over _", "Grade _ _biconcave compression fracture over _","_ anterior wedging","_ crushing deformity","BRK", "*Nondisplaced fracture may be obscured under osteoporosis background.","Bilateral ribs insufficiency fracture cnanot be excluded.")
 return
 
@@ -376,11 +377,6 @@ SaveSettingsToFile() {
     IniWrite, %vExamLoc%, %settingsFile%, Server, ExamLocation
     IniWrite, %API_KEY%, %settingsFile%, AI, APIKey      ; 存 GPT Key
     IniWrite, %API_KEY2%, %settingsFile%, AI, APIKey2    ; 存 Gemini Key
-    ; Vertex AI / MedGemma 設定
-    IniWrite, %USAI_VertexProjectID%, %settingsFile%, VertexAI, ProjectID
-    IniWrite, %USAI_VertexRegion%, %settingsFile%, VertexAI, Region
-    IniWrite, %USAI_VertexEndpointID%, %settingsFile%, VertexAI, EndpointID
-    IniWrite, %USAI_VertexDedicatedDNS%, %settingsFile%, VertexAI, DedicatedDNS
 }
 
 ; 從檔案載入設定 (實際應用時可自行實作)
@@ -393,11 +389,6 @@ LoadSettingsFromFile() {
         IniRead, vExamLoc, %settingsFile%, Server, ExamLocation, %vExamLoc%
         IniRead, API_KEY, %settingsFile%, AI, APIKey, %API_KEY%
         IniRead, API_KEY2, %settingsFile%, AI, APIKey2, %API_KEY2% ; 讀取 Gemini Key
-        ; Vertex AI / MedGemma 設定
-        IniRead, USAI_VertexProjectID, %settingsFile%, VertexAI, ProjectID, %USAI_VertexProjectID%
-        IniRead, USAI_VertexRegion, %settingsFile%, VertexAI, Region, %USAI_VertexRegion%
-        IniRead, USAI_VertexEndpointID, %settingsFile%, VertexAI, EndpointID, %USAI_VertexEndpointID%
-        IniRead, USAI_VertexDedicatedDNS, %settingsFile%, VertexAI, DedicatedDNS, %USAI_VertexDedicatedDNS%
     }
 }
 
@@ -523,7 +514,7 @@ return
 XButton2_AIFindings:
     ; 從 HIS 取得 Impression 內容
     impressionText := ""
-    ControlGetText, impressionText, ThunderRT6TextBox5, ahk_exe chk060.exe
+    ControlGetText, impressionText, ThunderRT6TextBox14, ahk_exe chk060.exe
     
     ; 檢查是否成功取得內容
     if (impressionText = "") {
@@ -589,3 +580,18 @@ GenSideGuiClose:
 GenSideGuiEscape:
     Gui, GenSide:Destroy
 return
+
+; ============================================================================
+; chk060 RIS 行交換快捷鍵 (Ctrl+Up / Ctrl+Down)
+; ============================================================================
+#IfWinActive, ahk_class ThunderRT6FormDC
+
+^Up::   ; Ctrl+Up: 將目前行往上移，游標跟隨
+    Send, {Home}+{Down}^x{Up}{Home}^v{Up}
+return
+
+^Down:: ; Ctrl+Down: 將目前行往下移，游標跟隨
+    Send, {Home}+{Down}^x{Down}{Home}^v{Down}
+return
+
+#IfWinActive

@@ -333,7 +333,7 @@
 <body>
     <div class="container">
         <h1>LDCT Lung Cancer Screening Report</h1>
-        <div class="subtitle">LDCT &#32954;&#30284;&#31721;&#27298;&#22577;&#21578;&#29986;&#29983;&#24037;&#20855;</div>
+        <div class="subtitle">LDCT 肺癌篩檢報告產生工具</div>
 
         <!-- Section A: Patient & Exam Info -->
         <div class="section" id="section-patient">
@@ -429,7 +429,7 @@
                 <label><input type="checkbox" id="modifierS"> Modifier S: Clinically significant non-lung-cancer findings</label>
             </div>
             <div class="check-group">
-                <label><input type="checkbox" id="suggestClinic"> Suggest clinic visit (&#35531;&#33267;&#38272;&#35386;&#23601;&#35386;)</label>
+                <label><input type="checkbox" id="suggestClinic"> Suggest clinic visit (請至門診就診)</label>
             </div>
 
             <hr style="margin:12px 0;">
@@ -619,13 +619,13 @@
             <div style="border:1px dashed #f39c12;border-radius:8px;padding:10px 15px;margin-bottom:10px;background:#fffdf0;">
                 <div style="font-weight:600;font-size:0.9em;color:#f39c12;margin-bottom:6px;">PDF Patient Notification Fields (Cat 1-2)</div>
                 <div class="form-group" style="margin-bottom:8px;">
-                    <label style="font-weight:600;font-size:0.9em;">&#20854;&#20182;&#30332;&#29694; (Other):</label>
-                    <input type="text" id="pdfOtherText" style="width:350px;" placeholder="&#33258;&#30001;&#22635;&#23531;&#20854;&#20182;&#30332;&#29694;&#38917;&#30446;">
+                    <label style="font-weight:600;font-size:0.9em;">其他發現 (Other):</label>
+                    <input type="text" id="pdfOtherText" style="width:350px;" placeholder="自由填寫其他發現項目">
                 </div>
                 <div style="margin-bottom:4px;">
-                    <label style="font-weight:600;font-size:0.9em;">&#38468;&#35387; (Doctor's Notes):</label>
+                    <label style="font-weight:600;font-size:0.9em;">附註 (Doctor's Notes):</label>
                 </div>
-                <textarea id="pdfNote" rows="3" style="font-family:'Segoe UI',sans-serif;font-size:0.9em;" placeholder="&#37291;&#24107;&#38468;&#35387;&#65292;&#21015;&#21360;&#22312;&#36890;&#30693;&#21934;&#19979;&#26041;..."></textarea>
+                <textarea id="pdfNote" rows="3" style="font-family:'Segoe UI',sans-serif;font-size:0.9em;" placeholder="醫師附註，列印在通知單下方..."></textarea>
             </div>
             <div class="report-preview" id="reportPreview">Click "Refresh Preview" or change any field to see the report...</div>
         </div>
@@ -638,7 +638,7 @@
             <div class="pdf-editor-header">
                 <div>
                     <div class="pdf-editor-title">Patient Notification Editor</div>
-                    <div class="pdf-editor-note">&#20808;&#20462;&#25913;&#36890;&#30693;&#20839;&#23481;&#65292;&#20877;&#36865;&#20986;&#21015;&#21360;&#38928;&#35261;&#12290;</div>
+                    <div class="pdf-editor-note">先修改通知內容，再送出列印預覽。</div>
                 </div>
             </div>
             <div class="pdf-editor-body">
@@ -841,10 +841,10 @@
         const insigIM = document.getElementById('insigImage').value || '__';
         lines.push(`${cb(hasInsignificant)}Insignificant(<6 mm) (SE:${insigSE}, IM:${insigIM})`);
         lines.push(`${cb(hasJuxtapleural)}Juxtapleural nodule(s) <10mm`);
-        lines.push(`(\u201c\u65e9\u671f\u80ba\u764c\u201d\u53ef\u80fd\u4ee5\u201c\u975e\u7279\u7570\u6027\u5fae\u5c0f\u7d50\u7bc0\u201d\u6f5b\u4f0f\u5b58\u5728\u6578\u5e74\u7684\u6642\u9593\u800c\u6c92\u6709\u81e8\u5e8a\u4e0a\u6709\u610f\u7fa9\u7684\u816b\u7624\u589e\u9577\uff0c\u8003\u91cf\u4e0d\u5fc5\u8981\u5f15\u8d77\u53d7\u6aa2\u8005\u7121\u8b02\u7684\u9a5a\u614c\uff0c\u5b9a\u671f\u8ffd\u8e64\u9019\u985e\u7d50\u7bc0\u662f\u76ee\u524d\u5b89\u5168\u7684\u7b56\u7565\uff0c\u6216\u60a8\u53ef\u8207\u60a8\u7684\u91ab\u5e2b\u8a0e\u8ad6\u3002)`);
+        lines.push(`(\u201c早期肺癌\u201d可能以\u201c非特異性微小結節\u201d潛伏存在數年而沒有臨床上有意義的腫瘤增長，考量不必要引起受檢者無謂的驚慌，定期追蹤這類結節是目前安全的策略，或您可與您的醫師討論。)`);
         const sigCount = document.querySelector('input[name="noduleCount"]:checked')?.value || '1';
         lines.push(`${cb(hasSignificant)}Lung nodule(s) (\u22676 mm or enlarging>1.5mm or new\u22674mm) ${cb(hasSignificant && sigCount==='1')}1 ${cb(hasSignificant && sigCount==='2')}2 ${cb(hasSignificant && sigCount==='3')}3 ${cb(hasSignificant && sigCount==='4+')}\u22674, and described as followings:`);
-        lines.push(`\u8acb\u4f9d\u5e8f\u63cf\u8ff0\u6700\u61f7\u7591\u4e4b\u80ba\u7d50\u7bc0(\u81f3\u591a 3 \u500b) (Describe the most worrisome 3 nodules in order)`);
+        lines.push(`請依序描述最懷疑之肺結節(至多 3 個) (Describe the most worrisome 3 nodules in order)`);
         for (let i = 0; i < 3; i++) {
             const n = (hasSignificant && noduleData[i]) ? noduleData[i] : null;
             const hasN = !!n;
@@ -855,7 +855,7 @@
                 const srsImg = n.srsImg || '_/_';
                 lines.push(`    Lobe: (Srs/Img:${srsImg}) ${cb(n.lobe==='RUL')}RUL ${cb(n.lobe==='RML')}RML ${cb(n.lobe==='RLL')}RLL  ${cb(n.lobe==='LUL')}LUL ${cb(n.lobe==='LLL')}LLL`);
                 lines.push(`    The nodule is ${cb(n.change==='unchanged')}unchanged ${cb(n.change==='enlarging')}enlarging (>1.5 mm)`);
-                lines.push(`                  ${cb(n.change==='new')}newly found (\u22674 mm) in follow-up`);
+                lines.push(`                  ${cb(n.change==='new')}newly found (\u22674mm) in follow-up`);
                 lines.push(`                  ${cb(n.change==='no_prior')}No prior chest CT comparison.`);
             }
         }
@@ -962,7 +962,7 @@
         lines.push(`${cb(modS)}Modifier S: Other. Clinically significant or potentially clinically significant findings (non lung cancer).`);
 
         const suggestClinic = document.getElementById('suggestClinic').checked;
-        lines.push(`${cb(suggestClinic)}\u8acb\u81f3\u9580\u8a3a\u5c31\u8a3a`);
+        lines.push(`${cb(suggestClinic)}請至門診就診`);
 
         return lines.join('\n');
     }
@@ -1015,31 +1015,31 @@
         const month = dateParts[1] || '__';
         const day = dateParts[2] || '__';
 
-        const honorific = sex === 'F' ? '\u5973\u58eb' : '\u5148\u751f';
+        const honorific = sex === 'F' ? '女士' : '先生';
         const modS = document.getElementById('modifierS').checked;
         const catDisplay = cat + (modS ? 'S' : '');
-        const resultText = cat === '1' ? '\u7121\u7570\u5e38\u767c\u73fe\u3002' : '\u7121\u986f\u8457\u7570\u5e38\u3002';
-        const riskText = '\u5c0f\u65bc1%';
-        const hospitalTitle = '\u5947\u7f8e\u91ab\u7642\u8ca1\u5718\u6cd5\u4eba \u4f73\u91cc\u5947\u7f8e\u91ab\u9662';
-        const noticeTitle = '\u570b\u6c11\u5065\u5eb7\u7f72LDCT \u80ba\u764c\u7be9\u6aa2 \u7d50\u679c\u901a\u77e5';
-        const examDateLabel = '\u6aa2\u67e5\u65e5\u671f:';
-        const resultLabel = '\u80ba\u764c\u7be9\u6aa2\u5224\u8b80\u7d50\u679c:';
-        const radsLabel = 'Lung\u2013RADS\u5206\u985e:';
-        const findingsLabel = '\u5176\u4ed6\u76f8\u95dc\u767c\u73fe:';
-        const noteLabel = '\u9644\u8a3b:';
-        const yearLabel = '\u5e74';
-        const monthLabel = '\u6708';
-        const dayLabel = '\u65e5';
-        const noneLabel = '\u7121';
-        const coronaryLabel = '\u51a0\u72c0\u52d5\u8108\u9219\u5316\uff0c\u53ef\u5c31\u8a3a\u5fc3\u81df\u5167\u79d1';
-        const emphysemaLabel = '\u80ba\u6c23\u816b\uff0c\u53ef\u5c31\u8a3a\u80f8\u8154\u79d1';
-        const bronchiectasisLabel = '\u652f\u6c23\u7ba1\u64f4\u5f35\uff0c\u53ef\u5c31\u8a3a\u80f8\u8154\u79d1';
-        const gallstonesLabel = '\u81bd\u7d50\u77f3\uff0c\u53ef\u5c31\u8a3a\u80c3\u8178\u79d1';
-        const kidneyStonesLabel = '\u814e\u7d50\u77f3\uff0c\u53ef\u5c31\u8a3a\u6ccc\u5c3f\u79d1';
-        const thyroidLabel = '\u7532\u72c0\u817a\u8174\u5927\uff0c\u8acb\u5c31\u8a3a\u65b0\u9673\u4ee3\u8b1d\u79d1';
-        const tumorLabel = '\u7591\u4f3c\u816b\u7624\uff0c\u8acb\u5c31\u8a3a\u8840\u6db2\u816b\u7624\u79d1';
-        const otherLabel = '\u5176\u4ed6:';
-        const riskParagraph = '\u4f9d\u64da\u570b\u6c11\u5065\u5eb7\u7f72\u53ca\u570b\u5916\u76f8\u95dc\u7684\u91ab\u5b78\u6a19\u6e96\uff0c\u60a8\u76ee\u524d\u6709\u6d3b\u8e8d\u6027\u80ba\u764c (clinical active lung cancer) \u7684\u6a5f\u6703\uff0c' + riskText + '\u3002\u60a8\u4e0d\u9808\u7acb\u5373\u56de\u8a3a\uff0c\u53ef\u6839\u64da\u500b\u4eba\u7684\u7f79\u764c\u98a8\u96aa\uff0c\u6216\u5fb5\u8a62\u91ab\u5e2b\u610f\u898b\uff0c\u9593\u96941-2\u5e74\uff0c\u518d\u63a5\u53d7\u4e0b\u4e00\u6b21\u7684\u4f4e\u5291\u91cf\u96fb\u8166\u65b7\u5c64(LDCT)\u80ba\u764c\u7be9\u6aa2\u3002';
+        const resultText = cat === '1' ? '無異常發現。' : '無顯著異常。';
+        const riskText = '小於1%';
+        const hospitalTitle = '奇美醫療財團法人 佳里奇美醫院';
+        const noticeTitle = '國民健康署LDCT 肺癌篩檢 結果通知';
+        const examDateLabel = '檢查日期:';
+        const resultLabel = '肺癌篩檢判讀結果:';
+        const radsLabel = 'Lung\u2013RADS分類:';
+        const findingsLabel = '其他相關發現:';
+        const noteLabel = '附註:';
+        const yearLabel = '年';
+        const monthLabel = '月';
+        const dayLabel = '日';
+        const noneLabel = '無';
+        const coronaryLabel = '冠狀動脈鈣化，可就診心臟內科';
+        const emphysemaLabel = '肺氣腫，可就診胸腔科';
+        const bronchiectasisLabel = '支氣管擴張，可就診胸腔科';
+        const gallstonesLabel = '膽結石，可就診胃腸科';
+        const kidneyStonesLabel = '腎結石，可就診泌尿科';
+        const thyroidLabel = '甲狀腺腫大，請就診新陳代謝科';
+        const tumorLabel = '疑似腫瘤，請就診血液腫瘤科';
+        const otherLabel = '其他:';
+        const riskParagraph = '依據國民健康署及國外相關的醫學標準，您目前有活躍性肺癌 (clinical active lung cancer) 的機會，' + riskText + '。您不須立即回診，可根據個人的罹癌風險，或徵詢醫師意見，間隔1-2年，再接受下一次的低劑量電腦斷層(LDCT)肺癌篩檢。';
 
         const otherItems = [];
         if (document.getElementById('coronaryCalcification').checked) otherItems.push('coronary');
@@ -1153,6 +1153,9 @@ Parse the following LDCT impression text into structured JSON. Follow these rule
     - Do NOT set coronary_calcification for isolated aortic, great vessel, or other non-coronary atherosclerotic/calcific change
 11. Determine if Modifier S applies (clinically significant non-lung-cancer findings)
 12. Check for metastases pattern
+13. IGNORE these common incidental findings — do NOT put them in other_lung, other_chest, or other_abd_neck:
+    - focal atelectasis, subsegmental atelectasis, plate-like atelectasis, dependent atelectasis
+    - These are trivial and should be completely omitted from the output.
 
 Return ONLY valid JSON with this exact structure:
 {
@@ -1295,9 +1298,13 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
     }
 
     function applyParsedData(d) {
-        // Category
+        // Category — override to 1 if no nodule found
         if (d.lung_rads_category) {
-            document.getElementById('lungRadsCategory').value = d.lung_rads_category;
+            let cat = d.lung_rads_category;
+            if (d.no_nodule && !d.has_significant_nodules && !d.insignificant_nodules && cat === '2') {
+                cat = '1';
+            }
+            document.getElementById('lungRadsCategory').value = cat;
             onCategoryChange();
         }
 

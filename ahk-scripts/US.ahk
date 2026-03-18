@@ -832,7 +832,7 @@ if (!API_KEY) {
 }
 
 endpoint := "https://api.openai.com/v1/chat/completions"
-gModel   := "gpt-4o"  ; change if needed
+gModel   := "gpt-5-mini"  ; cheaper than gpt-5, same API format
 
 ; 根據超音波類型構建不同的系統提示詞
 if (I2F_TypeUpperAbd) {
@@ -954,160 +954,139 @@ STRICT RULES:
 
 sysPrompt =
 (
-You are a radiology reporting assistant for intravenous urography (IVU/IVP).
+You are a radiology reporting assistant specialized in Intravenous Urography (IVU / IVP).
+Convert the user's raw Impression text into a structured IVU report with TWO tagged sections.
 
-TASK
-Convert a provided “Impression” into a two-block report, using these EXACT tags:
-
-<<FINDINGS>>
-First line MUST be:
-Intravenous urography (IVU):
-
-Second line (CONDITIONAL): If a comparison study exists in the input, add:
-Comparison with previous study: [date/time].
-(followed by a blank line)
-
-Then output:
-- Urotract descriptive findings (條列式，依規則生成)
-- Incidental non-urotract findings (同樣條列，保持中性描述)
+OUTPUT FORMAT — use these EXACT tags (no other sections, no separators):
 
 <<IMPRESSION>>
-First line MUST be:
 Impression:
+- bullet points (urotract-related items only)
 
-Then output:
-- Urotract-related key items, one per bullet
-- Any bladder / prostate related key items
-- Any critical / urgent non-urotract issues (if present)
-(所有非關鍵非泌尿 incidental 事項一律不列於此區，只留在 FINDINGS)
-
-Do NOT output any other sections before, between, or after these tags.
-Do NOT output lines of “=====” or other separators.
-Only output these two blocks in this exact order: <<FINDINGS>> then <<IMPRESSION>>.
-
-===============================================================================
-FILTERING RULES – <<IMPRESSION>> BLOCK (Impression:)
-===============================================================================
-KEEP
-• 泌尿系統重點：腎臟、輸尿管（含段別）、腎盂腎盞、UPJ/UVJ、膀胱、前列腺肥大、結石、狹窄、阻塞、水腎 / 水腎管、對比劑滯留、延遲或持續腎影。
-• 重要 / 急症非泌尿議題（少見；如主動脈破裂、嚴重出血等）。
-
-OMIT
-• 其餘非泌尿 incidental 訊息（如骨刺、退化、器質性脊椎變化等）——這些只出現在 <<FINDINGS>> 區，不要出現在 <<IMPRESSION>> 區。
-
-寫作原則：
-• 使用條列式，每個重點一個 bullet（“- ”開頭）。
-• 語氣偏臨床結論，可保留診斷用語，但避免不必要的推測。
-• 依「重要度排序」：阻塞 / 急症 → 可疑重大病灶 → 次要病灶（結石、肥大等）。
-
-例：若輸入 “Mild enlarged prostate.”，則 <<IMPRESSION>> 可寫為：
-Impression:
-- Enlarged prostate.
-
-===============================================================================
-FINDINGS GENERATION RULES – <<FINDINGS>> BLOCK
-===============================================================================
-標題行固定：
+<<FINDINGS>>
 Intravenous urography (IVU):
+- bullet points (imaging findings)
 
-內容格式：
-• 每一行 Findings 皆以 “- ” 開頭。
-• 簡潔描述影像所見，避免診斷 / 推測語氣 (avoid: suggest, likely, probably)。
-• 先列泌尿系統所見，再列 incidental 非泌尿所見。
-• 保持現在式與標準放射學措辭（例如用 “indented” 而非 “indentated”）。
-• 保留 laterality（左右側）、大小（若有）、解剖段別 / level。
-• 不自行捏造原文未提供的數字或測量值。
+Formatting: use “- “ bullets. Do NOT use “*”. Do NOT add explanations outside the report.
 
-===============================================================================
-CONFLICT RESOLUTION PRIORITY – SCOUT FILM STONES
-===============================================================================
-When generating the scout film line in <<FINDINGS>>:
+==================================================
+SECTION 1 — <<IMPRESSION>> Rules
+==================================================
+INCLUDE only urotract-related findings:
+  kidneys, ureters, collecting system, bladder, prostate, urinary obstruction,
+  stones, hydronephrosis, ureteral stenosis, ectopic insertion, renal duplication,
+  extrarenal pelvis, cystitis, residual urine, UPJ / UVJ disease.
 
-1. If the input Impression mentions any urinary tract stone, such as:
-   - renal stone / renal stones
-   - ureteral stone / ureter stone / UVJ stone / UPJ stone
-   - ureteral calculus / urinary tract calculus
-   - bladder stone / vesical stone
-   or equivalent terms in other languages
+EXCLUDE non-urotract findings:
+  bowel gas, spine degeneration, phleboliths, gallstones, orthopedic findings.
+  (These go ONLY in <<FINDINGS>>.)
 
-   THEN:
-   - DO NOT use the normal sentence
-     "There is no abnormal calcified nodular lesion on the scout film."
-   - INSTEAD, write an abnormal sentence. For renal stones:
+If impression states “Unremarkable IVP study” or equivalent:
+  Impression:
+  - Unremarkable intravenous pyelography (IVP) study.
 
-     • If side is specified (e.g. "Left renal stone over middle calyx"):
-       "There is abnormal calcified nodular lesion at left renal region on the scout film."
+Keep wording concise and close to input. If Srs/Img reference exists, keep it.
 
-     • If side is not specified:
-       "There is abnormal calcified nodular lesion at the renal region on the scout film."
+==================================================
+SECTION 2 — <<FINDINGS>> Rules
+==================================================
+Describe findings using radiology observation language.
+MANDATORY structure (always output ALL categories, in this order):
 
-2. Only when the Impression does NOT mention any urinary tract stone
-   may you use the normal sentence:
-   "There is no abnormal calcified nodular lesion on the scout film."
+1) Scout film — stones / calcifications / clips / phleboliths
+2) Post contrast — nephrograms / collecting system opacification
+3) Obstruction — hydronephrosis / hydroureter / tapering (if any)
+4) Bladder
+5) Incidental findings (non-urotract from input)
 
+If comparison study exists, add as second line:
+  Comparison with previous study: [date/time].
 
-===============================================================================
-BASELINE NORMAL FINDINGS (當未提及相關異常時，一律保留)
-===============================================================================
-除非輸入的 Impression 明確指出相反異常（例如：結石、水腎、水腎管、明顯 obstruction、異常 nephrogram 等），否則一律在 <<FINDINGS>> 中保留以下正常敘述：
+==================================================
+PHRASE TEMPLATES — Normal IVU
+==================================================
+When no conflicting abnormality is mentioned, use these EXACT sentences:
 
-Use the following normal sentences ONLY IF the Impression does NOT describe
-any conflicting abnormality for that component:
+- There is no abnormal calcified nodular lesion on the scout film.
+- After intravenous contrast administration, normal bilateral nephrograms and opacifications of the bilateral collecting systems are appreciated.
+- No obstructive dilatation or contrast stasis of the urinary collecting system is revealed.
+- The urinary bladder is unremarkable.
 
-- For the scout film (only if no stone is mentioned and no other calcified lesion is described):
-  "There is no abnormal calcified nodular lesion on the scout film."
+ALL four lines MUST appear. Replace with abnormal version only when input conflicts.
 
-- For nephrogram / collecting systems (only if no obstruction, no delayed nephrogram, 
-  and no significant hydronephrosis / hydroureter is described):
-  "After intravenous contrast administration, normal bilateral nephrograms and opacifications of the bilateral collecting systems are appreciated."
-  "No obstructive dilatation or contrast stasis of the urinary collecting system is revealed."
-若 Impression 只提到「前列腺肥大」而未提及其他異常，則仍須輸出以上三行正常敘述，再加上膀胱受壓描述（見下一節）。
+==================================================
+PHRASE TEMPLATES — Stone
+==================================================
+Kidney stone:
+- Calcified nodular lesions are projected over the [left/right] renal area on the scout film.
+- Calcified lesions are seen within the [location] calyx.
 
-===============================================================================
-BLADDER / PROSTATE MAPPING
-===============================================================================
-當 Impression 提到前列腺肥大 / enlarged prostate / BPH 等，請在 <<FINDINGS>> 的膀胱描述中加入：
+Ureteral stone:
+- A calcified nodular lesion is projected over the [left/right] paraspinal region at the [L level] along the expected [upper/middle/lower]-third ureter on the scout film.
+- Dilatation of the renal pelvis, calyces, and ureter up to the level of the stone is noted.
+- Relative contrast stasis of the collecting system is demonstrated.
 
+Anatomic mapping for scout film stone location:
+  Upper-third ureter: “over the paraspinal region at the L1-L5 level”
+  Middle-third ureter: “over the pelvic brim / iliac vessel crossing region”
+  Lower-third ureter: “over the presacral / pelvic cavity toward the ureterovesical junction”
+
+==================================================
+PHRASE TEMPLATES — Hydronephrosis
+==================================================
+- Dilatation of the renal pelvis and calyces is noted.
+- Dilatation of the renal pelvis, calyces, and ureter is noted.
+
+==================================================
+PHRASE TEMPLATES — Ureteral Stenosis
+==================================================
+- The ureter shows focal narrowing at the [segment].
+- The ureter shows tapering at the [segment].
+
+==================================================
+PHRASE TEMPLATES — Bladder / Prostate
+==================================================
+Enlarged prostate:
 - The urinary bladder is indented by the prostate.
 
-同時：
-• 若無其他膀胱異常，僅需上述一行（再加 baseline 正常敘述）。
-• 若 Impression 有明確膀胱病灶（如腫瘤、結石、壁增厚），則在同一區塊以額外 bullets 加上：
-  - Bladder wall thickening...
-  - Filling defect in the urinary bladder compatible with...
+Residual urine:
+- Post-void residual urine is present within the urinary bladder.
 
-===============================================================================
-ANATOMIC MAPPING — Scout Film Stone
-===============================================================================
-若需將 scout film 上的結石位置轉成標準文字，可參考：
+Bladder diverticulum:
+- The urinary bladder shows an outpouching diverticulum.
 
-• Upper-third ureter：
-  “…over the paraspinal region at the L1–L5 level (upper-third ureter)…”
+Bladder wall thickening:
+- Irregular thickening of the urinary bladder wall is demonstrated.
 
-• Middle-third ureter：
-  “…over the pelvic brim / iliac vessel crossing region (middle-third ureter)…”
+==================================================
+PHRASE TEMPLATES — Common Incidentals
+==================================================
+Pelvic phlebolith:
+- Calcified nodular densities projected over the pelvis are consistent with pelvic phleboliths.
 
-• Lower-third ureter：
-  “…over the presacral / pelvic cavity toward the ureterovesical junction (lower-third ureter)…”
+Spine degeneration:
+- Degenerative change and spur formation of the spine are observed.
 
-===============================================================================
-LANGUAGE & GENERAL RULES
-===============================================================================
-• 一律使用現在式。
-• 保持標準放射學英文措辭，避免奇怪變形字。
-• 清楚標示 side（right/left/bilateral）、level（UPJ/middle/UVJ）、size（若有提及）。
-• 保留所有原 Impression 中與泌尿或重要非泌尿相關的臨床資訊。
-• 非關鍵、非泌尿的 incidental 所見，只放在 <<FINDINGS>>，不進 <<IMPRESSION>>。
+Osteopenia:
+- Generalized diminished bone density, suggestive of osteopenia, is noted.
 
-INPUT
-• 任意語言的原始 Impression 文字。
+Bowel gas:
+- Mild increased bowel gas is present.
 
-OUTPUT
-• 僅輸出上述兩個標籤區塊：
-  1) <<FINDINGS>> 區（含 “Intravenous urography (IVU):” 與條列 Findings）
-  2) <<IMPRESSION>> 區（含 “Impression:” 與條列結論）
-• 不多加任何解釋文字，不加入其他標題或分隔線。
+Ileus:
+- Increased bowel gas is present, suggestive of mild ileus.
 
+==================================================
+LANGUAGE RULES
+==================================================
+- Use present tense.
+- Use neutral descriptive wording.
+- Avoid speculative language except when already present in the impression.
+- Maintain laterality (right/left/bilateral) and vertebral level when given.
+- Keep sentences short and consistent.
+- Do NOT invent measurements not provided.
+
+Return ONLY the two tagged sections: <<IMPRESSION>> then <<FINDINGS>>.
 )
 
 }else if (InStr(I2F_Scenario, "TRUS")) {
@@ -1342,8 +1321,8 @@ if (content = "") {
     return
 }
 
-find := RegGet(content, "s)<<(?:FINDINGS)>>\s*(.*?)\s*(?=<<IMPRESSION>>|$)")
-impr := RegGet(content, "s)<<IMPRESSION>>\s*(.*)$")
+find := RegGet(content, "s)<<(?:FINDINGS)>>\s*(.*?)\s*(?=<<(?:IMPRESSION|FINDINGS)>>|$)")
+impr := RegGet(content, "s)<<IMPRESSION>>\s*(.*?)\s*(?=<<(?:IMPRESSION|FINDINGS)>>|$)")
 
 GuiControl, I2F:, I2F_Findings, % Trim(find)
 GuiControl, I2F:, I2F_ImprOpt,  % Trim(impr)
@@ -1426,39 +1405,17 @@ return
 global USAI_CurrentImage := ""
 global USAI_PreviousImage := ""
 global USAI_APIKey := API_KEY2
-global USAI_BackendMode := "Gemini"       ; "Gemini" or "VertexAI"
-global USAI_VertexProjectID := ""
-global USAI_VertexRegion := "us-central1"
-global USAI_VertexEndpointID := ""
-global USAI_VertexDedicatedDNS := ""     ; 專屬端點 DNS (e.g. 336116856320425984.us-central1-944001176350.prediction.vertexai.goog)
-global USAI_VertexToken := ""             ; Bearer token (手動或 gcloud)
 
 ; 熱字串觸發
 ::usaigui::
 ShowUSAIGUI:  ; 修改 ShowUSAIGUI 標籤，使用雙欄式佈局
-	Gui, USAIG:New, , 超音波 AI 分析 (Gemini / MedGemma)
+	Gui, USAIG:New, , 超音波 AI 分析 (Gemini)
     Gui, USAIG:Font, s10
 
     ; === 左側面板 ===
     Gui, USAIG:Add, GroupBox, x10 y10 w470 h157, API / Backend 設定
     Gui, USAIG:Add, Text, x20 y30 w60 vUSAIAPIKeyLbl, API Key:
     Gui, USAIG:Add, Edit, x85 y30 w380 h20 vUSAIAPIKey Password, %API_KEY2%
-    ; Backend 選擇
-    Gui, USAIG:Add, Text, x20 y58 w60, Backend:
-    Gui, USAIG:Add, Radio, x85 y58 w120 vUSAIBackendGemini gUSAIBackendChanged Checked, Gemini API
-    Gui, USAIG:Add, Radio, x210 y58 w250 vUSAIBackendVertex gUSAIBackendChanged, Vertex AI (MedGemma)
-    ; GCP 設定欄位 (預設隱藏)
-    Gui, USAIG:Add, Text, x20 y83 w65 vUSAIVertexLbl1 Hidden, Project ID:
-    Gui, USAIG:Add, Edit, x90 y81 w155 h20 vUSAIVertexProjectEdit Hidden, %USAI_VertexProjectID%
-    Gui, USAIG:Add, Text, x255 y83 w45 vUSAIVertexLbl2 Hidden, Region:
-    Gui, USAIG:Add, Edit, x305 y81 w80 h20 vUSAIVertexRegionEdit Hidden, %USAI_VertexRegion%
-    Gui, USAIG:Add, Text, x20 y105 w70 vUSAIVertexLbl3 Hidden, Endpoint ID:
-    Gui, USAIG:Add, Edit, x90 y103 w370 h20 vUSAIVertexEndpointEdit Hidden, %USAI_VertexEndpointID%
-    Gui, USAIG:Add, Text, x20 y127 w70 vUSAIVertexLbl5 Hidden, 專屬 DNS:
-    Gui, USAIG:Add, Edit, x90 y125 w370 h20 vUSAIVertexDNSEdit Hidden, %USAI_VertexDedicatedDNS%
-    Gui, USAIG:Add, Text, x20 y149 w55 vUSAIVertexLbl4 Hidden, Token:
-    Gui, USAIG:Add, Edit, x75 y147 w235 h20 vUSAIVertexTokenEdit Hidden,
-    Gui, USAIG:Add, Button, x315 y146 w70 h22 gUSAIRefreshToken vUSAIRefreshTokenBtn Hidden, gcloud
 
     Gui, USAIG:Add, GroupBox, x10 y177 w470 h100, 影像狀態
     Gui, USAIG:Add, Text, x20 y197 w220 h40 vUSAIImage1Status Center, 本次影像：未上傳`n點擊下方按鈕貼上影像
@@ -1514,59 +1471,6 @@ USAIExamTypeChanged:
     }
 return
 
-USAIBackendChanged:
-    Gui, USAIG:Submit, NoHide
-
-    if (USAIBackendGemini = 1) {
-        USAI_BackendMode := "Gemini"
-        ; 顯示 API Key，隱藏 Vertex 欄位
-        GuiControl, USAIG:Show, USAIAPIKeyLbl
-        GuiControl, USAIG:Show, USAIAPIKey
-        GuiControl, USAIG:Hide, USAIVertexLbl1
-        GuiControl, USAIG:Hide, USAIVertexProjectEdit
-        GuiControl, USAIG:Hide, USAIVertexLbl2
-        GuiControl, USAIG:Hide, USAIVertexRegionEdit
-        GuiControl, USAIG:Hide, USAIVertexLbl3
-        GuiControl, USAIG:Hide, USAIVertexEndpointEdit
-        GuiControl, USAIG:Hide, USAIVertexLbl5
-        GuiControl, USAIG:Hide, USAIVertexDNSEdit
-        GuiControl, USAIG:Hide, USAIVertexLbl4
-        GuiControl, USAIG:Hide, USAIVertexTokenEdit
-        GuiControl, USAIG:Hide, USAIRefreshTokenBtn
-        GuiControl, USAIG:, USAIAnalyzeBtn, 開始 Gemini 分析
-        GuiControl, USAIG:, USAIStatus, Backend: Gemini Developer API
-    } else {
-        USAI_BackendMode := "VertexAI"
-        ; 隱藏 API Key，顯示 Vertex 欄位
-        GuiControl, USAIG:Hide, USAIAPIKeyLbl
-        GuiControl, USAIG:Hide, USAIAPIKey
-        GuiControl, USAIG:Show, USAIVertexLbl1
-        GuiControl, USAIG:Show, USAIVertexProjectEdit
-        GuiControl, USAIG:Show, USAIVertexLbl2
-        GuiControl, USAIG:Show, USAIVertexRegionEdit
-        GuiControl, USAIG:Show, USAIVertexLbl3
-        GuiControl, USAIG:Show, USAIVertexEndpointEdit
-        GuiControl, USAIG:Show, USAIVertexLbl5
-        GuiControl, USAIG:Show, USAIVertexDNSEdit
-        GuiControl, USAIG:Show, USAIVertexLbl4
-        GuiControl, USAIG:Show, USAIVertexTokenEdit
-        GuiControl, USAIG:Show, USAIRefreshTokenBtn
-        GuiControl, USAIG:, USAIAnalyzeBtn, 開始 MedGemma 分析
-        GuiControl, USAIG:, USAIStatus, Backend: Vertex AI MedGemma
-    }
-return
-
-USAIRefreshToken:
-    ; 嘗試透過 gcloud CLI 取得 token
-    GuiControl, USAIG:, USAIStatus, 正在取得 GCP Token...
-    token := GetGCloudAccessToken()
-    if (token != "") {
-        GuiControl, USAIG:, USAIVertexTokenEdit, %token%
-        GuiControl, USAIG:, USAIStatus, Token 取得成功 (有效期約 1 小時)
-    } else {
-        GuiControl, USAIG:, USAIStatus, 無法取得 Token。請手動從 GCP 控制台複製貼上，或安裝 gcloud CLI。
-    }
-return
 
 ; ============================================================================
 ; OCR 結果格式化函數
@@ -2079,29 +1983,10 @@ if (RegExMatch(input, "is)Dist\s*A\s*([\d.]+)\s*mm.*?Dist\s*B\s*([\d.]+)\s*mm", 
 USAIAnalyze:
 	Gui, USAIG:Submit, NoHide
 
-    ; Backend-aware 驗證
-    if (USAI_BackendMode = "Gemini") {
-        if (USAIAPIKey = "") {
-            GuiControl, USAIG:, USAIStatus, 錯誤：請輸入 Google API Key
-            return
-        }
-    } else {
-        ; Vertex AI 模式：讀取 GUI 欄位到全域變數
-        USAI_VertexProjectID := USAIVertexProjectEdit
-        USAI_VertexRegion := USAIVertexRegionEdit
-        USAI_VertexEndpointID := USAIVertexEndpointEdit
-        USAI_VertexDedicatedDNS := USAIVertexDNSEdit
-        USAI_VertexToken := USAIVertexTokenEdit
-        ; 儲存 Vertex AI 設定到 INI (下次自動載入)
-        SaveSettingsToFile()
-        if (USAI_VertexProjectID = "" || USAI_VertexEndpointID = "") {
-            GuiControl, USAIG:, USAIStatus, 錯誤：請輸入 Project ID 和 Endpoint ID
-            return
-        }
-        if (USAI_VertexToken = "") {
-            GuiControl, USAIG:, USAIStatus, 錯誤：請輸入 Access Token (點 gcloud 按鈕或手動貼上)
-            return
-        }
+    ; 驗證 API Key
+    if (USAIAPIKey = "") {
+        GuiControl, USAIG:, USAIStatus, 錯誤：請輸入 Google API Key
+        return
     }
 
     ; 檢查影像
@@ -2114,14 +1999,8 @@ USAIAnalyze:
         return
     }
 
-    ; Backend-aware 按鈕與狀態
-    if (USAI_BackendMode = "Gemini") {
-        GuiControl, USAIG:Disable, USAIAnalyzeBtn
-        GuiControl, USAIG:, USAIStatus, 正在呼叫 Gemini 3 Thinking...
-    } else {
-        GuiControl, USAIG:Disable, USAIAnalyzeBtn
-        GuiControl, USAIG:, USAIStatus, 正在取得 GCP Token 並呼叫 MedGemma...
-    }
+    GuiControl, USAIG:Disable, USAIAnalyzeBtn
+    GuiControl, USAIG:, USAIStatus, 正在呼叫 Gemini 3 Thinking...
     
     ; === 1. 設定 Prompt 與 Thinking 模式 ===
     SysPrompt := ""
@@ -2135,11 +2014,6 @@ USAIAnalyze:
         SysPrompt := ""
     }
 
-    ; MedGemma 不支援 Thinking 模式，自動忽略
-    if (USAI_BackendMode = "VertexAI") {
-        useThinking := false
-    }
-    
     if (InStr(USAIExamType, "Breast")) {
         SysPrompt .= "You are a radiologist assistant specializing in Breast Ultrasound. "
         SysPrompt .= "Analyze the ultrasound image. Focus on: shape, orientation, margin, echo pattern, posterior features, and calcifications. "
@@ -2490,12 +2364,7 @@ USAIAnalyze:
     UserPrompt := ""
     images := []
 
-    ; Vertex AI: SysPrompt 不併入 UserPrompt (會作為獨立 system message)
-    if (USAI_BackendMode = "VertexAI") {
-        promptPrefix := ""
-    } else {
-        promptPrefix := SysPrompt
-    }
+    promptPrefix := SysPrompt
 
     if (USAIChoice1) {
         UserPrompt := promptPrefix . "`n`nPlease analyze this image."
@@ -2523,12 +2392,8 @@ USAIAnalyze:
     }
 
     ; === 3. 呼叫 API (非同步) ===
-    if (USAI_BackendMode = "Gemini") {
-        modelID := "gemini-3-pro-preview"
-        StartGeminiBackgroundJob(USAIAPIKey, modelID, UserPrompt, images, useThinking)
-    } else {
-        StartVertexAIBackgroundJob(USAI_VertexProjectID, USAI_VertexRegion, USAI_VertexEndpointID, USAI_VertexDedicatedDNS, USAI_VertexToken, SysPrompt, UserPrompt, images)
-    }
+    modelID := "gemini-3-pro-preview"
+    StartGeminiBackgroundJob(USAIAPIKey, modelID, UserPrompt, images, useThinking)
     
     ; 啟動計時器，每 1 秒檢查一次結果
     SetTimer, CheckGeminiResult, 1000
@@ -2559,12 +2424,7 @@ CheckGeminiResult:
         GuiControl, USAIG:Enable, USAIAnalyzeBtn
 
         if (resultText != "" && !InStr(resultText, "API Error")) {
-            ; 根據 Backend 選擇正確的解析器
-            if (USAI_BackendMode = "VertexAI") {
-                finalResult := ParseVertexAIResponse(resultText)
-            } else {
-                finalResult := ParseGeminiResponse(resultText)
-            }
+            finalResult := ParseGeminiResponse(resultText)
             
             ; 如果解析失敗(可能背景腳本直接寫入了錯誤訊息)，直接顯示原文
             if (finalResult = "Error parsing response")
@@ -2581,9 +2441,6 @@ CheckGeminiResult:
         FileDelete, %resultFile%
         FileDelete, %A_Temp%\gemini_request.json
         FileDelete, %A_Temp%\gemini_worker.ahk
-        FileDelete, %A_Temp%\vertex_request.json
-        FileDelete, %A_Temp%\vertex_worker.ahk
-        FileDelete, %A_Temp%\gcloud_token.txt
     }
     else {
         ; 更新狀態文字讓使用者知道還在跑 (可選)
@@ -2641,146 +2498,6 @@ StartGeminiBackgroundJob(apiKey, modelID, prompt, images, useThinking) {
     Run, "%A_AhkPath%" "%workerScriptPath%"
 }
 
-; ============================================================================
-; Vertex AI / MedGemma 相關函數
-; ============================================================================
-
-GetGCloudAccessToken() {
-    ; 透過 gcloud CLI 取得 OAuth2 Access Token
-    tokenFile := A_Temp . "\gcloud_token.txt"
-    FileDelete, %tokenFile%
-    RunWait, %comspec% /c chcp 65001 >nul & gcloud auth print-access-token > "%tokenFile%" 2>&1, , Hide
-    FileRead, token, *P65001 %tokenFile%
-    FileDelete, %tokenFile%
-    token := Trim(token, " `t`r`n")
-    ; gcloud access token 必須以 "ya29." 開頭且只含 ASCII
-    if (token = "" || InStr(token, "ERROR") || InStr(token, "error") || SubStr(token, 1, 5) != "ya29.") {
-        return ""
-    }
-    return token
-}
-
-BuildVertexAIJSON(sysPrompt, userPrompt, images) {
-    ; 構建 OpenAI Chat Completions 格式 (Vertex AI MedGemma vLLM)
-    cleanSysPrompt := EscapeJSONString(sysPrompt)
-    cleanUserPrompt := EscapeJSONString(userPrompt)
-
-    json := "{""model"":""medgemma-multimodal"","
-    json .= """messages"":["
-
-    ; System message
-    json .= "{""role"":""system"",""content"":""" . cleanSysPrompt . """},"
-
-    ; User message (multimodal content array)
-    json .= "{""role"":""user"",""content"":["
-
-    ; 圖片 (image_url type with data URI)
-    isFirst := true
-    for index, imgData in images {
-        if (!isFirst)
-            json .= ","
-        isFirst := false
-
-        ; 提取 base64 原始資料
-        if (InStr(imgData, "base64,"))
-            imgRaw := SubStr(imgData, InStr(imgData, "base64,") + 7)
-        else
-            imgRaw := imgData
-
-        json .= "{""type"":""image_url"",""image_url"":{""url"":""data:image/png;base64," . imgRaw . """}}"
-    }
-
-    ; 文字提示
-    if (!isFirst)
-        json .= ","
-    json .= "{""type"":""text"",""text"":""" . cleanUserPrompt . """}"
-
-    json .= "]}],"  ; 結束 content array 和 messages array
-
-    ; 生成參數
-    json .= """temperature"":1.0,"
-    json .= """max_tokens"":8192"
-
-    json .= "}"
-    return json
-}
-
-StartVertexAIBackgroundJob(projectID, region, endpointID, dedicatedDNS, token, sysPrompt, userPrompt, images) {
-    ; Token 已從 GUI 傳入 (手動貼上或 gcloud 按鈕取得)
-
-    ; 1. 構建 JSON
-    jsonBody := BuildVertexAIJSON(sysPrompt, userPrompt, images)
-
-    ; 3. 寫入臨時檔案
-    requestFile := A_Temp . "\vertex_request.json"
-    FileDelete, %requestFile%
-    FileAppend, %jsonBody%, %requestFile%, UTF-8
-
-    ; 4. 準備結果檔案 (與 Gemini 共用路徑，讓 CheckGeminiResult 可以偵測)
-    resultFile := A_Temp . "\gemini_response.txt"
-    FileDelete, %resultFile%
-
-    ; 5. 構建 Vertex AI endpoint URL
-    if (dedicatedDNS != "") {
-        ; 專屬端點: host = dedicatedDNS, path 仍用 endpointID
-        endpoint := "https://" . dedicatedDNS . "/v1/projects/" . projectID . "/locations/" . region . "/endpoints/" . endpointID . ":rawPredict"
-    } else {
-        ; 標準端點: 使用 aiplatform.googleapis.com
-        endpoint := "https://" . region . "-aiplatform.googleapis.com/v1/projects/" . projectID . "/locations/" . region . "/endpoints/" . endpointID . ":rawPredict"
-    }
-
-    ; 6. 建立背景 Worker 腳本
-    workerScriptPath := A_Temp . "\vertex_worker.ahk"
-    FileDelete, %workerScriptPath%
-
-    workerCode =
-    (
-    #NoTrayIcon
-    FileRead, jsonBody, *P65001 %requestFile%
-
-    url := "%endpoint%"
-    bearerToken := "%token%"
-
-    whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-    whr.Open("POST", url, false)
-    whr.SetRequestHeader("Content-Type", "application/json")
-    whr.SetRequestHeader("Authorization", "Bearer " . bearerToken)
-    whr.SetTimeouts(30000, 60000, 30000, 180000) ; 180 秒超時 (MedGemma)
-
-    try {
-        whr.Send(jsonBody)
-        FileAppend, `% whr.ResponseText, %resultFile%, UTF-8
-    } catch e {
-        err := "API Error: " . e.Message
-        FileAppend, `% err, %resultFile%, UTF-8
-    }
-    ExitApp
-    )
-
-    FileAppend, %workerCode%, %workerScriptPath%, UTF-8
-
-    ; 7. 執行背景腳本
-    Run, "%A_AhkPath%" "%workerScriptPath%"
-}
-
-ParseVertexAIResponse(responseText) {
-    ; Vertex AI MedGemma 回傳 OpenAI Chat Completions 格式:
-    ; {"choices":[{"message":{"content":"THE ANSWER"}}]}
-    ; 提取 choices[0].message.content
-
-    if (RegExMatch(responseText, """choices"".*?""message"".*?""content""\s*:\s*""((?:\\.|[^""\\])*)""", match)) {
-        result := match1
-        ; JSON unescape
-        result := StrReplace(result, "\""", """")
-        result := StrReplace(result, "\n", "`n")
-        result := StrReplace(result, "\r", "`r")
-        result := StrReplace(result, "\t", "`t")
-        result := StrReplace(result, "\\", "\")
-        return result
-    }
-
-    return "Error parsing Vertex AI response: " . SubStr(responseText, 1, 500)
-}
 
 ; 插入結果到報告
 USAIInsertResult:
@@ -3019,76 +2736,6 @@ B64Encode(string) {
 
 
 
-; 呼叫 OpenAI Vision API
-CallOpenAIVision(apiKey, prompt, images) {
-    ; 構建訊息內容
-    content := []
-    
-    ; 添加文字部分
-    textPart := {}
-    textPart["type"] := "text"
-    textPart["text"] := prompt
-    content.Push(textPart)
-    
-    ; 添加影像部分
-    for index, imageUrl in images {
-        imagePart := {}
-        imagePart["type"] := "image_url"
-        imagePart["image_url"] := {}
-        imagePart["image_url"]["url"] := imageUrl
-        content.Push(imagePart)
-    }
-    
-    ; 構建請求資料
-    requestData := {}
-    requestData["model"] := "o3"
-    requestData["messages"] := [{}]
-    requestData["messages"][1]["role"] := "user"
-    requestData["messages"][1]["content"] := content
-    requestData["max_completion_tokens"] := 5000
-    requestData["temperature"] := 1
-    
-    ; 手動構建 JSON（更可靠）
-    jsonData := BuildRequestJSON(requestData)
-    
-    ; 調試：顯示構建的 JSON（可選）
-    ; debugFile := A_Temp . "\usai_debug.json"
-    ; FileDelete, %debugFile%
-    ; FileAppend, %jsonData%, %debugFile%, UTF-8
-    ; MsgBox, 4, 調試 - JSON 請求, JSON 已保存到: %debugFile%`n`n是否要查看 JSON 內容？
-    ; IfMsgBox, Yes
-    ; {
-    ;     Run, notepad.exe "%debugFile%"
-    ; }
-    
-    ; 發送 HTTP 請求
-    whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-    whr.Open("POST", "https://api.openai.com/v1/chat/completions", false)
-    whr.SetRequestHeader("Content-Type", "application/json")
-    whr.SetRequestHeader("Authorization", "Bearer " . apiKey)
-    whr.SetTimeouts(30000, 30000, 30000, 30000) ; 30秒超時
-    
-    try {
-        whr.Send(jsonData)
-        
-        if (whr.Status = 200) {
-            response := JSON_Parse(whr.ResponseText)
-            if (response.choices && response.choices.Length() > 0 && response.choices[1].message) {
-                return response.choices[1].message.content
-            }
-        } else {
-            ; 錯誤處理
-            httpStatus := whr.Status
-            responseText := whr.ResponseText
-            MsgBox, 16, API 錯誤, HTTP錯誤代碼: %httpStatus%`n回應: %responseText%
-        }
-    } catch e {
-        errorMessage := e.message
-        MsgBox, 16, 請求錯誤, 發送請求時發生錯誤: %errorMessage%
-    }
-    
-    return ""
-}
 
 ; ============================================================================
 ; Google Gemini 1.5 Pro API 呼叫函數
@@ -3185,42 +2832,6 @@ ParseGeminiResponse(responseText) {
     return "Error parsing response: " . responseText
 }
 
-; 專門為 OpenAI API 構建 JSON 請求
-BuildRequestJSON(requestData) {
-    ; 手動構建 JSON 以確保格式正確
-    json := "{"
-    json .= """model"":""" . requestData["model"] . ""","
-    json .= """max_completion_tokens"":" . requestData["max_completion_tokens"] . ","
-    json .= """temperature"":" . requestData["temperature"] . ","
-    json .= """messages"":[{"
-    json .= """role"":""" . requestData["messages"][1]["role"] . ""","
-    json .= """content"":["
-    
-    ; 構建 content 陣列
-    content := requestData["messages"][1]["content"]
-    contentParts := []
-    
-    for index, part in content {
-        if (part["type"] = "text") {
-            ; 轉義文字內容
-            escapedText := EscapeJSONString(part["text"])
-            contentParts.Push("""type"":""text"",""text"":""" . escapedText . """")
-        } else if (part["type"] = "image_url") {
-            contentParts.Push("""type"":""image_url"",""image_url"":{""url"":""" . part["image_url"]["url"] . """}")
-        }
-    }
-    
-    ; 加入所有 content parts
-    for index, partJson in contentParts {
-        if (index > 1)
-            json .= ","
-        json .= "{" . partJson . "}"
-    }
-    
-    json .= "]}]}"
-    
-    return json
-}
 
 ; JSON 字串轉義函數
 EscapeJSONString(str) {

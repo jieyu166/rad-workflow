@@ -32,8 +32,9 @@ return
 
 
 ::mca;::
-HotstringMenuV("A","MenuShortcut", "Benign calcification of _ breast_s.","Round calcifications with lucent center of _ breast_s, typically mammographic benign due to fat necrosis.","Scattered microcalcifications of bilateral breasts, relatively monomorphic pattern, concluded as benign finding.`r_Benign scattered microcalcifications of bilateral breasts.")
+HotstringMenuV("A","MenuShortcut", "Benign calcification of _ breast_s.","Round calcifications with lucent center of _ breast_s, typically mammographic benign due to fat necrosis.","Scattered microcalcifications of bilateral breasts, relatively monomorphic pattern, concluded as benign finding.`r_Benign scattered microcalcifications of bilateral breasts.","BRK","Vascular calcifications of _ breast_s.","_ vascular calcifications, concluded as benign.","Coarse calcifications of _ breast_s, concluded as benign fat necrosis calcifications.","_ skin calcifications.")
 return
+
 
 ::mno;::
 HotstringMenuV("A","MenuShortcut", "Multiple equal density circumscribed masses of both breasts, typical mammographic appearance of cysts, fibroadenomas, asymmetric glands, concluded as benign.","_However, some lesion may have normal mammographic appearance, regular follow up is still suggested.")

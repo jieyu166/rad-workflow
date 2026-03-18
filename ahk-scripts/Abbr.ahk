@@ -60,8 +60,12 @@ return
 :O:rct;::rotator cuff tear
 :O:crct::chronic rotator cuff tear
 :O:sai::subacromial impingement
-::fr.::fracture
-:O:cfr::compression fracture. 
+:O:cfr::compression fracture
+::fr.::
+::fr;::
+HotstringMenuV("A","MenuShortcut","fracture.","old fracture with _ deformity.","old fracture with _ deformity and _ degenerative change.","old fracture.","BRK","compression fracture.","healing fracture.","pathologic fracture.","Nondisplaced fracture.","stress fracture.","avulsion fracture.")
+return
+
 :O:dp::distal phalanx
 :O:pp::proximal phalanx
 :O:dish;::Diffuse idiopathic skeletal hyperostosis (DISH)
@@ -81,7 +85,7 @@ return
 :O:crpd::chronic renal parenchyma disease.
 :O:clpd::chronic liver parenchyma disease.
 :O:lpd::liver parenchyma disease.
-
+:O:bso::bilateral salpingo-oophorectomy
 
 ;============================================================================================
 ; Neuro
@@ -107,3 +111,4 @@ HotstringMenuV("A","MenuShortcut","focal atelectasis.","BRK","fibroadenoma","FA"
 return
 :O:ggo::ground-glass opacity
 :O:api;::Bilateral apical pleural thickening.
+:O:clip;::Clips at _RUQ abdomen.

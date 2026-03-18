@@ -68,13 +68,65 @@ GetDICOMData() {
 GetDICOMLineData(Attrib := "", text := ""){
     tmp := StrSplit(text, "`n")
 	res := ""
-    for index, textline in tmp 
+    for index, textline in tmp
         if (InStr(textline, Attrib))
              res:= tmp[index+1]
 	 if (res != "") {
         tmp2 := StrSplit(res, "|")
 			return tmp2[2]
     }
+}
+
+; Extract multi-line DICOM tag value (for private tags like 0009,1005)
+; Collects all |..| delimited content across continuation lines
+GetDICOMTagValue(tag, text) {
+    result := ""
+    found := false
+    tmp := StrSplit(text, "`n")
+    for index, line in tmp
+    {
+        if (!found) {
+            if (InStr(line, tag)) {
+                found := true
+                ; Value might start on same line or next
+                if (RegExMatch(line, "\|([^|]*)\|", m))
+                    result .= m1
+            }
+        } else {
+            ; Continuation line with |..|
+            if (RegExMatch(line, "\|([^|]*)\|", m)) {
+                result .= m1
+            } else if (RegExMatch(line, "^\s*\d{4},\d{4}")) {
+                ; Next tag started, stop
+                break
+            }
+        }
+    }
+    return result
+}
+
+; Extract Lunit AI summary from DICOM text, returns cleaned text
+ExtractLunitSummary(dicomText) {
+    raw := GetDICOMTagValue("0009,1005", dicomText)
+    if (raw = "")
+        return ""
+    ; Replace \x0A with newline
+    raw := StrReplace(raw, "\x0A", "`n")
+    ; Keep only findings (before "Threshold value")
+    threshPos := InStr(raw, "Threshold value")
+    if (threshPos)
+        raw := SubStr(raw, 1, threshPos - 1)
+    return Trim(raw, " `t`n`r")
+}
+
+; Extract abnormality score from 0009,1008 JSON
+ExtractLunitAbnormalityScore(dicomText) {
+    raw := GetDICOMTagValue("0009,1008", dicomText)
+    if (raw = "")
+        return ""
+    if (RegExMatch(raw, """abnormality_score""\s*:\s*([\d.]+)", m))
+        return m1
+    return ""
 }
 
 ; 取得 DICOM 日期（不影響 HIS）
@@ -635,18 +687,72 @@ CopyOld:
     CopyCXRtoHISWithParam(1)
 return
 
-; --- 查看 AI 報告 ---
+; --- 查看 AI 報告 + 自動提取摘要至 chk060 ---
 <#1::
 SeeCXRAI:
     MouseGetPos, tmpX, tmpY
+
+    ; Step 1: G2 - 切到 Lunit AI series
     gosub PosDICOMLU
-	gosub PosDICOMLU
+    gosub PosDICOMLU
     Send {LButton}
     Sleep, 10
     Send g
     Sleep, 10
     Send 2
+    Sleep, 1000  ; 等待 PACS 載入 AI series
+
+    ; 確認是否要提取 AI 摘要至報告
+    MsgBox, 4, Lunit AI, Copy AI report to chk060?
+    IfMsgBox, No
+    {
+        DllCall("SetCursorPos", "int", tmpX, "int", tmpY)
+        return
+    }
+
+    ; Step 2: 抓 DICOM 檔頭
+    ClipboardBackup := Clipboard
+    gosub CallDICOMWinL
+    aiDicomText := clipboard
+    Clipboard := ClipboardBackup
+
+    ; Step 3: 還原滑鼠
     DllCall("SetCursorPos", "int", tmpX, "int", tmpY)
+
+    ; Step 4: 提取 Lunit 摘要
+    aiSummary := ExtractLunitSummary(aiDicomText)
+    if (aiSummary = "") {
+        TrayTip, AI, No Lunit AI data found in DICOM header, 3, 2
+        return
+    }
+
+    ; Step 5: 提取異常分數
+    abnScore := ExtractLunitAbnormalityScore(aiDicomText)
+
+    ; Step 6: 格式化並貼到 chk060
+    ; 移除 "normal" 相關句子，只保留異常發現
+    aiOutput := ""
+    Loop, Parse, aiSummary, `n, `r
+    {
+        line := Trim(A_LoopField)
+        if (line = "")
+            continue
+        ; 跳過正常/陰性描述
+        if (InStr(line, "appears normal") || InStr(line, "is not seen") || InStr(line, "is not suspected"))
+            continue
+        if (aiOutput != "")
+            aiOutput .= " "
+        aiOutput .= line
+    }
+
+    if (aiOutput = "") {
+        ; 全部正常，用簡短描述
+        desc := "* Lunit AI (score " . abnScore . "%): No significant findings.`r"
+    } else {
+        desc := "* Lunit AI (score " . abnScore . "%): " . aiOutput . "`r"
+    }
+	
+    CopyCXRtoHISWithParam(2)
 return
 
 

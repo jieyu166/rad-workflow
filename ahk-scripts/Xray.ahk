@@ -553,7 +553,7 @@ return
 OpenForamenWeb:
     ; 取得腳本所在目錄
     SplitPath, A_ScriptFullPath,, scriptDir
-    foramenPath := scriptDir . "\spinal-foramen.html"
+    foramenPath := scriptDir . "\..\tool\spinal-foramen.html"
     Run, msedge.exe "%foramenPath%"
 return
 
