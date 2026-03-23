@@ -162,7 +162,7 @@ return
 
 
 ::no;::
-HotstringMenuV("A","MenuShortcut","No significant >3mm lung nodules found in both lungs.", "No obvious radiopaque urotract stones.","No aortic dissection.", "No definite CT evidence of major pulmonary embolism was noted. *However, small branches embolism may be obscured.")
+HotstringMenuV("A","MenuShortcut","No significant >3mm lung nodules found in both lungs.", "No obvious radiopaque urotract stones.","No aortic dissection.", "No definite CT evidence of major pulmonary embolism was noted. *However, small branches embolism may be obscured.","BRK","No clavicular displaced fracture","No tibial, fibular shaft fracture noted.")
 return
 
 ::nodule;::

@@ -46,7 +46,7 @@ def parse_yaml_input(path: str) -> dict:
     Uses a simple parser to avoid pyyaml dependency."""
     text = Path(path).read_text(encoding='utf-8')
     info = {
-        'start': {}, 'end': {}, 'week': '', 'date_range': '',
+        'start': {}, 'end': {}, 'mid': {}, 'week': '', 'date_range': '',
         'duty_day': '', 'notes': [], 'study_hr': 0,
     }
 
@@ -62,15 +62,20 @@ def parse_yaml_input(path: str) -> dict:
         remaining = data.get('remaining', {})
         start = remaining.get('start', {})
         end = remaining.get('end', {})
+        mid = remaining.get('mid', {})
 
         # Map to display names
-        mod_map = {'XR': 'X光', 'CT': 'CT', 'US': 'US', 'Mammo': 'Mammo'}
+        mod_map = {'XR': 'X光', 'CT': 'CT', 'US': 'US', 'Mammo': 'Mammo',
+                   'IVP': 'IVP', 'BMD': 'BMD', 'MR': 'MR'}
         for k, v in start.items():
             display = mod_map.get(k, k)
             info['start'][display] = int(v)
         for k, v in end.items():
             display = mod_map.get(k, k)
             info['end'][display] = int(v)
+        for k, v in mid.items():
+            display = mod_map.get(k, k)
+            info['mid'][display] = int(v)
 
         # Study hours
         study = data.get('study', [])
@@ -93,23 +98,17 @@ def parse_yaml_input(path: str) -> dict:
 
     # Parse remaining block with regex
     # Look for patterns like {XR: 617, CT: 16, US: 9, Mammo: 76}
-    start_match = re.search(r'start:\s*\{([^}]+)\}', text)
-    end_match = re.search(r'end:\s*\{([^}]+)\}', text)
-    mod_map = {'XR': 'X光', 'CT': 'CT', 'US': 'US', 'Mammo': 'Mammo'}
+    mod_map = {'XR': 'X光', 'CT': 'CT', 'US': 'US', 'Mammo': 'Mammo',
+               'IVP': 'IVP', 'BMD': 'BMD', 'MR': 'MR'}
 
-    if start_match:
-        for pair in start_match.group(1).split(','):
-            k, v = pair.split(':')
-            k = k.strip()
-            display = mod_map.get(k, k)
-            info['start'][display] = int(v.strip())
-
-    if end_match:
-        for pair in end_match.group(1).split(','):
-            k, v = pair.split(':')
-            k = k.strip()
-            display = mod_map.get(k, k)
-            info['end'][display] = int(v.strip())
+    for key in ('start', 'end', 'mid'):
+        match = re.search(key + r':\s*\{([^}]+)\}', text)
+        if match:
+            for pair in match.group(1).split(','):
+                k, v = pair.split(':')
+                k = k.strip()
+                display = mod_map.get(k, k)
+                info[key][display] = int(v.strip())
 
     return info
 
@@ -533,13 +532,11 @@ Examples:
         else:
             week_input = parse_week_input_md(input_path)
 
-        # Mid-week mode: swap remaining.mid -> remaining.end
+        # Mid-week mode: swap mid -> end
         if args.mid:
-            remaining = week_input.get('remaining', {})
-            mid = remaining.get('mid', None)
+            mid = week_input.get('mid', {})
             if mid:
-                remaining['end'] = mid
-                week_input['remaining'] = remaining
+                week_input['end'] = mid
                 print("Mid-week mode: using remaining.mid as end values", file=sys.stderr)
             else:
                 print("Warning: --mid specified but no remaining.mid in week_input.yaml",

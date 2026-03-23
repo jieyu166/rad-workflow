@@ -98,7 +98,7 @@ return
 HotstringMenuV("A","MenuShortcut2","_ subareolar ductal ectasia, _mm.(Srs/Img:1/_) No echogenic content, favor benign.","_ prominent duct, _mm.(Srs/Img:1/_)")
 return
 
-:O:ub::Mild urinary bladder wall thickening, could be chronic cystitis, shrunken UB, or others.
+:O:ub::Mild urinary bladder wall thickening, could be chronic cystitis, _shrunken UB, or others.
 :O:ub2::Mild urinary bladder wall irregular thickening, could be cystitis, or others. Occult entities can not be excluded. Suggest correlate with urine cytology or other exams.
 
 ::usbx::
@@ -794,6 +794,7 @@ Gui, I2F:Add, Button, gI2F_Clear x+10 w80 h28, Clear
 Gui, I2F:Add, Text, xm y+12 Section, Findings (descriptive, system-organized):
 Gui, I2F:Add, Edit, vI2F_Findings w480 h200
 Gui, I2F:Add, Button, gI2F_CopyFindings w140 h26, &Copy Findings
+Gui, I2F:Add, Button, gI2F_PasteToRIS x+10 w200 h26, &Paste to RIS (chk060)
 Gui, I2F:Add, Text, xm y+12, Optimized Impression (severity-ordered):
 Gui, I2F:Add, Edit, vI2F_ImprOpt w480 h120
 Gui, I2F:Add, Button, gI2F_CopyImpr w200 h26, Copy Optimized Impression
@@ -818,6 +819,19 @@ Clipboard := RegExReplace(I2F_ImprOpt, "\r?\n", "`r`n")
 MsgBox, 64, Copied, Optimized Impression copied to clipboard.
 return
 
+I2F_PasteToRIS:
+Gui, I2F:Submit, NoHide
+findingsText := RegExReplace(I2F_Findings, "\r?\n", "`r`n")
+imprOptText := RegExReplace(I2F_ImprOpt, "\r?\n", "`r`n")
+if (findingsText = "" && imprOptText = "") {
+    MsgBox, 48, Warning, Findings and Optimized Impression are both empty.
+    return
+}
+ControlSetText, ThunderRT6TextBox14, %findingsText%, ahk_exe chk060.exe
+ControlSetText, ThunderRT6TextBox5, Impression:`n%imprOptText%, ahk_exe chk060.exe
+MsgBox, 64, Done, Findings and Impression pasted to chk060.
+return
+
 I2F_DoGenerate:
 Gui, I2F:Submit, NoHide
 if (I2F_Impression = "") {
@@ -832,7 +846,7 @@ if (!API_KEY) {
 }
 
 endpoint := "https://api.openai.com/v1/chat/completions"
-gModel   := "gpt-5-mini"  ; cheaper than gpt-5, same API format
+gModel   := "gpt-4o-mini"  ; faster than gpt-5-mini, sufficient for structured conversion
 
 ; 根據超音波類型構建不同的系統提示詞
 if (I2F_TypeUpperAbd) {

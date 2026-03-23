@@ -1,15 +1,16 @@
-week: "2026-W11"
-date_range: "03/09 ~ 03/15"
+week: "2026-W12"
+date_range: "03/16 ~ 03/22"
 
 remaining:
-  start: {XR: 515, CT: 34, US: 24, Mammo: 47}
-  end:   {XR: 426, CT: 29, US: 20, Mammo: 74}
+  start: {XR: 426, CT: 29, US: 20, Mammo: 74, IVP: 3}
+  mid:   {XR: 627, CT: 39, US: 40, Mammo: 84, IVP: 9}
+  end:   {XR: 524, CT: 32, US: 28, Mammo: 40, IVP: 9}
 
-duty_day: ""
+duty_day: "三"
 class_day: "五"
 class_time: "13:00~17:00"
 notes:
-  - "本週無值班日"
-  - "期末 IVP 剩餘 3"
-
+  - "週三值班（1150319_YK.csv）"
+  - "週六周末值班"
+  - "週六6hr + 週日4hr"
 study: []
