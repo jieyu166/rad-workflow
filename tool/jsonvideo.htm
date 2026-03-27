@@ -818,6 +818,10 @@ async function tryCopyToClipboard(text) {
 }
 
     // ===== GET parameter ?t= auto-load =====
+    // ?t=jieyu166.synology.me/course/test
+    //   mp4 → https://jieyu166.synology.me/course/test.mp4 (remote NAS)
+    //   srt → ./course/test.srt (local, same origin as this page)
+    //   json → ./course/test.json (local, same origin as this page)
     (function initFromUrlParam() {
       const params = new URLSearchParams(window.location.search);
       let basePath = params.get('t');
@@ -826,47 +830,53 @@ async function tryCopyToClipboard(text) {
       // Strip surrounding quotes if present
       basePath = basePath.replace(/^['"]|['"]$/g, '');
 
-      // Ensure protocol prefix
-      if (!basePath.startsWith('http://') && !basePath.startsWith('https://')) {
-        basePath = 'https://' + basePath;
-      }
-
       // Remove trailing extension if user accidentally included one
       basePath = basePath.replace(/\.(mp4|webm|srt|vtt|json)$/i, '');
 
-      // Populate fields and auto-load video
-      const videoUrl = basePath + '.mp4';
-      const srtUrl = basePath + '.srt';
-      const jsonUrl = basePath + '.json';
+      // Build remote video URL (with protocol)
+      let remoteBase = basePath;
+      if (!remoteBase.startsWith('http://') && !remoteBase.startsWith('https://')) {
+        remoteBase = 'https://' + remoteBase;
+      }
+      const videoUrl = remoteBase + '.mp4';
 
+      // Extract path after hostname for local srt/json
+      // e.g. "jieyu166.synology.me/course/test" → "course/test"
+      let localPath = basePath.replace(/^https?:\/\//, '');
+      const slashIdx = localPath.indexOf('/');
+      localPath = slashIdx !== -1 ? localPath.substring(slashIdx + 1) : localPath;
+      const localSrt = localPath + '.srt';
+      const localJson = localPath + '.json';
+
+      // Populate fields
       videoUrlInput.value = videoUrl;
-      subtitleUrlInput.value = srtUrl;
+      subtitleUrlInput.value = localSrt;
 
-      // Load video immediately
+      // Load video immediately (cross-origin OK for <video>)
       videoPlayer.src = videoUrl;
       videoPlayer.load();
 
-      // Try to fetch subtitle + JSON; fall back gracefully on CORS error
+      // Fetch srt + json from same origin (no CORS issue)
       (async function() {
         let srtOk = false;
         let jsonOk = false;
 
-        // Try subtitle
+        // Try local subtitle
         try {
-          const res = await fetch(srtUrl);
+          const res = await fetch(localSrt);
           if (res.ok) {
             const content = await res.text();
-            subtitles = parseSubtitleAuto(content, srtUrl);
+            subtitles = parseSubtitleAuto(content, localSrt);
             srtOk = true;
             console.log('已自動載入字幕:', subtitles.length);
           }
         } catch (e) {
-          console.log('字幕載入失敗（可能 CORS）:', e.message);
+          console.log('字幕檔未找到:', e.message);
         }
 
-        // Try recap JSON
+        // Try local recap JSON
         try {
-          const res = await fetch(jsonUrl);
+          const res = await fetch(localJson);
           if (res.ok) {
             const text = await res.text();
             recap = parseRecapJson(text);
@@ -878,25 +888,21 @@ async function tryCopyToClipboard(text) {
             }
           }
         } catch (e) {
-          console.log('Recap JSON 載入失敗（可能 CORS）:', e.message);
+          console.log('Recap JSON 未找到:', e.message);
         }
 
-        // Show status based on results
-        if (!srtOk && !jsonOk) {
-          // Switch to "none" subtitle mode since fetch failed
-          noneOption.checked = true;
-          fileUploadBlock.classList.add('hidden');
-          urlInputBlock.classList.add('hidden');
-          recapStatus.textContent = 'CORS 限制，無法遠端載入';
-        } else if (!srtOk) {
-          noneOption.checked = true;
-          fileUploadBlock.classList.add('hidden');
-          urlInputBlock.classList.add('hidden');
-        } else {
-          // SRT loaded OK, show URL mode
+        // Update UI based on results
+        if (srtOk) {
           urlOption.checked = true;
           fileUploadBlock.classList.add('hidden');
           urlInputBlock.classList.remove('hidden');
+        } else {
+          noneOption.checked = true;
+          fileUploadBlock.classList.add('hidden');
+          urlInputBlock.classList.add('hidden');
+        }
+        if (!jsonOk) {
+          recapStatus.textContent = srtOk ? '未載入' : '字幕/章節檔未找到，請上傳或放置於同目錄';
         }
       })();
     })();
