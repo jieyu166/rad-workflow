@@ -1,0 +1,210 @@
+{
+  "overall_summary_zh": "本講座由高雄榮總吳輔榮醫師主講，介紹 Lung-RADS S modifier 的定義、分類與臨床應用。S modifier 用於標記 LDCT 肺癌篩檢中與肺癌無關但有臨床意義的偶發發現，涵蓋六大解剖區域。講座詳述各區域 actionable vs non-actionable 標準、文獻中偶發發現比例（8-45%）、高榮 350 人 cohort 的 actionable S category（3.7%），並分享實際個案與國健署抽片複審品管機制。",
+  "takeaways_zh": [
+    "S modifier = Clinically Significant or Potentially Clinically Significant Findings，加到 Lung-RADS Category 0-4X 上",
+    "已知/正在評估/已治療的偶發發現不需繼續使用 S modifier",
+    "LDCT 六大擷取區域：lung/pleura、cardiovascular、mediastinum、lower neck、upper abdomen、chest wall",
+    "偶發發現三級分類：non-actionable → significant-possibly actionable → actionable",
+    "文獻中 significant incidental finding 比例介於 8-45%，約 73% 為 non-actionable",
+    "Coronary artery calcification 和 emphysema 為最常見的 S modifier finding",
+    "放射科醫師之間 S modifier 報告變異性大（社區 15.3% vs 學術 10.8%）",
+    "高榮 LDCT cohort（N=350）actionable S category 為 3.7%（CAC 30.8%、bronchiectasis 38.5%）",
+    "溝通錯誤是 adverse event 第一大根因——S modifier 需確保訊息正確傳達臨床醫師",
+    "Modified Lung-RADS 判讀流程分肺部（結節）和非肺部（S modifier）雙軌進行",
+    "AI-enhanced CAD 可降低 false positive 但目前僅偵測 lung nodule，無法偵測 extrapulmonary 病灶",
+    "國健署抽片複審制度從 111 年至 113 年持續優化，影像重組符合率從 58% 提升至 76%"
+  ],
+  "segments": [
+    {
+      "index": 1,
+      "start_time": "00:00",
+      "end_time": "02:36",
+      "start_sec": 0,
+      "end_sec": 156,
+      "title": "Modifier S 定義與 Lung-RADS 沿革",
+      "summary_zh": "吳輔榮醫師介紹 Lung-RADS S modifier 定義：用於標記肺癌篩檢 LDCT 中發現的 clinically significant or potentially clinically significant findings。從 2014 年 Lung-RADS 推出，到 2019 年加入 S modifier，再到 2022 年進一步細分各部位的偶發發現分類。",
+      "bullets_zh": [
+        "S modifier = Clinically Significant or Potentially Clinically Significant Findings",
+        "Lung-RADS 2014 年推出，2019 年加入 S modifier，2022 年提供各部位詳細分類",
+        "中華放射線醫學會依 ACR 精神制定低劑量電腦斷層肺癌篩檢判讀指引表",
+        "S modifier 可加到 Lung-RADS Category 0-4 上"
+      ]
+    },
+    {
+      "index": 2,
+      "start_time": "02:36",
+      "end_time": "04:08",
+      "start_sec": 156,
+      "end_sec": 248,
+      "title": "ACR 各版本指引與 Incidental Findings 架構",
+      "summary_zh": "介紹 ACR Lung-RADS 2022 年版將各部位偶發發現依 actionable 和 non-actionable 區分。RadioGraphics 2018 也針對 clinically significant findings 做說明。主要共識為 coronary artery calcification 需報告，emphysema 則較具爭議。",
+      "bullets_zh": [
+        "ACR 2022 版將 S modifier 依各解剖部位做詳細說明",
+        "RadioGraphics 2018 已針對 LDCT incidental findings 提出分類建議",
+        "Coronary artery calcification 為最常見共識需報告項目",
+        "Emphysema 是否需報告仍具爭議，因篩檢對象多為 heavy smoker"
+      ]
+    },
+    {
+      "index": 3,
+      "start_time": "04:08",
+      "end_time": "06:14",
+      "start_sec": 248,
+      "end_sec": 374,
+      "title": "LDCT 偶發發現的三級分類與分布",
+      "summary_zh": "Low-dose chest CT 擷取範圍涵蓋六大區域（lung/pleura、cardiovascular、mediastinum、lower neck、upper abdomen、chest wall）。偶發發現分為 non-actionable、significant-possibly actionable、actionable 三級。Non-actionable 約佔 73%。",
+      "bullets_zh": [
+        "LDCT 涵蓋：背景肺/肋膜、心血管、縱膈腔、下頸部、上腹部、胸壁",
+        "偶發發現三級：Non-actionable → Significant-possibly actionable → Actionable",
+        "Actionable = 新發現或未曾記錄的 clinically significant finding",
+        "Non-actionable 約佔整體偶發發現的 73%"
+      ]
+    },
+    {
+      "index": 4,
+      "start_time": "06:14",
+      "end_time": "08:38",
+      "start_sec": 374,
+      "end_sec": 518,
+      "title": "Lung-RADS 架構與文獻中 Incidental Findings 比例",
+      "summary_zh": "Lung-RADS 架構為 Category 0-4X（肺癌懷疑度）+ S modifier（非肺癌偶發發現）。文獻顯示 LDCT significant incidental finding 比例介於 8-45%，依不同研究差異大。大部分約 73% 屬於 non-actionable。",
+      "bullets_zh": [
+        "Lung-RADS = Category 0-4X（肺癌分級）+ S modifier（偶發發現）",
+        "Significant incidental finding 比例：Van de Wiel 8%、Morgan 15%、Reiter 45%",
+        "ACR LCS Registry（2015-19）百萬筆資料顯示 significant 佔 17%",
+        "已知/已評估/已治療的偶發發現不需使用 S modifier"
+      ]
+    },
+    {
+      "index": 5,
+      "start_time": "08:38",
+      "end_time": "13:17",
+      "start_sec": 518,
+      "end_sec": 797,
+      "title": "各區域 Actionable vs Non-actionable IF 詳細說明",
+      "summary_zh": "依 ACR Lung-RADS 2022 逐一介紹六大區域的 actionable 和 non-actionable incidental finding。Lung/pleura：bronchiectasis、pleural effusion 等為 actionable。Cardiovascular：coronary artery calcification、ascending aorta ≥42mm 等。Mediastinum：lymph node ≥15mm short axis。Lower neck：thyroid nodule ≥15mm。Upper abdomen：liver nodule/mass ≥1cm、adrenal nodule >10HU >1cm。Chest wall：osteopenia/osteoporosis、breast nodule/mass。",
+      "bullets_zh": [
+        "Lung/Pleura：mild subsegmental atelectasis = non-actionable；bronchiectasis、new pleural effusion = actionable",
+        "Cardiovascular：ascending aorta ≥42mm、main pulmonary artery ≥31mm = actionable",
+        "Mediastinum：lymph node <15mm short axis = non-actionable；≥15mm = actionable",
+        "Lower neck：thyroid nodule <15mm = non-actionable；≥15mm 或 suspicious features = actionable",
+        "Upper abdomen：simple cyst/small nodule = non-actionable；liver mass ≥1cm、adrenal >10HU >1cm = actionable",
+        "Chest wall：coarse breast calcification/DJD = non-actionable；osteopenia (<100HU at L1)、breast mass = actionable"
+      ]
+    },
+    {
+      "index": 6,
+      "start_time": "13:17",
+      "end_time": "15:10",
+      "start_sec": 797,
+      "end_sec": 910,
+      "title": "NLST 研究中常見偶發發現",
+      "summary_zh": "NLST cohort 收集約 8000 人（平均年齡 61.4 歲），最常見 significant incidental finding 為 emphysema（43%）、coronary artery calcification（12.1%）、其他 tumor/suspicious lesion（7.4%）。大部分 significant incidental finding 需轉介臨床進一步追蹤。",
+      "bullets_zh": [
+        "NLST cohort 約 8000 人，平均年齡 61.4 歲",
+        "Emphysema 佔 43%（是否需報告仍有爭議）",
+        "Coronary artery calcification 佔 12.1%",
+        "其他 tumor/suspicious lesion 佔 7.4%",
+        "未來 SIF 需更標準化的說明與分類"
+      ]
+    },
+    {
+      "index": 7,
+      "start_time": "15:10",
+      "end_time": "20:06",
+      "start_sec": 910,
+      "end_sec": 1206,
+      "title": "Henderson 2023 文獻：Reporting Variability 分析",
+      "summary_zh": "Henderson 等人 2023 年 Ann Am Thorac Soc 文章探討 lung cancer screening 中 incidental finding 報告的變異性。4000 多人資料顯示：13.4% 使用 S modifier，10.2% 需進一步追蹤。S modifier 使用不受種族/性別/抽煙影響，但與 Lung-RADS category、醫院類型（社區 15.3% vs 學術 10.8%）、COPD/高血壓/糖尿病有關。放射科醫師之間存在顯著報告差異。",
+      "bullets_zh": [
+        "研究收集 4000 多人資料，S modifier 使用率 13.4%",
+        "報告 S modifier 且有追蹤：3.2%；報告但無追蹤：10.2%",
+        "未報告 S modifier 但有追蹤：3.6%（顯示報告不一致）",
+        "社區醫院比學術機構更常使用 S modifier（15.3% vs 10.8%）",
+        "Emphysema 和 coronary artery calcification 為最常見的 S modifier finding",
+        "放射科醫師之間報告變異性大，需更有共識的標準"
+      ]
+    },
+    {
+      "index": 8,
+      "start_time": "20:06",
+      "end_time": "22:06",
+      "start_sec": 1206,
+      "end_sec": 1326,
+      "title": "高榮 LDCT Cohort：Actionable S Category 分析",
+      "summary_zh": "高雄榮總 350 人 LDCT cohort 中，男女比 47%/53%，13 人有 actionable S category（3.7%）。分布：CAC/CAD 佔 30.8%、bronchiectasis/atelectasis 佔 38.5%、mediastinal tumor/thyroid nodules 佔 23.1%、其他（AVM）7.7%。",
+      "bullets_zh": [
+        "高榮 cohort N=350，平均年齡 51.72 歲",
+        "Actionable S category 13 人（3.7%），女性略高（5.5% vs 2.2%）",
+        "CAC/CAD 佔 30.8%，bronchiectasis/atelectasis 佔 38.5%",
+        "Mediastinal tumor（thymoma）/thyroid nodules 佔 23.1%",
+        "S modifier 需與臨床醫師充分溝通"
+      ]
+    },
+    {
+      "index": 9,
+      "start_time": "22:06",
+      "end_time": "24:41",
+      "start_sec": 1326,
+      "end_sec": 1481,
+      "title": "溝通錯誤的重要性與 Modified Lung-RADS 判讀流程",
+      "summary_zh": "醫療溝通錯誤是不良事件第一大根因，每年導致 44,000-98,000 人死亡。S modifier 報告需正確傳達至臨床醫師。Modified Lung-RADS 判讀流程分為「肺部判讀」（結節 → Category 0-4X）和「非肺部判讀」（S modifier → actionable vs non-actionable）兩條路線。可藉由多專科團隊討論優化 S modifier 處置。",
+      "bullets_zh": [
+        "溝通錯誤是 adverse event 第一大根因（每年 44,000-98,000 死亡）",
+        "S modifier 報告需藉由文字說明或多專科團隊確保資訊傳達",
+        "Modified Lung-RADS 判讀分肺部（結節）和非肺部（S modifier）雙軌",
+        "Actionable vs Non-actionable 之間存在 threshold 差異",
+        "可透過臨床資訊、報告文字說明、MDT 會議來優化 S modifier 處置"
+      ]
+    },
+    {
+      "index": 10,
+      "start_time": "24:41",
+      "end_time": "26:26",
+      "start_sec": 1481,
+      "end_sec": 1586,
+      "title": "高榮 S Modifier 個案討論",
+      "summary_zh": "展示高雄榮總實際 LDCT 個案：68 歲女性 right lower lobe tubular vascular structure（pulmonary AVM）、peripheral reticular infiltration（interstitial lung disease）、bilateral lung infiltration 需鑑別 pneumonia/PAP/ILD、geographic diffuse coarse nodules（r/o diffuse bronchiolitis）、paratracheal lymph node enlargement。強調 clinical history 的重要性及 differential diagnosis 撰寫。",
+      "bullets_zh": [
+        "Pulmonary AVM：right lower lobe 可見 tubular vascular lesion",
+        "Interstitial lung disease：peripheral reticular infiltration",
+        "需結合臨床病史做鑑別：pneumonia vs PAP vs ILD",
+        "Diffuse coarse nodules → r/o diffuse bronchiolitis",
+        "AI 目前僅能偵測 lung nodule，無法偵測縱膈腔等 S modifier 病灶"
+      ]
+    },
+    {
+      "index": 11,
+      "start_time": "26:26",
+      "end_time": "28:45",
+      "start_sec": 1586,
+      "end_sec": 1725,
+      "title": "更多個案：Lymph Node、Bone Meta、CAC、AI 侷限",
+      "summary_zh": "繼續個案：mediastinal lymphadenopathy 需進一步 survey、axillary lymph node enlargement、spine osteoblastic change（後證實 prostate cancer bone metastasis）、mediastinal tumor（fibrocystic inflammation）、coronary artery calcification、bronchiectasis in right middle lobe。同時介紹 AI-enhanced CAD 在 LDCT 的角色與限制——AI 可降低 false positive 但可能增加 unnecessary surveillance。",
+      "bullets_zh": [
+        "Mediastinal lymphadenopathy 與 axillary lymph node 需加 S modifier",
+        "Spine osteoblastic change → 實際為 prostate cancer bone metastasis",
+        "AI-enhanced CAD 可降低 false positive，但可能增加小結節偵測導致 unnecessary surgery",
+        "目前 AI 僅針對 lung nodule，無法偵測 mediastinal/extrapulmonary 病灶",
+        "未來 AI 需結合臨床資訊減少過度評估"
+      ]
+    },
+    {
+      "index": 12,
+      "start_time": "28:45",
+      "end_time": "30:40",
+      "start_sec": 1725,
+      "end_sec": 1840,
+      "title": "國健署肺篩抽片複審制度與品質管理",
+      "summary_zh": "介紹國健署肺癌早期偵測計畫影像抽片複閱機制：參照乳篩經驗設計，抽樣前三醫院各 10 例，複閱流程針對 Lung-RADS 3、4A/B/X。從 111 年到 113 年，掃描視野、影像重組（1.25mm/5mm soft tissue kernel）、結節測量準確度、報告一致性均逐步改善。關鍵改善包括影像重組規範加強宣導、匿名審查制度建立。",
+      "bullets_zh": [
+        "抽片複閱機制：參照乳篩經驗，針對 Lung-RADS 3、4A/B/X 複閱",
+        "111 年影像重組符合率僅 58%，113 年提升至 76%",
+        "掃描視野需符合胸廓大小，DFOV 適當設定",
+        "CT 影像需 axial ≤1.25mm + 5mm soft tissue/standard kernel",
+        "結節測量需精確至小數點後一位，依 Modified Lung-RADS 標準判讀",
+        "品質管理透過教育訓練持續優化，報告一致性逐年進步"
+      ]
+    }
+  ]
+}

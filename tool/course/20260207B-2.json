@@ -1,0 +1,204 @@
+{
+  "overall_summary_zh": "吳輔榮醫師演講後半部，涵蓋 Modifier S 定義、ACR Lung-RADS 2022 六大部位分類、IF 發生率文獻回顧（NLST、Henderson 2023、Kim 2026）、高雄榮總 cohort 數據、臨床影像教學案例，以及法律風險案例與 AI 判讀盲點和人機協作策略。",
+  "takeaways_zh": [
+    "S Modifier 定義為 clinically significant or potentially clinically significant findings，用於標記與肺癌無關的偶發發現",
+    "ACR Lung-RADS 2022 將 S Modifier 依六大部位細分為 actionable 與 non-actionable incidental findings",
+    "Actionable 與 non-actionable 之間的閾值尚未統一，放射科醫師間存在顯著判讀差異",
+    "NLST 數據顯示最常見 significant IF 為 emphysema（43%）和冠狀動脈鈣化（12.1%）",
+    "Henderson 2023 研究發現 13.4% 使用 S modifier，但 3.6% 有建議追蹤卻未標記 S（漏網之魚）",
+    "社區醫院比學術機構更常使用 S modifier（15.3% vs 10.8%），機構間變異顯著",
+    "Kim 2026 韓國研究顯示胸腔/心包膜積水的 Hazard Ratio 高達 8，與死亡高度相關",
+    "高雄榮總 350 人 cohort 中 actionable S modifier 佔 3.7%（13 人），以 CAC 為最大宗",
+    "AI CAD 僅能偵測肺結節，無法判斷縱隔腔腫瘤、骨轉移、心血管鈣化等肺外病灶",
+    "法律案例：LDCT 漏診 6 公分胸腺瘤，法院判賠 180 萬元，確立健檢主動告知義務",
+    "Pre-screening strategy：AI 判讀正常後，醫師用厚切影像（3-5mm）快速複閱排除肺外異常",
+    "人機協作原則：讓 AI 協助掌舵，由人類醫師確保航行安全，水能載舟亦能覆舟"
+  ],
+  "segments": [
+    {
+      "index": 1,
+      "start_time": "00:00",
+      "end_time": "01:43",
+      "start_sec": 0,
+      "end_sec": 103,
+      "title": "開場與 Modifier S 定義",
+      "summary_zh": "主持人介紹吳輔榮醫師（高雄榮總胸腔循環科主任），演講主題為如何適當使用 Lung-RADS Modifier S。大綱涵蓋 Modifier S 定義、目的、常見臨床處置、臨床影像教學及法律風險。S Modifier 定義為 clinically significant or potentially clinically significant findings，用於標記與肺癌無關但具臨床重要性的發現。",
+      "bullets_zh": [
+        "講者：吳輔榮醫師，高雄榮總胸腔循環科主任",
+        "S Modifier 定義：clinically significant or potentially clinically significant findings unrelated to lung cancer",
+        "Lung-RADS 經歷 2014→2019→2022 三次改版，逐步完善 S modifier 分類",
+        "核心挑戰：何謂「具臨床意義」缺乏明確定義，放射科醫師間判斷不一致"
+      ]
+    },
+    {
+      "index": 2,
+      "start_time": "01:43",
+      "end_time": "04:11",
+      "start_sec": 103,
+      "end_sec": 251,
+      "title": "ACR Lung-RADS 2022 各部位 S Modifier 分類",
+      "summary_zh": "說明 ACR Lung-RADS 2022 根據六大部位（Lung/Pleura、Cardiovascular、Mediastinum、Lower Neck、Upper Abdomen、Chest Wall）對 incidental findings 進行 actionable 與 non-actionable 分類。詳述各部位的具體閾值，如 ascending aorta >4.2 cm、main PA >3.1 cm 為 actionable，以及 adrenal nodule、renal mass、liver nodule、pancreatic cyst 等上腹部病灶的處置標準。",
+      "bullets_zh": [
+        "Cardiovascular：ascending aorta >4.2 cm、main PA >3.1 cm 為 actionable，需進一步 work up",
+        "冠狀動脈鈣化（any CAC）需做 ASCVD risk assessment",
+        "Mediastinum：lymph node ≥1.5 cm short axis 需進一步處置",
+        "Lower Neck：thyroid nodule ≥1.5 cm 或有 suspicious features 需臨床處置",
+        "Upper Abdomen：adrenal nodule ≥1 cm density ≥10 HU、liver nodule >1 cm、pancreatic cyst/mass 為 actionable",
+        "Chest Wall：breast mass、osteoporosis <100 HU at L1 需進一步 management"
+      ]
+    },
+    {
+      "index": 3,
+      "start_time": "04:11",
+      "end_time": "05:30",
+      "start_sec": 251,
+      "end_sec": 330,
+      "title": "Modifier S 的目的與未解決問題",
+      "summary_zh": "探討 Modifier S 的臨床目的：提供更好的指引和分類。2022 版 Lung-RADS 對 Category S 做了更明確定義，區分 actionable 與 non-actionable。但核心問題在於閾值因人而異，放射科醫師間存在判讀差異，可能源於對病史的不了解或認知不同。Emphysema 是否納入 S modifier 存在爭議，因重度吸菸者中幾乎人人都有。",
+      "bullets_zh": [
+        "Lung-RADS 2022 對 S Modifier 做了更明確的 actionable vs non-actionable 分類",
+        "Emphysema 是否列入 Modifier S 有爭議，因在 heavy smoker 中幾乎人人都有",
+        "Actionable 與 non-actionable 之間的閾值因放射科醫師而異",
+        "報告做法：是否在 impression 列出 significant 或 actionable significant IF 尚無共識"
+      ]
+    },
+    {
+      "index": 4,
+      "start_time": "05:30",
+      "end_time": "06:44",
+      "start_sec": 330,
+      "end_sec": 404,
+      "title": "S Modifier 臨床工作流程",
+      "summary_zh": "說明 S Modifier 的臨床決策流程：先判斷是否為 S modifier finding，再確認該病灶是否已知（已知→may not require action；未知→需進一步處置）。若不確定臨床是否已知，可先在報告中提醒需進一步評估，由臨床醫師根據 HIS 病歷資料做最終判斷。",
+      "bullets_zh": [
+        "決策流程：判斷 S modifier → 確認是否已知 → 已知則 not require action、未知則需 evaluation",
+        "不確定時先在報告中建議進一步處置，由臨床醫師根據 HIS 病史判斷",
+        "S Modifier 對大部分族群中的判斷仍存在爭議"
+      ]
+    },
+    {
+      "index": 5,
+      "start_time": "06:44",
+      "end_time": "09:55",
+      "start_sec": 404,
+      "end_sec": 595,
+      "title": "Incidental Findings 發生率文獻回顧",
+      "summary_zh": "回顧多篇文獻顯示 LDCT 中 clinically significant incidental findings 比例為 8-45%，其中大部分為 non-actionable（一篇報告達 73%）。詳述 ACR Lung-RADS 各部位 non-actionable vs actionable 分類，並引用 NLST trial 數據（26,455 人），最常見 SIF 為 emphysema（43%）和冠狀動脈鈣化（12.1%），結論建議未來應標準化 SIF 報告。",
+      "bullets_zh": [
+        "文獻顯示 significant IF 比例 8-45%，大部分為 non-actionable",
+        "NLST trial 收案約 26,000 人，平均年齡 61.4 歲",
+        "最常見 SIF：emphysema（43%）、coronary artery calcification（12.1%）、其他腫瘤（7.4%）",
+        "NLST 結論：大多數 SIF 需報告給臨床醫師，建議未來應標準化 SIF 報告"
+      ]
+    },
+    {
+      "index": 6,
+      "start_time": "09:55",
+      "end_time": "13:34",
+      "start_sec": 595,
+      "end_sec": 814,
+      "title": "Henderson 2023 — 報告變異性研究",
+      "summary_zh": "詳述 Henderson 2023 發表於 Annals of the American Thoracic Society 的研究，收案約 4,500 人。發現 13.4% 使用 S modifier，3.6% 有建議追蹤卻未標記 S（潛在漏網之魚）。最常報告的 IF 為冠狀動脈鈣化和肺氣腫，但因被視為「預期發現」而非偶發發現，使用率偏低。社區機構比學術中心更常使用 S category。甲狀腺結節存在顯著的編碼落差。結論：需更標準化的定義和系統化編碼。",
+      "bullets_zh": [
+        "收案約 4,500 人，11 位放射科醫師，含社區醫院與醫學中心",
+        "83% 無 S 也無追蹤建議；3.2% 有 S 且建議追蹤；10.2% 有 S 無追蹤；3.6% 無 S 卻建議追蹤（漏網之魚）",
+        "冠狀動脈鈣化和肺氣腫因被視為預期發現（expected finding），S 使用率低",
+        "社區機構比醫學中心更常使用 S category，機構間差異顯著",
+        "甲狀腺結節存在編碼落差：有建議追蹤但未標記 S 的比例偏高",
+        "結論：需更標準化定義、系統化編碼，減少變異，確保病人一致照護"
+      ]
+    },
+    {
+      "index": 7,
+      "start_time": "13:34",
+      "end_time": "15:43",
+      "start_sec": 814,
+      "end_sec": 943,
+      "title": "Kim 2026 與 Tanoue 2022 — 死亡率關聯與標準化報告",
+      "summary_zh": "介紹 Kim 2026 發表於 Radiology 的韓國國家肺癌篩檢研究，分析 S modifier 與死亡率的關聯。胸腔/心包膜積水的 Hazard Ratio 高達 8，肺外惡性腫瘤 HR 3.54，主動脈瘤 HR 3.31，顯示 S modifier 是合併症和死亡風險的重要標記物。接續 Tanoue 2022 文獻強調報告差異性大，呼吸器官、腸胃道、肌肉骨骼 SIF 最常見，需結構化報告來標準化。",
+      "bullets_zh": [
+        "Kim 2026（Radiology）：韓國肺篩 125,600 人，評估 S modifier 的預後意義",
+        "胸腔/心包膜積水 HR 8.01、肺外惡性腫瘤 HR 3.54、主動脈瘤 HR 3.31",
+        "S modifier 記錄有助於了解病人預後和合併症風險",
+        "Tanoue 2022：60.9% 報告至少一項 IF，報告差異大，需結構化報告模板標準化"
+      ]
+    },
+    {
+      "index": 8,
+      "start_time": "15:43",
+      "end_time": "16:24",
+      "start_sec": 943,
+      "end_sec": 984,
+      "title": "高雄榮總 LDCT Cohort 數據",
+      "summary_zh": "介紹高雄榮總自行收集的 350 人 LDCT cohort 資料。Actionable S modifier 共 13 人（3.7%），以嚴重冠狀動脈鈣化（CAC）佔最大宗，其次為 bronchiectasis、肺部 inflammation、AVM，以及縱隔腔腫瘤（thymoma、thyroid nodule）。",
+      "bullets_zh": [
+        "高雄榮總 350 人 LDCT cohort，actionable S modifier 13 人（3.7%）",
+        "最常見：嚴重 CAC、bronchiectasis、lung inflammation、AVM",
+        "亦有縱隔腔腫瘤（thymoma、thyroid nodule）"
+      ]
+    },
+    {
+      "index": 9,
+      "start_time": "16:24",
+      "end_time": "18:22",
+      "start_sec": 984,
+      "end_sec": 1102,
+      "title": "Modifier S 臨床影像教學案例",
+      "summary_zh": "展示 LDCT 中可見的心血管與肺部 S modifier 影像案例：陳舊性心肌梗塞（fatty replacement）、嚴重冠狀動脈鈣化、升主動脈動脈瘤、主動脈剝離（intimal flap calcification）、肺動脈擴張（PAH）、肺 AVM、interstitial lung disease、bilateral haziness（可能為 ILD 或 organizing pneumonia）。強調這些都是 AI 無法偵測的肺外重要發現。另介紹縱隔腔淋巴結腫大和骨轉移（bone metastasis）案例，說明 AI 僅偵測肺結節而遺漏這些致命病灶。",
+      "bullets_zh": [
+        "心血管案例：陳舊性心肌梗塞（fatty replacement）、嚴重 CAC、升主動脈動脈瘤、主動脈剝離",
+        "肺動脈擴張提示 pulmonary arterial hypertension（PAH）",
+        "肺部案例：AVM（右下肺 tubular vascular lesion）、ILD、organizing pneumonia",
+        "縱隔腔：mediastinal lymphadenopathy — AI 無法偵測",
+        "骨轉移（bone metastasis）在 bone window 可見，AI 同樣無法判讀"
+      ]
+    },
+    {
+      "index": 10,
+      "start_time": "18:22",
+      "end_time": "19:10",
+      "start_sec": 1102,
+      "end_sec": 1150,
+      "title": "法律風險案例 — 6 公分胸腺瘤漏診",
+      "summary_zh": "介紹 2026/1/15 新聞案例：患者接受 LDCT 健檢，報告稱縱隔腔「無異常」，一年後因重症肌無力確診 6 公分胸腺瘤。醫院辯稱 LDCT 主要檢查肺結節而非縱隔腔，但醫審會認定判讀疏失，法院判賠 180 萬元。此判決確立健檢機構的主動告知義務範圍。",
+      "bullets_zh": [
+        "患者做 LDCT 健檢，報告未發現縱隔腔異常",
+        "一年後確診重症肌無力，他院檢出 6 公分胸腺瘤",
+        "醫院辯稱 LDCT 主要檢查肺結節，但醫審會認定判讀疏失",
+        "法院判賠 180 萬元，確立健檢機構的主動告知義務"
+      ]
+    },
+    {
+      "index": 11,
+      "start_time": "19:10",
+      "end_time": "20:35",
+      "start_sec": 1150,
+      "end_sec": 1235,
+      "title": "AI 輔助判讀的盲點與法律風險",
+      "summary_zh": "分析放射科醫師和 AI 在 LDCT 判讀中的盲點。醫師專注於肺結節容易忽略肺外病灶（縱隔腔腫瘤、骨轉移、心血管鈣化）。AI CAD 僅偵測肺結節，對 mediastinum 和 bone 等肺外病灶無法判讀。展示一例 anterior mediastinal nodule 從 0.7 cm 增大至 1.7 cm 的案例。過度依賴 AI 會產生 automation bias，且依台灣法律，漏診責任歸報告醫師。",
+      "bullets_zh": [
+        "放射科醫師判讀盲點：過度專注肺結節，忽略肺外病灶",
+        "AI CAD 僅偵測肺結節，mediastinum、bone 等肺外病灶無法判讀",
+        "案例：anterior mediastinal nodule 從 0.7 cm 增大至 1.7 cm（Category S）",
+        "Automation bias：過度依賴 AI 導致漏診，依台灣法律報告醫師須負責",
+        "缺乏完整影像審閱的 AI 流程存在系統性風險"
+      ]
+    },
+    {
+      "index": 12,
+      "start_time": "20:35",
+      "end_time": "21:52",
+      "start_sec": 1235,
+      "end_sec": 1312,
+      "title": "Pre-screening Strategy 與人機協作結論",
+      "summary_zh": "提出 pre-screening strategy：AI 判讀正常後，醫師使用厚切影像（3-5mm）快速掃描排除肺外異常，大幅減少閱片時間同時保留人類醫師的判斷力。結論強調人機協作的重要性：AI 能為肺癌篩檢帶來突破但必須應用得當，讓 AI 協助掌舵、由人類醫師確保航行安全。「水能載舟，亦能覆舟」— 工具好壞取決於使用者的能力。",
+      "bullets_zh": [
+        "Pre-screening strategy：AI 判正常 → 醫師用厚切影像（3-5mm）快速複閱排除肺外異常",
+        "效益：大幅減少閱片時間，保留人類對整體解剖構造的判斷力",
+        "AI 在 LDCT 的角色如同「水能載舟，亦能覆舟」",
+        "人機協作：讓 AI 協助掌舵，由人類醫師確保航行安全",
+        "臨床專家與 AI 開發者必須緊密合作，建立穩健的應用框架"
+      ]
+    }
+  ]
+}
