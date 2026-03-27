@@ -380,13 +380,18 @@
 
         try {
           const res = await fetch(subtitleUrl);
-          if (!res.ok) throw new Error('無法獲取字幕檔');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
           const content = await res.text();
           subtitles = parseSubtitleAuto(content, subtitleUrl);
           console.log('已從網址載入字幕:', subtitles.length);
         } catch (err) {
-          alert('載入字幕檔失敗: ' + err.message);
-          return;
+          const isCors = err instanceof TypeError && err.message === 'Failed to fetch';
+          const msg = isCors
+            ? '載入字幕檔失敗（CORS 跨域限制）。\n\n解法：在檔案伺服器加 CORS header，或改用「上傳字幕檔」。'
+            : '載入字幕檔失敗: ' + err.message;
+          alert(msg);
+          // Don't return — let video play without subtitles
+          subtitles = [];
         }
       }
     });
@@ -829,20 +834,39 @@ async function tryCopyToClipboard(text) {
       // Remove trailing extension if user accidentally included one
       basePath = basePath.replace(/\.(mp4|webm|srt|vtt|json)$/i, '');
 
-      // Populate fields
-      videoUrlInput.value = basePath + '.mp4';
-      subtitleUrlInput.value = basePath + '.srt';
+      // Populate fields and auto-load video
+      const videoUrl = basePath + '.mp4';
+      const srtUrl = basePath + '.srt';
+      const jsonUrl = basePath + '.json';
 
-      // Switch to URL subtitle mode
-      urlOption.checked = true;
-      fileUploadBlock.classList.add('hidden');
-      urlInputBlock.classList.remove('hidden');
+      videoUrlInput.value = videoUrl;
+      subtitleUrlInput.value = srtUrl;
 
-      // Auto-load recap JSON
+      // Load video immediately
+      videoPlayer.src = videoUrl;
+      videoPlayer.load();
+
+      // Try to fetch subtitle + JSON; fall back gracefully on CORS error
       (async function() {
+        let srtOk = false;
+        let jsonOk = false;
+
+        // Try subtitle
         try {
-          const recapUrl = basePath + '.json';
-          const res = await fetch(recapUrl);
+          const res = await fetch(srtUrl);
+          if (res.ok) {
+            const content = await res.text();
+            subtitles = parseSubtitleAuto(content, srtUrl);
+            srtOk = true;
+            console.log('已自動載入字幕:', subtitles.length);
+          }
+        } catch (e) {
+          console.log('字幕載入失敗（可能 CORS）:', e.message);
+        }
+
+        // Try recap JSON
+        try {
+          const res = await fetch(jsonUrl);
           if (res.ok) {
             const text = await res.text();
             recap = parseRecapJson(text);
@@ -850,10 +874,29 @@ async function tryCopyToClipboard(text) {
               normalizeRecapSegments(recap.segments);
               renderRecap(recap);
               recapStatus.textContent = `已載入：${recap.segments.length} 段`;
+              jsonOk = true;
             }
           }
         } catch (e) {
-          console.log('Recap JSON 未找到或載入失敗:', e.message);
+          console.log('Recap JSON 載入失敗（可能 CORS）:', e.message);
+        }
+
+        // Show status based on results
+        if (!srtOk && !jsonOk) {
+          // Switch to "none" subtitle mode since fetch failed
+          noneOption.checked = true;
+          fileUploadBlock.classList.add('hidden');
+          urlInputBlock.classList.add('hidden');
+          recapStatus.textContent = 'CORS 限制，無法遠端載入';
+        } else if (!srtOk) {
+          noneOption.checked = true;
+          fileUploadBlock.classList.add('hidden');
+          urlInputBlock.classList.add('hidden');
+        } else {
+          // SRT loaded OK, show URL mode
+          urlOption.checked = true;
+          fileUploadBlock.classList.add('hidden');
+          urlInputBlock.classList.remove('hidden');
         }
       })();
     })();
