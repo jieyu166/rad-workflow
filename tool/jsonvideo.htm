@@ -251,6 +251,10 @@
             <input type="radio" id="subtitleUrl" name="subtitleSource" value="url" />
             <label for="subtitleUrl">字幕網址</label>
           </div>
+          <div class="option">
+            <input type="radio" id="subtitleNone" name="subtitleSource" value="none" />
+            <label for="subtitleNone">無字幕</label>
+          </div>
         </div>
 
         <div id="fileUploadBlock" class="file-input">
@@ -302,6 +306,7 @@
     const fileUploadBlock = document.getElementById('fileUploadBlock');
     const urlInputBlock = document.getElementById('urlInputBlock');
 
+    const noneOption = document.getElementById('subtitleNone');
     const recapFileInput = document.getElementById('recapFileInput');
     const segmentsList = document.getElementById('segmentsList');
     const recapStatus = document.getElementById('recapStatus');
@@ -331,6 +336,13 @@
       }
     });
 
+    noneOption.addEventListener('change', function() {
+      if (this.checked) {
+        fileUploadBlock.classList.add('hidden');
+        urlInputBlock.classList.add('hidden');
+      }
+    });
+
     // ===== Load video + subtitle =====
     loadButton.addEventListener('click', async function() {
       const videoUrl = videoUrlInput.value.trim();
@@ -343,8 +355,13 @@
       videoPlayer.src = videoUrl;
       videoPlayer.load();
 
-      // Load subtitle (file or url)
-      if (fileOption.checked) {
+      // Load subtitle (file, url, or none)
+      if (noneOption.checked) {
+        subtitles = [];
+        subtitleDisplay.textContent = '';
+        currentSubtitleIndex = -1;
+        console.log('無字幕模式');
+      } else if (fileOption.checked) {
         const subtitleFile = subtitleFileInput.files[0];
         if (!subtitleFile) {
           alert('請選擇字幕檔（SRT 或 VTT）');
@@ -794,6 +811,52 @@ async function tryCopyToClipboard(text) {
     }
   }
 }
+
+    // ===== GET parameter ?t= auto-load =====
+    (function initFromUrlParam() {
+      const params = new URLSearchParams(window.location.search);
+      let basePath = params.get('t');
+      if (!basePath) return;
+
+      // Strip surrounding quotes if present
+      basePath = basePath.replace(/^['"]|['"]$/g, '');
+
+      // Ensure protocol prefix
+      if (!basePath.startsWith('http://') && !basePath.startsWith('https://')) {
+        basePath = 'https://' + basePath;
+      }
+
+      // Remove trailing extension if user accidentally included one
+      basePath = basePath.replace(/\.(mp4|webm|srt|vtt|json)$/i, '');
+
+      // Populate fields
+      videoUrlInput.value = basePath + '.mp4';
+      subtitleUrlInput.value = basePath + '.srt';
+
+      // Switch to URL subtitle mode
+      urlOption.checked = true;
+      fileUploadBlock.classList.add('hidden');
+      urlInputBlock.classList.remove('hidden');
+
+      // Auto-load recap JSON
+      (async function() {
+        try {
+          const recapUrl = basePath + '.json';
+          const res = await fetch(recapUrl);
+          if (res.ok) {
+            const text = await res.text();
+            recap = parseRecapJson(text);
+            if (recap && Array.isArray(recap.segments)) {
+              normalizeRecapSegments(recap.segments);
+              renderRecap(recap);
+              recapStatus.textContent = `已載入：${recap.segments.length} 段`;
+            }
+          }
+        } catch (e) {
+          console.log('Recap JSON 未找到或載入失敗:', e.message);
+        }
+      })();
+    })();
 
   </script>
 </body>

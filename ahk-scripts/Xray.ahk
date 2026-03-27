@@ -806,7 +806,7 @@ return
 HotstringMenuV("A","MenuShortcut2","Mild infiltration in {LungSel} , could be pneumonia, or others.", "Consolidation in {LungSel}_, could be pneumonia or others.", "Focal atelectasis in {LungSel} .", "BRK","Emphysematous change or hyperaerated appearance of both lungs. ","Pulmonary congestion pattern _or emphysematous change of both lungs.","Mild increased hazy bronchovascular marking over bilateral lung.`r  DDx: inflammatory process or others.","Patchy consolidations in {LungSel} , could be pneumonia or others.`r  Occult entities growth can not be excluded.","Suspect chronic inflammatory/ infection changes or others in both lungs.","Reticulations/Infiltrations in both lungs, could be related to emphysema, interstitial lung disease, pulmonary edema or others.", "BRK", "Fibrocalcified change in both upper lungs, more prominent at {LtRt} side. Suspect old infection/inflammatory changes, eg. old TB or others.","Fibrocalcified change in both upper lungs, suspect old infection/inflammatory changes, eg. old TB or others.", "Bilateral apical pleural thickening.","Mild pulmonary congestion pattern.","Emphysematous change of both lungs.","BRK","{LtRt} pleural effusion or pleural changes.","minimal pleural effusion or pleural changes.") 
 return
 
-:O:cxr4;::
+:O:cxa;::
 HotstringMenuV("A","MenuShortcut2","Chronic/post infection/inflammatory changes or others in both lungs.") 
 return
 

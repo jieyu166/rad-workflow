@@ -13,7 +13,7 @@ HotstringMenuV("A","MenuShortcut","Otherwise limited change.","Overall limited c
 return
 :O:ou::Otherwise unremarkable. 
 :O:ln;::
-HotstringMenuV("A","MenuShortcut","lymph node", "Visible LNs short axis <1cm.","BRK","<6mm nodules in both lungs.(Arrows in Srs:_)"," Nonspecific tiny nodules in both lungs, <_mm.","solid nodule","ground-glass nodule", "part-solid nodule") 
+HotstringMenuV("A","MenuShortcut","lymph node", "Visible LNs short axis <1cm.","BRK","<6mm nodules in both lungs.(Arrows in Srs:_)"," Nonspecific tiny nodules in both lungs, <_mm.","<6mm solid nodule in _.(Srs/Img:_/_)","solid nodule","ground-glass nodule", "part-solid nodule") 
 return
 :O:lap;::lymphadenopathy
 

@@ -1454,7 +1454,8 @@ ShowUSAIGUI:  ; 修改 ShowUSAIGUI 標籤，使用雙欄式佈局
     Gui, USAIG:Add, Text, x500 y30 w80 h23, 檢查部位:
     Gui, USAIG:Add, DropDownList, x580 y27 w300 vUSAIExamType gUSAIExamTypeChanged Choose1, Gemini 3 Thinking (Breast)||脊椎 (Spine, Thinking)|Ankle Foot 陳主任風格 Thinking| Chest x-ray (Thinking)|Knee Thinking|一般描述 (General)
 
-    Gui, USAIG:Add, CheckBox, x580 y60 w250 h23 vUSAICropImage Checked, 啟用影像裁切 (去除上方資訊)
+    Gui, USAIG:Add, CheckBox, x580 y60 w180 h23 vUSAICropImage Checked, 啟用影像裁切 (去除上方資訊)
+    Gui, USAIG:Add, Button, x770 y57 w110 h25 gUSAIExportCrop, 匯出裁切圖
 
     Gui, USAIG:Add, Radio, x500 y90 w380 vUSAIChoice1 Checked, 僅本次影像
     Gui, USAIG:Add, Radio, x500 y110 w380 vUSAIChoice2, 同一病灶比較 (兩張)
@@ -1483,6 +1484,32 @@ USAIExamTypeChanged:
     } else {
         GuiControl, USAIG:, USAICropImage, 0  ; 取消勾選
     }
+return
+
+; --- 匯出裁切圖：裁切當前影像並複製到剪貼簿 + 存檔 ---
+USAIExportCrop:
+    ; 檢查 current 截圖是否存在
+    tempFile := A_Temp . "\usai_current.png"
+    if (!FileExist(tempFile)) {
+        MsgBox, 48, 提示, 尚未截取影像。請先按「截取當前影像」。
+        return
+    }
+
+    GuiControlGet, doCrop, USAIG:, USAICropImage
+    exportPath := A_ScriptDir . "\usai_cropped.png"
+
+    if (doCrop) {
+        ; 裁切後存檔
+        CreateAIImage(tempFile, exportPath, 90)
+    } else {
+        ; 不裁切，直接複製
+        FileCopy, %tempFile%, %exportPath%, 1
+    }
+
+    ; 複製到剪貼簿（PowerShell，64-bit 相容）
+    RunWait, powershell.exe -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::SetImage([System.Drawing.Image]::FromFile('%exportPath%'))", , Hide
+
+    GuiControl, USAIG:, USAIStatus, 裁切圖已匯出: %exportPath% (已複製到剪貼簿)
 return
 
 
@@ -3021,10 +3048,9 @@ CreateAIImage(inputPath, outputPath, keepPercent := 90) {
 
 ; 複製 OCR 1 結果
 USAICopyOCR1:
-    Gui, USAIG:Submit, NoHide
-    if (USAIOCR1Result != "") {
-        Clipboard := USAIOCR1Result
-        GuiControl, USAIG:, USAIStatus, OCR 1 結果已複製到剪貼簿
+    if (USAI_CurrentOCRText != "") {
+        Clipboard := USAI_CurrentOCRText
+        GuiControl, USAIG:, USAIStatus, OCR 1 報告格式已複製到剪貼簿
     } else {
         GuiControl, USAIG:, USAIStatus, OCR 1 沒有內容可複製
     }
@@ -3039,10 +3065,9 @@ return
 
 ; 複製 OCR 2 結果
 USAICopyOCR2:
-    Gui, USAIG:Submit, NoHide
-    if (USAIOCR2Result != "") {
-        Clipboard := USAIOCR2Result
-        GuiControl, USAIG:, USAIStatus, OCR 2 結果已複製到剪貼簿
+    if (USAI_PreviousOCRText != "") {
+        Clipboard := USAI_PreviousOCRText
+        GuiControl, USAIG:, USAIStatus, OCR 2 報告格式已複製到剪貼簿
     } else {
         GuiControl, USAIG:, USAIStatus, OCR 2 沒有內容可複製
     }
