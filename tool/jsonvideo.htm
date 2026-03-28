@@ -840,13 +840,12 @@ async function tryCopyToClipboard(text) {
       }
       const videoUrl = remoteBase + '.mp4';
 
-      // Extract path after hostname for local srt/json
-      // e.g. "jieyu166.synology.me/course/test" → "course/test"
-      let localPath = basePath.replace(/^https?:\/\//, '');
-      const slashIdx = localPath.indexOf('/');
-      localPath = slashIdx !== -1 ? localPath.substring(slashIdx + 1) : localPath;
-      const localSrt = localPath + '.srt';
-      const localJson = localPath + '.json';
+      // Extract filename only for local srt/json
+      // e.g. "jieyu166.synology.me/courses/LungRADS/2025ModifierS" → "2025ModifierS"
+      // Local files are all flat under courses/
+      const filename = basePath.replace(/^https?:\/\//, '').split('/').pop();
+      const localSrt = 'courses/' + filename + '.srt';
+      const localJson = 'courses/' + filename + '.json';
 
       // Populate fields
       videoUrlInput.value = videoUrl;
