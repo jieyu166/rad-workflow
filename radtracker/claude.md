@@ -5,6 +5,7 @@
 1. 解析工作回報資料（CSV 為主，xlsx 為 Legacy）
 2. 產出標準化週報
 3. 提供排程建議
+4. 排程同步至 Google Calendar
 
 ## 專案結構
 ```
@@ -13,6 +14,7 @@ radtracker/
 ├── generate_report.py         ← 產出週報 JSON（支援 --csv/--xlsx/--mid 模式）
 ├── update_history.py          ← 自動更新 history.json
 ├── archive_week.py            ← 自動歸檔 output/ 至 W{nn}/
+├── schedule_prompt.md         ← 排程規劃 prompt（含 GCal 同步規範）
 ├── claude.md                  ← 你正在讀的這份（固定規則）
 ├── weekly_review_prompt.md    ← 標準化週報 prompt（8個固定輸出區段）
 ├── week_input.yaml            ← 當前週使用者輸入
@@ -329,3 +331,123 @@ python generate_report.py --xlsx csv_input/legacy/radiology_tracker.xlsx --input
 - 所有數字必須從 xlsx 計算而來，不可由 LLM 推算
 - 效率 = 完成數量 / (花費時間/60)，精確到小數點一位
 - 每日完成合計必須與追蹤表完成數一致（一致性檢查）
+
+---
+
+## 排程規劃 & Google Calendar 同步
+
+### 概述
+每週排程規劃產出三項：
+1. `output/w{nn}_schedule.json` — 結構化排程資料（必須）
+2. `output/w{nn}_schedule.html` — 視覺化排程（必須）
+3. **Google Calendar 事件** — 同步至 primary 日曆（必須）
+
+**重要：排程建立或修改時，必須同時更新三者。**
+
+### Schedule JSON 格式
+```json
+{
+  "week": "2026-W14",
+  "date_range": "03/31~04/05",
+  "days": 6,
+  "notes": ["特殊備註"],
+  "backlog": {
+    "X光": {"start": 632, "forecast_added": 200, "target_completed": 480, "forecast_end": 352}
+  },
+  "totals": {
+    "cases": 643, "hours": 27, "report_hours": 24,
+    "by_modality": {"X光": 480, "CT": 18, "US": 75, "Mammo": 70}
+  },
+  "daily": [
+    {
+      "date": "2026-03-31",
+      "day": "二",
+      "tags": ["normal"],
+      "total_cases": 93,
+      "active_hr": 4.75,
+      "slots": [
+        {"start": "13:00", "end": "15:00", "type": "report", "modality": "US", "count": 25, "rate": 12, "colorId": "10", "note": "US 優先"},
+        {"start": "09:00", "end": "12:00", "type": "clinical", "label": "臨床"},
+        {"start": "12:00", "end": "13:00", "type": "break", "label": "午餐"}
+      ]
+    }
+  ],
+  "gcal": {
+    "calendar_id": "primary",
+    "event_prefix": "📋",
+    "color_map": {"XR": "9", "CT": "11", "US": "10", "Mammo": "5"},
+    "synced_event_ids": ["event_id_1", "event_id_2"]
+  }
+}
+```
+
+### Slot 類型
+| type | 說明 | 必要欄位 |
+|------|------|----------|
+| `report` | 報告工作 | modality, count, rate, colorId |
+| `clinical` | 臨床/其他工作 | label |
+| `break` | 休息/午餐 | label |
+
+### Google Calendar 同步規則
+
+#### 日曆配置
+| 用途 | Calendar ID | 備註 |
+|------|-------------|------|
+| 預計行程（排程） | `primary` (jieyu166@gmail.com) | 📋 前綴 |
+| 實際完成（回顧） | `4nqk94mmpmctc9fu49ps673484@group.calendar.google.com` | ✅ 前綴 |
+
+#### 事件格式
+- **Title**: `📋 [模態] 預計 x[件數]`
+  - 範例：`📋 [XR] 預計 x100（急打）`, `📋 [Mammo] 預計 x20`
+- **Color**: XR=9(Blueberry), CT=11(Tomato), US=10(Basil), Mammo=5(Banana)
+- **Description** 須包含：
+  ```
+  目標：[模態] [件數]份（[子分類]）
+  速率：[rate]份/hr
+  預估耗時：[hours]hr
+
+  [備註]
+  Backlog: 期初 [start] → 目標消化 [target] 份
+  ```
+- **sendUpdates**: `"none"`（不發通知）
+- **timeZone**: `"Asia/Taipei"`
+
+#### 建立流程
+1. 從 schedule JSON 的 `daily[].slots[]` 中篩選 `type === "report"` 的 slot
+2. 每個 report slot → 1 個 Google Calendar 事件
+3. 建立後，將 event ID 寫入 `gcal.synced_event_ids`
+4. 更新 schedule JSON 檔案
+
+#### 修改流程
+1. 讀取 schedule JSON 的 `gcal.synced_event_ids`
+2. 刪除所有已同步的事件
+3. 依據修改後的 slots 重新建立事件
+4. 更新 `synced_event_ids` 為新的 event ID 清單
+
+#### 刪除流程
+1. 讀取 `gcal.synced_event_ids`
+2. 逐一刪除事件
+3. 清空 `synced_event_ids` 陣列
+
+### 排程規劃規則（由使用者每週補充修正）
+
+#### 基礎約束
+- 每日目標上限：X光 150, CT 8, US 15, Mammo 15
+- 連續同模態 > 2hr 需安排休息
+- 使用者指定的臨床/上課/值班時段不可排報告
+
+#### 每日可用時段（預設，使用者可覆寫）
+| 日 | 預設可用 | 備註 |
+|----|----------|------|
+| 一 | 全天 ~8hr | 目前也工作，需使用者確認 |
+| 二 | 下午+晚間 ~4hr | 上午臨床 |
+| 三 | 下午+晚間 ~4hr | 上午另有工作；通常值班 |
+| 四 | 下午+晚間 ~4hr | 上午臨床 |
+| 五 | 上午 ~4hr | 下午上課 |
+| 六 | 彈性 | Mammo 18:00 後 |
+| 日 | 午後 ~4hr | |
+
+#### 重要
+- **每週工作狀況不同，以使用者規劃時的補充為主**
+- 使用者提供的 schedule HTML 或口頭修正優先於預設規則
+- 修改排程時必須同步更新 JSON + HTML + Google Calendar 三者

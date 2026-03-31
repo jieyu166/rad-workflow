@@ -61,11 +61,12 @@ return
 :O:crct::chronic rotator cuff tear
 :O:sai::subacromial impingement
 :O:cfr::compression fracture
+:O:mvc::multiple vertebral collapse.
 ::fr.::fracture
 ::fr;::
 HotstringMenuV("A","MenuShortcut","fracture.","old fracture with _ deformity.","old fracture with _ deformity and _ degenerative change.","old fracture.","BRK","compression fracture.","healing fracture.","pathologic fracture.","Nondisplaced fracture.","stress fracture.","avulsion fracture.")
 return
-
+:O:sub;::subluxation.
 :O:dp::distal phalanx
 :O:pp::proximal phalanx
 :O:dish;::Diffuse idiopathic skeletal hyperostosis (DISH)
@@ -86,6 +87,7 @@ return
 :O:clpd::chronic liver parenchyma disease.
 :O:lpd::liver parenchyma disease.
 :O:bso::bilateral salpingo-oophorectomy
+:O:phle;::pelvic phleboliths.
 
 ;============================================================================================
 ; Neuro
@@ -116,3 +118,8 @@ return
 :O:mia;::minimally invasive adenocarcinoma
 
 :O:clip;::Clips at _RUQ abdomen.
+
+::meta;::
+HotstringMenuV("A","MenuShortcut", "Bilateral lung metastases","Suspect lung metastases")
+return
+

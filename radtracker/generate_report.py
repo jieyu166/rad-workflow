@@ -114,7 +114,8 @@ def parse_yaml_input(path: str) -> dict:
 
 
 def load_csv_data(csv_paths: list[str], yk_path: str | None,
-                  week_str: str, reporter_id: str) -> dict:
+                  week_str: str, reporter_id: str,
+                  extra_days: int = 0) -> dict:
     """Load and process CSV data using parse_csv module."""
     from parse_csv import process_csvs
 
@@ -122,7 +123,7 @@ def load_csv_data(csv_paths: list[str], yk_path: str | None,
     if yk_path:
         all_paths.append(yk_path)
 
-    return process_csvs(all_paths, week_str, reporter_id)
+    return process_csvs(all_paths, week_str, reporter_id, extra_days=extra_days)
 
 
 def csv_to_report_data(csv_data: dict, week_input: dict) -> dict:
@@ -519,6 +520,8 @@ Examples:
     parser.add_argument('--reporter', default='A80748', help='Reporter ID (CSV mode)')
     parser.add_argument('--mid', action='store_true',
                         help='Mid-week mode: use remaining.mid instead of remaining.end')
+    parser.add_argument('--extra-days', type=int, default=0,
+                        help='Extend week end by N days (e.g., 1 to include next Monday)')
     parser.add_argument('-o', '--output', default='output/weekly_report.json',
                         help='Output JSON path')
 
@@ -549,7 +552,8 @@ Examples:
                   file=sys.stderr)
             sys.exit(1)
 
-        csv_data = load_csv_data(args.csv, args.yk, week_str, args.reporter)
+        csv_data = load_csv_data(args.csv, args.yk, week_str, args.reporter,
+                                 extra_days=args.extra_days)
         report_data = csv_to_report_data(csv_data, week_input)
 
         # Tag midweek mode in output

@@ -108,7 +108,7 @@ return
 
 
 ::eff;::
-HotstringMenuV("A","MenuShortcut", "_Mild suprapatellar effusion","{LtRt} pleural effusion","{LtRt} minimal pleural effusion or pleural changes.","Pericardial effusion can not be excluded.")
+HotstringMenuV("A","MenuShortcut", "_Mild suprapatellar effusion","BRK","{LtRt} pleural effusion","{LtRt} minimal pleural effusion or pleural changes.","Bilateral pleural effusion, {LtRt} more severe.","Pericardial effusion can not be excluded.")
 return
 
 
@@ -122,7 +122,7 @@ HotstringMenuV("A","MenuShortcut","Left renal cyst","Right renal cyst","BRK", "B
 return
 
 :O:stone;::
-HotstringMenuV("A","MenuShortcut","Left renal stone, _ cm","Right renal stone, _ cm","BRK", "Bilateral renal stones, up to _cm", "Left renal stones, up to _ cm", "Right renal stones, up to _ cm","BRK","Gallstone or right renal stone or other.","Right renal stone or bowel content or other.","BRK","A right _upper_middle_lower third ureteral stone, _ cm. ","_Right/_Left _ third ureteral stone, about _cm in diameter, complicated with hydronephrosis_hydroureteronephrosis and perinephric_periureteric infiltration", "No obvious radiopaque urotract stones","_ upper ureteral stone at _ level can not be excluded.")
+HotstringMenuV("A","MenuShortcut","{LtRt} renal stone(s).","{LtRt} renal stone, _ cm", "Bilateral renal stones, up to _cm", "{LtRt} renal stones, up to _ cm", "BRK","Gallstone or right renal stone or other.","Right renal stone or bowel content or other.","BRK","A right _upper_middle_lower third ureteral stone, _ cm. ","_Right/_Left _ third ureteral stone, about _cm in diameter, complicated with hydronephrosis_hydroureteronephrosis and perinephric_periureteric infiltration", "No obvious radiopaque urotract stones","{LtRt} upper ureteral stone at _ level can not be excluded.")
 return
 
 ::emphy;::
@@ -136,15 +136,15 @@ HotstringMenuV("A","MenuShortcut","Atherosclerotic change of abdominal aorta and
 return
 
 ::car;::
-HotstringMenuV("A","MenuShortcut2","Normal heart size","Borderline cardiomegaly","Cardiomegaly.")
+HotstringMenuV("A","MenuShortcut2","Normal heart size.","Borderline cardiomegaly.","Cardiomegaly.")
 return
 
 ::med;::
-HotstringMenuV("A","MenuShortcut2","Mild mediastinal widening","Obvious mediastinal widening","Mediastinal widening, could be related to elongated aorta or others","Mediastinal widening, nature unknown.")
+HotstringMenuV("A","MenuShortcut2","Mild mediastinal widening.","Obvious mediastinal widening.","Mediastinal widening, could be related to elongated aorta or others","Mediastinal widening, nature unknown.")
 return
 
 ::sug;::
-HotstringMenuV("A","MenuShortcut2","Suggest follow up","Suggest clinical correlation","Suggest short-term follow up","Suggest _ further evaluation","Suggest correlate with other studies","Suggest abdominal correlation.","BRK","Suggest breast US correlation.","Suggest diagnostic mammography with spot magnification for further evaluation.","Suggest 6-month follow-up mammography.")
+HotstringMenuV("A","MenuShortcut2","Suggest follow up","Suggest clinical correlation","Suggest short-term follow up","Suggest _ further evaluation","Suggest correlate with other studies","Suggest abdominal correlation.","BRK","Suggest breast US correlation.","Suggest diagnostic mammography with spot magnification for further evaluation.","Suggest 6-month follow-up mammography.","Diagnostic mammo(_ breast, spot magnification)")
 return
 
 ::bow;::
@@ -221,8 +221,8 @@ return
 HotstringMenuV("A","MenuShortcut", "Accessory navicular", "An accessory spleen, _cm.(Srs/Img:_/_)","An accessory spleen.(Srs/Img:_/_)")
 return
 
-::pul;::
-HotstringMenuV("A","MenuShortcut", "pulmonary", "pulmonary congestion","pulmonary edema","pulmonary embolism", "pulmonary artery")
+::edema;::
+HotstringMenuV("A","MenuShortcut", "pulmonary congestion pattern","pulmonary edema")
 return
 
 
@@ -264,8 +264,9 @@ return
 若無法一次讀完可以分批次閱讀，但請完成全部 的內容區塊筆記整理後才可終止，無須請示是否要繼續，請用繁體中文撰寫
 )
 
-:O:sus:: 
-HotstringMenuV("A","MenuShortcut2","suspect post infection/inflammatory changes or others.","suspect chronic infection/inflammatory changes or others.","")
+
+:O:cx;::
+HotstringMenuV("A","MenuShortcut2","Chronic/post infection/inflammatory changes or others in both lungs.","suspect post infection/inflammatory changes or others.","suspect chronic infection/inflammatory changes or others.","")
 return
 
 

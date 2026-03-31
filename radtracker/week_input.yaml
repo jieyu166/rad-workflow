@@ -1,9 +1,10 @@
 week: "2026-W13"
-date_range: "03/23 ~ 03/29"
+date_range: "03/23 ~ 03/30"
 
 remaining:
   start: {XR: 524, CT: 32, US: 28, Mammo: 40, IVP: 9}
   mid:   {XR: 722, CT: 22, US: 54, Mammo: 95, IVP: 9}
+  end:   {XR: 632, CT: 15, US: 34, Mammo: 94}
 
 duty_day: ""
 class_day: "五"

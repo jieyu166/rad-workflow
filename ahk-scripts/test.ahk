@@ -694,15 +694,16 @@ SeeCXRAI:
 
     ; Step 1: G2 - 切到 Lunit AI series
     gosub PosDICOMLU
-    gosub PosDICOMLU
-    Send {LButton}
+    Send {LButton}{LButton}
     Sleep, 10
     Send g
     Sleep, 10
     Send 2
     Sleep, 1000  ; 等待 PACS 載入 AI series
+return
 
-    ; 確認是否要提取 AI 摘要至報告
+	
+    ; 確認是否要提取 AI 摘要至報告(暫時不用)
     MsgBox, 4, Lunit AI, Copy AI report to chk060?
     IfMsgBox, No
     {

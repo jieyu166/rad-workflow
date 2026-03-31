@@ -340,12 +340,15 @@ def parse_week_range(week_str: str) -> tuple[datetime, datetime]:
 # ── Main Processing ───────────────────────────────────────────────────────
 
 def process_csvs(csv_paths: list[str], week_str: str,
-                 reporter_id: str = 'A80748') -> dict:
-    """Main processing: read CSVs → filter → group → classify → aggregate."""
+                 reporter_id: str = 'A80748', extra_days: int = 0) -> dict:
+    """Main processing: read CSVs → filter → group → classify → aggregate.
+    extra_days: extend week_end by N days (e.g., 1 to include next Monday for delayed logging)."""
 
     # Parse week range
     week_start, week_end = parse_week_range(week_str)
-    # Extend end to include the full Sunday (plus early morning of next Monday)
+    if extra_days > 0:
+        week_end = week_end + timedelta(days=extra_days)
+    # Extend end to include full last day (plus early morning of next day)
     date_filter_end = week_end + timedelta(days=1, hours=6)
 
     # Read and merge all CSV files
@@ -561,6 +564,8 @@ def main():
                         help='Reporter ID to filter (default: A80748)')
     parser.add_argument('-o', '--output', default=None,
                         help='Output JSON path (default: stdout)')
+    parser.add_argument('--extra-days', type=int, default=0,
+                        help='Extend week end by N days (e.g., 1 to include next Monday for delayed logging)')
 
     args = parser.parse_args()
 
@@ -576,7 +581,7 @@ def main():
         print("Error: --week is required when week cannot be inferred from filename", file=sys.stderr)
         sys.exit(1)
 
-    result = process_csvs(args.csv, week, args.reporter)
+    result = process_csvs(args.csv, week, args.reporter, extra_days=args.extra_days)
 
     # Print summary to stderr
     t = result['totals']
