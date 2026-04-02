@@ -664,7 +664,7 @@ return
 
 
 ; --- 查看舊報告（開瀏覽器）---
-<#x::
+<#2::
 ;    MsgBox, 262180, NEXT EXAM, "Open browser and see result?"
 ;    IfMsgBox, No
 ;        goto CopyOld
@@ -673,7 +673,7 @@ gosub CopyOld2
 return
 
 ; --- 複製舊報告到 HIS ---
-<#2::
+<#x::
 CopyOld:
 	dicom := GetDICOMData()
 	accessionNum := GetAccessionNumber(dicom)

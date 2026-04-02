@@ -126,7 +126,7 @@ HotstringMenuV("A","MenuShortcut","{LtRt} renal stone(s).","{LtRt} renal stone, 
 return
 
 ::emphy;::
-HotstringMenuV("A","MenuShortcut2","Emphysematous change of both lungs", "Centrilobular emphysema of both lungs. ","Paraseptal, centrilobular emphysema of both lungs","Panlobar, paraseptal, centrilobular emphysema of both lungs. ")
+HotstringMenuV("A","MenuShortcut2","Emphysematous change of both lungs", "Paraseptal, centrilobular emphysema of both lungs", "Centrilobular emphysema of both lungs.", "Panlobar, paraseptal, centrilobular emphysema of both lungs. ")
 return
 
 

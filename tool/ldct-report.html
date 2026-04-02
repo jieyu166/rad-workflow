@@ -1146,15 +1146,25 @@ Parse the following LDCT impression text into structured JSON. Follow these rule
 6. For significant nodules, extract details for each (up to 3): size, density (non-solid/part-solid/solid), solid part size if part-solid, lobe (RUL/RML/RLL/LUL/LLL), series/image, change status (unchanged/enlarging/new/no_prior)
 7. Count the number of significant nodules
 8. Check for airway nodules and atypical cysts
+   - If an airway nodule is found, set airway_nodule = true
+   - Set airway_type to exactly one of: "subsegmental" or "segmental"
+   - "subsegmental" = subsegmental airway nodule (Category 2)
+   - "segmental" = segmental or more proximal airway nodule
+   - If segmental, set airway_seg_type to: "secretions" (favor secretions, Cat 2), "baseline" (at baseline, Cat 4A), or "growing" (stable or growing, Cat 4B)
+   - If an atypical cyst is found, set atypical_cyst = true, and cyst_category to "3", "4A", or "4B"
 9. Extract other lung findings: emphysema, bronchiectasis, bronchitis, tree_in_bud, centrilobular, old_tb, ild
+   - "centrilobular" means centrilobular NODULES only. Do NOT set centrilobular = true for "centrilobular emphysema" — that is emphysema, not centrilobular nodules. Only set emphysema = true in that case.
 10. Extract other findings: lymph_nodes (with location), coronary_calcification (with description), other_chest, other_abdomen_neck
     - Set coronary_calcification = true only when the impression explicitly mentions coronary arteries, coronary artery calcification, or named coronary vessels such as LAD, LCx, RCA, left main/LM
     - If coronary_calcification = true, coronary_description should contain only the named coronary vessel(s), for example "LAD, LCx"
     - Do NOT set coronary_calcification for isolated aortic, great vessel, or other non-coronary atherosclerotic/calcific change
+    - Thyroid nodule/goiter/thyroid findings belong in other_abd_neck (neck category), NOT in other_chest
+    - Neck masses, cervical findings, and all sub-diaphragm findings also go in other_abd_neck
 11. Determine if Modifier S applies (clinically significant non-lung-cancer findings)
 12. Check for metastases pattern
 13. IGNORE these common incidental findings — do NOT put them in other_lung, other_chest, or other_abd_neck:
     - focal atelectasis, subsegmental atelectasis, plate-like atelectasis, dependent atelectasis
+    - atherosclerosis, aortic atherosclerosis, aortic calcification, vascular calcification (very common in elderly, not clinically actionable)
     - These are trivial and should be completely omitted from the output.
 
 Return ONLY valid JSON with this exact structure:
