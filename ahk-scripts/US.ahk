@@ -818,7 +818,13 @@ I2F_CopyFindImpr:
 Gui, I2F:Submit, NoHide
 findText := RegExReplace(I2F_Findings, "\r?\n", "`r`n")
 imprText := RegExReplace(I2F_Impression, "\r?\n", "`r`n")
-Clipboard := findText . "`r`nImpression:`r`n" . imprText
+imprText := "Impression:`r`n" . imprText
+if (findText = "" && imprText = "") {
+    MsgBox, 48, Warning, Findings and Optimized Impression are both empty.
+    return
+}
+ControlSetText, ThunderRT6TextBox14, %findText%, ahk_exe chk060.exe
+ControlSetText, ThunderRT6TextBox5, %imprText%, ahk_exe chk060.exe
 MsgBox, 64, Copied, Findings + Impression copied to clipboard.
 return
 
@@ -905,6 +911,7 @@ FINDINGS RULES:
    - Pancreas: "Normal size and echogenicity of the visible pancreas"
    - Spleen: "Normal size and echogenicity"
    - Kidneys: "Acceptable bilateral kidney sizes. No US evidence of hydronephrosis"
+     **EXCEPTION**: If impression mentions renal atrophy, small kidney, or shrunken kidney on ANY side, do NOT output "Acceptable bilateral kidney sizes". Instead describe the atrophic/small kidney accordingly and only state acceptable size for the unaffected side if applicable.
    - Urinary bladder: "Well distended with smooth wall"
    - Prostate: "Normal size and echogenicity"
    - Others: List incidental or extra-abdominal findings (e.g., ascites, pleural effusion, peritoneal nodules, retroperitoneal masses) with bullet points and descriptive terms only.
@@ -914,6 +921,7 @@ FINDINGS RULES:
    - renal stone → "echogenic focus with posterior acoustic shadowing in kidney"
    - gallstones → "echogenic foci with acoustic shadowing in gallbladder"
    - hydronephrosis → "dilatation of renal collecting system"
+   - renal atrophy / small kidney / shrunken kidney → "small-sized [side] kidney" or "decreased size of [side] kidney" (include measurement if provided). Do NOT combine with "acceptable bilateral kidney sizes".
    - s/p cholecystectomy → "post-surgical changes, gallbladder not visualized"
    - prostate calcifications → "echogenic foci within prostate parenchyma"
    - prostate volume X cc → (combine with measurement, see below)
@@ -949,11 +957,23 @@ FINDINGS RULES:
      Comparison with previous study: 2025.05.21 11:25.
 
 <<IMPRESSION>>
-Rewrite and optimize the impression with:
-1. SEVERITY-BASED ORDER: urgent/obstructive → suspicious masses → benign lesions → exam limitations
-2. Concise clinical language
-3. Maintain diagnostic meaning
-4. Use numbered or bullet format for clarity
+Generate a DIAGNOSTIC impression (NOT a restatement of findings).
+
+STYLE: Telegraphic radiology impression — short phrases, no full sentences, no articles (a/an/the) unless needed for clarity. Prioritize diagnostic terms over descriptive language.
+
+RULES:
+1. SEVERITY ORDER: urgent/obstructive → malignancy suspicion → benign lesions → incidentals → exam limitations
+2. State the most likely DIAGNOSIS or diagnostic category, not the sonographic description.
+   - BAD (finding restatement): "Anechoic lesions in liver"
+   - GOOD (diagnostic impression): "Hepatic cysts"
+   - BAD: "Echogenic focus with shadowing in gallbladder"
+   - GOOD: "Gallstone(s)"
+   - BAD: "Diffusely increased liver echogenicity"
+   - GOOD: "Fatty liver"
+3. DDx: When diagnosis is uncertain, provide up to 3 differential diagnoses max, formatted as: "Liver mass, DDx: hemangioma / HCC / metastasis"
+4. Include side, size, count ONLY when clinically significant.
+5. Combine related items (e.g., "Bilateral renal cysts" not separate lines for each side).
+6. Use numbered list. Omit normal organs entirely — do NOT write "otherwise unremarkable" or "no other abnormality".
 
 ORGAN MAPPING GUIDE:
 - Hepatic cysts, fatty liver, liver lesions → Liver
@@ -974,143 +994,161 @@ STRICT RULES:
 )
 
 }else if (InStr(I2F_Scenario, "IVP")) {
-
 sysPrompt =
 (
 You are a radiology reporting assistant specialized in Intravenous Urography (IVU / IVP).
-Convert the user's raw Impression text into a structured IVU report with TWO tagged sections.
 
-OUTPUT FORMAT — use these EXACT tags (no other sections, no separators):
+Your task:
+Convert a user's raw "Impression text" into a structured IVU report with TWO sections.
 
-<<IMPRESSION>>
+The output must ALWAYS follow this exact format:
+
 Impression:
-- bullet points (urotract-related items only)
+- bullet points describing urotract-related impression items
 
-<<FINDINGS>>
+================================================================================
 Intravenous urography (IVU):
-- bullet points (imaging findings)
+- bullet points describing imaging findings
 
-Formatting: use “- “ bullets. Do NOT use “*”. Do NOT add explanations outside the report.
-
-==================================================
-SECTION 1 — <<IMPRESSION>> Rules
-==================================================
-INCLUDE only urotract-related findings:
-  kidneys, ureters, collecting system, bladder, prostate, urinary obstruction,
-  stones, hydronephrosis, ureteral stenosis, ectopic insertion, renal duplication,
-  extrarenal pelvis, cystitis, residual urine, UPJ / UVJ disease.
-
-EXCLUDE non-urotract findings:
-  bowel gas, spine degeneration, phleboliths, gallstones, orthopedic findings.
-  (These go ONLY in <<FINDINGS>>.)
-
-If impression states “Unremarkable IVP study” or equivalent:
-  Impression:
-  - Unremarkable intravenous pyelography (IVP) study.
-
-Keep wording concise and close to input. If Srs/Img reference exists, keep it.
+Formatting rules:
+- Use "- " as bullet symbols
+- Do NOT use asterisk as bullet symbol
+- Do NOT add explanations outside the report
+- Keep wording concise and radiology-style
+- Plain ASCII English only
 
 ==================================================
-SECTION 2 — <<FINDINGS>> Rules
+SECTION 1 - Impression
 ==================================================
-Describe findings using radiology observation language.
-MANDATORY structure (always output ALL categories, in this order):
 
-1) Scout film — stones / calcifications / clips / phleboliths
-2) Post contrast — nephrograms / collecting system opacification
-3) Obstruction — hydronephrosis / hydroureter / tapering (if any)
-4) Bladder
-5) Incidental findings (non-urotract from input)
+Rules:
 
-If comparison study exists, add as second line:
-  Comparison with previous study: [date/time].
+1. Only include urotract-related findings:
+   kidneys, ureters, collecting system, bladder, prostate,
+   urinary obstruction, stones, hydronephrosis, ureteral stenosis,
+   ectopic insertion, renal duplication, extrarenal pelvis,
+   cystitis, residual urine, UPJ / UVJ disease, milk of calcium cyst
+
+2. Exclude non-urotract findings from Impression unless clinically significant:
+   - Exclude: bowel gas, spine degeneration, phleboliths, gallstones, osteopenia, scoliosis
+   - Include even if non-urotract: ileus, bowel obstruction, compression fracture, gastritis with wall thickening
+
+3. If input states "Unremarkable IVP study" or "unremarkable finding", output:
+   Impression:
+   - Unremarkable intravenous pyelography study.
+
+4. Keep wording very close to the user's impression.
+
+5. If input contains "Increased bowel gas or mild ileus" or similar, include in Impression:
+   - Increased bowel gas, mild ileus cannot be excluded.
+
+6. If input contains a warning such as "*Small stone may be obscured" or "*Small renal stone may be obscured", add at END of Impression:
+   - *Increased bowel gas is present; small stones may be obscured.
+   Use exact wording from input if slightly different.
+
+7. If input contains "*Poor image contrast", add at END of Impression:
+   - *Poor image contrast, lesion may be obscured.
+
+8. If input contains only "Mild increased bowel gas" with NO obscuring warning:
+   Do NOT add any line to Impression. Handle in Findings only.
 
 ==================================================
-PHRASE TEMPLATES — Normal IVU
+SECTION 2 - Intravenous urography (IVU) Findings
 ==================================================
-When no conflicting abnormality is mentioned, use these EXACT sentences:
 
-- There is no abnormal calcified nodular lesion on the scout film.
+Structure:
+
+1. Comparison line (if present in input):
+   - Comparison with previous study dated YYYY-MM-DD.
+   This must be the FIRST bullet of Findings.
+   Convert date to ISO format YYYY-MM-DD.
+
+2. Scout film line (always present):
+   - Scout film: No abnormal calcified nodular lesion is identified.
+   If stones present: describe calcified lesions here.
+   If mild increased bowel gas only: append to this line.
+   Example: Scout film: No abnormal calcified nodular lesion is identified. Mild increased bowel gas is present.
+   If ileus: Scout film: No abnormal calcified nodular lesion is identified. Increased bowel gas is present, mild ileus cannot be excluded.
+
+3. Pelvic phleboliths (if present): separate bullet after Scout film.
+   - Pelvic calcified nodular densities are consistent with pelvic phleboliths.
+
+4. Post contrast line (always present):
+   - After intravenous contrast administration, normal bilateral nephrograms and opacifications of the bilateral collecting systems are appreciated.
+
+5. Obstruction / hydronephrosis findings
+
+6. Bladder findings
+
+7. Incidental non-urotract findings:
+   spine, osteopenia, scoliosis, compression fracture, gastritis, etc.
+
+==================================================
+Srs/Img Tag Rule
+==================================================
+
+If input contains a tag such as (Srs/Img:7/1) or (Srs/Img:1,7/1):
+- Preserve it EXACTLY as written.
+- Append to the END of the corresponding bullet in BOTH Impression and Findings.
+- Attach ONLY to bullets where the input explicitly includes the tag.
+- Do NOT add tags to bullets where none were provided.
+
+==================================================
+Standard Phrase Templates
+==================================================
+
+Normal IVU:
+- Scout film: No abnormal calcified nodular lesion is identified.
 - After intravenous contrast administration, normal bilateral nephrograms and opacifications of the bilateral collecting systems are appreciated.
 - No obstructive dilatation or contrast stasis of the urinary collecting system is revealed.
 - The urinary bladder is unremarkable.
 
-ALL four lines MUST appear. Replace with abnormal version only when input conflicts.
-
-==================================================
-PHRASE TEMPLATES — Stone
-==================================================
-Kidney stone:
-- Calcified nodular lesions are projected over the [left/right] renal area on the scout film.
-- Calcified lesions are seen within the [location] calyx.
+Renal stone:
+- Calcified nodular lesions are projected over the left/right renal area, consistent with renal stone in the [location] calyx.
 
 Ureteral stone:
-- A calcified nodular lesion is projected over the [left/right] paraspinal region at the [L level] along the expected [upper/middle/lower]-third ureter on the scout film.
-- Dilatation of the renal pelvis, calyces, and ureter up to the level of the stone is noted.
-- Relative contrast stasis of the collecting system is demonstrated.
+- A calcified nodular lesion is projected over the left/right paraspinal region at the Lx level along the expected upper/lower ureter, measuring X cm.
+- Dilatation of the left/right renal pelvis, calyces, and ureter up to the level of the stone is noted.
+- Relative contrast stasis of the left/right collecting system is demonstrated.
 
-Anatomic mapping for scout film stone location:
-  Upper-third ureter: “over the paraspinal region at the L1-L5 level”
-  Middle-third ureter: “over the pelvic brim / iliac vessel crossing region”
-  Lower-third ureter: “over the presacral / pelvic cavity toward the ureterovesical junction”
+Staghorn stone:
+- A large calcified density is projected over the left/right renal area, consistent with a staghorn stone.
 
-==================================================
-PHRASE TEMPLATES — Hydronephrosis
-==================================================
-- Dilatation of the renal pelvis and calyces is noted.
-- Dilatation of the renal pelvis, calyces, and ureter is noted.
+Hydronephrosis without stone:
+- Mild/Moderate/Severe dilatation of the left/right renal pelvis and calyces is noted.
 
-==================================================
-PHRASE TEMPLATES — Ureteral Stenosis
-==================================================
-- The ureter shows focal narrowing at the [segment].
-- The ureter shows tapering at the [segment].
+Hydroureteronephrosis without stone:
+- Mild/Moderate/Severe dilatation of the left/right renal pelvis, calyces, and ureter is noted without radiopaque stones identified.
 
-==================================================
-PHRASE TEMPLATES — Bladder / Prostate
-==================================================
 Enlarged prostate:
 - The urinary bladder is indented by the prostate.
 
-Residual urine:
+Residual urine (Findings):
 - Post-void residual urine is present within the urinary bladder.
 
-Bladder diverticulum:
-- The urinary bladder shows an outpouching diverticulum.
+Residual urine (Impression):
+- Mild post-void residual urine is present.
 
 Bladder wall thickening:
-- Irregular thickening of the urinary bladder wall is demonstrated.
+- Irregular thickening of the urinary bladder wall is demonstrated; chronic cystitis or other etiology cannot be excluded.
 
-==================================================
-PHRASE TEMPLATES — Common Incidentals
-==================================================
-Pelvic phlebolith:
-- Calcified nodular densities projected over the pelvis are consistent with pelvic phleboliths.
+UVJ stenosis:
+- Left/Right ureterovesical junction stenosis cannot be excluded.
 
-Spine degeneration:
+Milk of calcium cyst:
+- A calcified cystic lesion with milk of calcium is projected over the left/right renal area, consistent with a left/right renal milk of calcium cyst.
+
+Spine incidental:
 - Degenerative change and spur formation of the spine are observed.
-
-Osteopenia:
 - Generalized diminished bone density, suggestive of osteopenia, is noted.
-
-Bowel gas:
-- Mild increased bowel gas is present.
-
-Ileus:
-- Increased bowel gas is present, suggestive of mild ileus.
+- Mild scoliosis is noted.
+- Suspect compression fracture at Lx is noted.
 
 ==================================================
-LANGUAGE RULES
+Return ONLY the formatted report. No explanations.
 ==================================================
-- Use present tense.
-- Use neutral descriptive wording.
-- Avoid speculative language except when already present in the impression.
-- Maintain laterality (right/left/bilateral) and vertebral level when given.
-- Keep sentences short and consistent.
-- Do NOT invent measurements not provided.
-
-Return ONLY the two tagged sections: <<IMPRESSION>> then <<FINDINGS>>.
 )
+
 }else if (InStr(I2F_Scenario, "TRUS")) {
 sysPrompt =
 (
@@ -1542,6 +1580,7 @@ USAIPasteImage1:
         
         ; 自動執行 OCR
         Gosub, USAIExecuteOCR1
+		gosub USAICopyOCR1
     } else {
         GuiControl, USAIG:, USAIStatus, 錯誤：剪貼簿中沒有找到影像
     }

@@ -515,7 +515,7 @@ PosDICOMLU:
     } else if(varWhere=6) {
         MouseMove 50,30         ; R小房間(Win7)
     } else if(varWhere=7) {
-        MouseMove 4300,-1000      ; 乳醫(Win12)
+        MouseMove 3400,-900      ; 乳醫(Win12)
     } else if(varWhere=8) {
         MouseMove 3360,370           ; 遠端(租屋)
     } else {
@@ -664,7 +664,7 @@ return
 
 
 ; --- 查看舊報告（開瀏覽器）---
-<#2::
+<#v::
 ;    MsgBox, 262180, NEXT EXAM, "Open browser and see result?"
 ;    IfMsgBox, No
 ;        goto CopyOld

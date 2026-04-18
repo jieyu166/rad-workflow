@@ -31,14 +31,16 @@ else
 return
 
 
-::mca;::
+:O:mca;::
 HotstringMenuV("A","MenuShortcut", "Benign calcification of _ breast_s.","Round calcifications with lucent center of _ breast_s, typically mammographic benign due to fat necrosis.","Scattered microcalcifications of bilateral breasts, relatively monomorphic pattern, concluded as benign finding.`r_Benign scattered microcalcifications of bilateral breasts.","BRK","Benign vascular calcifications of _ breast_s.","_ vascular calcifications, concluded as benign.","Benign coarse calcifications of _ breast_s, concluded as benign fat necrosis calcifications.","_ benign skin calcifications.","BRK","Grouped amorphous microcalcifications in _ breast, concluded as suspicious microcalcifications.","Coarse heterogenous microcalcifications in _ breast, concluded as suspicious microcalcifications.")
 return
 
 
-::mno;::
+:O:mno;::
 HotstringMenuV("A","MenuShortcut", "Multiple equal density circumscribed masses of both breasts, typical mammographic appearance of cysts, fibroadenomas, asymmetric glands, concluded as benign.","_However, some lesion may have normal mammographic appearance, regular follow up is still suggested.")
 return
+
+:O:mic::microcalcification
 
 ;=====================================================================
 ; 日期格式轉換功能
@@ -81,7 +83,7 @@ return
 return
 
 
-::mammo;::
+:O:mammo;::
 WinGet, ActiveId, ID, A ;紀錄目前視窗
 Gui Font, s12
 Gui Add, GroupBox, x20 y15 w150 h100, Title
@@ -223,7 +225,7 @@ return
 ;============================================================================================
 
 
-::tba;::
+:O:tba;::
 WinGet, ActiveId, ID, A ;紀錄目前視窗
 Gui Font, s16
 Gui Add, Radio, x20 y25 w80 h23 vS1, 男性(&M)
@@ -306,7 +308,7 @@ CopyCXRtoHISWithParam(2)
 return
 
 
-::bmd;::
+:O:bmd;::
 WinGet, ActiveId, ID, A ;紀錄目前視窗
 Gui Font, s12
 Gui Add, GroupBox, x20 y15 w340 h100, T-score

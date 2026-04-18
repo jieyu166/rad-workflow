@@ -3,7 +3,7 @@
 :O:sup::superior
 :O:inf::inferior
 :O:ant::anterior 
-::post.::posterior 
+:O:post.::posterior
 :O:susp::suspect
 :O:bil::bilateral
 :O:fu;::follow up.
@@ -13,7 +13,7 @@ HotstringMenuV("A","MenuShortcut","Otherwise limited change.","Overall limited c
 return
 :O:ou::Otherwise unremarkable. 
 :O:ln;::
-HotstringMenuV("A","MenuShortcut","lymph node", "Visible LNs short axis <1cm.","BRK","<6mm nodules in both lungs.(Arrows in Srs:_)"," Nonspecific tiny nodules in both lungs, <_mm.","<_6mm solid nodule in _.(Srs/Img:_/_)","BRK","solid nodule","ground-glass nodule", "part-solid nodule","juxtapleural nodule") 
+HotstringMenuV("A","MenuShortcut","lymph node", "Visible LNs short axis <1cm.","BRK","<6mm _solid nodules in both lungs.(Arrows in Srs:_)"," Nonspecific tiny nodules in both lungs, <_mm.","<_6mm solid nodule in _.(Srs/Img:_/_)","BRK","solid nodule","ground-glass nodule", "part-solid nodule","juxtapleural nodule") 
 return
 :O:lap;::lymphadenopathy
 
@@ -63,14 +63,17 @@ return
 :O:cfr::compression fracture
 :O:mvc::multiple vertebral collapse.
 ::fr.::fracture
-::fr;::
+:O:fr;::
 HotstringMenuV("A","MenuShortcut","fracture.","old fracture with _ deformity.","old fracture with _ deformity and _ degenerative change.","old fracture.","BRK","compression fracture.","healing fracture.","pathologic fracture.","Nondisplaced fracture.","stress fracture.","avulsion fracture.")
 return
 :O:sub;::subluxation.
 :O:dp::distal phalanx
 :O:pp::proximal phalanx
 :O:dish;::Diffuse idiopathic skeletal hyperostosis (DISH)
-
+:O:cla::clavicular
+:O:pat::
+HotstringMenuV("A","MenuShortcut","patella alta","patella baja","patellar.")
+return
 
 ;============================================================================================
 ; GI, GU
@@ -87,7 +90,7 @@ return
 :O:clpd::chronic liver parenchyma disease.
 :O:lpd::liver parenchyma disease.
 :O:bso::bilateral salpingo-oophorectomy
-:O:phle;::pelvic phleboliths.
+:O:pel::Pelvic phleboliths.
 
 ;============================================================================================
 ; Neuro
@@ -108,7 +111,7 @@ return
 :O:cvc;::central venous catheter (CVC)
 :O:av::aortic valvular
 :O:mv::mitral valvular _annulus
-::fa;::
+:O:fa;::
 HotstringMenuV("A","MenuShortcut","focal atelectasis.","BRK","fibroadenoma","FA","focal asymmetry")
 return
 :O:ggo::ground-glass opacity
@@ -119,7 +122,7 @@ return
 
 :O:clip;::Clips at _RUQ abdomen.
 
-::meta;::
+:O:meta;::
 HotstringMenuV("A","MenuShortcut", "Bilateral lung metastases","Suspect lung metastases")
 return
 

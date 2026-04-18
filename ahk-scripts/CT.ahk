@@ -3,6 +3,9 @@
 ; CT
 ;============================================================================================
 
+:O:div;::
+HotstringMenuV("A","MenuShortcut", "Periampullary duodenal diverticulum", "Duodenal diverticulum","Colonic diverticula", "Urinary bladder diverticulum")
+return
 
 :O:ildct;::
 (

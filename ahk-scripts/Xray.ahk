@@ -2,7 +2,256 @@
 ; X-ray
 ;============================================================================================
 
-::cxr2;::
+; -------------------------------------------------------------------------------------------
+; MSK
+; -------------------------------------------------------------------------------------------
+
+::limb::The length of lower extremities measures _ cm on the right side, and _ cm on the left side.
+
+
+:O:os::
+HotstringMenuV("A","MenuShortcut", "os triangulare","BRK","os trigonum","os subfibulare","os peroneum","Osgood-Schlatter disease","os")
+return
+
+
+:O:wrist;::
+    gosub GetSideSelection
+
+    ; 2. (選用) 檢查使用者是否按了取消(X)，如果變數是空的就終止
+    if (tSideCap = ""){
+        tSideCap := "_"
+		tSideLow := "_"
+	}
+
+    ; 3. 貼上內容 (使用設定好的變數)
+    SendInput,
+(
+%tSideCap% wrist:
+
+_Healing _complex _comminuted _intra-articular fracture of _distal radius _extending to _radiocarpal compartment _and DRUJ _with mild articular step-off, _status post butress plate fixation, _without _with bone union, _with callus formation
+ _with ulnar impaction syndrome. 
+_Positive _Negative ulnar variance.  
+_Avulsion fracture of tip of the ulnar styloid process _without bone union. 
+_Osteoarthrosis of basal joint.
+)
+return
+
+:O:shou;::
+(
+Degenerative joint disease of acromio-clavicular joint.
+Generalized diminished bone density. 
+Lateral downsloping of acromion, predisposing to subacromial impingement.
+Humeral ROM acceptable.
+)
+
+:O:knee;::
+subknee1:
+  SendInput,
+(
+Joint space narrowing in favor of osteoarthritis with or without meniscal tear. Kellgren and Lawrence grade _.(1-4)
+_Degenerative joint disease of patellofemoral joint.
+No patellar malalignment.
+_Mild lateral tilting of patella.
+_Mild suprapatellar effusion.
+)
+return
+
+:O:knee2;::
+SendInput Genu varum._valgus.`rGeneralized diminished bone density.`r_Atherosclerosis of arteries.`r`rRight`r
+MsgBox, 4,, "簡化版? 完整版?(press Yes or No)"
+IfMsgBox, No
+{
+	gosub subknee1
+	SendInput `r`rLeft`r
+	gosub subknee1
+	return
+}
+
+gosub subknee2
+SendInput `r`rLeft`r
+gosub subknee2
+return
+
+:O:knee3;::
+subknee2:
+  SendInput,
+(
+Joint space narrowing in favor of osteoarthritis with or without meniscal tear. Kellgren and Lawrence grade _.(1-4)
+No patellar malalignment.
+)
+return
+
+:O:mdeg::Mild degenerative change of spine.
+:O:deg::Degenerative change and spur formation of spine.
+:O:dego::Degenerative and osteoporotic change of spine.`
+
+:O:spine;::
+HotstringMenuV("A","MenuShortcut2","Cspine|AP and lateral views of C-spine show:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharyngeal and retrotracheal space.","Lspine|AP and lateral views of L-spine show:","T/L|AP and lateral views of T/L-spine show:","L/S|AP and lateral views of L/S-spine show:","BRK","4 views of C-spine:","Flexion and Extension views of C-spine:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharyngeal and retrotracheal space.`rNo obvious hypermobility.", "Flexion and Extension views of L-spine:`rNo obvious hypermobility.")
+SendInput `rNo definite bony fracture.`rNo joint subluxation or dislocation.`r
+SendInput Normal alignment.`rNormal disc spaces.`r
+SendInput ___Uncovertebral joint hypertrophy and facet joint arthrosis of ___lower cervical __lumbar spine.
+return	
+
+
+:O:sco;::
+HotstringMenuV("A","MenuShortcut2","Mild scoliosis.","Mild scoliosis, convex to _{LtRt}","_Mild _scoliosis of thoracolumbar spine, with major and compensatory curvature.","BRK","Mild rotatory asymmetry of the _upper _thoracic _lumbar spine, convex to {LtRt}, measuring _ degree.","_Mild _scoliosis of the _upper _thoracic _thoracolumbar _lumbar spine, _, apex at _, convex to {LtRt}, measuring _ degree.")
+return
+
+
+:O:pelvis;::
+(
+Degenerative change and spur formation of spine. 
+Generalized diminished bone density. 
+
+The S-I and hip joints are well preserved.
+Fracture or dislocation is not seen.
+)
+
+
+:O:ba;::The bone age of left hand and wrist is between _ years _ months and _ years _ months. 
+:O:nb;::
+(
+No definite bony fracture.
+No joint dislocation or subluxation.
+)
+
+
+
+:*:fing::
+Input, key, L1 T2
+if (key == "a" or key == "1" )
+    SendInput, thumb
+else if (key == "b" or key == "2" )
+    SendInput, index finger
+else if (key == "c" or key == "3" )
+    SendInput, middle finger
+else if (key == "d" or key == "4" )
+    SendInput, ring finger
+else if (key == "e" or key == "5" )
+    SendInput, little finger
+else
+    SendInput, fing%key%
+return
+
+
+:O:wou::Without union.
+:O:wu::With union.
+
+:O:pec::
+HotstringMenuV("A","MenuShortcut", "pectus excavatum ", "pectus carinatum", "_Mild pectus excavatum, Haller index _.")
+return
+
+:O:ankle;::Plantar calcaneal spur.`rAchilles tendon insertional enthesophyte.
+:O:cast;::Status post splint/cast fixation causing difficult evaluation of subtle lesions.
+
+:O:acc;::
+HotstringMenuV("A","MenuShortcut", "Accessory navicular", "An accessory spleen, _cm.(Srs/Img:_/_)","An accessory spleen.(Srs/Img:_/_)")
+return
+
+
+; -------------------------------------------------------------------------------------------
+; Sinus, face, neck
+; -------------------------------------------------------------------------------------------
+
+:O:sinus;::
+(
+- The sinuses are essentially clear.
+- The calvarium is intact.  
+- There is normal sella turcica.  
+- The facial bone is unremarkable.
+
+Mild clouding of _ sinus_es, could be sinusitis, bony overlapping or others.
+Air-fluid levels in _ sinuses, could be sinusitis or others.
+Mild enlarged bilateral _inferior nasal turbinates.
+)
+
+:O:sin;::
+HotstringMenuV("A","MenuShortcut","Mild clouding of _ sinus_es, could be sinusitis, bony overlapping or others.","Air-fluid levels in _ sinuses, could be sinusitis or others.","Sphenoid sinus pneumatization","Mild enlarged bilateral _inferior nasal turbinates.")
+return
+
+
+:O:skull;::
+(
+Skull AP and lateral views:
+
+- The calvarium is intact.
+- There is normal sella turcica.
+- The facial bone is unremarkable.
+- The sinuses are essentially clear.
+)
+
+
+:O:pano;::
+(
+- No significant bony fracture or dislocation.
+- Bilateral TMJs are intact.
+mixed dentition
+Periapical lucency, could be periodontitis or others.
+Mild TMJ anterior subluxation.
+Multiple teeth loss.
+Mild clouding of bilateral maxillary sinuses, could be sinusitis, bony overlapping or others.
+
+Suggest clinical correlation and follow up.
+
+)
+
+
+
+:O:neck;::
+(
+_AP and lateral views of neck show:
+
+- Prevertebral space is not widened.
+- Normal epiglottis.
+- The soft tissue is unremarkable.
+- The spinal alignment is normal.
+- The disc spaces are preserved.
+- No evidence of radiopaque foreign body.
+)
+
+
+:O:nono;::
+SendInput No active lung lesion is noted.`r
+SendInput Normal heart size.`r
+SendInput _Unremarkable bony structure.`r
+return
+
+
+:O:kub;::
+HotstringMenuV("A","MenuShortcut","Mild sclerotic change around bilateral SI joints, could be related to arthritis or others.","Gallstone or right renal stone or other.","Suspect right renal stones","BRK","Mild both hips osteoarthritis (OA)")
+return
+
+:O:kub2::
+(
+- No obvious abnormal radiopaque density can be depicted.
+- Bilateral renal and psoas muscle shadows are unremarkable.
+- Unremarkable bowel gas pattern.
+- _Pelvic phleboliths.
+- Unremarkable bony structure.
+)
+:O:kub3::
+(
+- No obvious abnormal radiopaque density can be depicted.
+- Bilateral renal and psoas muscle shadows are unremarkable.
+- Unremarkable bowel gas pattern.
+- _Pelvic phleboliths.
+- Degenerative change and spur formation of spine.
+- Generalized diminished bone density. 
+)
+
+
+
+:O:cxr;::
+HotstringMenuV("A","MenuShortcut2","Mild infiltration in {LungSel} , could be pneumonia, or others.", "Consolidation in {LungSel}_, could be pneumonia, or others.", "Focal atelectasis in {LungSel} .", "BRK","Emphysematous change or hyperaerated appearance of both lungs. ","Pulmonary congestion pattern _or emphysematous change of both lungs.","Mild increased hazy bronchovascular marking over bilateral lung.`r  DDx: inflammatory process or others.","Patchy consolidations in {LungSel} , could be pneumonia or others.`r  Occult entities growth can not be excluded.","Suspect chronic inflammatory/ infection changes or others in both lungs.","Reticulations/Infiltrations in both lungs, could be related to emphysema, interstitial lung disease, pulmonary edema or others.", "BRK", "Fibrocalcified change in both upper lungs, more prominent at {LtRt} side. Suspect old infection/inflammatory changes, eg. old TB or others.","Fibrocalcified change in both upper lungs, suspect old infection/inflammatory changes, eg. old TB or others.", "Bilateral apical pleural thickening.","Mild pulmonary congestion pattern.","Emphysematous change of both lungs.","BRK","{LtRt} pleural effusion or pleural changes.","minimal pleural effusion or pleural changes.") 
+return
+
+
+
+;============================================================================================
+; CXR, spine, knee UI 程式
+;============================================================================================
+
+:O:cxr2;::
 WinCXR:
 WinGet, ActiveId, ID, A ;記錄目前視窗
 Gui, Font, s14
@@ -322,7 +571,7 @@ OutputFinish(outputMode := 2, windowName := "", applyDash := false, resetCXR := 
 }
 
 
-::spine2;::
+:O:spine2;::
 WinSpine:
 WinGet, ActiveId, ID, A ;紀錄目前視窗
 Gui Font, s14
@@ -344,7 +593,7 @@ Gui Add, Button, xp+160 yp w150 h50 gBtnInsertTitle, 輸出標題(&T)
 
 ; 第三排按鈕
 Gui Add, Button, x10 yp+60 w150 h50 gBoneDensity1, 骨密低(&A)
-Gui Add, Button, xp+160 yp w150 h50 gBoneDensity2, 骨質疏鬆(&O)
+Gui Add, Button, xp+160 yp w150 h50 gBoneDensity2, 骨質疏鬆(&D)
 Gui Add, Button, xp+160 yp w150 h50 gBtnWedging, Ant. Wedging(&W)
 
 
@@ -634,188 +883,6 @@ SpineClose:
 return
 
 
-:O:sinus;::
-(
-- The sinuses are essentially clear.
-- The calvarium is intact.  
-- There is normal sella turcica.  
-- The facial bone is unremarkable.
-
-Mild clouding of _ sinus_es, could be sinusitis, bony overlapping or others.
-Air-fluid levels in _ sinuses, could be sinusitis or others.
-Mild enlarged bilateral _inferior nasal turbinates.
-)
-
-:O:sin;::
-HotstringMenuV("A","MenuShortcut","Mild clouding of _ sinus_es, could be sinusitis, bony overlapping or others.","Air-fluid levels in _ sinuses, could be sinusitis or others.","Mild enlarged bilateral _inferior nasal turbinates.")
-return
-
-
-:O:skull;::
-(
-Skull AP and lateral views:
-
-- The calvarium is intact.
-- There is normal sella turcica.
-- The facial bone is unremarkable.
-- The sinuses are essentially clear.
-)
-
-
-:O:pano;::
-(
-- No significant bony fracture or dislocation.
-- Bilateral TMJs are intact.
-mixed dentition
-Periapical lucency, could be periodontitis or others.
-Mild TMJ anterior subluxation.
-Multiple teeth loss.
-Mild clouding of bilateral maxillary sinuses, could be sinusitis, bony overlapping or others.
-
-Suggest clinical correlation and follow up.
-
-)
-
-
-
-:O:neck;::
-(
-_AP and lateral views of neck show:
-
-- Prevertebral space is not widened.
-- Normal epiglottis.
-- The soft tissue is unremarkable.
-- The spinal alignment is normal.
-- The disc spaces are preserved.
-- No evidence of radiopaque foreign body.
-)
-
-:O:wrist;::
-    gosub GetSideSelection
-
-    ; 2. (選用) 檢查使用者是否按了取消(X)，如果變數是空的就終止
-    if (tSideCap = ""){
-        tSideCap := "_"
-		tSideLow := "_"
-	}
-
-    ; 3. 貼上內容 (使用設定好的變數)
-    SendInput,
-(
-%tSideCap% wrist:
-
-_Healing _complex _comminuted _intra-articular fracture of _distal radius _extending to _radiocarpal compartment _and DRUJ _with mild articular step-off, _status post butress plate fixation, _without _with bone union, _with callus formation
- _with ulnar impaction syndrome. 
-_Positive _Negative ulnar variance.  
-_Avulsion fracture of tip of the ulnar styloid process _without bone union. 
-_Osteoarthrosis of basal joint.
-)
-return
-
-:O:nono;::
-SendInput No active lung lesion is noted.`r
-SendInput Normal heart size.`r
-SendInput _Unremarkable bony structure.`r
-return
-
-
-:O:kub;::
-HotstringMenuV("A","MenuShortcut","Mild sclerotic change around bilateral SI joints, could be related to arthritis or others.","Gallstone or right renal stone or other.","Suspect right renal stones","BRK","Mild both hips osteoarthritis (OA)")
-return
-
-:O:kub2::
-(
-- No obvious abnormal radiopaque density can be depicted.
-- Bilateral renal and psoas muscle shadows are unremarkable.
-- Unremarkable bowel gas pattern.
-- _Pelvic phleboliths.
-- Unremarkable bony structure.
-)
-:O:kub3::
-(
-- No obvious abnormal radiopaque density can be depicted.
-- Bilateral renal and psoas muscle shadows are unremarkable.
-- Unremarkable bowel gas pattern.
-- _Pelvic phleboliths.
-- Degenerative change and spur formation of spine.
-- Generalized diminished bone density. 
-)
-
-:O:shou;::
-(
-Degenerative joint disease of acromio-clavicular joint.
-Generalized diminished bone density. 
-Lateral downsloping of acromion, predisposing to subacromial impingement.
-Humeral ROM acceptable.
-)
-
-:O:knee;::
-subknee1:
-  SendInput,
-(
-Joint space narrowing in favor of osteoarthritis with or without meniscal tear. Kellgren and Lawrence grade _.(1-4)
-_Degenerative joint disease of patellofemoral joint.
-No patellar malalignment.
-_Mild lateral tilting of patella.
-_Mild suprapatellar effusion.
-)
-return
-
-:O:knee2;::
-SendInput Genu varum._valgus.`rGeneralized diminished bone density.`r_Atherosclerosis of arteries.`r`rRight`r
-MsgBox, 4,, "簡化版? 完整版?(press Yes or No)"
-IfMsgBox, No
-{
-	gosub subknee1
-	SendInput `r`rLeft`r
-	gosub subknee1
-	return
-}
-
-gosub subknee2
-SendInput `r`rLeft`r
-gosub subknee2
-return
-
-:O:knee3;::
-subknee2:
-  SendInput,
-(
-Joint space narrowing in favor of osteoarthritis with or without meniscal tear. Kellgren and Lawrence grade _.(1-4)
-No patellar malalignment.
-)
-return
-
-:O:mdeg::Mild degenerative change of spine.
-:O:deg::Degenerative change and spur formation of spine.
-:O:dego::Degenerative and osteoporotic change of spine.`
-
-:O:spine;::
-HotstringMenuV("A","MenuShortcut2","Cspine|AP and lateral views of C-spine show:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharyngeal and retrotracheal space.","Lspine|AP and lateral views of L-spine show:","T/L|AP and lateral views of T/L-spine show:","L/S|AP and lateral views of L/S-spine show:","BRK","4 views of C-spine:","Flexion and Extension views of C-spine:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharyngeal and retrotracheal space.`rNo obvious hypermobility.", "Flexion and Extension views of L-spine:`rNo obvious hypermobility.")
-SendInput `rNo definite bony fracture.`rNo joint subluxation or dislocation.`r
-SendInput Normal alignment.`rNormal disc spaces.`r
-SendInput ___Uncovertebral joint hypertrophy and facet joint arthrosis of ___lower cervical __lumbar spine.
-return	
-
-
-::sco;::
-HotstringMenuV("A","MenuShortcut2","Mild scoliosis.","Mild scoliosis, convex to _{LtRt}","_Mild _scoliosis of thoracolumbar spine, with major and compensatory curvature.","BRK","Mild rotatory asymmetry of the _upper _thoracic _lumbar spine, convex to {LtRt}, measuring _ degree.","_Mild _scoliosis of the _upper _thoracic _thoracolumbar _lumbar spine, _, apex at _, convex to {LtRt}, measuring _ degree.")
-return
-
-:O:cxr;::
-HotstringMenuV("A","MenuShortcut2","Mild infiltration in {LungSel} , could be pneumonia, or others.", "Consolidation in {LungSel}_, could be pneumonia or others.", "Focal atelectasis in {LungSel} .", "BRK","Emphysematous change or hyperaerated appearance of both lungs. ","Pulmonary congestion pattern _or emphysematous change of both lungs.","Mild increased hazy bronchovascular marking over bilateral lung.`r  DDx: inflammatory process or others.","Patchy consolidations in {LungSel} , could be pneumonia or others.`r  Occult entities growth can not be excluded.","Suspect chronic inflammatory/ infection changes or others in both lungs.","Reticulations/Infiltrations in both lungs, could be related to emphysema, interstitial lung disease, pulmonary edema or others.", "BRK", "Fibrocalcified change in both upper lungs, more prominent at {LtRt} side. Suspect old infection/inflammatory changes, eg. old TB or others.","Fibrocalcified change in both upper lungs, suspect old infection/inflammatory changes, eg. old TB or others.", "Bilateral apical pleural thickening.","Mild pulmonary congestion pattern.","Emphysematous change of both lungs.","BRK","{LtRt} pleural effusion or pleural changes.","minimal pleural effusion or pleural changes.") 
-return
-
-
-
-::pelvis;::
-(
-Degenerative change and spur formation of spine. 
-Generalized diminished bone density. 
-
-The S-I and hip joints are well preserved.
-Fracture or dislocation is not seen.
-)
 
 ;============================================================================================
 ; Knee Assistant GUI (Designed for Gemini 3 Pro Context)

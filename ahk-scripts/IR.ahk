@@ -3,7 +3,7 @@
 ; Intervention
 ;============================================================================================
 
-::ptcd;::
+:O:ptcd;::
 (
 Indication: _ with obstructive jaundice.
 
@@ -18,7 +18,7 @@ Impression: Biliary tree dilatation s/p PTCD.
 )
 
 
-::pcn;::
+:O:pcn;::
 	; 1. 呼叫通用選擇器 (程式會暫停在這裡等您按按鈕)
     gosub GetSideSelection
 
@@ -44,7 +44,7 @@ Impression:
 )
 	return	
 	
-::pcnr;::
+:O:pcnr;::
 	; 1. 呼叫通用選擇器 (程式會暫停在這裡等您按按鈕)
     gosub GetSideSelection
 
@@ -72,7 +72,7 @@ Impression:
 )
 return
 
-::ascites;::
+:O:ascites;::
 (
 Clinical information: ascites, requested for drainage.
 
@@ -82,7 +82,7 @@ The procedure was performed smoothly and the patient stood it well.
 
 Conclusion: Ascites in _RUQ of abdomen s/p sonoguided pigtail catheter drainage.
 )
-::abscess;::
+:O:abscess;::
 (
 Clinical information: _Liver abscess requested for drainage.
 
