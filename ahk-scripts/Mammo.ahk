@@ -32,12 +32,25 @@ return
 
 
 :O:mca;::
-HotstringMenuV("A","MenuShortcut", "Benign calcification of _ breast_s.","Round calcifications with lucent center of _ breast_s, typically mammographic benign due to fat necrosis.","Scattered microcalcifications of bilateral breasts, relatively monomorphic pattern, concluded as benign finding.`r_Benign scattered microcalcifications of bilateral breasts.","BRK","Benign vascular calcifications of _ breast_s.","_ vascular calcifications, concluded as benign.","Benign coarse calcifications of _ breast_s, concluded as benign fat necrosis calcifications.","_ benign skin calcifications.","BRK","Grouped amorphous microcalcifications in _ breast, concluded as suspicious microcalcifications.","Coarse heterogenous microcalcifications in _ breast, concluded as suspicious microcalcifications.")
+HotstringMenuV("A","MenuShortcut"
+    ,"Benign calcification of _ breast_s."
+    ,"Round calcifications with lucent center of _ breast_s, typically mammographic benign due to fat necrosis."
+    ,"Scattered microcalcifications of bilateral breasts, relatively monomorphic pattern, concluded as benign finding.`r_Benign scattered microcalcifications of bilateral breasts."
+    ,"BRK"
+    ,"Benign vascular calcifications of _ breast_s."
+    ,"_ vascular calcifications, concluded as benign."
+    ,"Benign coarse calcifications of _ breast_s, concluded as benign fat necrosis calcifications."
+    ,"_ benign skin calcifications."
+    ,"BRK"
+    ,"Grouped amorphous microcalcifications in _ breast, concluded as suspicious microcalcifications."
+    ,"Coarse heterogenous microcalcifications in _ breast, concluded as suspicious microcalcifications.")
 return
 
 
 :O:mno;::
-HotstringMenuV("A","MenuShortcut", "Multiple equal density circumscribed masses of both breasts, typical mammographic appearance of cysts, fibroadenomas, asymmetric glands, concluded as benign.","_However, some lesion may have normal mammographic appearance, regular follow up is still suggested.")
+HotstringMenuV("A","MenuShortcut"
+    ,"Multiple equal density circumscribed masses of both breasts, typical mammographic appearance of cysts, fibroadenomas, asymmetric glands, concluded as benign."
+    ,"_However, some lesion may have normal mammographic appearance, regular follow up is still suggested.")
 return
 
 :O:mic::microcalcification
@@ -53,7 +66,7 @@ return
 
     ; 2. 送出複製指令 (Ctrl+C)
     Send, ^c
-    ClipWait, 0.3 ; 等待複製完成，最多等 0.3 秒
+    ClipWait, 5 ; 等待複製完成，最多等 5 秒
     if ErrorLevel ; 如果複製失敗(沒選到字)，就結束
     {
         Clipboard := ClipboardBackup
@@ -212,7 +225,7 @@ If (mammoB1){
 	}
 }
 
-If (mammoB1 OR mammoB2 OR mammo B3){
+If (mammoB1 OR mammoB2 OR mammoB3){
 	desc .= "Addendum: Although this report follows the standard lexicon of ACR BI-RADS, `r          small cancers maybe invisible within dense fibroglandular tissue, `r          Adjunct ultrasound screening is always recommended for dense breast."
 }
 

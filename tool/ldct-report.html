@@ -678,6 +678,29 @@
         field.type = field.type === 'password' ? 'text' : 'password';
     }
 
+    function normalizeDateInput(value) {
+        const raw = (value || '').trim();
+        if (!raw) return '';
+
+        const match = raw.match(/^(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})$/);
+        if (!match) return raw;
+
+        const [, year, month, day] = match;
+        return `${year}/${month.padStart(2, '0')}/${day.padStart(2, '0')}`;
+    }
+
+    function syncPriorCTState() {
+        const priorDateField = document.getElementById('priorDate');
+        const noPriorCheckbox = document.getElementById('noPriorCT');
+        const normalizedPriorDate = normalizeDateInput(priorDateField.value);
+
+        if (normalizedPriorDate) {
+            noPriorCheckbox.checked = false;
+        }
+
+        return normalizedPriorDate;
+    }
+
     // ================================================================
     // UI Interactions
     // ================================================================
@@ -728,10 +751,22 @@
             document.getElementById('airwaySegmentalDetails').style.display =
                 e.target.value === 'segmental' ? 'block' : 'none';
         }
+        if (e.target.id === 'priorDate') {
+            const normalizedPriorDate = syncPriorCTState();
+            if (normalizedPriorDate) {
+                e.target.value = normalizedPriorDate;
+            }
+        }
+        if (e.target.id === 'noPriorCT' && e.target.checked) {
+            document.getElementById('priorDate').value = '';
+        }
         // Auto-update preview on any change
         updatePreview();
     });
     document.addEventListener('input', function(e) {
+        if (e.target.id === 'priorDate') {
+            syncPriorCTState();
+        }
         if (e.target.closest('#section-parsed') || e.target.closest('#section-patient')) {
             updatePreview();
         }
@@ -809,8 +844,9 @@
         const hasSignificant = nodulePrimary === 'other' && document.getElementById('noduleSignificant').checked;
         const ctdivol = document.getElementById('ctdivol').value || '__';
         const dlp = document.getElementById('dlp').value || '__';
-        const priorDate = document.getElementById('priorDate').value || '0000/00/00';
-        const noPrior = document.getElementById('noPriorCT').checked;
+        const normalizedPriorDate = syncPriorCTState();
+        const priorDate = normalizedPriorDate || '0000/00/00';
+        const noPrior = document.getElementById('noPriorCT').checked && !normalizedPriorDate;
 
         return { quality, cat, nodulePrimary, hasInsignificant, hasJuxtapleural, hasSignificant, ctdivol, dlp, priorDate, noPrior };
     }
@@ -1327,9 +1363,10 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
         }
 
         // Prior CT
-        if (d.prior_available) {
+        const normalizedPriorDate = normalizeDateInput(d.prior_date);
+        if (d.prior_available || normalizedPriorDate) {
             document.getElementById('noPriorCT').checked = false;
-            if (d.prior_date) document.getElementById('priorDate').value = d.prior_date;
+            if (normalizedPriorDate) document.getElementById('priorDate').value = normalizedPriorDate;
         } else {
             document.getElementById('noPriorCT').checked = true;
             document.getElementById('priorDate').value = '';
@@ -1478,6 +1515,7 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
         document.getElementById('noduleInsignificant').checked = true;
         document.getElementById('noduleJuxtapleural').checked = false;
         document.getElementById('noduleSignificant').checked = false;
+        document.getElementById('noPriorCT').checked = false;
         document.getElementById('lungRadsCategory').value = '';
         noduleData = [];
         renderNoduleTable();

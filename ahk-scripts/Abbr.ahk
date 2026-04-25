@@ -13,7 +13,20 @@ HotstringMenuV("A","MenuShortcut","Otherwise limited change.","Overall limited c
 return
 :O:ou::Otherwise unremarkable. 
 :O:ln;::
-HotstringMenuV("A","MenuShortcut","lymph node", "Visible LNs short axis <1cm.","BRK","<6mm _solid nodules in both lungs.(Arrows in Srs:_)"," Nonspecific tiny nodules in both lungs, <_mm.","<_6mm solid nodule in _.(Srs/Img:_/_)","BRK","solid nodule","ground-glass nodule", "part-solid nodule","juxtapleural nodule") 
+HotstringMenuV("A","MenuShortcut"
+    ,"lymph node"
+    ,"Visible LNs short axis <1cm."
+    ,"BRK"
+    ,"A <_6mm solid nodule in _.(Srs/Img:_/_)"
+    ,"A <6mm juxtapleural nodule in _.(Srs/Img:_/_)"
+    ,"BRK"
+    ,"<6mm _solid nodules in both lungs.(Arrows in Srs:_)"
+    ,""
+    ,"BRK"
+    ,"solid nodule"
+    ,"ground-glass nodule"
+    ,"part-solid nodule"
+    ,"juxtapleural nodule")
 return
 :O:lap;::lymphadenopathy
 
@@ -64,7 +77,18 @@ return
 :O:mvc::multiple vertebral collapse.
 ::fr.::fracture
 :O:fr;::
-HotstringMenuV("A","MenuShortcut","fracture.","old fracture with _ deformity.","old fracture with _ deformity and _ degenerative change.","old fracture.","BRK","compression fracture.","healing fracture.","pathologic fracture.","Nondisplaced fracture.","stress fracture.","avulsion fracture.")
+HotstringMenuV("A","MenuShortcut"
+    ,"fracture."
+    ,"old fracture with _ deformity."
+    ,"old fracture with _ deformity and _ degenerative change."
+    ,"old fracture."
+    ,"BRK"
+    ,"compression fracture."
+    ,"healing fracture."
+    ,"pathologic fracture."
+    ,"Nondisplaced fracture."
+    ,"stress fracture."
+    ,"avulsion fracture.")
 return
 :O:sub;::subluxation.
 :O:dp::distal phalanx
@@ -109,8 +133,9 @@ return
 :O:pau::penetrating atherosclerotic ulcer
 :O:ild::interstitial lung disease 
 :O:cvc;::central venous catheter (CVC)
-:O:av::aortic valvular
-:O:mv::mitral valvular _annulus
+::av;::aortic valvular
+::mv;::mitral valvular _annulus
+::amv;::aortic, mitral valvular
 :O:fa;::
 HotstringMenuV("A","MenuShortcut","focal atelectasis.","BRK","fibroadenoma","FA","focal asymmetry")
 return
@@ -126,3 +151,34 @@ return
 HotstringMenuV("A","MenuShortcut", "Bilateral lung metastases","Suspect lung metastases")
 return
 
+:O:ate;::
+HotstringMenuV("A","MenuShortcut","focal atelectasis.","nodular atelectasis","subsegmental atelectasis")
+return
+
+:O:pna;::pneumonia
+
+:O:th;::
+HotstringMenuV("A","MenuShortcut","Bilateral thyroid nodules","Suspect bilateral thyroid nodules","Suggest thyroid US follow up.")
+return
+
+
+:O:ca;::
+HotstringMenuV("A","MenuShortcut"
+    ,"Calcified granulomas in both lungs"
+    ,"calcified granuloma"
+    ,"Calcified tendinitis in _"
+    ,"calcified tendinitis"
+    ,"BRK"
+    ,"Calcified LN(s) in _"
+    ,"Calcified mediastinal LNs, suspect old inflammatory changes"
+    ,"BRK"
+    ,"Dystrophic calcification in _."
+    ,"chondrocalcinosis/CPPD"
+    ,"pleural calcifications"
+    ,"Prostate calcifications"
+    ,"Prostate calcifications, est. volume about _ cc."
+    ,"BRK"
+    ,"Pelvic phleboliths."
+    ,"Calcified uterine fibroid(s)."
+    ,"Splenic calcification(s).")
+return

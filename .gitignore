@@ -6,9 +6,13 @@ ahk-scripts/test3_name_debug.txt
 # 其他常見忽略項目
 *.log
 *.tmp
+tmp.*
 .DS_Store
 Thumbs.db
 .claude/
+__pycache__/
+*.py[cod]
+*.dcm
 
 # Radtracker data files (patient data, not for version control)
 radtracker/csv_input/
@@ -17,3 +21,12 @@ radtracker/output/*.html
 radtracker/output/*.csv
 radtracker/output/*.json
 radtracker/output/W*/
+
+# Generated analysis reports
+ahk-scripts/logs/*_report.html
+ahk-scripts/logs/*_report.json
+
+# Slide extraction inputs and generated output
+slide-extractor/*.mp4
+slide-extractor/_thumbs/
+slide-extractor/output/

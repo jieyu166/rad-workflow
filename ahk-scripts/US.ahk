@@ -95,7 +95,9 @@ return
 
 :O:bn::_LRt _/_: __*__ mm.(Srs/Img:1/_) _ 
 :O:usb2;::
-HotstringMenuV("A","MenuShortcut2","_ subareolar ductal ectasia, _mm.(Srs/Img:1/_) No echogenic content, favor benign.","_ prominent duct, _mm.(Srs/Img:1/_)")
+HotstringMenuV("A","MenuShortcut2"
+    ,"_ subareolar ductal ectasia, _mm.(Srs/Img:1/_) No echogenic content, favor benign."
+    ,"_ prominent duct, _mm.(Srs/Img:1/_)")
 return
 
 :O:ub::Mild urinary bladder wall thickening, could be chronic cystitis, _shrunken UB, or others.
@@ -131,7 +133,7 @@ _S3 via _anterior abdominal wall approach and sent for pathological exam.
 ;============================================================================================
 
 
-::usneck::
+:O:usneck::
 SendInput Neck/Thyroid sonography shows: `r`r
 SendInput 1. Thyroid: `r_Normal size and echogenicity of bilateral thyroid lobes and isthmus.`r`r
 SendInput 2. Neck:`rLymph nodes with preserved fatty hila of bilateral neck, short-axis <1cm.`r`r
@@ -144,7 +146,7 @@ SendInput 3. Salivary glands:`r - unremarkable.`r`r
 SendInput _tn;`r_tirads; `r
 return
 
-::usneck2::
+:O:usneck2::
 (
 Diffuse heterogeneous echotexture of thyroid parenchyma without significant hyper-vascularity, compatible with chronic thyroiditis or others. Suggest correlate with thyroid function and antibody tests.
 ----------------------------------------------------------------------
@@ -158,7 +160,7 @@ isthmus.
 - Lymph nodes with preserved fatty hila of bilateral neck, short-axis <1cm.
 )
 
-::usneck3::
+:O:usneck3::
 (
 Status post bilateral total thyroidectomy. No US evidence of local recurrence.
 ----------------------------------------------------------------------
@@ -174,7 +176,12 @@ Neck sonography shows:
 
 ::tn::- A _solid _hypoechoic nodule in _LRt _mid. thyroid, _x_x_ mm, TR_.(Srs/Img:1/_)
 ::tn2::
-HotstringMenuV("A","MenuShortcut", "- <1cm TR_4 nodules in _bilateral thyroid.","- A <1cm TR_4 nodule in _ thyroid.","- <1cm TR_4 nodules in _bilateral thyroid.(Srs/Img:_/_ _)","BRK","- A TR_ nodule in _right _left thyroid, _cm.(Srs/Img:1/_)")
+HotstringMenuV("A","MenuShortcut"
+    ,"- <1cm TR_4 nodules in _bilateral thyroid."
+    ,"- A <1cm TR_4 nodule in _ thyroid."
+    ,"- <1cm TR_4 nodules in _bilateral thyroid.(Srs/Img:_/_ _)"
+    ,"BRK"
+    ,"- A TR_ nodule in _right _left thyroid, _cm.(Srs/Img:1/_)")
 return
 
 ; ==============================================================================
@@ -561,7 +568,15 @@ return
 ;============================================================================================
 :O:bph;::Enlarged prostate with calcifications, est. volume about _ cc.
 :O:bph2::
-HotstringMenuV("A","MenuShortcut","Prostate cysts, calcifications, est. volume about _ cc.", "Enlarged prostate with cysts, calcifications, est. volume about _ cc.", "Prostate calcifications, est. volume about _ cc.", "Est. prostate volume about _cc.", "BRK", "Heterogenous enhancement of prostate", "Heterogenous enhancement of prostate with hypoenhancing parts, size about _(Srs/Img:_/_)","Suggest correlate with PSA or other exams.")
+HotstringMenuV("A","MenuShortcut"
+    ,"Prostate cysts, calcifications, est. volume about _ cc."
+    ,"Enlarged prostate with cysts, calcifications, est. volume about _ cc."
+    ,"Prostate calcifications, est. volume about _ cc."
+    ,"Est. prostate volume about _cc."
+    ,"BRK"
+    ,"Heterogenous enhancement of prostate"
+    ,"Heterogenous enhancement of prostate with hypoenhancing parts, size about _(Srs/Img:_/_)"
+    ,"Suggest correlate with PSA or other exams.")
 return
 
 ::usa::
@@ -580,7 +595,11 @@ return
 
 
 :O:usadd::
-HotstringMenuV("A","MenuShortcut", "Mild enlarged bilateral kidney sizes. Could be related to DM or other chronic renal parenchyma disease.","Coarse echotexture of the liver with uneven surface, suggesting cirrhosis of liver. ","No US evidence of hydronephrosis.","* Gas block/Poor visualization of _pancreas_right lobe of liver from subcostal area. Lesion may be obscured.`r")
+HotstringMenuV("A","MenuShortcut"
+    ,"Mild enlarged bilateral kidney sizes. Could be related to DM or other chronic renal parenchyma disease."
+    ,"Coarse echotexture of the liver with uneven surface, suggesting cirrhosis of liver. "
+    ,"No US evidence of hydronephrosis."
+    ,"* Gas block/Poor visualization of _pancreas_right lobe of liver from subcostal area. Lesion may be obscured.`r")
 return
 
 
@@ -795,17 +814,12 @@ Gui, I2F:Add, Text, xm y+12 Section, Findings (descriptive, system-organized):
 Gui, I2F:Add, Edit, vI2F_Findings w480 h200
 Gui, I2F:Add, Button, gI2F_CopyFindings w140 h26, &Copy Findings
 Gui, I2F:Add, Button, gI2F_CopyFindImpr x+10 w180 h26, Copy F + &Impression
-Gui, I2F:Add, Button, gI2F_PasteToRIS x+10 w140 h26, &Paste to RIS
-Gui, I2F:Add, Text, xm y+12, Optimized Impression (severity-ordered):
-Gui, I2F:Add, Edit, vI2F_ImprOpt w480 h120
-Gui, I2F:Add, Button, gI2F_CopyImpr w200 h26, Copy Optimized Impression
 Gui, I2F:Show
 return
 
 I2F_Clear:
 Gui, I2F:Submit, NoHide
 GuiControl, I2F:, I2F_Findings
-GuiControl, I2F:, I2F_ImprOpt
 return
 
 I2F_CopyFindings:
@@ -820,31 +834,12 @@ findText := RegExReplace(I2F_Findings, "\r?\n", "`r`n")
 imprText := RegExReplace(I2F_Impression, "\r?\n", "`r`n")
 imprText := "Impression:`r`n" . imprText
 if (findText = "" && imprText = "") {
-    MsgBox, 48, Warning, Findings and Optimized Impression are both empty.
+    MsgBox, 48, Warning, Findings and Impression are both empty.
     return
 }
 ControlSetText, ThunderRT6TextBox14, %findText%, ahk_exe chk060.exe
 ControlSetText, ThunderRT6TextBox5, %imprText%, ahk_exe chk060.exe
-MsgBox, 64, Copied, Findings + Impression copied to clipboard.
-return
-
-I2F_CopyImpr:
-Gui, I2F:Submit, NoHide
-Clipboard := RegExReplace(I2F_ImprOpt, "\r?\n", "`r`n")
-MsgBox, 64, Copied, Optimized Impression copied to clipboard.
-return
-
-I2F_PasteToRIS:
-Gui, I2F:Submit, NoHide
-findingsText := RegExReplace(I2F_Findings, "\r?\n", "`r`n")
-imprOptText := RegExReplace(I2F_ImprOpt, "\r?\n", "`r`n")
-if (findingsText = "" && imprOptText = "") {
-    MsgBox, 48, Warning, Findings and Optimized Impression are both empty.
-    return
-}
-ControlSetText, ThunderRT6TextBox14, %findingsText%, ahk_exe chk060.exe
-ControlSetText, ThunderRT6TextBox5, Impression:`r`n%imprOptText%, ahk_exe chk060.exe
-MsgBox, 64, Done, Findings and Impression pasted to chk060.
+MsgBox, 64, Done, Findings + original Impression copied to chk060.
 return
 
 I2F_DoGenerate:
@@ -856,7 +851,7 @@ if (I2F_Impression = "") {
 
 ;EnvGet, API_KEY, OPENAI_API_KEY
 if (!API_KEY) {
-    MsgBox, 16, Error, OPENAI_API_KEY is not set. Please add it as a user environment variable.
+    MsgBox, 16, Error, GPT API Key 尚未設定。請按 Win+\ 開啟設定管理器並填入 GPT Key。
     return
 }
 
@@ -886,7 +881,10 @@ sysPrompt =
 (
 You are a radiology reporting assistant specializing in abdominal/urotract ultrasound reports.
 
-TASK: Convert impression text into structured findings and optimized impression.
+TASK: Convert impression text into structured descriptive ultrasound findings only.
+Do not output impression.
+Do not optimize impression.
+Do not add diagnostic impression.
 
 OUTPUT FORMAT - Use these EXACT tags:
 
@@ -904,6 +902,8 @@ Then output these organ systems in this EXACT order, even if normal:
 
 FINDINGS RULES:
 1. DESCRIPTIVE ONLY – No diagnostic terms, no speculation words (avoid: suggest, consistent with, probably, favor, compatible with).
+   You MUST rewrite diagnostic impression terms into descriptive ultrasound findings.
+   Do not copy the impression unchanged unless it is already a descriptive finding.
 2. Standard normal descriptions for each organ:
    - Liver: "Normal size and echogenicity of the liver parenchyma"
    - Biliary trees: "No evidence of biliary tract dilatation"
@@ -956,41 +956,6 @@ FINDINGS RULES:
      Upper abdominal sonography:
      Comparison with previous study: 2025.05.21 11:25.
 
-<<IMPRESSION>>
-Generate a DIAGNOSTIC impression (NOT a restatement of findings).
-
-STYLE: Telegraphic radiology impression — short phrases, no full sentences, no articles (a/an/the) unless needed for clarity. Prioritize diagnostic terms over descriptive language.
-
-RULES:
-1. SEVERITY ORDER: urgent/obstructive → malignancy suspicion → benign lesions → incidentals → exam limitations
-2. State the most likely DIAGNOSIS or diagnostic category, not the sonographic description.
-   - BAD (finding restatement): "Anechoic lesions in liver"
-   - GOOD (diagnostic impression): "Hepatic cysts"
-   - BAD: "Echogenic focus with shadowing in gallbladder"
-   - GOOD: "Gallstone(s)"
-   - BAD: "Diffusely increased liver echogenicity"
-   - GOOD: "Fatty liver"
-3. DDx: When diagnosis is uncertain, provide up to 3 differential diagnoses max, formatted as: "Liver mass, DDx: hemangioma / HCC / metastasis"
-4. Include side, size, count ONLY when clinically significant.
-5. Combine related items (e.g., "Bilateral renal cysts" not separate lines for each side).
-6. Use numbered list. Omit normal organs entirely — do NOT write "otherwise unremarkable" or "no other abnormality".
-
-ORGAN MAPPING GUIDE:
-- Hepatic cysts, fatty liver, liver lesions → Liver
-- S/P cholecystectomy, gallstones, GB polyps → Gallbladder
-- CBD dilatation, biliary stones → Biliary trees
-- Renal stones, hydronephrosis, renal cysts → Kidneys
-- UB wall thickening, bladder stones → Urinary bladder
-- Prostate enlargement, prostate calcifications, prostate volume, prostate measurements → Prostate
-- Pancreatic lesions, pancreatitis → Pancreas
-- Splenomegaly → Spleen
-- Ascites, pleural effusion, peritoneal nodules, retroperitoneal findings → Others
-
-STRICT RULES:
-- Never invent measurements not provided.
-- No speculation in FINDINGS section.
-- Preserve all clinical information from original impression.
-- If size unspecified, omit measurements.
 )
 
 }else if (InStr(I2F_Scenario, "IVP")) {
@@ -999,14 +964,15 @@ sysPrompt =
 You are a radiology reporting assistant specialized in Intravenous Urography (IVU / IVP).
 
 Your task:
-Convert a user's raw "Impression text" into a structured IVU report with TWO sections.
+Convert a user's raw "Impression text" into a structured IVU report.
+The entire report will be placed in the Findings text box, so include BOTH the Impression section and the IVU findings section in one response.
 
 The output must ALWAYS follow this exact format:
 
 Impression:
 - bullet points describing urotract-related impression items
 
-================================================================================
+===============================================================================
 Intravenous urography (IVU):
 - bullet points describing imaging findings
 
@@ -1016,6 +982,7 @@ Formatting rules:
 - Do NOT add explanations outside the report
 - Keep wording concise and radiology-style
 - Plain ASCII English only
+- Do NOT use <<FINDINGS>> or <<IMPRESSION>> tags for IVP output.
 
 ==================================================
 SECTION 1 - Impression
@@ -1313,7 +1280,7 @@ Impression:
 
 json := "{"
     . """model"": """ gModel ""","
-    . """temperature"": 1,"
+    . """temperature"": 0.1,"
     . """messages"": ["
         . "{""role"": ""system"", ""content"": " . JEscape(sysPrompt) . "},"
         . "{""role"": ""user"", ""content"": " . JEscape(userPrompt) . "}"
@@ -1332,11 +1299,15 @@ if (content = "") {
     return
 }
 
-find := RegGet(content, "s)<<(?:FINDINGS)>>\s*(.*?)\s*(?=<<(?:IMPRESSION|FINDINGS)>>|$)")
-impr := RegGet(content, "s)<<IMPRESSION>>\s*(.*?)\s*(?=<<(?:IMPRESSION|FINDINGS)>>|$)")
+if (InStr(I2F_Scenario, "IVP")) {
+    find := content
+} else {
+    find := RegGet(content, "s)<<(?:FINDINGS)>>\s*(.*?)\s*(?=<<(?:IMPRESSION|FINDINGS)>>|$)")
+    if (find = "")
+        find := content
+}
 
 GuiControl, I2F:, I2F_Findings, % Trim(find)
-GuiControl, I2F:, I2F_ImprOpt,  % Trim(impr)
 return
 
 ; ---- Helpers ----

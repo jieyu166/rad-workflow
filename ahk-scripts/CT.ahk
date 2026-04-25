@@ -4,7 +4,11 @@
 ;============================================================================================
 
 :O:div;::
-HotstringMenuV("A","MenuShortcut", "Periampullary duodenal diverticulum", "Duodenal diverticulum","Colonic diverticula", "Urinary bladder diverticulum")
+HotstringMenuV("A","MenuShortcut"
+    ,"Periampullary duodenal diverticulum"
+    ,"Duodenal diverticulum"
+    ,"Colonic diverticula"
+    ,"Urinary bladder diverticulum")
 return
 
 :O:ildct;::
@@ -14,24 +18,42 @@ return
 )
 
 :O:ctadd::
-HotstringMenuV("A","MenuShortcut2","NoC|*This is a Non contrast medium injection image.`rLimited evaluation for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey","CTA|*Some venous phase enhanced lesions/mass could be obscured due to the protocol is specially designed for aorta arterial phase, either benign or early malignancy was reported","Low dose|*LDCT is only limited in detection and follow-up of pulmonary nodules. It is not suitable to replace HRCT to evaluate interstitial lung disease, nor to be used for soft tissue lesions in chest wall, mediastinum and upper abdomen","BRK","*Motion artifact may interfere with interpretation","*Metallic artifact may interfere with interpretation", "The dental fillings and the opaque material within the teeth obscure the area due to beam hardening artifact","BRK","This screening abdominal MRI is focusing on upper abdomen, thus, subtle lesion arising from GI tract, urotract and reproductive system could be underestimated", "Other supplementary survey such as tumor markers, urine analysis, urotract sonography, Panendoscopy and Colonoscopy should be considered","Semi-quantitative fibrosis estimation is subjective and may be different in different observers","Beam-hardening artifacts, skull base lesions may be obscured.")
+HotstringMenuV("A","MenuShortcut2"
+    ,"NoC|*This is a Non contrast medium injection image.`rLimited evaluation for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey"
+    ,"CTA|*Some venous phase enhanced lesions/mass could be obscured due to the protocol is specially designed for aorta arterial phase, either benign or early malignancy was reported"
+    ,"Low dose|*LDCT is only limited in detection and follow-up of pulmonary nodules. It is not suitable to replace HRCT to evaluate interstitial lung disease, nor to be used for soft tissue lesions in chest wall, mediastinum and upper abdomen"
+    ,"BRK"
+    ,"*Motion artifact may interfere with interpretation"
+    ,"*Metallic artifact may interfere with interpretation"
+    ,"The dental fillings and the opaque material within the teeth obscure the area due to beam hardening artifact"
+    ,"BRK"
+    ,"This screening abdominal MRI is focusing on upper abdomen, thus, subtle lesion arising from GI tract, urotract and reproductive system could be underestimated"
+    ,"Other supplementary survey such as tumor markers, urine analysis, urotract sonography, Panendoscopy and Colonoscopy should be considered"
+    ,"Semi-quantitative fibrosis estimation is subjective and may be different in different observers"
+    ,"Beam-hardening artifacts, skull base lesions may be obscured.")
 return
 
 :O:ctpren::
 SendInput Other details are mentioned as followings:`r----------------------------------------------------------------------`r
-HotstringMenuV("A","MenuShortcut2","Abd-C|CT study of abdomen (_) without contrast medium:`r  Pre-contrast scans: 5 mm slice thickness from diaphragm to pubic symphysis","NCCT of the brain with axial, coronal, sagittal sections showed:","Chest CT-c|CT study of the thorax was performed with a multi-slice CT scanner.`rMETHOD: (1) HRCT (2) Noncontrast survey were performed`rSCAN RANGE: lower neck to adrenal gland`rINDICATION: _")
+HotstringMenuV("A","MenuShortcut2"
+    ,"Abd-C|CT study of abdomen (_) without contrast medium:`r  Pre-contrast scans: 5 mm slice thickness from diaphragm to pubic symphysis"
+    ,"NCCT of the brain with axial, coronal, sagittal sections showed:"
+    ,"Chest CT-c|CT study of the thorax was performed with a multi-slice CT scanner.`rMETHOD: (1) HRCT (2) Noncontrast survey were performed`rSCAN RANGE: lower neck to adrenal gland`rINDICATION: _")
 SendInput `r`r`r*This is a Non contrast medium injection image.`rLimited evaluation for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey;
 return
 
 :O:ctprec::
 SendInput Other details are mentioned as followings:`r----------------------------------------------------------------------`r
-HotstringMenuV("A","MenuShortcut2","Abd+C|CT study of abdomen (_) without and with contrast medium:`r  Pre-contrast and post-contrast venous and delayed scans: 5 mm slice thickness from diaphragm to pubic symphysis","NCCT and CECT of the brain with axial, coronal, sagittal sections showed:","Chest CT+c|CT study of the thorax was performed with a multi-slice CT scanner.`rMETHOD: (1) HRCT (2) Noncontrast survey (3) contrast enhancement were performed`rSCAN RANGE: lower neck to adrenal gland`rINDICATION: _","CTA|Spiral CTA of aorta was performed with a multi-slice CT scanner.`rMETHOD: (1) Noncontrast survey (2) CE-CTA with MPR were performed.  `rSCAN RANGE: lower neck to hip.`rINDICATION: _","BRK","CTPAOD|CT and CT arteriography of lower extremity without and with contrast medium:`r  Pre- and post- contrast scans: 7 mm slice thickness from diaphragm to plantar.")
+HotstringMenuV("A","MenuShortcut2"
+    ,"Abd+C|CT study of abdomen (_) without and with contrast medium:`r  Pre-contrast and post-contrast venous and delayed scans: 5 mm slice thickness from diaphragm to pubic symphysis"
+    ,"NCCT and CECT of the brain with axial, coronal, sagittal sections showed:"
+    ,"Chest CT+c|CT study of the thorax was performed with a multi-slice CT scanner.`rMETHOD: (1) HRCT (2) Noncontrast survey (3) contrast enhancement were performed`rSCAN RANGE: lower neck to adrenal gland`rINDICATION: _"
+    ,"CTA|Spiral CTA of aorta was performed with a multi-slice CT scanner.`rMETHOD: (1) Noncontrast survey (2) CE-CTA with MPR were performed.  `rSCAN RANGE: lower neck to hip.`rINDICATION: _"
+    ,"BRK"
+    ,"CTPAOD|CT and CT arteriography of lower extremity without and with contrast medium:`r  Pre- and post- contrast scans: 7 mm slice thickness from diaphragm to plantar.")
 SendInput `rBefore and after the administration of intravenous contrast there was no adverse effect.`r`r
 return
 
-:O:ca;::
-HotstringMenuV("A","MenuShortcut","Calcified granulomas in both lungs", "calcified granuloma","Calcified tendinitis in _","calcified tendinitis","BRK","Dystrophic calcification in _.")
-return
 
 
 ::ctbx::
@@ -115,13 +137,25 @@ Imaging findings :
 nrhnct
 )
 ::ctch2::
+InputBox, LDCT_DLP, LDCT Dose, 請輸入 DLP (mGy-cm):
+if ErrorLevel
+    return
+
+LDCT_DLP := Trim(StrReplace(LDCT_DLP, ","))
+if (LDCT_DLP = "" || !RegExMatch(LDCT_DLP, "^\d+(\.\d+)?$")) {
+    MsgBox, 48, DLP 輸入錯誤, 請輸入數字，例如 88 或 88.5。
+    return
+}
+
+LDCT_EffectiveDose := Round(LDCT_DLP * 0.014, 2)
+desc =
 (
 ======================================================================
 Low Dose Computed Tomography (LDCT) of lung is performed from the apex through the lung base without intravenous contrast medium. 
 Thin sliced axial and maximum intensity projection (MIP) images are reviewed.
 ----------------------------------------------------------------------
 CT dose information:
-According to AAPM TG23 report, the estimated Effective Dose of current chest CT study in adult is _ mGy-cm (DLP) x 0.014 = __ mSv.  CTDIvol _ mGy.
+According to AAPM TG23 report, the estimated Effective Dose of current chest CT study in adult is %LDCT_DLP% mGy-cm (DLP) x 0.014 = %LDCT_EffectiveDose% mSv.  CTDIvol _ mGy.
 ----------------------------------------------------------------------
 Clinical Indication: Lung cancer screening _/ Nodule follow-up
 Comparison with previous chest CT or LDCT (date): _not available
@@ -136,6 +170,8 @@ _N/A
 
 ** LDCT is only limited in detection and follow-up of pulmonary nodules. It is not suitable to replace HRCT to evaluate interstitial lung disease, nor to be used for soft tissue lesions in chest wall, mediastinum and upper abdomen.
 )
+CopyCXRtoHISWithParam(2)
+return
 
 ; --- LDCT 篩檢報告工具 ---
 ::ldctool::

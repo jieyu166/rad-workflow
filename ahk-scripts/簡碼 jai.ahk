@@ -84,16 +84,69 @@ FileEncoding, UTF-8
 
 :O:sp;::
 SendInput Status post{Space}
-HotstringMenuV("A","MenuShortcut", "nasogastric tube insertion with tip in stomach","nasogastric tube insertion with tip not seen", "BRK", "central venous catheter insertion via _", "central venous catheter insertion via _, tip in SVC","permcath catheter insertion at _right chest", "BRK", "pacemaker implantation over _left chest","BRK", "Port-A implantation via _right_left subclavian vein, with tip in _SVC_atriocaval junction","Port-A insertion via _right_left internal jugular vein, with tip in _SVC_atriocaval junction", "Port-A implantation over _right_left chest","BRK","sternotomy with metallic wire fixation","sternotomy with metallic wire fixation, _valvular replacement _CABG","_coronary stenting", "BRK" ,"endotracheal tube insertion, tip to carina _cm","endotracheal tube insertion with tip in appropriate location","endotracheal tube insertion and tip at _","tracheostomy","BRK","_right_left partial mastectomy with clips", "_right_left mastectomy","BRK","cholecystectomy, with clips in right upper abdomen","_" ,"BRK","pigtail insertion with tip at _", "double J stent implantation in _ urotract.")
+HotstringMenuV("A","MenuShortcut"
+    ,"nasogastric tube insertion with tip in stomach"
+    ,"nasogastric tube insertion with tip not seen"
+    ,"BRK"
+    ,"central venous catheter insertion via _"
+    ,"central venous catheter insertion via _, tip in SVC"
+    ,"permcath catheter insertion at _right chest"
+    ,"BRK"
+    ,"pacemaker implantation over _left chest"
+    ,"BRK"
+    ,"Port-A implantation via _right_left subclavian vein, with tip in _SVC_atriocaval junction"
+    ,"Port-A insertion via _right_left internal jugular vein, with tip in _SVC_atriocaval junction"
+    ,"Port-A implantation over _right_left chest"
+    ,"BRK"
+    ,"sternotomy with metallic wire fixation"
+    ,"sternotomy with metallic wire fixation, _valvular replacement _CABG"
+    ,"_coronary stenting"
+    ,"BRK"
+    ,"endotracheal tube insertion, tip to carina _cm"
+    ,"endotracheal tube insertion with tip in appropriate location"
+    ,"endotracheal tube insertion and tip at _"
+    ,"tracheostomy"
+    ,"BRK"
+    ,"_right_left partial mastectomy with clips"
+    ,"_right_left mastectomy"
+    ,"BRK"
+    ,"cholecystectomy, with clips in right upper abdomen"
+    ,"_"
+    ,"BRK"
+    ,"pigtail insertion with tip at _"
+    ,"double J stent implantation in _ urotract.")
 return
 
 :O:sp2;::
 SendInput Status post{Space}
-HotstringMenuV("A","MenuShortcut", "total knee replacement, with acceptable alignment, without evidence of loosening","medial unicompartmental knee arthroplasty","BRK","_left hip bipolar hemiarthroplasty","_ total hip replacement","_ total hip replacement, with acceptable alignment","BRK","_ vertebroplasty","transpedicular screws fixation between _, interbody cage fixation","transpedicular screws fixation, interbody cage fixation _","internal fixation at _", "BRK")
+HotstringMenuV("A","MenuShortcut"
+    ,"total knee replacement, with acceptable alignment, without evidence of loosening"
+    ,"medial unicompartmental knee arthroplasty"
+    ,"BRK"
+    ,"_left hip bipolar hemiarthroplasty"
+    ,"_ total hip replacement"
+    ,"_ total hip replacement, with acceptable alignment"
+    ,"BRK"
+    ,"_ vertebroplasty"
+    ,"transpedicular screws fixation between _, interbody cage fixation"
+    ,"transpedicular screws fixation, interbody cage fixation _"
+    ,"internal fixation at _"
+    ,"BRK")
 return
 
 :O:spi;::
-HotstringMenuV("A","MenuShortcut2","Loss lordosis of spine","No obvious hypermobility", "Suspect L5 short pedicle","_ pars defect can not be excluded. DDx. facet arthrosis","_ anterior wedging","Facet arthrosis of lower L-spine","Baastrup disease or kissing spinal processes of lower L-spine","Facet arthrosis, Baastrup disease/kissing spinal processes of _lower L-spine", "BRK","C-spine(AP+Flex.+Ext.):","L-spine(AP+Flex.+Ext.):")
+HotstringMenuV("A","MenuShortcut2"
+    ,"Loss lordosis of spine"
+    ,"No obvious hypermobility"
+    ,"Suspect L5 short pedicle"
+    ,"_ pars defect can not be excluded. DDx. facet arthrosis"
+    ,"_ anterior wedging"
+    ,"Facet arthrosis of lower L-spine"
+    ,"Baastrup disease or kissing spinal processes of lower L-spine"
+    ,"Facet arthrosis, Baastrup disease/kissing spinal processes of _lower L-spine"
+    ,"BRK"
+    ,"C-spine(AP+Flex.+Ext.):"
+    ,"L-spine(AP+Flex.+Ext.):")
 return
 
 
@@ -104,17 +157,52 @@ return
 
 
 :O:adds::
-HotstringMenuV("A","MenuShortcut", "Occult entities can not be excluded", "Tumor growth can not be excluded","Superimposed pneumonia or other occult entities can not be excluded","Lesions may be obscured", "Motion artifact may interfere with interpretation.","*Poor inspiration. Lesion may be obscured","BRK",  "*Subtle fracture may not be visible under one view, suggest follow up or correlate with other views if clinical indicated", "*Acute fracture may be obscured at initial exam. Suggest OPD follow up","*Neuroforainal evaluation limited because bone overlapping.",  "BRK", "*Unsatisified posture, lesion may be obscured", "*Poor image contrast, lesion may be obscured", "BRK","*Lesions may be obscured due to limited US penetration","Prominent skin folds, lesion may be obscured","BRK","*Small stone may be obscured","*Urotract stone evaluation limited because bowel interference")
+HotstringMenuV("A","MenuShortcut"
+    ,"Occult entities can not be excluded"
+    ,"Tumor growth can not be excluded"
+    ,"Superimposed pneumonia or other occult entities can not be excluded"
+    ,"Lesions may be obscured"
+    ,"Motion artifact may interfere with interpretation."
+    ,"*Poor inspiration. Lesion may be obscured"
+    ,"BRK"
+    ,"*Subtle fracture may not be visible under one view, suggest follow up or correlate with other views if clinical indicated"
+    ,"*Acute fracture may be obscured at initial exam. Suggest OPD follow up"
+    ,"*Neuroforainal evaluation limited because bone overlapping."
+    ,"BRK"
+    ,"*Unsatisified posture, lesion may be obscured"
+    ,"*Poor image contrast, lesion may be obscured"
+    ,"BRK"
+    ,"*Lesions may be obscured due to limited US penetration"
+    ,"Prominent skin folds, lesion may be obscured"
+    ,"BRK"
+    ,"*Small stone may be obscured"
+    ,"*Urotract stone evaluation limited because bowel interference")
 return
 
 
 :O:emphy;::
-HotstringMenuV("A","MenuShortcut2","Emphysematous change of both lungs", "Paraseptal, centrilobular emphysema of both lungs", "Centrilobular emphysema of both lungs.", "Panlobar, paraseptal, centrilobular emphysema of both lungs. ")
+HotstringMenuV("A","MenuShortcut2"
+    ,"Emphysematous change of both lungs"
+    ,"Paraseptal, centrilobular emphysema of both lungs"
+    ,"Centrilobular emphysema of both lungs."
+    ,"Panlobar, paraseptal, centrilobular emphysema of both lungs. ")
 return
 
 :O:athero;::
 :O:ath;::
-HotstringMenuV("A","MenuShortcut","Atherosclerotic change of abdominal aorta and its major branches","Atherosclerotic change of coronary arteries, abdominal aorta, and its major branches","BRK","Atherosclerotic change of aorta and its major branches","Atherosclerotic change of coronary arteries, aorta and its major branches","BRK","Intimal calcification of aorta","Tortuous aorta with intimal calcification","Atherosclerosis of arteries", "Elongation of aorta with intimal calcification.","BRK","abdominal total hysterectomy")
+HotstringMenuV("A","MenuShortcut"
+    ,"Atherosclerotic change of abdominal aorta and its major branches"
+    ,"Atherosclerotic change of coronary arteries, abdominal aorta, and its major branches"
+    ,"BRK"
+    ,"Atherosclerotic change of aorta and its major branches"
+    ,"Atherosclerotic change of coronary arteries, aorta and its major branches"
+    ,"BRK"
+    ,"Intimal calcification of aorta"
+    ,"Tortuous aorta with intimal calcification"
+    ,"Atherosclerosis of arteries"
+    ,"Elongation of aorta with intimal calcification."
+    ,"BRK"
+    ,"abdominal total hysterectomy")
 return
 
 :O:car;::
@@ -122,35 +210,89 @@ HotstringMenuV("A","MenuShortcut2","Normal heart size.","Borderline cardiomegaly
 return
 
 :O:med;::
-HotstringMenuV("A","MenuShortcut2","Mild mediastinal widening.","Obvious mediastinal widening.","Mediastinal widening, could be related to elongated aorta or others","Mediastinal widening, nature unknown.")
+HotstringMenuV("A","MenuShortcut2"
+    ,"Mild mediastinal widening."
+    ,"Obvious mediastinal widening."
+    ,"Mediastinal widening, could be related to elongated aorta or others"
+    ,"Mediastinal widening, nature unknown.")
 return
 
 :O:hilar;::
-HotstringMenuV("A","MenuShortcut","Bilateral hilar fullness, could be vascular shadows or others", "Bilateral hilar fullness, could be vessels but _lymphadenopathy can not be excluded","Bilateral hilar fullness, could be vessels but lymphadenopathy or other lesions can not be excluded","BRK", "{LtRt} hilar fullness, could be vascular shadow or others","{LtRt} hilar fullness, could be vessels but lymphadenopathy or other lesions can not be excluded","Bilateral hilar calcified LNs or vessels.")
+HotstringMenuV("A","MenuShortcut"
+    ,"Bilateral hilar fullness, could be vascular shadows or others"
+    ,"Bilateral hilar fullness, could be vessels but _lymphadenopathy can not be excluded"
+    ,"Bilateral hilar fullness, could be vessels but lymphadenopathy or other lesions can not be excluded"
+    ,"BRK"
+    ,"{LtRt} hilar fullness, could be vascular shadow or others"
+    ,"{LtRt} hilar fullness, could be vessels but lymphadenopathy or other lesions can not be excluded"
+    ,"Bilateral hilar calcified LNs or vessels.")
 return
 
 
 :O:eff;::
-HotstringMenuV("A","MenuShortcut", "_Mild suprapatellar effusion","BRK","{LtRt} pleural effusion","{LtRt} minimal pleural effusion or pleural changes.","Bilateral pleural effusion, {LtRt} more severe.","Pericardial effusion can not be excluded.")
+HotstringMenuV("A","MenuShortcut"
+    ,"_Mild suprapatellar effusion"
+    ,"BRK"
+    ,"{LtRt} pleural effusion"
+    ,"{LtRt} minimal pleural effusion or pleural changes."
+    ,"Bilateral pleural effusion, {LtRt} more severe."
+    ,"Pericardial effusion can not be excluded.")
 return
 
 
 :O:osteo;::
 :O:ost;::
-HotstringMenuV("A","MenuShortcut","Suspect osteopenia.","Suspect osteoporosis.","Disuse osteoporosis.","Grade _ wedging compression fracture over _", "Grade _ _biconcave compression fracture over _","_ anterior wedging","_ crushing deformity","BRK", "*Nondisplaced fracture may be obscured under osteoporosis background.","Bilateral ribs insufficiency fracture cnanot be excluded.")
+HotstringMenuV("A","MenuShortcut"
+    ,"Suspect osteopenia."
+    ,"Suspect osteoporosis."
+    ,"Disuse osteoporosis."
+    ,"Grade _ wedging compression fracture over _"
+    ,"Grade _ _biconcave compression fracture over _"
+    ,"_ anterior wedging"
+    ,"_ crushing deformity"
+    ,"BRK"
+    ,"*Nondisplaced fracture may be obscured under osteoporosis background."
+    ,"Bilateral ribs insufficiency fracture cnanot be excluded.")
 return
 
 :O:comp::
-HotstringMenuV("A","MenuShortcut","* Compared with prior film on","* Limited interval change compared with prior film on","No previous exams can be compared","BRK","Comparison with previous CT on ","Comparison with previous ([_])CT","No previous CT could be compared","BRK","* Compared with prior US on")
+HotstringMenuV("A","MenuShortcut"
+    ,"* Compared with prior film on"
+    ,"* Limited interval change compared with prior film on"
+    ,"No previous exams can be compared"
+    ,"BRK"
+    ,"Comparison with previous CT on "
+    ,"Comparison with previous ([_])CT"
+    ,"No previous CT could be compared"
+    ,"BRK"
+    ,"* Compared with prior US on")
 return
 
 
 :O:bow;::
-HotstringMenuV("A","MenuShortcut2","Unremarkable bowel gas","Mild increased bowel gas","Increased bowel gas","Increased bowel gas or mild ileus","Suspect ileus or bowel obstruction","Suspect ileus.","BRK","BRK","Nonspecific bowel gas. Further evaluation if ileus suspected","Due to gaseous bowel overlapping, pneumoperitoneum can not be excluded","No x-ray evidence of pneumoperitoneum. However, x-ray sensitivity is about 75%, further evaluation if clinical condition indicates.")
+HotstringMenuV("A","MenuShortcut2"
+    ,"Unremarkable bowel gas"
+    ,"Mild increased bowel gas"
+    ,"Increased bowel gas"
+    ,"Increased bowel gas or mild ileus"
+    ,"Suspect ileus or bowel obstruction"
+    ,"Suspect ileus."
+    ,"BRK"
+    ,"BRK"
+    ,"Nonspecific bowel gas. Further evaluation if ileus suspected"
+    ,"Due to gaseous bowel overlapping, pneumoperitoneum can not be excluded"
+    ,"No x-ray evidence of pneumoperitoneum. However, x-ray sensitivity is about 75%, further evaluation if clinical condition indicates.")
 return
 
 :O:no;::
-HotstringMenuV("A","MenuShortcut","No significant >3mm lung nodules found in both lungs.", "No obvious radiopaque urotract stones.","No aortic dissection.", "No definite CT evidence of major pulmonary embolism was noted. *However, small branches embolism may be obscured.","BRK","No clavicular displaced fracture","No tibial, fibular shaft fracture noted.")
+HotstringMenuV("A","MenuShortcut"
+    ,"No significant >3mm lung nodules found in both lungs."
+    ,"No obvious radiopaque urotract stones."
+    ,"No aortic dissection."
+    ,"No definite CT evidence of major pulmonary embolism was noted. *However, small branches embolism may be obscured."
+    ,"BRK"
+    ,"No clavicular displaced fracture"
+    ,"No tibial, fibular shaft fracture noted.")
 return
 
 
@@ -159,7 +301,11 @@ return
 :O:nl;::No active lung lesions. 
 
 :O:cx;::
-HotstringMenuV("A","MenuShortcut2","Chronic/post infection/inflammatory changes or others in both lungs.","suspect post infection/inflammatory changes or others.","suspect chronic infection/inflammatory changes or others.","")
+HotstringMenuV("A","MenuShortcut2"
+    ,"Chronic/post infection/inflammatory changes or others in both lungs."
+    ,"suspect post infection/inflammatory changes or others."
+    ,"suspect chronic infection/inflammatory changes or others."
+    ,"")
 return
 
 :O:cann::can not be excluded. 
@@ -167,16 +313,51 @@ return
 
 
 :O:bos;::
-HotstringMenuV("A","MenuShortcut","Bosniak classification category I","Bilateral renal cysts. Bosniak classification category _I","Bilateral renal cysts and hemorrhagic cysts. Bosniak classification category I-II.")
+HotstringMenuV("A","MenuShortcut"
+    ,"Bosniak classification category I"
+    ,"Bilateral renal cysts. Bosniak classification category _I"
+    ,"Bilateral renal cysts and hemorrhagic cysts. Bosniak classification category I-II.")
 return
 ; "hypodense lesion without post-contrast enhancement _, about _cm in diameter, favor _cyst","hypodense lesions without post-contrast enhancement in _, up to _cm in diameter, favor _cysts."
 
 :O:cyst;::
-HotstringMenuV("A","MenuShortcut","Left renal cyst","Right renal cyst","BRK", "Bilateral renal cysts", "Left renal cysts, up to _ cm", "Right renal cysts, up to _ cm","BRK","_ breast cysts","Bilateral breast cysts","BRK","_Bilateral thyroid cysts","BRK", "Hepatic cyst or hypodense lesion in _both lobes of liver.(Srs/Img:2/65)","Hepatic cysts in both lobes of liver, up to _ cm. ","Hepatic cysts","BRK","A midline neck cyst, _cm, could be thyroglossal duct cyst or other.(Srs/Img:1/_)","A midline prostate cyst, _cm, could be utricle cyst, Mullerian duct cyst or others.(Srs/Img:1/_)")
+HotstringMenuV("A","MenuShortcut"
+    ,"Left renal cyst"
+    ,"Right renal cyst"
+    ,"BRK"
+    ,"Bilateral renal cysts"
+    ,"Left renal cysts, up to _ cm"
+    ,"Right renal cysts, up to _ cm"
+    ,"BRK"
+    ,"_ breast cysts"
+    ,"Bilateral breast cysts"
+    ,"BRK"
+    ,"_Bilateral thyroid cysts"
+    ,"BRK"
+    ,"Hepatic cyst or hypodense lesion in _both lobes of liver.(Srs/Img:_/_)"
+    ,"Hepatic cysts in both lobes of liver, up to _ cm. "
+    ,"Hepatic cysts"
+    ,"BRK"
+    ,"A midline neck cyst, _cm, could be thyroglossal duct cyst or other.(Srs/Img:1/_)"
+    ,"A midline prostate cyst, _cm, could be utricle cyst, Mullerian duct cyst or others.(Srs/Img:1/_)")
 return
 
 :O:stone;::
-HotstringMenuV("A","MenuShortcut","Left renal stone, _ cm","Right renal stone, _ cm","Bilateral renal stones, up to _cm", "{LtRt} renal stone, _ cm","{LtRt} renal stone(s).",  "{LtRt} renal stones, up to _ cm", "BRK","Gallstone or right renal stone or other.","Right renal stone or bowel content or other.","BRK","A right _upper_middle_lower third ureteral stone, _ cm. ","_Right/_Left _ third ureteral stone, about _cm in diameter, complicated with hydronephrosis_hydroureteronephrosis and perinephric_periureteric infiltration", "No obvious radiopaque urotract stones","{LtRt} upper ureteral stone at _ level can not be excluded.")
+HotstringMenuV("A","MenuShortcut"
+    ,"Left renal stone, _ cm"
+    ,"Right renal stone, _ cm"
+    ,"Bilateral renal stones, up to _cm"
+    ,"{LtRt} renal stone, _ cm"
+    ,"{LtRt} renal stone(s)."
+    ,"{LtRt} renal stones, up to _ cm"
+    ,"BRK"
+    ,"Gallstone or right renal stone or other."
+    ,"Right renal stone or bowel content or other."
+    ,"BRK"
+    ,"A right _upper_middle_lower third ureteral stone, _ cm. "
+    ,"_Right/_Left _ third ureteral stone, about _cm in diameter, complicated with hydronephrosis_hydroureteronephrosis and perinephric_periureteric infiltration"
+    ,"No obvious radiopaque urotract stones"
+    ,"{LtRt} upper ureteral stone at _ level can not be excluded.")
 return
 
 :O:title;::
@@ -184,16 +365,61 @@ HotstringMenuV("A","MenuShortcut","{LtRt} ankle and foot:","-spine(AP+Flex.+Ext.
 return
 
 :O:sug;::
-HotstringMenuV("A","MenuShortcut2","Suggest follow up","Suggest clinical correlation","Suggest short-term follow up","Suggest _ further evaluation","Suggest correlate with other studies","Suggest abdominal correlation.","BRK","Suggest breast US correlation.","Suggest diagnostic mammography with spot magnification for further evaluation.","Suggest 6-month follow-up mammography.","Diagnostic mammo(_ breast, spot magnification)")
+HotstringMenuV("A","MenuShortcut2"
+    ,"Suggest follow up"
+    ,"Suggest clinical correlation"
+    ,"Suggest short-term follow up"
+    ,"Suggest _ further evaluation"
+    ,"Suggest correlate with other studies"
+    ,"Suggest abdominal correlation."
+    ,"BRK"
+    ,"Suggest breast US correlation."
+    ,"Suggest diagnostic mammography with spot magnification for further evaluation."
+    ,"Suggest 6-month follow-up mammography."
+    ,"Diagnostic mammo(_ breast, spot magnification)")
 return
 
 :O:nodule;::
-HotstringMenuV("A","MenuShortcut","A _hyperechoic nodule in _left lobe of liver, _ cm.(Srs/Img:_/_)", "A _hypoechoic nodule in _left lobe of liver, _ cm.(Srs/Img:_/_)","A _hyperechoic nodule in _left kidney, _ cm.(Srs/Img:_/_)","A hypoechoic nodule in _ peripheral zone of prostate , _ cm. (Srs/Img:1/_) ","BRK","A solid nodule in _, mean diameter _mm .(Srs/Img:_/_)","A partsolid nodule in _, solid part _mm, total _mm.(Srs/Img:_/_)","A ground-glass nodule in _, _ mm.(Srs/Img:_/_)","<6mm _solid_partsolid_ground-glass nodules in _.(Srs/Img:_/_)","_subsegmental airway nodules.(Srs/Img:_/_)","<4mm juxtapleural nodule in _.(Srs/Img:_/_)")
+HotstringMenuV("A","MenuShortcut"
+    ,"A _hyperechoic nodule in _left lobe of liver, _ cm.(Srs/Img:_/_)"
+    ,"A _hypoechoic nodule in _left lobe of liver, _ cm.(Srs/Img:_/_)"
+    ,"A _hyperechoic nodule in _left kidney, _ cm.(Srs/Img:_/_)"
+    ,"A hypoechoic nodule in _ peripheral zone of prostate , _ cm. (Srs/Img:1/_) "
+    ,"BRK"
+    ,"A solid nodule in _, mean diameter _mm .(Srs/Img:_/_)"
+    ,"A partsolid nodule in _, solid part _mm, total _mm.(Srs/Img:_/_)"
+    ,"A ground-glass nodule in _, _ mm.(Srs/Img:_/_)"
+    ,"<6mm _solid_partsolid_ground-glass nodules in _.(Srs/Img:_/_)"
+    ,"_subsegmental airway nodules.(Srs/Img:_/_)"
+    ,"<4mm juxtapleural nodule in _.(Srs/Img:_/_)")
 return
 
 
 :O:fatty;::
-HotstringMenuV("A","MenuShortcut","Mild fatty liver","Mild to moderate fatty liver","Moderate fatty liver","Severe fatty liver. *Deeper lesions may be obscured because limited US penetration","BRK","decreased attenuation of liver parenchyma as compared with spleen, suggesting fatty liver, _.")
+HotstringMenuV("A","MenuShortcut"
+    ,"Mild fatty liver"
+    ,"Mild to moderate fatty liver"
+    ,"Moderate fatty liver"
+    ,"Severe fatty liver. *Deeper lesions may be obscured because limited US penetration"
+    ,"BRK"
+    ,"decreased attenuation of liver parenchyma as compared with spleen, suggesting fatty liver, _.")
+return
+
+:O:pan;::
+HotstringMenuV("A","MenuShortcut"
+    ,"pancreatic"
+    ,"BRK"
+    ,"pancreatic cyst at _, _cm.(Srs/Img:_/_)"
+    ,"pancreatic cysts in _, up to _cm."
+    ,"BRK"
+    ,"pancreatic ductal dilation, up to _mm."
+    ,"Pancreatic duct dilation with intraductal stones, could be chronic pancreatitis or others."
+    ,"BRK"
+    ,"A solid lesion in _, _cm, nature uncertain.(Srs/Img:_/_)"
+    ,"A hypoechoic lesion in _, _cm, DDx: pancreatic adenocarcinoma or others.(Srs/Img:_/_)"
+    ,"BRK"
+    ,"IPMN or mucinous cyst at _, _cm. Suggest MRI correlation."
+    ,"Side-branch IPMN at _, _cm.(Srs/Img:_/_)")
 return
 
 :O:pe;::
@@ -239,7 +465,11 @@ return
 ;============================================================================================
 
 :O:ica;::
-HotstringMenuV("A","MenuShortcut2","_Mild intracranial atherosclerosis change","_Moderate intracranial atherosclerosis change","_Severe intracranial atherosclerosis change","_Moderate to severe intracranial atherosclerosis change.")
+HotstringMenuV("A","MenuShortcut2"
+    ,"_Mild intracranial atherosclerosis change"
+    ,"_Moderate intracranial atherosclerosis change"
+    ,"_Severe intracranial atherosclerosis change"
+    ,"_Moderate to severe intracranial atherosclerosis change.")
 return
 
 :O:edema;::

@@ -1,15 +1,18 @@
-week: "2026-W16"
-date_range: "04/13 ~ 04/19"
+week: "2026-W17"
+date_range: "04/20 ~ 04/26"
 
 remaining:
-  start: {XR: 461, CT: 24, US: 67, Mammo: 52}
+  start: {XR: 566, CT: 29, US: 37, Mammo: 46}
+  mid:   {XR: 692, CT: 31, US: 74, Mammo: 58, IVP: 6}
   end:   {}
 
-duty_day: "三"
+duty_day: "五晚、六佳里全天"
 class_day: ""
 class_time: ""
 notes:
-  - "XR 新增 350, CT 新增 25(三四五), US 新增 70(二), Mammo 新增 100(一二五)"
-  - "週五上午家庭時間，下午起可工作"
-  - "週六上午家庭時間，下午起可工作"
+  - "US 新增 50(一), 70(二)"
+  - "週四須回診，上午不可用"
+  - "週五晚上值班"
+  - "週六佳里全天值班（類似 W12）"
+  - "預估新增：XR >=500, CT >=40, US 120, Mammo >=100"
 study: []

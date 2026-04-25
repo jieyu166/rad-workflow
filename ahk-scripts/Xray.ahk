@@ -86,7 +86,15 @@ return
 :O:dego::Degenerative and osteoporotic change of spine.`
 
 :O:spine;::
-HotstringMenuV("A","MenuShortcut2","Cspine|AP and lateral views of C-spine show:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharyngeal and retrotracheal space.","Lspine|AP and lateral views of L-spine show:","T/L|AP and lateral views of T/L-spine show:","L/S|AP and lateral views of L/S-spine show:","BRK","4 views of C-spine:","Flexion and Extension views of C-spine:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharyngeal and retrotracheal space.`rNo obvious hypermobility.", "Flexion and Extension views of L-spine:`rNo obvious hypermobility.")
+HotstringMenuV("A","MenuShortcut2"
+    ,"Cspine|AP and lateral views of C-spine show:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharyngeal and retrotracheal space."
+    ,"Lspine|AP and lateral views of L-spine show:"
+    ,"T/L|AP and lateral views of T/L-spine show:"
+    ,"L/S|AP and lateral views of L/S-spine show:"
+    ,"BRK"
+    ,"4 views of C-spine:"
+    ,"Flexion and Extension views of C-spine:`r_Below C_ couldn't be evaluated.`rThe atlantoaxial distance is within normal limit.`rNo widening of retropharyngeal and retrotracheal space.`rNo obvious hypermobility."
+    ,"Flexion and Extension views of L-spine:`rNo obvious hypermobility.")
 SendInput `rNo definite bony fracture.`rNo joint subluxation or dislocation.`r
 SendInput Normal alignment.`rNormal disc spaces.`r
 SendInput ___Uncovertebral joint hypertrophy and facet joint arthrosis of ___lower cervical __lumbar spine.
@@ -94,7 +102,13 @@ return
 
 
 :O:sco;::
-HotstringMenuV("A","MenuShortcut2","Mild scoliosis.","Mild scoliosis, convex to _{LtRt}","_Mild _scoliosis of thoracolumbar spine, with major and compensatory curvature.","BRK","Mild rotatory asymmetry of the _upper _thoracic _lumbar spine, convex to {LtRt}, measuring _ degree.","_Mild _scoliosis of the _upper _thoracic _thoracolumbar _lumbar spine, _, apex at _, convex to {LtRt}, measuring _ degree.")
+HotstringMenuV("A","MenuShortcut2"
+    ,"Mild scoliosis."
+    ,"Mild scoliosis, convex to _{LtRt}"
+    ,"_Mild _scoliosis of thoracolumbar spine, with major and compensatory curvature."
+    ,"BRK"
+    ,"Mild rotatory asymmetry of the _upper _thoracic _lumbar spine, convex to {LtRt}, measuring _ degree."
+    ,"_Mild _scoliosis of the _upper _thoracic _thoracolumbar _lumbar spine, _, apex at _, convex to {LtRt}, measuring _ degree.")
 return
 
 
@@ -166,7 +180,11 @@ Mild enlarged bilateral _inferior nasal turbinates.
 )
 
 :O:sin;::
-HotstringMenuV("A","MenuShortcut","Mild clouding of _ sinus_es, could be sinusitis, bony overlapping or others.","Air-fluid levels in _ sinuses, could be sinusitis or others.","Sphenoid sinus pneumatization","Mild enlarged bilateral _inferior nasal turbinates.")
+HotstringMenuV("A","MenuShortcut"
+  , "Mild clouding of _ sinus_es, could be sinusitis, bony overlapping or others."
+  , "Air-fluid levels in _ sinuses, could be sinusitis or others."
+  , "Mild enlarged bilateral _inferior nasal turbinates."
+  , "Sphenoid sinus pneumatization")
 return
 
 
@@ -218,7 +236,12 @@ return
 
 
 :O:kub;::
-HotstringMenuV("A","MenuShortcut","Mild sclerotic change around bilateral SI joints, could be related to arthritis or others.","Gallstone or right renal stone or other.","Suspect right renal stones","BRK","Mild both hips osteoarthritis (OA)")
+HotstringMenuV("A","MenuShortcut"
+    ,"Mild sclerotic change around bilateral SI joints, could be related to arthritis or others."
+    ,"Gallstone or right renal stone or other."
+    ,"Suspect right renal stones"
+    ,"BRK"
+    ,"Mild both hips osteoarthritis (OA)")
 return
 
 :O:kub2::
@@ -242,7 +265,26 @@ return
 
 
 :O:cxr;::
-HotstringMenuV("A","MenuShortcut2","Mild infiltration in {LungSel} , could be pneumonia, or others.", "Consolidation in {LungSel}_, could be pneumonia, or others.", "Focal atelectasis in {LungSel} .", "BRK","Emphysematous change or hyperaerated appearance of both lungs. ","Pulmonary congestion pattern _or emphysematous change of both lungs.","Mild increased hazy bronchovascular marking over bilateral lung.`r  DDx: inflammatory process or others.","Patchy consolidations in {LungSel} , could be pneumonia or others.`r  Occult entities growth can not be excluded.","Suspect chronic inflammatory/ infection changes or others in both lungs.","Reticulations/Infiltrations in both lungs, could be related to emphysema, interstitial lung disease, pulmonary edema or others.", "BRK", "Fibrocalcified change in both upper lungs, more prominent at {LtRt} side. Suspect old infection/inflammatory changes, eg. old TB or others.","Fibrocalcified change in both upper lungs, suspect old infection/inflammatory changes, eg. old TB or others.", "Bilateral apical pleural thickening.","Mild pulmonary congestion pattern.","Emphysematous change of both lungs.","BRK","{LtRt} pleural effusion or pleural changes.","minimal pleural effusion or pleural changes.") 
+HotstringMenuV("A","MenuShortcut2"
+    ,"Mild infiltration in {LungSel} , could be pneumonia, or others."
+    ,"Consolidation in {LungSel}_, could be pneumonia, or others."
+    ,"Focal atelectasis in {LungSel} ."
+    ,"BRK"
+    ,"Emphysematous change or hyperaerated appearance of both lungs. "
+    ,"Pulmonary congestion pattern _or emphysematous change of both lungs."
+    ,"Mild increased hazy bronchovascular marking over bilateral lung.`r  DDx: inflammatory process or others."
+    ,"Patchy consolidations in {LungSel} , could be pneumonia or others.`r  Occult entities growth can not be excluded."
+    ,"Suspect chronic inflammatory/ infection changes or others in both lungs."
+    ,"Reticulations/Infiltrations in both lungs, could be related to emphysema, interstitial lung disease, pulmonary edema or others."
+    ,"BRK"
+    ,"Fibrocalcified change in both upper lungs, more prominent at {LtRt} side. Suspect old infection/inflammatory changes, eg. old TB or others."
+    ,"Fibrocalcified change in both upper lungs, suspect old infection/inflammatory changes, eg. old TB or others."
+    ,"Bilateral apical pleural thickening."
+    ,"Mild pulmonary congestion pattern."
+    ,"Emphysematous change of both lungs."
+    ,"BRK"
+    ,"{LtRt} pleural effusion or pleural changes."
+    ,"minimal pleural effusion or pleural changes.")
 return
 
 
