@@ -4,7 +4,7 @@ date_range: "04/20 ~ 04/26"
 remaining:
   start: {XR: 566, CT: 29, US: 37, Mammo: 46}
   mid:   {XR: 692, CT: 31, US: 74, Mammo: 58, IVP: 6}
-  end:   {}
+  end:   {XR: 731, CT: 30, US: 69, Mammo: 69, IVP: 6}
 
 duty_day: "五晚、六佳里全天"
 class_day: ""
