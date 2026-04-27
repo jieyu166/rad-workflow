@@ -54,3 +54,58 @@
 ## 設定
 
 `radiologist_settings.ini` 存放個人設定（帳號、AI API Key 等），不應包含實際密碼或 API Key。
+
+## Mammo BI-RADS 0 Tracker
+
+`radtracker/mammo_tracker.py` scans monthly mammography screening cases from
+CSV exports. CSV files from the hospital system are CP950 encoded by default.
+AHK-related files are usually UTF-8 with BOM; preserve the existing encoding
+when editing those files.
+
+Basic workflow:
+
+```powershell
+python radtracker\mammo_tracker.py --month 2026-04
+python radtracker\mammo_report_fetcher.py --month 2026-04
+python radtracker\mammo_tracker.py --month 2026-04 --stats
+python radtracker\mammo_report_fetcher.py --list-birads0
+```
+
+Report fetching requires the hospital intranet, including hospital Wi-Fi. The
+fetcher only runs during 21:00-03:00 to avoid adding load during daytime
+clinical work.
+
+### Manual Follow-Up Fields
+
+Follow-up state is stored in `radtracker/output/mammo_birads0.json`. Edit only
+the tracking fields below; generated identifiers and dates should be left as-is.
+
+`status` values:
+
+- `pending`: still needs follow-up or final outcome confirmation.
+- `resolved`: final outcome is available and should be included in PPV1
+  statistics.
+
+`outcome` values:
+
+- `null`: no final outcome yet.
+- `benign`: final follow-up is benign.
+- `malignant`: final follow-up is malignant.
+- `inadequate`: recall workup was inadequate or inconclusive and should be
+  counted as resolved but non-malignant for PPV1.
+- `lost_to_followup`: patient did not complete follow-up and should be counted
+  as resolved but non-malignant for PPV1.
+
+`notes` is free text for clinical context, for example:
+
+```json
+{
+  "status": "pending",
+  "outcome": null,
+  "notes": "US BI-RADS 3, 6-month follow-up"
+}
+```
+
+Use `pending + outcome null + notes` when follow-up is still ongoing, such as
+after ultrasound BI-RADS 3. Use `resolved + outcome` only when the case should
+leave the pending list.
