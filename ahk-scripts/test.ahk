@@ -603,8 +603,14 @@ CallDICOMWin:
     Send {LButton}
     Send {LButton}{LButton}
     WinWaitActive, DICOM 檔頭訊息, , 2
+    if ErrorLevel {
+        TrayTip, DICOM, 無法開啟 DICOM 檔頭訊息視窗, 2, 2
+        DllCall("SetCursorPos", "int", tmpX2, "int", tmpY2)
+        return
+    }
     ControlGetText, clipboard, Edit3, DICOM 檔頭訊息
-    ClipWait
+    if (clipboard = "")
+        TrayTip, DICOM, 無法取得 DICOM 檔頭內容, 2, 2
     Sleep 10
     Send {Esc}{Esc}
     DllCall("SetCursorPos", "int", tmpX2, "int", tmpY2)
@@ -621,8 +627,14 @@ CallDICOMWinL:
     Send {LButton}
     Send {LButton}{LButton}
     WinWaitActive, DICOM 檔頭訊息, , 2
+    if ErrorLevel {
+        TrayTip, DICOM, 無法開啟 DICOM 檔頭訊息視窗, 2, 2
+        DllCall("SetCursorPos", "int", tmpX, "int", tmpY)
+        return
+    }
     ControlGetText, clipboard, Edit3, DICOM 檔頭訊息
-    ClipWait
+    if (clipboard = "")
+        TrayTip, DICOM, 無法取得 DICOM 檔頭內容, 2, 2
     Sleep, 120
     Send {Esc}{Esc}
     DllCall("SetCursorPos", "int", tmpX, "int", tmpY)
@@ -806,10 +818,18 @@ return
 <#d::
     clipboard := ""
     Send ^c
-    ClipWait
+    ClipWait, 5
+    if ErrorLevel {
+        TrayTip, Copy failed, 無法取得檢查號, 2, 2
+        return
+    }
     ExamNo := clipboard
-    clipboard := GetOldReportContent(ExamNo, 0)
-	ClipWait, 100
+    oldReport := GetOldReportContent(ExamNo, 0)
+    if (oldReport = "") {
+        TrayTip, Report, 無法取得舊報告, 2, 2
+        return
+    }
+    clipboard := oldReport
 	Send {Right}{Right}
 	Send {F2}
 	Send ^v

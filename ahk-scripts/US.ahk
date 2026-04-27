@@ -580,16 +580,12 @@ HotstringMenuV("A","MenuShortcut"
 return
 
 ::usa::
-HotstringMenuV("A","MenuShortcut", "Upper abdominal sonography:", "Urotract sonography:","TRUS sonography:","Lower abdomen sonography:" )
-SendInput `r
-
-; AI 輔助分析功能已移除，請使用 usaigui; 啟動 AHK 版本的 AI 分析
-
 MsgBox, 4,, "Would you like to compaire previous study...(press Yes or No)"
 IfMsgBox, Yes
 	gosub calldate
 
-SendInput `rFindings and Impressions:`r_`r`rOtherwise unremarkable.  
+HotstringMenuV("A","MenuShortcut", "Upper abdominal sonography:", "Urotract sonography:","TRUS sonography:","Lower abdomen sonography:" )
+SendInput `r(Findings same as Impressions)
 return
 
 

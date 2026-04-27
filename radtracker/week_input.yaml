@@ -1,18 +1,19 @@
-week: "2026-W17"
-date_range: "04/20 ~ 04/26"
+week: "2026-W18"
+date_range: "04/27 ~ 05/03"
 
 remaining:
-  start: {XR: 566, CT: 29, US: 37, Mammo: 46}
-  mid:   {XR: 692, CT: 31, US: 74, Mammo: 58, IVP: 6}
-  end:   {XR: 731, CT: 30, US: 69, Mammo: 69, IVP: 6}
+  start: {XR: 731, CT: 30, US: 69, Mammo: 69, IVP: 6}
 
-duty_day: "五晚、六佳里全天"
+duty_day: ""
 class_day: ""
 class_time: ""
 notes:
-  - "US 新增 50(一), 70(二)"
-  - "週四須回診，上午不可用"
-  - "週五晚上值班"
-  - "週六佳里全天值班（類似 W12）"
-  - "預估新增：XR >=500, CT >=40, US 120, Mammo >=100"
+  - "無值班週"
+  - "週五 5/1 勞動節放假，新增CT預計較少（以20份估算全週）"
+  - "週二US預計新增70份"
+  - "Mammo本週預計新增60份"
+  - "週六上午家庭時間，下午才可排工作"
+  - "週日須至嘉義，僅可工作2小時"
+  - "每日XR目標130份"
+  - "IVP 6份週一優先消化"
 study: []

@@ -30,3 +30,5 @@ ahk-scripts/logs/*_report.json
 slide-extractor/*.mp4
 slide-extractor/_thumbs/
 slide-extractor/output/
+.spectra/
+openspec/.vector-search.db*

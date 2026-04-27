@@ -57,7 +57,7 @@ BatchFetchReports:
         Send, {Home}
         Sleep, 100
         Send, ^c
-        ClipWait, 2
+        ClipWait, 5
         
         if ErrorLevel {
             failCount++

@@ -565,6 +565,21 @@ Examples:
         week_input = parse_week_input_md(args.input)
         report_data = xlsx_to_report_data(entries, week_input)
 
+    # ── Biopsy / Interventional tracker ──
+    if args.csv:
+        try:
+            from biopsy_tracker import get_biopsy_summary
+            csv_dir = str(Path(args.csv[0]).parent)
+            biopsy_data = get_biopsy_summary(csv_dir, week_str, args.reporter)
+            report_data['biopsy_followup'] = biopsy_data
+            s = biopsy_data['summary']
+            print(f"\n── Biopsy Followup ──")
+            print(f"  Due this week (check now): {s['biopsy_due_now_count']}")
+            print(f"  Done this week (due next week): {s['biopsy_this_week_count']}")
+            print(f"  Interventional this week: {s['interventional_count']}")
+        except Exception as e:
+            print(f"  biopsy_tracker skipped: {e}", file=sys.stderr)
+
     # Print summary
     print_report(report_data)
 

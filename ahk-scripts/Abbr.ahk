@@ -156,6 +156,8 @@ HotstringMenuV("A","MenuShortcut","focal atelectasis.","nodular atelectasis","su
 return
 
 :O:pna;::pneumonia
+:O:ele;::Elevated _LtRt hemidiaphragm.
+
 
 :O:th;::
 HotstringMenuV("A","MenuShortcut","Bilateral thyroid nodules","Suspect bilateral thyroid nodules","Suggest thyroid US follow up.")
