@@ -55,14 +55,12 @@
 
 `radiologist_settings.ini` 存放個人設定（帳號、AI API Key 等），不應包含實際密碼或 API Key。
 
-## Mammo BI-RADS 0 Tracker
+## Mammo BI-RADS 0 追蹤
 
-`radtracker/mammo_tracker.py` scans monthly mammography screening cases from
-CSV exports. CSV files from the hospital system are CP950 encoded by default.
-AHK-related files are usually UTF-8 with BOM; preserve the existing encoding
-when editing those files.
+`radtracker/mammo_tracker.py` 掃描每月的乳房攝影篩檢案件。醫院系統匯出的 CSV
+為 CP950 編碼；AHK 相關檔案通常為 UTF-8 with BOM，編輯時請維持原本編碼。
 
-Basic workflow:
+基本流程：
 
 ```powershell
 python radtracker\mammo_tracker.py --month 2026-04
@@ -71,41 +69,36 @@ python radtracker\mammo_tracker.py --month 2026-04 --stats
 python radtracker\mammo_report_fetcher.py --list-birads0
 ```
 
-Report fetching requires the hospital intranet, including hospital Wi-Fi. The
-fetcher only runs during 21:00-03:00 to avoid adding load during daytime
-clinical work.
+抓取報告需在院內網路（含院內 Wi-Fi）下執行。為避免影響白天臨床工作，
+fetcher 僅於每日 21:00–03:00 之間運作。
 
-### Manual Follow-Up Fields
+### 追蹤欄位手動維護
 
-Follow-up state is stored in `radtracker/output/mammo_birads0.json`. Edit only
-the tracking fields below; generated identifiers and dates should be left as-is.
+追蹤狀態儲存於 `radtracker/output/mammo_birads0.json`。僅可編輯下列追蹤欄位，
+自動產生的識別碼與日期請勿變動。
 
-`status` values:
+`status` 值：
 
-- `pending`: still needs follow-up or final outcome confirmation.
-- `resolved`: final outcome is available and should be included in PPV1
-  statistics.
+- `pending`：尚需追蹤或尚未確認最終結果。
+- `resolved`：已有最終結果，將計入 PPV1 統計。
 
-`outcome` values:
+`outcome` 值：
 
-- `null`: no final outcome yet.
-- `benign`: final follow-up is benign.
-- `malignant`: final follow-up is malignant.
-- `inadequate`: recall workup was inadequate or inconclusive and should be
-  counted as resolved but non-malignant for PPV1.
-- `lost_to_followup`: patient did not complete follow-up and should be counted
-  as resolved but non-malignant for PPV1.
+- `null`：尚無最終結果。
+- `benign`：最終追蹤為良性。
+- `malignant`：最終追蹤為惡性。
+- `inadequate`：回招處置不充分或結果不明確，計為已結案但非惡性。
+- `lost_to_followup`：病人未完成追蹤，計為已結案但非惡性。
 
-`notes` is free text for clinical context, for example:
+`notes` 為自由文字，可填入臨床備註，例如：
 
 ```json
 {
   "status": "pending",
   "outcome": null,
-  "notes": "US BI-RADS 3, 6-month follow-up"
+  "notes": "US BI-RADS 3, 6 個月後追蹤"
 }
 ```
 
-Use `pending + outcome null + notes` when follow-up is still ongoing, such as
-after ultrasound BI-RADS 3. Use `resolved + outcome` only when the case should
-leave the pending list.
+仍在追蹤中（例如超音波判定 BI-RADS 3 需後續追蹤）請使用 `pending + outcome null + notes`；
+僅在案件可從待追蹤清單移除時，才使用 `resolved + outcome`。
