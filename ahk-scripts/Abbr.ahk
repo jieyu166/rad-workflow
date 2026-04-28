@@ -96,7 +96,7 @@ return
 :O:dish;::Diffuse idiopathic skeletal hyperostosis (DISH)
 :O:cla::clavicular
 :O:pat::
-HotstringMenuV("A","MenuShortcut","patella alta","patella baja","patellar.")
+HotstringMenuV("A","MenuShortcut","patella alta","patella baja","patellar fracture","patellar")
 return
 
 ;============================================================================================
@@ -163,6 +163,9 @@ return
 HotstringMenuV("A","MenuShortcut","Bilateral thyroid nodules","Suspect bilateral thyroid nodules","Suggest thyroid US follow up.")
 return
 
+:O:eso;::
+HotstringMenuV("A","MenuShortcut","Mild esophagitis.","esophageal wall thickening")
+return
 
 :O:ca;::
 HotstringMenuV("A","MenuShortcut"
@@ -170,7 +173,7 @@ HotstringMenuV("A","MenuShortcut"
     ,"calcified granuloma"
     ,"Calcified tendinitis in _"
     ,"calcified tendinitis"
-    ,"BRK"
+    ,"BRK", "calcification"
     ,"Calcified LN(s) in _"
     ,"Calcified mediastinal LNs, suspect old inflammatory changes"
     ,"BRK"

@@ -566,46 +566,27 @@ CXRFinish:
    OutputFinish(2, "CXR 範例", false, true, false)
 return
 
-; 統一輸出函式
-; outputMode: 1=只換行, 2=完整移動 呼叫CopyCXRtoHISWithParam的參數
+; 統一輸出函式（CXR2 / spine2 共用收尾）
+; outputMode: 1=只換行, 2=完整移動 呼叫 CopyCXRtoHISWithParam 的參數
 ; windowName: 視窗名稱 ("CXR 範例" 或 "Spine phases")
-; applyDash: 是否套用 dash 格式
-; resetCXR: 是否呼叫 CXR9 重置
-; backWindow 是否回本視窗還是跳到病歷輸入介面
+; applyDash : 保留以維持呼叫端相容；目前所有呼叫端皆傳 false（項目符號已移除）
+; resetCXR  : 是否呼叫 CXR9 重置
+; backWindow: 輸出後是否回原視窗
 OutputFinish(outputMode := 2, windowName := "", applyDash := false, resetCXR := false, backWindow := true) {
-    global desc, AddDash
+    global desc
 
-    ; 1. Dash 格式處理 (Spine 專用)
-    if (applyDash) {
-        Gui, Submit, NoHide
-        if (AddDash) {
-            finalDesc := ""
-            Loop, Parse, desc, `n, `r
-            {
-                thisLine := Trim(A_LoopField)
-                if (thisLine = "")
-                    continue
-                if (SubStr(thisLine, 1, 2) != "- " && SubStr(thisLine, 0) != ":") {
-                    thisLine := "- " . thisLine
-                }
-                finalDesc .= thisLine . "`r"
-            }
-            desc := finalDesc
-        }
-    }
-
-    ; 2. 輸出到 HIS
+    ; 1. 輸出到 HIS
     CopyCXRtoHISWithParam(outputMode)
 
-    ; 3. 重置 CXR GUI (如果需要)
+    ; 2. 重置 CXR GUI (如果需要)
     if (resetCXR) {
         Gosub, CXRClean
     }
 
-    ; 4. 清空 desc
+    ; 3. 清空 desc
     desc := ""
 
-    ; 5. 返回原視窗
+    ; 4. 返回原視窗
     if (backWindow) {
         Sleep, 100
         WinActivate, %windowName%
@@ -616,6 +597,8 @@ OutputFinish(outputMode := 2, windowName := "", applyDash := false, resetCXR := 
 :O:spine2;::
 WinSpine:
 WinGet, ActiveId, ID, A ;紀錄目前視窗
+; 重置每次開啟時的緩衝（buffer 為陣列，元素為 {sev: int, text: str}）
+SpineBuffer := []
 Gui Font, s14
 
 ; 移除所有 CheckBox，改為按鈕配置
@@ -626,7 +609,6 @@ Gui Add, CheckBox, x10 y10 w120 h23 vLTitle, 包含標題(&T)
 ; 預設不勾選，保留彈性；若選了就會固定輸出該部位
 Gui Add, Radio, x140 y10 w90 h23 vSpineLoc1, C-spine
 Gui Add, Radio, x240 y10 w90 h23 checked1 vSpineLoc2, L-spine
-Gui Add, CheckBox, x340 y10 w120 h23 vAddDash, 項目符號(-)
 
 ; 第二排按鈕
 Gui Add, Button, x10 yp+50 w150 h50 gLspineDefault, L-spine 預設(&L)
@@ -655,46 +637,88 @@ Gui Add, Button, xp+160 yp w150 h50 gPostOP, 術後組套(&P)
 
 ; 右側控制按鈕
 Gui Add, Button, x500 y10 w120 h40 gSpineClose, 切換到 CXR(&Q)
-Gui Add, Button, xp yp+50 w120 h40 gSpineClear, 清除內容
-Gui Add, Button, xp yp+60 w120 h40 gMergeExams, 合併檢查(&Z)
-Gui Add, Button, xp yp+60 w120 h40 gCopyOldFromSpine, 複製舊報告(&X)
+Gui Add, Button, xp yp+50 w120 h40 gMergeExams, 合併檢查(&Z)
+Gui Add, Button, xp yp+50 w120 h40 gCopyOldFromSpine, 複製舊報告(&X)
 Gui Add, Button, xp yp+50 w120 h40 gOpenForamenWeb, 裂孔網頁(&V)
 
-Gui Show, w640 h400, Spine phases
+; 緩衝排序輸出區（永遠先收集，按 [輸出全部] 才依嚴重度排序貼出）
+Gui Font, s10, Segoe UI
+Gui Add, Text, x500 yp+55 w120 h18 vSpineStatus, 已選 0 項
+Gui Font, s14
+Gui Add, Button, x500 yp+22 w120 h44 Default gFlushSpineBuffer, 輸出全部(&O)
+Gui Add, Button, xp yp+50 w120 h32 gClearSpineBuffer, 清空緩衝(&E)
+
+Gui Show, w640 h450, Spine phases
 ; 記錄視窗標題，用於後續 focus 回來
 WinGet, SpineWinID, ID, Spine phases
 return
 
+; 將目前的 desc + desc_sev 推入 SpineBuffer，不立即貼上
 SpineOutput:
     Gui, Submit, NoHide
-	OutputFinish(1, "Spine phases", true, false, true)
+    if (desc_sev = "")
+        desc_sev := 5  ; 未指定 severity 視為中等優先（介於結構問題與退化背景之間）
+    SpineBuffer.Push({sev: desc_sev + 0, text: desc})
+    desc := ""
+    desc_sev := ""
+    GuiControl, , SpineStatus, % "已選 " . SpineBuffer.Length() . " 項"
+return
+
+; 依 severity 排序後一次貼出（穩定排序：同 severity 維持點擊順序）
+FlushSpineBuffer:
+    if (!IsObject(SpineBuffer) || SpineBuffer.Length() = 0) {
+        MsgBox, 48, , 緩衝為空，請先選擇任一發現項目。
+        return
+    }
+    Gui, Submit, NoHide
+    desc := ""
+    Loop, 11 {
+        sev := A_Index - 1   ; 0..10
+        for _, item in SpineBuffer {
+            if (item.sev = sev)
+                desc .= item.text
+        }
+    }
+    SpineBuffer := []
+    GuiControl, , SpineStatus, % "已選 0 項"
+    OutputFinish(1, "Spine phases", false, false, true)
+return
+
+; 清空緩衝但不貼出
+ClearSpineBuffer:
+    SpineBuffer := []
+    desc := ""
+    desc_sev := ""
+    GuiControl, , SpineStatus, % "已選 0 項"
 return
 
 BtnInsertTitle:
     Gui, Submit, NoHide
     desc := ""
-    
+
     if (SpineLoc1) {
         desc := "C-spine"
     } else if (SpineLoc2) {
         desc := "L-spine"
     } else {
         ; 如果都沒選，預設輸出 Spine: 或是提示
-        desc := "Spine" 
-    }    
+        desc := "Spine"
+    }
 	MsgBox, 4,, "(AP+Flex.+Ext.)?"
 	IfMsgBox, Yes
 	{
 		desc .= "(AP{+}Flex.{+}Ext.)"
 	}
 	desc .=":`r"
-    gosub SpineOutput 
+    desc_sev := 0   ; 標題永遠最前
+    gosub SpineOutput
 return
 
 ; [按鈕 2] Anterior Wedging
 BtnWedging:
     desc := "_ anterior wedging.`r"
-    gosub SpineOutput 
+    desc_sev := 1   ; 壓迫性骨折，最高優先
+    gosub SpineOutput
 return
 
 ; L-spine 預設組套
@@ -702,36 +726,38 @@ LspineDefault:
     ; 先取得 CheckBox 的值
     Gui, Submit, NoHide
     desc := ""
-    
+
     ; 根據 CheckBox 決定是否加入標題
     if(LTitle) {
         desc := "L-spine:`r`r"
     }
-    
+
     desc .= "Degenerative disc disease with _ disc space narrowing.`r"
     desc .= "Loss of lordosis of spine.`r"
     desc .= "Spondylosis of spine.`r"
-    gosub SpineOutput 
+    desc_sev := 6   ; 退化背景組套
+    gosub SpineOutput
 return
 
 ; C-spine 預設組套
 CspineDefault:
     ; 先取得 CheckBox 的值
     Gui, Submit, NoHide
-    
-    
+
+
     ; 根據 CheckBox 決定是否加入標題
     if(LTitle) {
         desc := "C-spine:`r`r"
     }
-    
+
     desc .= "Degenerative disc disease with _ disc space narrowing.`r"
     desc .= "Loss of lordosis of spine.`r"
     desc .= "Spondylosis of spine.`r"
     desc .= "`r*Below C_ couldn't be evaluated at lateral view.`r"
     desc .= "The atlantoaxial distance is within normal limit.`r"
     desc .= "No widening of retropharyngeal and retrotracheal space.`r"
-	gosub SpineOutput     
+    desc_sev := 6   ; 退化背景組套
+	gosub SpineOutput
 return
 
 
@@ -743,39 +769,45 @@ PostOP:
 	if (SpineLoc1) {
 		desc .= "Status post anterior cervical corpectomy between _.`r"
 	}
-	gosub SpineOutput 
+    desc_sev := 3   ; 術後病史，使用者指定
+	gosub SpineOutput
 return
 
 ; 骨密低按鈕
 BoneDensity1:
     desc := "Generalized diminished bone density.`r"
-    gosub SpineOutput 
+    desc_sev := 4   ; 全身性骨質
+    gosub SpineOutput
 return
 
 ; 骨質疏鬆按鈕
 BoneDensity2:
     desc := "Osteoporotic change of visible bony structures.`r"
-    gosub SpineOutput 
+    desc_sev := 4   ; 全身性骨質
+    gosub SpineOutput
 return
 
 
 ; Hypermobility 按鈕
 Hypermobility:
     desc := "Mild _ hypermobility, angle change about _ degree.`r"
-    gosub SpineOutput 
+    desc_sev := 1   ; 使用者指定
+    gosub SpineOutput
 return
 
 ; NoHypermobility 按鈕
 NoHypermobility:
     desc := "No obvious hypermobility.`r"
-    gosub SpineOutput 
+    desc_sev := 1   ; 使用者指定
+    gosub SpineOutput
 return
 
 ; === 保留原有的功能按鈕 ===
 
 C1C2OA:
     desc := "C1-C2 osteoarthritis.`r"
-    gosub SpineOutput 
+    desc_sev := 5   ; 局部 OA
+    gosub SpineOutput
 return
 
 FacetArthrosis:
@@ -790,27 +822,32 @@ FacetArthrosis:
         ; 兩者皆未選 (保持原本行為，讓使用者自己選)
         desc := "Facet joint arthrosis of _cervical _lumbar spine.`r"
     }
-	gosub SpineOutput 
+    desc_sev := 7   ; 退化局部
+	gosub SpineOutput
 return
 
 UncovertebralJoint:
     desc := "Uncovertebral joint hypertrophy of cervical spine.`r"
-	gosub SpineOutput 
+    desc_sev := 8   ; 退化局部
+	gosub SpineOutput
 return
 
 UFJoint:
     desc := "Uncovertebral joint hypertrophy and facet joint arthrosis of cervical spine.`r"
-    gosub SpineOutput 
+    desc_sev := 7   ; 退化局部組合
+    gosub SpineOutput
 return
 
 Spondylolisthesis:
     desc := "Grade _I spondylolisthesis of _.`r"
-    gosub SpineOutput 
+    desc_sev := 1   ; 結構問題（同 Retrolisthesis）
+    gosub SpineOutput
 return
 
 Retrolisthesis:
     desc := "Mild retrolisthesis of _.`r"
-    gosub SpineOutput 
+    desc_sev := 1   ; 使用者指定
+    gosub SpineOutput
 return
 
 ; 複製舊報告（從 Spine2 視窗呼叫）
@@ -846,11 +883,6 @@ OpenForamenWeb:
     SplitPath, A_ScriptFullPath,, scriptDir
     foramenPath := scriptDir . "\..\tool\spinal-foramen.html"
     Run, msedge.exe "%foramenPath%"
-return
-
-SpineClear:
-    ; 清除目前的文字內容
-    desc := ""
 return
 
 ; 合併多行檢查項目為單行

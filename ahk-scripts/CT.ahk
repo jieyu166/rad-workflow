@@ -7,7 +7,7 @@
 HotstringMenuV("A","MenuShortcut"
     ,"Periampullary duodenal diverticulum"
     ,"Duodenal diverticulum"
-    ,"Colonic diverticula"
+    ,"Colonic diverticula","diverticulum","diverticula" 
     ,"Urinary bladder diverticulum")
 return
 

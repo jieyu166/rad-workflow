@@ -3,17 +3,14 @@
 F5::LWin
 #If
 
-^XButton1::Send ^{Right}
-^XButton2::Send ^{Left}
 
++WheelUp::
+Send, +{Left}
+return
 
-XButton1 & WheelUp::Send ^{Left}
-XButton1 & WheelDown::Send ^{Right}
-
-;#If GetKeyState("XButton1","P")
-;WheelUp::Send ^{Right}
-;WheelDown::Send ^{Left}
-;#If
++WheelDown::
+Send, +{Right}
+return
 
 ; 系統提示訊息
 TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告`n[Win]+[C/Ctrl+F3] 複製舊報告日期`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[Q] 複製影像序列`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[XButton1] 多功能選單`n[XButton2] 依視窗切換
