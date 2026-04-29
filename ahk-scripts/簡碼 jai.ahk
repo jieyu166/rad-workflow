@@ -25,6 +25,18 @@ global USAI_APIKey := API_KEY
 global USAI_CurrentOCRText := ""
 global USAI_PreviousOCRText := ""
 
+; --- AI Findings (I2F) globals — 必須在 auto-exec 內初始化（被 #include 的 US.ahk 內部已過 auto-exec） ---
+global g_I2F_Whr := ""
+global g_I2F_StartTick := 0
+global g_I2F_RequestActive := false
+global g_I2F_LastScenario := ""
+global g_I2F_LastImpression := ""
+global g_I2F_LastModel := ""
+global g_I2F_LastTokens := {prompt: 0, completion: 0, total: 0}
+global g_I2F_History := []
+global g_I2F_HistoryMax := 10
+global g_I2F_PromptDir := A_ScriptDir "\prompts"
+
 ; OCR 設定
 global OCRAppsRoot := "D:\ahk"  ; 請根據實際路徑調整
 global irfan_dir_p := "\IrfanViewPortable\App\IrfanView"

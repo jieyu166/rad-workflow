@@ -784,11 +784,22 @@ return
 
 ; ============================================================================
 ; AI Findings Generator (Impression -> Findings), AutoHotkey v1
-; Requires: environment variable OPENAI_API_KEY
+; Requires: API_KEY global (loaded by 簡碼 jai.ahk from radiologist_settings.ini)
+; Prompts: external files in ahk-scripts/prompts/{us_abd,us_trus,us_ivp}.md
 ; Hot entry point: gAI_FindOpen from Abd US 簡化 GUI
 ; ============================================================================
 
+; ── Async / history globals ──
+; 實際初始化在「簡碼 jai.ahk」的 auto-exec 區段（因為 US.ahk 透過 #include 引入時，
+; 主腳本的 auto-exec 已被前面 Abbr.ahk 的 hotstring 結束）。
+; 變數列表：
+;   g_I2F_Whr / g_I2F_StartTick / g_I2F_RequestActive
+;   g_I2F_LastScenario / g_I2F_LastImpression / g_I2F_LastModel / g_I2F_LastTokens
+;   g_I2F_History / g_I2F_HistoryMax / g_I2F_PromptDir
+
 AI_FindOpen:
+; 每次開啟視窗清空歷史（提示文字也說「視窗關閉即清除」）
+g_I2F_History := []
 Gui, I2F:New, -AlwaysOnTop +Resize, Impression → Findings (AI)
 Gui, I2F:Font, s10, Segoe UI
 
@@ -797,19 +808,30 @@ Gui, I2F:Add, GroupBox, x10 y10 w480 h80, 超音波類型
 Gui, I2F:Add, Radio, x20 y30 w140 vI2F_TypeUpperAbd Checked, &Upper abdomen
 Gui, I2F:Add, Radio, x170 y30 w140 vI2F_TypeUroM, Urotract (&M)
 Gui, I2F:Add, Radio, x320 y30 w140 vI2F_TypeUroF, Urotract (&F)
-; --- [新增] Prompt 情境選擇 ---
+; --- Prompt 情境選擇 ---
 Gui, I2F:Add, Text, x20 y60 w80 h20, 輸出模式:
-; vI2F_Scenario 是變數名稱，Choose1 代表預設選第一個
 Gui, I2F:Add, DropDownList, x100 y55 w360 vI2F_Scenario Choose1, 腹超||TRUS||IVP
 
 Gui, I2F:Add, Text, xm y+25, Impression:
 Gui, I2F:Add, Edit, vI2F_Impression w480 h160
-Gui, I2F:Add, Button, gI2F_DoGenerate w120 h28 Default, &Generate
+Gui, I2F:Add, Button, gI2F_DoGenerate w120 h28 Default vI2F_BtnGen, &Generate
 Gui, I2F:Add, Button, gI2F_Clear x+10 w80 h28, Clear
+Gui, I2F:Add, Text, x+10 yp+5 w220 h20 vI2F_Status, （閒置）
+
 Gui, I2F:Add, Text, xm y+12 Section, Findings (descriptive, system-organized):
 Gui, I2F:Add, Edit, vI2F_Findings w480 h200
 Gui, I2F:Add, Button, gI2F_CopyFindings w140 h26, &Copy Findings
 Gui, I2F:Add, Button, gI2F_CopyFindImpr x+10 w180 h26, Copy F + &Impression
+
+; 歷史紀錄（雙擊還原 Impression + Findings）
+Gui, I2F:Add, Text, xm y+15, 歷史紀錄（雙擊列還原；最多保留 %g_I2F_HistoryMax% 筆，視窗關閉即清除）:
+Gui, I2F:Add, ListView, xm y+3 w480 h120 vI2F_HistoryLV gI2F_HistoryEvent -ReadOnly -Multi, 時間|模式|耗時|tokens|Impression
+LV_ModifyCol(1, 60)
+LV_ModifyCol(2, 50)
+LV_ModifyCol(3, 50)
+LV_ModifyCol(4, 60)
+LV_ModifyCol(5, 240)
+
 Gui, I2F:Show
 return
 
@@ -845,484 +867,216 @@ if (I2F_Impression = "") {
     return
 }
 
-;EnvGet, API_KEY, OPENAI_API_KEY
 if (!API_KEY) {
     MsgBox, 16, Error, GPT API Key 尚未設定。請按 Win+\ 開啟設定管理器並填入 GPT Key。
     return
 }
 
-endpoint := "https://api.openai.com/v1/chat/completions"
-gModel   := "gpt-4o-mini"  ; faster than gpt-5-mini, sufficient for structured conversion
+if (g_I2F_RequestActive) {
+    MsgBox, 48, , 目前已有請求進行中，請等待完成。
+    return
+}
 
-; 根據超音波類型構建不同的系統提示詞
+endpoint := "https://api.openai.com/v1/chat/completions"
+gModel   := "gpt-5.4-mini"   ; 非推理模型，TTFT < 1s，避開 gpt-5-mini 的 25-50s reasoning 延遲（2026-04-29）
+
+; 依 US 類型決定 organSystems / conditionalOutput（僅腹超 prompt 會用到）
 if (I2F_TypeUpperAbd) {
-    usType := "Upper abdomen"
     usTitle := "Upper abdominal sonography:"
     organSystems := "Liver:`nBiliary trees:`nGallbladder:`nPancreas:`nSpleen:`nKidneys:"
     conditionalOutput := "Do NOT output: Uterus/adnexa, Others, Aorta/IVC, Urinary bladder, Prostate (unless specifically mentioned in impression)"
 } else if (I2F_TypeUroM) {
-    usType := "Urotract (M)"
     usTitle := "Urotract sonography:"
     organSystems := "Liver:`nBiliary trees:`nGallbladder:`nPancreas:`nSpleen:`nKidneys:`nUrinary bladder:`nProstate:"
     conditionalOutput := "Do NOT output: Uterus/adnexa, Others, Aorta/IVC (unless specifically mentioned in impression)"
 } else if (I2F_TypeUroF) {
-    usType := "Urotract (F)"
     usTitle := "Urotract sonography:"
     organSystems := "Liver:`nBiliary trees:`nGallbladder:`nPancreas:`nSpleen:`nKidneys:`nUrinary bladder:"
     conditionalOutput := "Do NOT output: Uterus/adnexa, Others, Aorta/IVC, Prostate (unless specifically mentioned in impression)"
 }
 
-if (InStr(I2F_Scenario, "腹超")) {
-sysPrompt =
-(
-You are a radiology reporting assistant specializing in abdominal/urotract ultrasound reports.
-
-TASK: Convert impression text into structured descriptive ultrasound findings only.
-Do not output impression.
-Do not optimize impression.
-Do not add diagnostic impression.
-
-OUTPUT FORMAT - Use these EXACT tags:
-
-<<FINDINGS>>
-First line MUST be: %usTitle%
-Second line (CONDITIONAL): If comparison study exists, add:
-Comparison with previous study: [date/time].
-(followed by a blank line)
-
-Then output these organ systems in this EXACT order, even if normal:
-
-%organSystems%
-
-%conditionalOutput%
-
-FINDINGS RULES:
-1. DESCRIPTIVE ONLY – No diagnostic terms, no speculation words (avoid: suggest, consistent with, probably, favor, compatible with).
-   You MUST rewrite diagnostic impression terms into descriptive ultrasound findings.
-   Do not copy the impression unchanged unless it is already a descriptive finding.
-2. Standard normal descriptions for each organ:
-   - Liver: "Normal size and echogenicity of the liver parenchyma"
-   - Biliary trees: "No evidence of biliary tract dilatation"
-   - Gallbladder: "Well distended with smooth wall"
-   - Pancreas: "Normal size and echogenicity of the visible pancreas"
-   - Spleen: "Normal size and echogenicity"
-   - Kidneys: "Acceptable bilateral kidney sizes. No US evidence of hydronephrosis"
-     **EXCEPTION**: If impression mentions renal atrophy, small kidney, or shrunken kidney on ANY side, do NOT output "Acceptable bilateral kidney sizes". Instead describe the atrophic/small kidney accordingly and only state acceptable size for the unaffected side if applicable.
-   - Urinary bladder: "Well distended with smooth wall"
-   - Prostate: "Normal size and echogenicity"
-   - Others: List incidental or extra-abdominal findings (e.g., ascites, pleural effusion, peritoneal nodules, retroperitoneal masses) with bullet points and descriptive terms only.
-3. Convert diagnoses to sonographic descriptions (case-insensitive):
-   - hepatic cysts → "anechoic thin-walled lesions in liver"
-   - fatty liver / steatosis → "diffusely increased echogenicity of liver parenchyma"
-   - renal stone → "echogenic focus with posterior acoustic shadowing in kidney"
-   - gallstones → "echogenic foci with acoustic shadowing in gallbladder"
-   - hydronephrosis → "dilatation of renal collecting system"
-   - renal atrophy / small kidney / shrunken kidney → "small-sized [side] kidney" or "decreased size of [side] kidney" (include measurement if provided). Do NOT combine with "acceptable bilateral kidney sizes".
-   - s/p cholecystectomy → "post-surgical changes, gallbladder not visualized"
-   - prostate calcifications → "echogenic foci within prostate parenchyma"
-   - prostate volume X cc → (combine with measurement, see below)
-   - Prostate measurements like "42x30x47" → If both size & volume are present, format as: "Prostate measuring 42x30x47 mm in size with volume estimated to be 34 c.c."
-   - **If only one present**, use: "Prostate measuring 34x33x43 mm" OR "Prostate volume estimated to be 26 c.c."
-   - (chronic) liver parenchymal disease → "coarse echotexture of the liver parenchyma" (use this phrasing instead of “diffusely increased echogenicity” when this phrase appears). If fatty liver/steatosis is also explicitly mentioned, you may include both bullets, with coarse echotexture first, e.g. "- Coarse, increased echotexture of the liver parenchyma".
-4. Include location, side, size when provided.
-5. Use bullet points within each system.
-6. Post-procedure / post-device language (NEW — exact wording rules):
-   - Do **not** label non-surgical device insertions as "post-surgical changes". Foley insertion, pigtail drainage, PTGBD, NG tube, central line, etc. are **procedures/devices**, not surgeries.
-   - Use the phrasing **"Post [device/procedure] insertion"** (e.g., "Post Foley insertion", "Post pigtail drainage insertion", "Post PTGBD insertion") when the impression documents those devices/procedures.
-   - Alternatively, use **"Post procedure changes"** when multiple/non-specific procedures are present or when a generic term is preferred.
-   - Examples (use these formats exactly):
-     - Incorrect: "Post-surgical changes from Foley insertion"
-     - Correct: "Post Foley insertion"
-     - Multiple devices: "Post Foley insertion and pigtail drainage" or separate bullets:
-       - "- Post Foley insertion"
-       - "- Post pigtail drainage insertion"
-   - Keep these as descriptive statements (no diagnostic or causal language) and include side/locational details if provided (e.g., "Post right PTGBD insertion").
-   - **Still** use "post-surgical changes, gallbladder not visualized" only for true surgical procedures (e.g., s/p cholecystectomy).
-7. Poor visualization rule:
-   - If impression mentions poor visualization or limited evaluation due to gas, bowel, ribs, or other artifacts, output the limitation under the corresponding organ system.
-   - For whole organ: "- Poor visualization due to gas interference".
-   - For partial organ: "- Poor visualization of [region] due to gas interference".
-   - If multiple organs are affected, list each under its respective organ heading.
-8. Comparison study rule:
-   - If the impression or input contains "Comparison with previous study:" followed by a date/time, extract this information.
-   - Insert it as the second line in the FINDINGS section, immediately after the title line (%usTitle%).
-   - Format: "Comparison with previous study: [date/time]."
-   - Leave a blank line after the comparison line before starting organ systems.
-   - Example output:
-     Upper abdominal sonography:
-     Comparison with previous study: 2025.05.21 11:25.
-
-)
-
-}else if (InStr(I2F_Scenario, "IVP")) {
-sysPrompt =
-(
-You are a radiology reporting assistant specialized in Intravenous Urography (IVU / IVP).
-
-Your task:
-Convert a user's raw "Impression text" into a structured IVU report.
-The entire report will be placed in the Findings text box, so include BOTH the Impression section and the IVU findings section in one response.
-
-The output must ALWAYS follow this exact format:
-
-Impression:
-- bullet points describing urotract-related impression items
-
-===============================================================================
-Intravenous urography (IVU):
-- bullet points describing imaging findings
-
-Formatting rules:
-- Use "- " as bullet symbols
-- Do NOT use asterisk as bullet symbol
-- Do NOT add explanations outside the report
-- Keep wording concise and radiology-style
-- Plain ASCII English only
-- Do NOT use <<FINDINGS>> or <<IMPRESSION>> tags for IVP output.
-
-==================================================
-SECTION 1 - Impression
-==================================================
-
-Rules:
-
-1. Only include urotract-related findings:
-   kidneys, ureters, collecting system, bladder, prostate,
-   urinary obstruction, stones, hydronephrosis, ureteral stenosis,
-   ectopic insertion, renal duplication, extrarenal pelvis,
-   cystitis, residual urine, UPJ / UVJ disease, milk of calcium cyst
-
-2. Exclude non-urotract findings from Impression unless clinically significant:
-   - Exclude: bowel gas, spine degeneration, phleboliths, gallstones, osteopenia, scoliosis
-   - Include even if non-urotract: ileus, bowel obstruction, compression fracture, gastritis with wall thickening
-
-3. If input states "Unremarkable IVP study" or "unremarkable finding", output:
-   Impression:
-   - Unremarkable intravenous pyelography study.
-
-4. Keep wording very close to the user's impression.
-
-5. If input contains "Increased bowel gas or mild ileus" or similar, include in Impression:
-   - Increased bowel gas, mild ileus cannot be excluded.
-
-6. If input contains a warning such as "*Small stone may be obscured" or "*Small renal stone may be obscured", add at END of Impression:
-   - *Increased bowel gas is present; small stones may be obscured.
-   Use exact wording from input if slightly different.
-
-7. If input contains "*Poor image contrast", add at END of Impression:
-   - *Poor image contrast, lesion may be obscured.
-
-8. If input contains only "Mild increased bowel gas" with NO obscuring warning:
-   Do NOT add any line to Impression. Handle in Findings only.
-
-==================================================
-SECTION 2 - Intravenous urography (IVU) Findings
-==================================================
-
-Structure:
-
-1. Comparison line (if present in input):
-   - Comparison with previous study dated YYYY-MM-DD.
-   This must be the FIRST bullet of Findings.
-   Convert date to ISO format YYYY-MM-DD.
-
-2. Scout film line (always present):
-   - Scout film: No abnormal calcified nodular lesion is identified.
-   If stones present: describe calcified lesions here.
-   If mild increased bowel gas only: append to this line.
-   Example: Scout film: No abnormal calcified nodular lesion is identified. Mild increased bowel gas is present.
-   If ileus: Scout film: No abnormal calcified nodular lesion is identified. Increased bowel gas is present, mild ileus cannot be excluded.
-
-3. Pelvic phleboliths (if present): separate bullet after Scout film.
-   - Pelvic calcified nodular densities are consistent with pelvic phleboliths.
-
-4. Post contrast line (always present):
-   - After intravenous contrast administration, normal bilateral nephrograms and opacifications of the bilateral collecting systems are appreciated.
-
-5. Obstruction / hydronephrosis findings
-
-6. Bladder findings
-
-7. Incidental non-urotract findings:
-   spine, osteopenia, scoliosis, compression fracture, gastritis, etc.
-
-==================================================
-Srs/Img Tag Rule
-==================================================
-
-If input contains a tag such as (Srs/Img:7/1) or (Srs/Img:1,7/1):
-- Preserve it EXACTLY as written.
-- Append to the END of the corresponding bullet in BOTH Impression and Findings.
-- Attach ONLY to bullets where the input explicitly includes the tag.
-- Do NOT add tags to bullets where none were provided.
-
-==================================================
-Standard Phrase Templates
-==================================================
-
-Normal IVU:
-- Scout film: No abnormal calcified nodular lesion is identified.
-- After intravenous contrast administration, normal bilateral nephrograms and opacifications of the bilateral collecting systems are appreciated.
-- No obstructive dilatation or contrast stasis of the urinary collecting system is revealed.
-- The urinary bladder is unremarkable.
-
-Renal stone:
-- Calcified nodular lesions are projected over the left/right renal area, consistent with renal stone in the [location] calyx.
-
-Ureteral stone:
-- A calcified nodular lesion is projected over the left/right paraspinal region at the Lx level along the expected upper/lower ureter, measuring X cm.
-- Dilatation of the left/right renal pelvis, calyces, and ureter up to the level of the stone is noted.
-- Relative contrast stasis of the left/right collecting system is demonstrated.
-
-Staghorn stone:
-- A large calcified density is projected over the left/right renal area, consistent with a staghorn stone.
-
-Hydronephrosis without stone:
-- Mild/Moderate/Severe dilatation of the left/right renal pelvis and calyces is noted.
-
-Hydroureteronephrosis without stone:
-- Mild/Moderate/Severe dilatation of the left/right renal pelvis, calyces, and ureter is noted without radiopaque stones identified.
-
-Enlarged prostate:
-- The urinary bladder is indented by the prostate.
-
-Residual urine (Findings):
-- Post-void residual urine is present within the urinary bladder.
-
-Residual urine (Impression):
-- Mild post-void residual urine is present.
-
-Bladder wall thickening:
-- Irregular thickening of the urinary bladder wall is demonstrated; chronic cystitis or other etiology cannot be excluded.
-
-UVJ stenosis:
-- Left/Right ureterovesical junction stenosis cannot be excluded.
-
-Milk of calcium cyst:
-- A calcified cystic lesion with milk of calcium is projected over the left/right renal area, consistent with a left/right renal milk of calcium cyst.
-
-Spine incidental:
-- Degenerative change and spur formation of the spine are observed.
-- Generalized diminished bone density, suggestive of osteopenia, is noted.
-- Mild scoliosis is noted.
-- Suspect compression fracture at Lx is noted.
-
-==================================================
-Return ONLY the formatted report. No explanations.
-==================================================
-)
-
-}else if (InStr(I2F_Scenario, "TRUS")) {
-sysPrompt =
-(
-You are a radiology reporting assistant specializing in TRUS sonography (transrectal prostate ultrasound) and lower urinary tract ultrasound.
-
-TASK
-Convert the input IMPRESSION into:
-1) Structured TRUS FINDINGS (descriptive, organ-based)
-2) Optimized IMPRESSION (clinical language allowed)
-
-========================
-OUTPUT FORMAT
-========================
-<<FINDINGS>>
-First line MUST be:
-TRUS sonography:
-
-If the input contains:
-Comparison with previous study: [date/time].
-then output that line exactly as the second line.
-
-Then add ONE blank line.
-
-Output organ systems in this exact order:
-
-Kidneys:
-[lines...]
-
-Urinary bladder:
-[lines...]
-
-Prostate:
-[lines...]
-
-Others:
-[only if any incidental finding exists outside kidneys / urinary bladder / prostate / seminal vesicles]
-
-<<IMPRESSION>>
-[numbered items only]
-
-========================
-GENERAL RULES
-========================
-1. FINDINGS must be descriptive only.
-Do NOT use: suggest, suspicious for, consistent with, probably, favor, compatible with, cannot exclude.
-These are allowed only in IMPRESSION.
-
-2. Do NOT invent data.
-Do not guess measurements, volume, laterality, diagnosis, or image numbers.
-
-3. Important findings explicitly stated in the input must not be dropped.
-They should appear in the appropriate FINDINGS section and/or IMPRESSION.
-
-4. Organ mapping:
-- kidney stones, renal cysts, hydronephrosis -> Kidneys
-- bladder wall, diverticulum, residual urine -> Urinary bladder
-- prostate volume, BPH, prostate nodules, postop prostate changes, seminal vesicles -> Prostate
-- incidental findings outside the urinary tract / prostate system -> Others
-
-========================
-DEFAULT NORMAL TEMPLATES
-========================
-Kidneys:
-- If no hydronephrosis is mentioned, include:
-No US evidence of hydronephrosis.
-- If kidneys are otherwise normal, include:
-Acceptable bilateral kidney sizes.
-No US evidence of hydronephrosis.
-
-Urinary bladder:
-- If no bladder abnormality is mentioned, include:
-Well distended with smooth wall.
-
-========================
-PROSTATE RULES
-========================
-1. Unless contradicted, include:
-Normal sizes and echopattern of bilateral seminal vesicles.
-
-2. Include:
-No focal nodules are seen at the peripheral zone of the prostate.
-BUT omit this line if any prostate nodule is described.
-
-3. Do NOT generate any "no focal nodules" sentence if a prostate nodule is present.
-
-4. If a prostate nodule sentence is provided, especially with size or Srs/Img, copy it VERBATIM into FINDINGS whenever possible.
-
-5. If the input already contains a detailed prostate sentence such as:
-Enlarged prostate with BPH nodules, cysts, calcifications, estimated volume about XX c.c., measuring AxBxC mm.
-preserve that wording in FINDINGS.
-
-6. If the input contains postoperative wording such as:
-s/p laser prostatectomy changes
-status post laser prostatectomy
-post prostatectomy changes
-do NOT omit it.
-
-FINDINGS preferred wording:
-s/p laser prostatectomy changes.
-
-IMPRESSION:
-- keep this information
-- if BPH/enlargement is also present, combine naturally, for example:
-s/p laser prostatectomy changes. Enlarged prostate with BPH nodules, cysts, calcifications, estimated volume about XX c.c.
-
-Use the correct spelling: prostatectomy
-
-7. If the input contains:
-A hypoechoic nodule in [side] peripheral zone of prostate, [size]. (Srs/Img:...)
-then:
-
-FINDINGS:
-- copy the sentence
-
-IMPRESSION:
-- rewrite smoothly if needed, e.g.
-A hypoechoic nodule in left peripheral zone of prostate measuring 0.7 cm. (Srs/Img:1/27)
-- then add:
-Suggest correlate with PSA or other exams.
-
-========================
-OTHERS RULE
-========================
-Any incidental finding outside kidneys / urinary bladder / prostate / seminal vesicles must go to Others.
-
-Important hard rule:
-If "Mild fatty liver." appears in the input, FINDINGS must include:
-
-Others:
-Mild fatty liver.
-
-Do not drop it just because this is a TRUS study.
-
-If no incidental extra-organ finding exists, omit Others entirely.
-
-========================
-IMPRESSION RULES
-========================
-1. Keep clinically relevant findings.
-2. Do not lose explicitly listed input findings.
-3. Suggested priority:
-(1) suspicious prostate nodules
-(2) hydronephrosis / obstruction
-(3) postop prostate status
-(4) enlarged prostate / BPH
-(5) renal stones / benign renal findings
-(6) bladder findings
-(7) incidental Others
-
-4. If the study is entirely normal:
-Unremarkable TRUS study.
-)
+; 從外部檔讀取對應 scenario 的 prompt（找不到 → 友善錯誤）
+if (InStr(I2F_Scenario, "腹超"))
+    promptFile := g_I2F_PromptDir "\us_abd.md"
+else if (InStr(I2F_Scenario, "IVP"))
+    promptFile := g_I2F_PromptDir "\us_ivp.md"
+else if (InStr(I2F_Scenario, "TRUS"))
+    promptFile := g_I2F_PromptDir "\us_trus.md"
+
+if (!FileExist(promptFile)) {
+    MsgBox, 16, Error, 找不到 prompt 檔案：%promptFile%`n請確認 ahk-scripts/prompts/ 內有對應 .md 檔。
+    return
 }
 
+FileRead, sysPrompt, %promptFile%
+if (ErrorLevel || sysPrompt = "") {
+    MsgBox, 16, Error, 無法讀取 prompt 檔：%promptFile%
+    return
+}
 
+; 替換佔位符（腹超用；其他 prompt 不含佔位符，StrReplace 為 no-op）
+sysPrompt := StrReplace(sysPrompt, "{{usTitle}}", usTitle)
+sysPrompt := StrReplace(sysPrompt, "{{organSystems}}", organSystems)
+sysPrompt := StrReplace(sysPrompt, "{{conditionalOutput}}", conditionalOutput)
 
-userPrompt =
-(
-Impression:
-%I2F_Impression%
-)
+; 建立 userPrompt + JSON
+userPrompt := "Impression:`n" . I2F_Impression
 
+; 注意：gpt-5 系列不支援 temperature 自訂（只接受預設值 1），故不傳此參數
 json := "{"
     . """model"": """ gModel ""","
-    . """temperature"": 0.1,"
     . """messages"": ["
         . "{""role"": ""system"", ""content"": " . JEscape(sysPrompt) . "},"
         . "{""role"": ""user"", ""content"": " . JEscape(userPrompt) . "}"
     . "]"
     . "}"
 
-resp := HttpPost(endpoint, json, API_KEY)
-if (resp = "") {
-    MsgBox, 16, Error, No response from API.
-    return
-}
+; 鎖定 GUI、顯示處理中
+GuiControl, I2F:Disable, I2F_BtnGen
+GuiControl, I2F:, I2F_Status, % "處理中... 0.0s（" I2F_Scenario " / " gModel "）"
+g_I2F_LastScenario := I2F_Scenario
+g_I2F_LastImpression := I2F_Impression
+g_I2F_LastModel := gModel
 
-content := ExtractContent(resp)
-if (content = "") {
-    MsgBox, 16, Error, Failed to parse API response.`n`n%resp%
-    return
-}
+; 啟動非同步 HTTP（async = true）
+g_I2F_Whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+g_I2F_Whr.Open("POST", endpoint, true)
+g_I2F_Whr.SetRequestHeader("Content-Type", "application/json; charset=utf-8")
+g_I2F_Whr.SetRequestHeader("Authorization", "Bearer " API_KEY)
+g_I2F_Whr.SetTimeouts(60000, 60000, 60000, 90000)
+g_I2F_Whr.Send(json)
 
-if (InStr(I2F_Scenario, "IVP")) {
-    find := content
-} else {
-    find := RegGet(content, "s)<<(?:FINDINGS)>>\s*(.*?)\s*(?=<<(?:IMPRESSION|FINDINGS)>>|$)")
-    if (find = "")
-        find := content
-}
-
-GuiControl, I2F:, I2F_Findings, % Trim(find)
+g_I2F_StartTick := A_TickCount
+g_I2F_RequestActive := true
+SetTimer, I2F_PollResponse, 250
 return
 
-; ---- Helpers ----
-HttpPost(url, body, apiKey) {
-    whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-    whr.Open("POST", url, false)
-    whr.SetRequestHeader("Content-Type", "application/json; charset=utf-8")
-    whr.SetRequestHeader("Authorization", "Bearer " apiKey)
-    whr.SetTimeouts(60000, 60000, 60000, 60000)
-    whr.Send(body)
-    status := whr.Status
-    if (status != 200) {
-        responseText := whr.ResponseText
-        return "HTTP " status "`n" responseText
+; ── 非同步輪詢處理回應 ──
+I2F_PollResponse:
+    elapsed_s := Round((A_TickCount - g_I2F_StartTick) / 1000, 1)
+
+    ; 檢查是否完成（WaitForResponse(0) 立即返回；try/catch 處理尚未完成的例外）
+    done := false
+    try {
+        done := g_I2F_Whr.WaitForResponse(0)
+    } catch e {
+        done := false
     }
-    return whr.ResponseText
+
+    if (!done) {
+        GuiControl, I2F:, I2F_Status, % "處理中... " elapsed_s "s（" g_I2F_LastScenario " / " g_I2F_LastModel "）"
+        if (elapsed_s > 90) {
+            SetTimer, I2F_PollResponse, Off
+            g_I2F_RequestActive := false
+            GuiControl, I2F:Enable, I2F_BtnGen
+            GuiControl, I2F:, I2F_Status, % "逾時（>90s）"
+        }
+        return
+    }
+
+    ; 已完成
+    SetTimer, I2F_PollResponse, Off
+    g_I2F_RequestActive := false
+    GuiControl, I2F:Enable, I2F_BtnGen
+
+    status := 0
+    resp := ""
+    try {
+        status := g_I2F_Whr.Status
+        resp := g_I2F_Whr.ResponseText
+    } catch e {
+        GuiControl, I2F:, I2F_Status, % "請求失敗（" SubStr(e.message, 1, 60) "）"
+        return
+    }
+
+    if (status != 200) {
+        ; 錯誤訊息只顯示 status + 截短前 200 字（避免洩漏 raw response）
+        snippet := SubStr(resp, 1, 200)
+        GuiControl, I2F:, I2F_Status, % "HTTP " status "（" elapsed_s "s）"
+        MsgBox, 16, API Error, % "HTTP " status "（耗時 " elapsed_s "s）`n`n回應節錄（前 200 字）：`n" snippet
+        return
+    }
+
+    content := ExtractContent(resp)
+    if (content = "") {
+        snippet := SubStr(resp, 1, 200)
+        GuiControl, I2F:, I2F_Status, % "解析失敗"
+        MsgBox, 16, Parse Error, % "回應解析失敗。`n`n回應節錄（前 200 字）：`n" snippet
+        return
+    }
+
+    ; 抓 token usage
+    ParseTokenUsage(resp)
+
+    ; 從 <<FINDINGS>> 抓正文（IVP 直接用 content）
+    if (InStr(g_I2F_LastScenario, "IVP")) {
+        find := content
+    } else {
+        find := RegGet(content, "s)<<(?:FINDINGS)>>\s*(.*?)\s*(?=<<(?:IMPRESSION|FINDINGS)>>|$)")
+        if (find = "")
+            find := content
+    }
+    find := Trim(find)
+
+    GuiControl, I2F:, I2F_Findings, % find
+    GuiControl, I2F:, I2F_Status, % "完成 " elapsed_s "s | tokens " g_I2F_LastTokens.total " (in " g_I2F_LastTokens.prompt "/out " g_I2F_LastTokens.completion ")"
+
+    ; 加入歷史
+    AddI2FHistory(g_I2F_LastImpression, find, g_I2F_LastScenario, elapsed_s, g_I2F_LastTokens.total)
+return
+
+; ── 歷史紀錄輔助函式 ──
+AddI2FHistory(impression, findings, scenario, elapsed_s, tokens) {
+    global g_I2F_History, g_I2F_HistoryMax
+    FormatTime, ts,, HH:mm:ss
+    g_I2F_History.InsertAt(1, {time: ts, scenario: scenario, elapsed: elapsed_s
+                              , tokens: tokens, impression: impression, findings: findings})
+    while (g_I2F_History.Length() > g_I2F_HistoryMax)
+        g_I2F_History.Pop()
+    RefreshI2FHistoryLV()
 }
 
-; 修正後的代碼：
+RefreshI2FHistoryLV() {
+    global g_I2F_History
+    Gui, I2F:Default
+    Gui, ListView, I2F_HistoryLV
+    LV_Delete()
+    for _, item in g_I2F_History {
+        preview := SubStr(StrReplace(StrReplace(item.impression, "`r", " "), "`n", " "), 1, 80)
+        LV_Add("", item.time, item.scenario, item.elapsed "s", item.tokens, preview)
+    }
+}
+
+; ── 點擊歷史列：雙擊還原至 Impression / Findings ──
+I2F_HistoryEvent:
+    if (A_GuiEvent != "DoubleClick")
+        return
+    Gui, I2F:Default
+    Gui, ListView, I2F_HistoryLV
+    row := A_EventInfo
+    if (row < 1 || row > g_I2F_History.Length())
+        return
+    item := g_I2F_History[row]
+    GuiControl, I2F:, I2F_Impression, % item.impression
+    GuiControl, I2F:, I2F_Findings, % item.findings
+    GuiControl, I2F:, I2F_Status, % "已還原：" item.time " " item.scenario
+return
+
+; ── 從 OpenAI 回應中抓 token 數（更新 g_I2F_LastTokens） ──
+ParseTokenUsage(resp) {
+    global g_I2F_LastTokens
+    g_I2F_LastTokens := {prompt: 0, completion: 0, total: 0}
+    if RegExMatch(resp, """prompt_tokens""\s*:\s*(\d+)", m)
+        g_I2F_LastTokens.prompt := m1 + 0
+    if RegExMatch(resp, """completion_tokens""\s*:\s*(\d+)", m)
+        g_I2F_LastTokens.completion := m1 + 0
+    if RegExMatch(resp, """total_tokens""\s*:\s*(\d+)", m)
+        g_I2F_LastTokens.total := m1 + 0
+}
+
+; ---- Helpers ----
+; HttpPost 已移除（同步呼叫不再使用；改用內嵌的非同步 WinHttp.WinHttpRequest.5.1）
+
 ExtractContent(json) {
     ; 尋找content字段
     if !RegExMatch(json, """content""\s*:\s*""((?:\\.|[^""\\])*)""", m)
