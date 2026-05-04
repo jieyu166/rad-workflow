@@ -1176,8 +1176,12 @@ Parse the following LDCT impression text into structured JSON. Follow these rule
 2. Determine the LDCT quality if mentioned (good, acceptable, not_acceptable), default "acceptable"
 3. Determine if prior CT is available and its date
 4. Determine whether nodule findings include any of these flags: no_nodule, benign_features, insignificant_nodules, juxtapleural_nodules, has_significant_nodules
-   - If the impression says no significant nodule or no suspicious nodule, set no_nodule = true unless a real nodule is explicitly described
-   - "significant" = nodules >= 6mm, or enlarging >1.5mm, or new >= 4mm
+   - If the impression says "no significant nodule", "no suspicious nodule", or "No significant >3mm lung nodules", set no_nodule = true unless a real nodule is explicitly described. In that situation, set lung_rads_category = "1" unless the impression explicitly states a different Lung-RADS category or describes airway nodule, atypical cyst, inflammatory Category 0, or suspicious tumor.
+   - Do not round decimal sizes upward. A 5.8 mm solid nodule is <6 mm.
+   - Solid nodule significance: significant = solid nodules >=6mm, or enlarging >1.5mm, or new >=4mm. Solid nodules <6mm are insignificant_nodules, not significant_nodules.
+   - Non-solid / ground-glass nodule significance: pure ground-glass or non-solid nodules are significant only when >=30mm (3cm), new/growing/suspicious, or explicitly assigned a higher Lung-RADS category. A 6-29mm ground-glass nodule is usually Category 2 and should NOT be put in significant_nodules solely because it is >=6mm.
+   - Part-solid nodule significance depends mainly on the solid component size when provided.
+   - Juxtapleural/perifissural/fissural/pleural-based nodules <10mm should set juxtapleural_nodules=true and should not be counted as significant unless explicitly suspicious or enlarging.
 5. For insignificant nodules, extract the series and image numbers if provided
 6. For significant nodules, extract details for each (up to 3): size, density (non-solid/part-solid/solid), solid part size if part-solid, lobe (RUL/RML/RLL/LUL/LLL), series/image, change status (unchanged/enlarging/new/no_prior)
 7. Count the number of significant nodules
@@ -1191,12 +1195,17 @@ Parse the following LDCT impression text into structured JSON. Follow these rule
 9. Extract other lung findings: emphysema, bronchiectasis, bronchitis, tree_in_bud, centrilobular, old_tb, ild
    - "centrilobular" means centrilobular NODULES only. Do NOT set centrilobular = true for "centrilobular emphysema" — that is emphysema, not centrilobular nodules. Only set emphysema = true in that case.
 10. Extract other findings: lymph_nodes (with location), coronary_calcification (with description), other_chest, other_abdomen_neck
+    - Set lymph_nodes = true for enlarged or borderline lymph nodes. If the report says "borderline LN" or "borderline lymph node", keep "borderline" in lymph_nodes_location.
+    - Do NOT set lymph_nodes = true for "visible LNs short axis <1cm", "visible lymph nodes <1cm", "reactive LN", "reactive lymph node", or nonspecific small lymph nodes.
+    - Lymph nodes should trigger modifier_s only when the short axis is >1.5cm, or when the impression explicitly suggests metastasis, lymphoma, sarcoidosis, or further workup.
     - Set coronary_calcification = true only when the impression explicitly mentions coronary arteries, coronary artery calcification, or named coronary vessels such as LAD, LCx, RCA, left main/LM
     - If coronary_calcification = true, coronary_description should contain only the named coronary vessel(s), for example "LAD, LCx"
     - Do NOT set coronary_calcification for isolated aortic, great vessel, or other non-coronary atherosclerotic/calcific change
     - Thyroid nodule/goiter/thyroid findings belong in other_abd_neck (neck category), NOT in other_chest
     - Neck masses, cervical findings, and all sub-diaphragm findings also go in other_abd_neck
 11. Determine if Modifier S applies (clinically significant non-lung-cancer findings)
+    - Set modifier_s=true when there is an actionable clinically significant non-lung-cancer finding, especially if the impression recommends clinic correlation, follow-up, ultrasound, mammography, contrast CT, bronchoscopy, or other workup.
+    - Do NOT set modifier_s solely for visible LNs <1cm, reactive LNs, lymph nodes <=1.5cm without suspicious wording, mild/moderate atherosclerosis, aortic calcification, vascular calcification, accessory spleen, small simple cysts, focal atelectasis, or status-post cholecystectomy.
 12. Check for metastases pattern
 13. IGNORE these common incidental findings — do NOT put them in other_lung, other_chest, or other_abd_neck:
     - focal atelectasis, subsegmental atelectasis, plate-like atelectasis, dependent atelectasis
