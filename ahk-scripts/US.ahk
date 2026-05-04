@@ -97,7 +97,9 @@ return
 :O:usb2;::
 HotstringMenuV("A","MenuShortcut2"
     ,"_ subareolar ductal ectasia, _mm.(Srs/Img:1/_) No echogenic content, favor benign."
-    ,"_ prominent duct, _mm.(Srs/Img:1/_)")
+    ,"_ prominent duct, _mm.(Srs/Img:1/_)"
+	,"Bilateral breast ductal ectasia, up to _mm, concluded as benign.(Srs/Img:1/_)","BRK"
+	,"Stable bilateral breast nodules, the detail please refer to the description.`r  _Favor benign.")
 return
 
 :O:ub::Mild urinary bladder wall thickening, could be chronic cystitis, _shrunken UB, or others.
@@ -174,14 +176,26 @@ Neck sonography shows:
 )
 
 
-::tn::- A _solid _hypoechoic nodule in _LRt _mid. thyroid, _x_x_ mm, TR_.(Srs/Img:1/_)
+::tn::A _solid _hypoechoic nodule in _LRt _mid. thyroid, _x_x_ mm, TR_.(Srs/Img:1/_)
 ::tn2::
+    gosub GetSideSelection
+
+    ; 2. (選用) 檢查使用者是否按了取消(X)，如果變數是空的就終止
+    if (tSideCap = ""){
+        tSideCap := "_"
+		tSideLow := "_"
+	}
+
+    ; 3. 貼上內容 (使用設定好的變數)
+    SendInput, A TR_ nodule in %tSideCap% thyroid, _cm.(Srs/Img:1/_)
+	return
+
+::tn3::
 HotstringMenuV("A","MenuShortcut"
-    ,"- <1cm TR_4 nodules in _bilateral thyroid."
-    ,"- A <1cm TR_4 nodule in _ thyroid."
-    ,"- <1cm TR_4 nodules in _bilateral thyroid.(Srs/Img:_/_ _)"
-    ,"BRK"
-    ,"- A TR_ nodule in _right _left thyroid, _cm.(Srs/Img:1/_)")
+    ,"<1cm TR_4 nodules in _bilateral thyroid."
+    ,"A <1cm TR_4 nodule in _ thyroid."
+    ,"<1cm TR_4 nodules in _bilateral thyroid.(Srs/Img:_/_ _)"
+    ,"BRK","Prior FNA: benign.(_)")
 return
 
 ; ==============================================================================
@@ -1136,18 +1150,18 @@ return
 ; 全域變數
 global USAI_CurrentImage := ""
 global USAI_PreviousImage := ""
-global USAI_APIKey := API_KEY2
+global USAI_APIKey := API_KEY
 
 ; 熱字串觸發
 ::usaigui::
 ShowUSAIGUI:  ; 修改 ShowUSAIGUI 標籤，使用雙欄式佈局
-	Gui, USAIG:New, , 超音波 AI 分析 (Gemini)
+	Gui, USAIG:New, , 超音波 AI 分析 (GPT-5.4)
     Gui, USAIG:Font, s10
 
     ; === 左側面板 ===
     Gui, USAIG:Add, GroupBox, x10 y10 w470 h157, API / Backend 設定
     Gui, USAIG:Add, Text, x20 y30 w60 vUSAIAPIKeyLbl, API Key:
-    Gui, USAIG:Add, Edit, x85 y30 w380 h20 vUSAIAPIKey Password, %API_KEY2%
+    Gui, USAIG:Add, Edit, x85 y30 w380 h20 vUSAIAPIKey Password, %API_KEY%
 
     Gui, USAIG:Add, GroupBox, x10 y177 w470 h100, 影像狀態
     Gui, USAIG:Add, Text, x20 y197 w220 h40 vUSAIImage1Status Center, 本次影像：未上傳`n點擊下方按鈕貼上影像
@@ -1170,7 +1184,7 @@ ShowUSAIGUI:  ; 修改 ShowUSAIGUI 標籤，使用雙欄式佈局
 	Gui, USAIG:Add, GroupBox, x490 y10 w400 h160, 分析選項
 
     Gui, USAIG:Add, Text, x500 y30 w80 h23, 檢查部位:
-    Gui, USAIG:Add, DropDownList, x580 y27 w300 vUSAIExamType gUSAIExamTypeChanged Choose1, Gemini 3 Thinking (Breast)||脊椎 (Spine, Thinking)|Ankle Foot 陳主任風格 Thinking| Chest x-ray (Thinking)|Knee Thinking|一般描述 (General)
+    Gui, USAIG:Add, DropDownList, x580 y27 w300 vUSAIExamType gUSAIExamTypeChanged Choose1, GPT-5.4 Thinking (Breast)||脊椎 (Spine, Thinking)|Ankle Foot 陳主任風格 Thinking| Chest x-ray (Thinking)|Knee Thinking|一般描述 (General)
 
     Gui, USAIG:Add, CheckBox, x580 y60 w180 h23 vUSAICropImage Checked, 啟用影像裁切 (去除上方資訊)
     Gui, USAIG:Add, Button, x770 y57 w110 h25 gUSAIExportCrop, 匯出裁切圖
@@ -1179,7 +1193,7 @@ ShowUSAIGUI:  ; 修改 ShowUSAIGUI 標籤，使用雙欄式佈局
     Gui, USAIG:Add, Radio, x500 y110 w380 vUSAIChoice2, 同一病灶比較 (兩張)
     Gui, USAIG:Add, Radio, x500 y130 w380 vUSAIChoice3, 大小變化比較 (兩張)
 
-    Gui, USAIG:Add, Button, x590 y150 w200 h40 gUSAIAnalyze Default vUSAIAnalyzeBtn, 開始 Gemini 分析
+    Gui, USAIG:Add, Button, x590 y150 w200 h40 gUSAIAnalyze Default vUSAIAnalyzeBtn, 開始 GPT 分析
 
     Gui, USAIG:Add, GroupBox, x490 y200 w400 h370, 分析結果
     Gui, USAIG:Add, Edit, x500 y220 w380 h340 vUSAIResult Multi WantReturn VScroll
@@ -1188,7 +1202,7 @@ ShowUSAIGUI:  ; 修改 ShowUSAIGUI 標籤，使用雙欄式佈局
     Gui, USAIG:Add, Button, x640 y602 w100 h35 gUSAICopyResult, 複製結果
     Gui, USAIG:Add, Button, x750 y602 w100 h35 gUSAIClearResult, 清除結果
 
-    Gui, USAIG:Add, Text, x10 y677 w880 h20 vUSAIStatus Center, 就緒 (Backend: Gemini API)
+    Gui, USAIG:Add, Text, x10 y677 w880 h20 vUSAIStatus Center, 就緒 (Backend: OpenAI GPT-5.4)
 
     Gui, USAIG:Show, w900 h707
 return
@@ -1760,7 +1774,7 @@ USAIAnalyze:
     }
 
     GuiControl, USAIG:Disable, USAIAnalyzeBtn
-    GuiControl, USAIG:, USAIStatus, 正在呼叫 Gemini 3 Thinking...
+    GuiControl, USAIG:, USAIStatus, 正在呼叫 GPT-5.4...
     
     ; === 1. 設定 Prompt 與 Thinking 模式 ===
     SysPrompt := ""
@@ -1776,8 +1790,28 @@ USAIAnalyze:
 
     if (InStr(USAIExamType, "Breast")) {
         SysPrompt .= "You are a radiologist assistant specializing in Breast Ultrasound. "
-        SysPrompt .= "Analyze the ultrasound image. Focus on: shape, orientation, margin, echo pattern, posterior features, and calcifications. "
-        SysPrompt .= "Provide a concise description suitable for a medical report."
+        SysPrompt .= "Analyze the ultrasound image like a breast imager, not only as BI-RADS category selection. "
+        SysPrompt .= "Use OCR Data when available for side, clock-face location, distance from nipple, size, and series/image number. "
+        SysPrompt .= "Do not invent measurements that are not visible or supplied by OCR. "
+        SysPrompt .= "Do not show hidden chain-of-thought; provide only concise, checkable imaging rationale. "
+        SysPrompt .= "Output plain text in this exact structure. Keep the first Report line in English; after that, start directly with Traditional Chinese differential diagnosis. "
+        SysPrompt .= "Do NOT restate the lesion description in Chinese and do NOT output a generic 病灶分析 section.`n"
+        SysPrompt .= "Report line: [side/location]: [size]mm.(Srs/Img:x/y) [concise lesion description].`n"
+        SysPrompt .= "## 主要鑑別診斷`n"
+        SysPrompt .= "### 1. [最可能診斷]`n"
+        SysPrompt .= "- 支持理由: ...`n"
+        SysPrompt .= "- 不支持或需確認處: ...`n"
+        SysPrompt .= "### 2. [次要鑑別診斷]`n"
+        SysPrompt .= "- 支持理由: ...`n"
+        SysPrompt .= "- 不支持或需確認處: ...`n"
+        SysPrompt .= "### 3. [必要時列低可能但重要診斷]`n"
+        SysPrompt .= "- 何時需考慮: ...`n"
+        SysPrompt .= "## BI-RADS 判斷`n"
+        SysPrompt .= "- 建議分類: BI-RADS [category]`n"
+        SysPrompt .= "- 理由: ...`n"
+        SysPrompt .= "- 建議: ...`n"
+        SysPrompt .= "## 可用報告句`n"
+        SysPrompt .= "[English report sentence, concise and directly usable.]"
     } else if (InStr(USAIExamType, "Spine")) {
 
 	SysPrompt := "You are an expert Radiologist. Analyze this Spine X-ray."
@@ -2131,14 +2165,20 @@ USAIAnalyze:
         if (USAI_CurrentOCRText != "") {
             UserPrompt .= "`nOCR Data: " . USAI_CurrentOCRText
         }
-        UserPrompt .= "`nOutput format: Location, Size, Description, Impression. (In English)"
+        if (InStr(USAIExamType, "Breast"))
+            UserPrompt .= "`nReturn exactly one English Report line, then start at ## 主要鑑別診斷. Do not output 病灶分析, Impression, or a Comparison section."
+        else
+            UserPrompt .= "`nOutput format: Location, Size, Description, Impression. (In English)"
         images.Push(USAI_CurrentImage)
     } else if (USAIChoice2) {
-        UserPrompt := promptPrefix . "`n`nAnalyze these TWO images of the SAME lesion."
+        UserPrompt := promptPrefix . "`n`nAnalyze these TWO images as two current views/images of the SAME lesion, not as old-vs-new comparison."
         if (USAI_CurrentOCRText != "" || USAI_PreviousOCRText != "") {
-             UserPrompt .= "`nOCR Data - Current: " . USAI_CurrentOCRText . ", Previous: " . USAI_PreviousOCRText
+             UserPrompt .= "`nOCR Data - Image 1: " . USAI_CurrentOCRText . ", Image 2: " . USAI_PreviousOCRText
         }
-        UserPrompt .= "`nOutput format (Single line): Location, Size, Description, Comparison findings. (In English)"
+        if (InStr(USAIExamType, "Breast"))
+            UserPrompt .= "`nReturn exactly one English Report line, then start at ## 主要鑑別診斷. Do not output 病灶分析, Impression, or a Comparison section. Do not compare the two images."
+        else
+            UserPrompt .= "`nOutput format (Single line): Location, Size, Description, Comparison findings. (In English)"
         images.Push(USAI_CurrentImage)
         images.Push(USAI_PreviousImage)
     } else if (USAIChoice3) {
@@ -2146,17 +2186,27 @@ USAIAnalyze:
         if (USAI_CurrentOCRText != "" || USAI_PreviousOCRText != "") {
              UserPrompt .= "`nOCR Data - Previous: " . USAI_PreviousOCRText . ", Current: " . USAI_CurrentOCRText
         }
-        UserPrompt .= "`nOutput format (Single line): Location, Size change, Brief description. (In English)"
+        if (InStr(USAIExamType, "Breast"))
+            UserPrompt .= "`nReturn Report line, size change, lesion analysis, BI-RADS reasoning, and Impression."
+        else
+            UserPrompt .= "`nOutput format (Single line): Location, Size change, Brief description. (In English)"
         images.Push(USAI_PreviousImage)
         images.Push(USAI_CurrentImage)
     }
 
     ; === 3. 呼叫 API (非同步) ===
-    modelID := "gemini-3-pro-preview"
-    StartGeminiBackgroundJob(USAIAPIKey, modelID, UserPrompt, images, useThinking)
+    modelID := "gpt-5.4"
+    g_USAI_StartTick := A_TickCount
+    g_USAI_LastModel := modelID
+    started := StartOpenAIBackgroundJob(USAIAPIKey, modelID, UserPrompt, images, useThinking)
+    if (!started) {
+        GuiControl, USAIG:Enable, USAIAnalyzeBtn
+        GuiControl, USAIG:, USAIStatus, 無法啟動 GPT 背景程序
+        return
+    }
     
     ; 啟動計時器，每 1 秒檢查一次結果
-    SetTimer, CheckGeminiResult, 1000
+    SetTimer, CheckOpenAIResult, 1000
 return
 
 ;    result := CallGeminiVision(USAIAPIKey, modelID, UserPrompt, images, useThinking)
@@ -2169,13 +2219,14 @@ return
 ;    }
 ;return
 
-CheckGeminiResult:
-    resultFile := A_Temp . "\gemini_response.txt"
+CheckOpenAIResult:
+    resultFile := A_Temp . "\openai_usai_response.txt"
+    elapsed_s := Round((A_TickCount - g_USAI_StartTick) / 1000, 1)
     
     ; 檢查結果檔案是否存在
     if (FileExist(resultFile)) {
         ; 停止計時器
-        SetTimer, CheckGeminiResult, Off
+        SetTimer, CheckOpenAIResult, Off
         
         ; 讀取結果 (指定 UTF-8 編碼)
         FileRead, resultText, *P65001 %resultFile%
@@ -2183,15 +2234,18 @@ CheckGeminiResult:
         ; 更新 GUI (Backend-aware)
         GuiControl, USAIG:Enable, USAIAnalyzeBtn
 
-        if (resultText != "" && !InStr(resultText, "API Error")) {
-            finalResult := ParseGeminiResponse(resultText)
+        if (SubStr(resultText, 1, 10) = "HTTP_ERROR" || SubStr(resultText, 1, 9) = "API Error") {
+            GuiControl, USAIG:, USAIResult, %resultText%
+            GuiControl, USAIG:, USAIStatus, 分析失敗或發生錯誤
+        } else if (resultText != "") {
+            finalResult := ParseOpenAIResponse(resultText)
             
             ; 如果解析失敗(可能背景腳本直接寫入了錯誤訊息)，直接顯示原文
-            if (finalResult = "Error parsing response")
+            if (SubStr(finalResult, 1, 22) = "Error parsing response")
                 finalResult := resultText
                 
             GuiControl, USAIG:, USAIResult, %finalResult%
-            GuiControl, USAIG:, USAIStatus, 分析完成！
+            GuiControl, USAIG:, USAIStatus, % "分析完成！(" elapsed_s "s / " g_USAI_LastModel ")"
         } else {
             GuiControl, USAIG:, USAIResult, %resultText%
             GuiControl, USAIG:, USAIStatus, 分析失敗或發生錯誤
@@ -2199,34 +2253,41 @@ CheckGeminiResult:
         
         ; 清理臨時檔案
         FileDelete, %resultFile%
-        FileDelete, %A_Temp%\gemini_request.json
-        FileDelete, %A_Temp%\gemini_worker.ahk
+        FileDelete, %A_Temp%\openai_usai_request.json
+        FileDelete, %A_Temp%\openai_usai_worker.ahk
     }
     else {
-        ; 更新狀態文字讓使用者知道還在跑 (可選)
-        ; GuiControl, USAIG:, USAIStatus, 正在思考中... (請稍候)
+        if (elapsed_s > 180) {
+            SetTimer, CheckOpenAIResult, Off
+            GuiControl, USAIG:Enable, USAIAnalyzeBtn
+            GuiControl, USAIG:, USAIStatus, % "逾時（>180s / " g_USAI_LastModel "）"
+            FileDelete, %A_Temp%\openai_usai_request.json
+            FileDelete, %A_Temp%\openai_usai_worker.ahk
+        } else {
+            GuiControl, USAIG:, USAIStatus, % "GPT-5.4 分析中... " elapsed_s "s"
+        }
     }
 return
 
-StartGeminiBackgroundJob(apiKey, modelID, prompt, images, useThinking) {
-    ; 1. 構建完整的 JSON 字串 (利用現有的 BuildGeminiJSON)
-    jsonBody := BuildGeminiJSON(prompt, images, useThinking)
+StartOpenAIBackgroundJob(apiKey, modelID, prompt, images, useThinking) {
+    ; 1. 構建完整的 JSON 字串 (OpenAI Responses API)
+    jsonBody := BuildOpenAIResponsesJSON(modelID, prompt, images, useThinking)
     
     ; 2. 將 JSON 寫入臨時檔案 (解決命令列長度限制)
-    requestFile := A_Temp . "\gemini_request.json"
+    requestFile := A_Temp . "\openai_usai_request.json"
     FileDelete, %requestFile%
     FileAppend, %jsonBody%, %requestFile%, UTF-8
     
     ; 3. 準備結果檔案路徑
-    resultFile := A_Temp . "\gemini_response.txt"
+    resultFile := A_Temp . "\openai_usai_response.txt"
     FileDelete, %resultFile%
     
     ; 4. 建立背景 Worker 腳本
     ; 這個腳本非常精簡，只負責讀 JSON -> POST -> 寫入結果
-    workerScriptPath := A_Temp . "\gemini_worker.ahk"
+    workerScriptPath := A_Temp . "\openai_usai_worker.ahk"
     FileDelete, %workerScriptPath%
     
-    endpoint := "https://generativelanguage.googleapis.com/v1beta/models/" . modelID . ":generateContent?key=" . apiKey
+    endpoint := "https://api.openai.com/v1/responses"
     
     ; 構建 Worker 腳本內容
     workerCode = 
@@ -2238,13 +2299,18 @@ StartGeminiBackgroundJob(apiKey, modelID, prompt, images, useThinking) {
     
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
     whr.Open("POST", url, false)
-    whr.SetRequestHeader("Content-Type", "application/json")
-    whr.SetTimeouts(30000, 60000, 30000, 120000) ; 120秒超時
+    whr.SetRequestHeader("Content-Type", "application/json; charset=utf-8")
+    whr.SetRequestHeader("Authorization", "Bearer %apiKey%")
+    whr.SetTimeouts(30000, 60000, 30000, 180000) ; 180秒超時
     
     try {
         whr.Send(jsonBody)
-        ; 將回應寫入結果檔案
-        FileAppend, `% whr.ResponseText, %resultFile%, UTF-8
+        if (whr.Status = 200) {
+            FileAppend, `% whr.ResponseText, %resultFile%, UTF-8
+        } else {
+            err := "HTTP_ERROR " . whr.Status . Chr(10) . whr.ResponseText
+            FileAppend, `% err, %resultFile%, UTF-8
+        }
     } catch e {
         err := "API Error: " . e.Message
         FileAppend, `% err, %resultFile%, UTF-8
@@ -2255,7 +2321,10 @@ StartGeminiBackgroundJob(apiKey, modelID, prompt, images, useThinking) {
     FileAppend, %workerCode%, %workerScriptPath%, UTF-8
     
     ; 5. 執行背景腳本 (使用 Run 不會卡住主程式)
-    Run, "%A_AhkPath%" "%workerScriptPath%"
+    Run, "%A_AhkPath%" "%workerScriptPath%",, Hide UseErrorLevel
+    if (ErrorLevel)
+        return false
+    return true
 }
 
 
@@ -2498,8 +2567,108 @@ B64Encode(string) {
 
 
 ; ============================================================================
-; Google Gemini 1.5 Pro API 呼叫函數
+; OpenAI GPT-5.4 / legacy Gemini API helpers
 ; ============================================================================
+BuildOpenAIResponsesJSON(modelID, prompt, images, useThinking) {
+    json := "{""model"":" . JEscape(modelID) . ",""input"":[{""role"":""user"",""content"":["
+    json .= "{""type"":""input_text"",""text"":" . JEscape(prompt) . "}"
+
+    for index, imgData in images {
+        json .= ","
+        json .= "{""type"":""input_image"",""image_url"":" . JEscape(imgData) . ",""detail"":""high""}"
+    }
+
+    json .= "]}],""max_output_tokens"":4000"
+    if (useThinking)
+        json .= ",""reasoning"":{""effort"":""medium""}"
+    json .= "}"
+    return json
+}
+
+ParseOpenAIResponse(responseText) {
+    ; Responses API returns output text blocks inside output[].content[].
+    ; Keep the last text block in case the model emits multiple output_text items.
+    if RegExMatch(responseText, """status""\s*:\s*""incomplete""") {
+        reason := RegGet(responseText, """reason""\s*:\s*""((?:\\.|[^""\\])*)""")
+        used := RegGet(responseText, """output_tokens""\s*:\s*(\d+)")
+        return "OpenAI response incomplete: " . JsonUnescape(reason) . " (output tokens used: " . used . "). Please retry; output budget has been increased."
+    }
+
+    finalResult := ""
+    pos := 1
+    while (pos := RegExMatch(responseText, """text""\s*:\s*""((?:\\.|[^""\\])*)""", match, pos)) {
+        finalResult := match1
+        pos += StrLen(match)
+    }
+
+    if (finalResult != "")
+        return JsonUnescape(finalResult)
+
+    if RegExMatch(responseText, """message""\s*:\s*""((?:\\.|[^""\\])*)""", err)
+        return "Error parsing response: " . JsonUnescape(err1)
+
+    return "Error parsing response: " . responseText
+}
+
+JsonUnescape(text) {
+    text := StrReplace(text, "\""", """")
+    text := StrReplace(text, "\/", "/")
+    text := StrReplace(text, "\n", "`n")
+    text := StrReplace(text, "\r", "`r")
+    text := StrReplace(text, "\t", "`t")
+    text := DecodeUnicodeEscapes(text)
+    text := StrReplace(text, "\\", "\")
+    return text
+}
+
+DecodeUnicodeEscapes(text) {
+    while RegExMatch(text, "\\u([0-9A-Fa-f]{4})", m) {
+        code := HexToInt(m1)
+        text := StrReplace(text, m, UnicodeChar(code))
+    }
+    return text
+}
+
+HexToInt(hex) {
+    n := 0
+    Loop, Parse, hex
+    {
+        ch := A_LoopField
+        if ch is xdigit
+        {
+            if ch is digit
+                v := ch + 0
+            else
+                v := Asc(ch) - (Asc(ch) >= 97 ? 87 : 55)
+            n := (n * 16) + v
+        }
+    }
+    return n
+}
+
+UnicodeChar(code) {
+    if (A_IsUnicode)
+        return Chr(code)
+
+    ; ANSI AutoHotkey cannot represent Chr(0x4e00) directly.
+    ; Convert one UTF-16 code unit to the system code page instead.
+    VarSetCapacity(wchar, 2, 0)
+    NumPut(code, wchar, 0, "UShort")
+    size := DllCall("WideCharToMultiByte", "UInt", 0, "UInt", 0
+        , "Ptr", &wchar, "Int", 1
+        , "Ptr", 0, "Int", 0
+        , "Ptr", 0, "Ptr", 0)
+    if (size <= 0)
+        return ""
+
+    VarSetCapacity(mb, size + 1, 0)
+    DllCall("WideCharToMultiByte", "UInt", 0, "UInt", 0
+        , "Ptr", &wchar, "Int", 1
+        , "Ptr", &mb, "Int", size
+        , "Ptr", 0, "Ptr", 0)
+    return StrGet(&mb, size, "CP0")
+}
+
 CallGeminiVision(apiKey, modelID, prompt, images, useThinking := false) {
     ; API Endpoint
     endpoint := "https://generativelanguage.googleapis.com/v1beta/models/" . modelID . ":generateContent?key=" . apiKey

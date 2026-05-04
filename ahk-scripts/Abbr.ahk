@@ -187,3 +187,5 @@ HotstringMenuV("A","MenuShortcut"
     ,"Calcified uterine fibroid(s)."
     ,"Splenic calcification(s).")
 return
+
+:O:sts;::Soft tissue swelling.

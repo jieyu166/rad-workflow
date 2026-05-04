@@ -231,3 +231,98 @@ DxSubHandler:
     output := StrReplace(SelectedMenuText, "{LungDxSel}", selection)
     SendInput {raw}%output%%A_EndChar%
 Return
+
+
+; =============================================================================
+; HotstringMenuMulti — 多選版 hotstring menu (2026-05-03 新增)
+; =============================================================================
+; 用法（簽名相容於 HotstringMenuV）：
+;   HotstringMenuMulti("A", "MenuShortcut", "item1", "item2", "BRK", "item3", ...)
+;
+; - MenuType: "A"=字母 mnemonic (a,b,c,...) / "N"=數字 mnemonic (1,2,3,...)
+; - Handle:   "MenuShortcut"  → 項目即顯示文字也是輸出文字
+;             "MenuShortcut2" → 項目以 "顯示|輸出" 區隔（與 V 版一致）
+; - 後續為項目；"BRK" 為水平分隔線
+;
+; 輸出格式：勾選項目按 MenuArray 順序串接，分隔字 ", "，結尾自動補 "."
+; 操作：
+;   Space   切換目前焦點 checkbox
+;   Enter   確認送出
+;   Esc     取消（不送任何字）
+;   Alt+x   切換對應 mnemonic 項目（x = a/b/c... 或 1/2/3...）
+;
+; 注意：
+; - 不支援 SUBMENU/SUBNAME/{LtRt}/{LungSel}/{LungDxSel} 子選單（多選模式不適合）
+; - 設計目標為「可同時並存」的事實列表（如 s/p ...、多重肺所見），
+;   互斥型選單（如 cardiomegaly vs normal heart）請繼續用 HotstringMenuV。
+; =============================================================================
+
+HotstringMenuMulti(MenuType, Handle, MenuArray*)
+{
+    global HMM_Items
+    HMM_Items := []
+
+    Gui, HMM:Destroy   ; 防止前次殘留
+    Gui, HMM:New, +AlwaysOnTop +ToolWindow +OwnDialogs +LabelHMM, HotstringMenuMulti
+    Gui, HMM:Font, s11, 微軟正黑體
+    Gui, HMM:Margin, 12, 10
+    Gui, HMM:Add, Text, xm w560, 多選 — Space=切換  Enter=確認  Esc=取消  (Alt+字母直接切換)
+
+    cnt := 1
+    for idx, Item in MenuArray {
+        if (Item = "BRK") {
+            Gui, HMM:Add, Text, xm w560 h2 0x10
+            continue
+        }
+        if (InStr(Item, "SUBMENU", true) || InStr(Item, "SUBNAME", true))
+            continue   ; 多選不支援子選單
+
+        displayText := Item
+        outputText := Item
+        if (Handle = "MenuShortcut2" && InStr(Item, "|")) {
+            parts := StrSplit(Item, "|")
+            displayText := parts[1]
+            outputText := RTrim(parts[2])
+        }
+
+        if (MenuType = "A")
+            label := "&" . Chr(cnt + 96) . "  " . displayText
+        else if (MenuType = "N")
+            label := "&" . cnt . "  " . displayText
+        else
+            label := displayText
+
+        Gui, HMM:Add, CheckBox, xm w560 h22 hwndhCB, % label
+        HMM_Items.Push({hwnd: hCB, text: outputText})
+        cnt += 1
+    }
+
+    Gui, HMM:Add, Text, xm w560 h2 0x10
+    Gui, HMM:Add, Button, xm w140 h34 gHMM_OK Default, 確定 (Enter)
+    Gui, HMM:Add, Button, x+10 yp w140 h34 gHMM_Cancel, 取消 (Esc)
+
+    Gui, HMM:Show,, HotstringMenuMulti
+}
+
+HMM_OK:
+    HMM_Out := ""
+    HMM_N := 0
+    for i, info in HMM_Items {
+        ControlGet, HMM_Val, Checked,,, % "ahk_id " . info.hwnd
+        if (HMM_Val) {
+            HMM_Out .= (HMM_N = 0 ? "" : ", ") . info.text
+            HMM_N += 1
+        }
+    }
+    Gui, HMM:Destroy
+    if (HMM_N > 0) {
+        HMM_Out .= "."
+        SendInput {raw}%HMM_Out%
+    }
+Return
+
+HMM_Cancel:
+HMMGuiClose:
+HMMGuiEscape:
+    Gui, HMM:Destroy
+Return

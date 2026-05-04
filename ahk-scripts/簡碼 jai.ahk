@@ -24,6 +24,8 @@ global USAI_PreviousImage := ""
 global USAI_APIKey := API_KEY
 global USAI_CurrentOCRText := ""
 global USAI_PreviousOCRText := ""
+global g_USAI_StartTick := 0
+global g_USAI_LastModel := ""
 
 ; --- AI Findings (I2F) globals — 必須在 auto-exec 內初始化（被 #include 的 US.ahk 內部已過 auto-exec） ---
 global g_I2F_Whr := ""
@@ -96,7 +98,7 @@ FileEncoding, UTF-8
 
 :O:sp;::
 SendInput Status post{Space}
-HotstringMenuV("A","MenuShortcut"
+HotstringMenuMulti("A","MenuShortcut"
     ,"nasogastric tube insertion with tip in stomach"
     ,"nasogastric tube insertion with tip not seen"
     ,"BRK"
@@ -126,7 +128,9 @@ HotstringMenuV("A","MenuShortcut"
     ,"_"
     ,"BRK"
     ,"pigtail insertion with tip at _"
-    ,"double J stent implantation in _ urotract.")
+    ,"double J stent implantation in _ urotract."
+    ,"BRK"
+    ,"Foley insertion.")
 return
 
 :O:sp2;::
@@ -310,7 +314,13 @@ return
 
 :O:lc;::Limited change.
 
-:O:nl;::No active lung lesions. 
+:O:nl;::No active lung lesions.
+
+; --- 高頻短語 hotstring (新增 2026-05-03，依 keylog 統計) ---
+:O:oth;::or others.
+:O:cb;::could be
+:O:pif;::post internal fixation.
+:O:ofr;::old fracture of _
 
 :O:cx;::
 HotstringMenuV("A","MenuShortcut2"
@@ -346,7 +356,8 @@ HotstringMenuV("A","MenuShortcut"
     ,"BRK"
     ,"_Bilateral thyroid cysts"
     ,"BRK"
-    ,"Hepatic cyst or hypodense lesion in _both lobes of liver.(Srs/Img:_/_)"
+	,"Hepatic cyst or hypodense lesion in _ of liver.(Srs/Img:_/_)"
+    ,"Hepatic cysts or hypodense lesions in _both lobes of liver.(Srs/Img:_/_)"
     ,"Hepatic cysts in both lobes of liver, up to _ cm. "
     ,"Hepatic cysts"
     ,"BRK"
@@ -385,6 +396,7 @@ HotstringMenuV("A","MenuShortcut2"
     ,"Suggest correlate with other studies"
     ,"Suggest abdominal correlation."
     ,"BRK"
+    ,"Suggest thyroid follow-up."
     ,"Suggest breast US correlation."
     ,"Suggest diagnostic mammography with spot magnification for further evaluation."
     ,"Suggest 6-month follow-up mammography."
@@ -440,7 +452,12 @@ return
   However, correlation to clinical S/S and V/Q scan still recommended to  exclude small branches embolism.
 )
 
-:O:recist;::Overall, _complete response (CR)/partial response (PR)/stable disease (SD)/_progressive disease (PD) (RECIST 1.1) is considered.
+:O:recist;::
+SendInput Overall,{Space}
+HotstringMenuV("A","MenuShortcut","complete response(CR)","partial response(PR)","stable disease(SD)","progressive disease(PD)")
+SendInput (RECIST 1.1) is considered.
+return
+
 ::rev::
 (
 Revision Date: _
@@ -703,7 +720,7 @@ XButton2_USAIGUI:
     MouseMove, %origX%, %origY%
 
     ; 啟動 USAIGUI 視窗
-    WinActivate, 超音波 AI 分析 (含 OCR)
+    WinActivate, 超音波 AI 分析
     Sleep, 100
 
     ; 執行貼上影像1
