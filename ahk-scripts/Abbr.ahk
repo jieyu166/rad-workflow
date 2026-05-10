@@ -48,7 +48,6 @@ return
 :O:ghj::glenohumeral joint
 :O:ac::acromio-clavicular
 :O:gh::gleno-humeral
-:O:oa::osteoarthritis (OA)
 :O:fai::femoroacetabular impingement (FAI)
 :O:ifi::ischiofemoral impingement (IFI)
 :O:ddd::degenerative disc disease
@@ -64,6 +63,10 @@ return
 :O:mp::
 HotstringMenuV("A","MenuShortcut","middle phalanx","metacarpophalangeal (MCP)","metatarsophalangeal(MTP)")
 return
+:O:oa;::
+HotstringMenuV("A","MenuShortcut","osteoarthritis (OA)","OA", "Both hips osteoarthritis (OA)")
+return
+
 :O:oci::osteitis condensans ilii
 :O:ocp::osteitis condensans pubis
 :O:opll::ossification of posterior longitudinal ligament (OPLL)
@@ -189,3 +192,7 @@ HotstringMenuV("A","MenuShortcut"
 return
 
 :O:sts;::Soft tissue swelling.
+
+:O:fcc;::fibrocystic changes.
+:O:cpfe;::combined pulmonary fibrosis and emphysema(CPFE) 
+:O:ila;:: interstitial lung abnormality(ILA)

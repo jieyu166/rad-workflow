@@ -108,9 +108,8 @@ HotstringMenuMulti("A","MenuShortcut"
     ,"BRK"
     ,"pacemaker implantation over _left chest"
     ,"BRK"
-    ,"Port-A implantation via _right_left subclavian vein, with tip in _SVC_atriocaval junction"
-    ,"Port-A insertion via _right_left internal jugular vein, with tip in _SVC_atriocaval junction"
-    ,"Port-A implantation over _right_left chest"
+    ,"Port-A implantation via {LtRt} subclavian vein, _internal jugular vein, with tip in _SVC_atriocaval junction"
+    ,"Port-A implantation over {LtRt} chest"
     ,"BRK"
     ,"sternotomy with metallic wire fixation"
     ,"sternotomy with metallic wire fixation, _valvular replacement _CABG"
@@ -121,45 +120,42 @@ HotstringMenuMulti("A","MenuShortcut"
     ,"endotracheal tube insertion and tip at _"
     ,"tracheostomy"
     ,"BRK"
-    ,"_right_left partial mastectomy with clips"
-    ,"_right_left mastectomy"
-    ,"BRK"
-    ,"cholecystectomy, with clips in right upper abdomen"
-    ,"_"
-    ,"BRK"
+    ,"VP shunt"
+    ,"Foley insertion.","_"
     ,"pigtail insertion with tip at _"
-    ,"double J stent implantation in _ urotract."
-    ,"BRK"
-    ,"Foley insertion.")
+    ,"double J stent implantation in {LtRt} urotract.")
 return
 
 :O:sp2;::
 SendInput Status post{Space}
-HotstringMenuV("A","MenuShortcut"
+HotstringMenuMulti("A","MenuShortcut"
     ,"total knee replacement, with acceptable alignment, without evidence of loosening"
     ,"medial unicompartmental knee arthroplasty"
     ,"BRK"
-    ,"_left hip bipolar hemiarthroplasty"
-    ,"_ total hip replacement"
-    ,"_ total hip replacement, with acceptable alignment"
+    ,"{LtRt} hip bipolar hemiarthroplasty"
+    ,"{LtRt} total hip replacement"
+    ,"{LtRt} total hip replacement, with acceptable alignment"
     ,"BRK"
     ,"_ vertebroplasty"
-    ,"transpedicular screws fixation between _, interbody cage fixation"
-    ,"transpedicular screws fixation, interbody cage fixation _"
+    ,"transpedicular screws fixation between _"
+    ,"interbody cage fixation at _"
     ,"internal fixation at _"
-    ,"BRK")
+    ,"BRK"
+    ,"{LtRt} partial mastectomy with clips"
+    ,"{LtRt} mastectomy"
+    ,"cholecystectomy, with clips in right upper abdomen")
 return
 
 :O:spi;::
-HotstringMenuV("A","MenuShortcut2"
+HotstringMenuMulti("A","MenuShortcut2"
     ,"Loss lordosis of spine"
     ,"No obvious hypermobility"
     ,"Suspect L5 short pedicle"
     ,"_ pars defect can not be excluded. DDx. facet arthrosis"
-    ,"_ anterior wedging"
+    ,"Facet arthrosis, Baastrup disease/kissing spinal processes of lower L-spine"
     ,"Facet arthrosis of lower L-spine"
     ,"Baastrup disease or kissing spinal processes of lower L-spine"
-    ,"Facet arthrosis, Baastrup disease/kissing spinal processes of _lower L-spine"
+    ,"_ anterior wedging"
     ,"BRK"
     ,"C-spine(AP+Flex.+Ext.):"
     ,"L-spine(AP+Flex.+Ext.):")
@@ -317,7 +313,7 @@ return
 :O:nl;::No active lung lesions.
 
 ; --- 高頻短語 hotstring (新增 2026-05-03，依 keylog 統計) ---
-:O:oth;::or others.
+:O:oro;::or others.
 :O:cb;::could be
 :O:pif;::post internal fixation.
 :O:ofr;::old fracture of _

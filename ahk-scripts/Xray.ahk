@@ -266,8 +266,8 @@ return
 
 :O:cxr;::
 HotstringMenuV("A","MenuShortcut2"
-    ,"Mild infiltration in {LungSel} , could be pneumonia, or others."
-    ,"Consolidation in {LungSel}_, could be pneumonia, or others."
+    ,"Mild infiltration in {LungSel}_, could be pneumonia, _or others."
+    ,"Consolidation in {LungSel}_, could be pneumonia, _or others."
     ,"Focal atelectasis in {LungSel} ."
     ,"BRK"
     ,"Emphysematous change or hyperaerated appearance of both lungs. "
@@ -430,7 +430,7 @@ CXR7:
 desc .= "Mild increased lung markings in bilateral perihilar region.`r"
 desc .= "No cardiomegaly.`r"
 desc .= "The bony structure is unremarkable.`r"
-OutputFinish(1, "CXR 範例", false, false, true)
+OutputFinish(1, "CXR 範例", false, false, false)
 return
 
 CXR8:
@@ -604,11 +604,11 @@ Gui Font, s14
 ; 移除所有 CheckBox，改為按鈕配置
 
 ; 第一排 - 標題選項
-Gui Add, CheckBox, x10 y10 w120 h23 vLTitle, 包含標題(&T)
+Gui Add, CheckBox, x10 y10 w120 h23 vLTitle, 包含標題(&5)
 ; [新增] 部位選擇 Radio Button
 ; 預設不勾選，保留彈性；若選了就會固定輸出該部位
-Gui Add, Radio, x140 y10 w90 h23 vSpineLoc1, C-spine
-Gui Add, Radio, x240 y10 w90 h23 checked1 vSpineLoc2, L-spine
+Gui Add, Radio, x140 y10 w90 h23 vSpineLoc1, C-spine(&2)
+Gui Add, Radio, x240 y10 w90 h23 checked1 vSpineLoc2, L-spine(&3)
 
 ; 第二排按鈕
 Gui Add, Button, x10 yp+50 w150 h50 gLspineDefault, L-spine 預設(&L)
@@ -645,7 +645,7 @@ Gui Add, Button, xp yp+50 w120 h40 gOpenForamenWeb, 裂孔網頁(&V)
 Gui Font, s10, Segoe UI
 Gui Add, Text, x500 yp+55 w120 h18 vSpineStatus, 已選 0 項
 Gui Font, s14
-Gui Add, Button, x500 yp+22 w120 h44 Default gFlushSpineBuffer, 輸出全部(&O)
+Gui Add, Button, x500 yp+22 w120 h44 Default gFlushSpineBuffer, 輸出全部(&G)
 Gui Add, Button, xp yp+50 w120 h32 gClearSpineBuffer, 清空緩衝(&E)
 
 Gui Show, w640 h450, Spine phases
@@ -681,7 +681,7 @@ FlushSpineBuffer:
     }
     SpineBuffer := []
     GuiControl, , SpineStatus, % "已選 0 項"
-    OutputFinish(1, "Spine phases", false, false, true)
+    OutputFinish(1, "Spine phases", false, false, false)
 return
 
 ; 清空緩衝但不貼出
@@ -710,8 +710,8 @@ BtnInsertTitle:
 		desc .= "(AP{+}Flex.{+}Ext.)"
 	}
 	desc .=":`r"
-    desc_sev := 0   ; 標題永遠最前
-    gosub SpineOutput
+    CopyCXRtoHISWithParam(1)
+    WinActivate, Spine phases
 return
 
 ; [按鈕 2] Anterior Wedging
@@ -727,12 +727,14 @@ LspineDefault:
     Gui, Submit, NoHide
     desc := ""
 
-    ; 根據 CheckBox 決定是否加入標題
+    ; 標題需單獨進 buffer，才能永遠排在其他 findings 前面
     if(LTitle) {
-        desc := "L-spine:`r`r"
+        desc := "L-spine:`r"
+        desc_sev := 0
+        gosub SpineOutput
     }
 
-    desc .= "Degenerative disc disease with _ disc space narrowing.`r"
+    desc := "Degenerative disc disease with _ disc space narrowing.`r"
     desc .= "Loss of lordosis of spine.`r"
     desc .= "Spondylosis of spine.`r"
     desc_sev := 6   ; 退化背景組套
@@ -743,14 +745,17 @@ return
 CspineDefault:
     ; 先取得 CheckBox 的值
     Gui, Submit, NoHide
+    desc := ""
 
 
-    ; 根據 CheckBox 決定是否加入標題
+    ; 標題需單獨進 buffer，才能永遠排在其他 findings 前面
     if(LTitle) {
-        desc := "C-spine:`r`r"
+        desc := "C-spine:`r"
+        desc_sev := 0
+        gosub SpineOutput
     }
 
-    desc .= "Degenerative disc disease with _ disc space narrowing.`r"
+    desc := "Degenerative disc disease with _ disc space narrowing.`r"
     desc .= "Loss of lordosis of spine.`r"
     desc .= "Spondylosis of spine.`r"
     desc .= "`r*Below C_ couldn't be evaluated at lateral view.`r"

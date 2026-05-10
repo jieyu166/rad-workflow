@@ -199,9 +199,11 @@ ShowLungSubMenu(text) {  ; 右側 REW 左側 UIO 雙側 BN
     Menu, LungSub, Add, left upper lung(LUL) l&ingula, LungSubHandler
     Menu, LungSub, Add, left l&ower lung(LLL), LungSubHandler
     Menu, LungSub, Add, &left lung, LungSubHandler
-	Menu, LungSub, Add, &bilateral lung, LungSubHandler
-    Menu, LungSub, Add, bilateral lower lu&ng, LungSubHandler
-    Menu, LungSub, Add, 右側 REW 左側 UIO 雙側 BN, LungSubHandler
+	Menu, LungSub, Add, &both lungs, LungSubHandler
+	Menu, LungSub, Add, both u&pper lungs, LungSubHandler
+	Menu, LungSub, Add, both &middle lungs, LungSubHandler
+    Menu, LungSub, Add, both lower lu&ngs, LungSubHandler
+    Menu, LungSub, Add, 右側 TREW 左側 UIOL 雙側 BPMN, LungSubHandler
     Menu, LungSub, Add, _, LungSubHandler
     Menu, LungSub, Show
     Menu, LungSub, Delete
@@ -263,7 +265,7 @@ HotstringMenuMulti(MenuType, Handle, MenuArray*)
     HMM_Items := []
 
     Gui, HMM:Destroy   ; 防止前次殘留
-    Gui, HMM:New, +AlwaysOnTop +ToolWindow +OwnDialogs +LabelHMM, HotstringMenuMulti
+    Gui, HMM:New, +AlwaysOnTop +ToolWindow +OwnDialogs +LabelHMMGui, HotstringMenuMulti
     Gui, HMM:Font, s11, 微軟正黑體
     Gui, HMM:Margin, 12, 10
     Gui, HMM:Add, Text, xm w560, 多選 — Space=切換  Enter=確認  Esc=取消  (Alt+字母直接切換)
@@ -317,6 +319,8 @@ HMM_OK:
     Gui, HMM:Destroy
     if (HMM_N > 0) {
         HMM_Out .= "."
+        ; 解析 {LtRt} / {LungSel} / {LungDxSel} placeholder
+        HMM_Out := HMM_ResolvePlaceholders(HMM_Out)
         SendInput {raw}%HMM_Out%
     }
 Return
@@ -326,3 +330,160 @@ HMMGuiClose:
 HMMGuiEscape:
     Gui, HMM:Destroy
 Return
+
+
+; ----------------------------------------------------------------------
+; Placeholder 解析：{LtRt} / {LungSel} / {LungDxSel} 逐一彈窗讓使用者選
+; ----------------------------------------------------------------------
+HMM_ResolvePlaceholders(text)
+{
+    global HMM_PickResult, HMM_PickDone
+    while (InStr(text, "{LtRt}")) {
+        HMM_PickResult := "", HMM_PickDone := false
+        Gui, HMMPick:Destroy
+        Gui, HMMPick:New, +AlwaysOnTop +ToolWindow +OwnDialogs +LabelHMMPickGui, 選擇
+        Gui, HMMPick:Font, s12, 微軟正黑體
+        Gui, HMMPick:Margin, 12, 12
+        Gui, HMMPick:Add, Text, , {LtRt} 選擇：
+        Gui, HMMPick:Add, Button, w110 h40 gHMMPickLtRtL Default, &Left
+        Gui, HMMPick:Add, Button, x+5 yp w110 h40 gHMMPickLtRtR, &Right
+        Gui, HMMPick:Add, Button, x+5 yp w110 h40 gHMMPickLtRtB, &Bilateral
+        Gui, HMMPick:Show, , HMM 選擇
+        while (!HMM_PickDone)
+            Sleep 30
+        choice := (HMM_PickResult = "") ? "_" : HMM_PickResult
+        text := StrReplace(text, "{LtRt}", choice, , 1)
+    }
+    while (InStr(text, "{LungSel}")) {
+        HMM_PickResult := "", HMM_PickDone := false
+        Gui, HMMPick:Destroy
+        Gui, HMMPick:New, +AlwaysOnTop +ToolWindow +OwnDialogs +LabelHMMPickGui, 選擇
+        Gui, HMMPick:Font, s12, 微軟正黑體
+        Gui, HMMPick:Margin, 12, 12
+        Gui, HMMPick:Add, Text, , {LungSel} 選擇肺葉：
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungRUL, righ&t upper lung (RUL)
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungRML, right middl&e lung (RML)
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungRLL, right lo&wer lung (RLL)
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungRT, &right lung
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungLUL, left &upper lung (LUL)
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungLULling, left upper lung l&ingula
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungLLL, left l&ower lung (LLL)
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungLT, &left lung
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungBI, &bilateral lung
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungBL, bilateral lo&wer lung
+        Gui, HMMPick:Add, Button, w220 h32 gHMMPickLungUS, _
+        Gui, HMMPick:Show, , HMM 選擇
+        while (!HMM_PickDone)
+            Sleep 30
+        choice := (HMM_PickResult = "") ? "_" : HMM_PickResult
+        text := StrReplace(text, "{LungSel}", choice, , 1)
+    }
+    while (InStr(text, "{LungDxSel}")) {
+        HMM_PickResult := "", HMM_PickDone := false
+        Gui, HMMPick:Destroy
+        Gui, HMMPick:New, +AlwaysOnTop +ToolWindow +OwnDialogs +LabelHMMPickGui, 選擇
+        Gui, HMMPick:Font, s12, 微軟正黑體
+        Gui, HMMPick:Margin, 12, 12
+        Gui, HMMPick:Add, Text, , {LungDxSel} 選擇 DDx：
+        Gui, HMMPick:Add, Button, w260 h36 gHMMPickDxPna, DDx: &pneumonia
+        Gui, HMMPick:Add, Button, w260 h36 gHMMPickDxEdema, DDx: pulmonary &edema
+        Gui, HMMPick:Add, Button, w260 h36 gHMMPickDxAtel, DDx: &atelectasis
+        Gui, HMMPick:Add, Button, w260 h36 gHMMPickDxTumor, DDx: &tumor
+        Gui, HMMPick:Add, Button, w260 h36 gHMMPickDxClin, &Clinical correlation is needed
+        Gui, HMMPick:Show, , HMM 選擇
+        while (!HMM_PickDone)
+            Sleep 30
+        choice := (HMM_PickResult = "") ? "_" : HMM_PickResult
+        text := StrReplace(text, "{LungDxSel}", choice, , 1)
+    }
+    return text
+}
+
+; --- LtRt buttons ---
+HMMPickLtRtL:
+    HMM_PickResult := "left", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLtRtR:
+    HMM_PickResult := "right", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLtRtB:
+    HMM_PickResult := "bilateral", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+
+; --- Lung buttons ---
+HMMPickLungRUL:
+    HMM_PickResult := "right upper lung (RUL)", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLungRML:
+    HMM_PickResult := "right middle lung (RML)", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLungRLL:
+    HMM_PickResult := "right lower lung (RLL)", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLungRT:
+    HMM_PickResult := "right lung", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLungLUL:
+    HMM_PickResult := "left upper lung (LUL)", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLungLULling:
+    HMM_PickResult := "left upper lung (LUL) lingula", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLungLLL:
+    HMM_PickResult := "left lower lung (LLL)", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLungLT:
+    HMM_PickResult := "left lung", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLungBI:
+    HMM_PickResult := "bilateral lung", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLungBL:
+    HMM_PickResult := "bilateral lower lung", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickLungUS:
+    HMM_PickResult := "_", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+
+; --- Dx buttons ---
+HMMPickDxPna:
+    HMM_PickResult := "DDx: pneumonia", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickDxEdema:
+    HMM_PickResult := "DDx: pulmonary edema", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickDxAtel:
+    HMM_PickResult := "DDx: atelectasis", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickDxTumor:
+    HMM_PickResult := "DDx: tumor", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+HMMPickDxClin:
+    HMM_PickResult := "Clinical correlation is needed", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return
+
+; --- Cancel/Close ---
+HMMPickGuiClose:
+HMMPickGuiEscape:
+    HMM_PickResult := "_", HMM_PickDone := true
+    Gui, HMMPick:Destroy
+return

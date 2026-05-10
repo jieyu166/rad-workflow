@@ -682,6 +682,12 @@
         const raw = (value || '').trim();
         if (!raw) return '';
 
+        const compactMatch = raw.match(/^(\d{4})(\d{2})(\d{2})$/);
+        if (compactMatch) {
+            const [, year, month, day] = compactMatch;
+            return `${year}/${month}/${day}`;
+        }
+
         const match = raw.match(/^(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})$/);
         if (!match) return raw;
 
@@ -699,6 +705,17 @@
         }
 
         return normalizedPriorDate;
+    }
+
+    function getPriorCTInputState() {
+        const priorDateField = document.getElementById('priorDate');
+        const noPriorCheckbox = document.getElementById('noPriorCT');
+        const normalizedPriorDate = normalizeDateInput(priorDateField.value);
+        return {
+            priorDate: normalizedPriorDate,
+            hasPriorDate: !!normalizedPriorDate,
+            noPrior: noPriorCheckbox.checked && !normalizedPriorDate
+        };
     }
 
     // ================================================================
@@ -1304,6 +1321,7 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
             showStatus('Please paste an impression first.', 'error');
             return;
         }
+        const priorInputState = getPriorCTInputState();
 
         let apiKey = document.getElementById('apiKey').value.trim();
         if (!apiKey) {
@@ -1344,7 +1362,7 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
             if (!text) throw new Error('No content in API response');
 
             const parsed = enforceCoronaryRule(JSON.parse(text), impression);
-            applyParsedData(parsed);
+            applyParsedData(parsed, { priorInputState });
             showStatus('AI parsing complete! Review and edit the results below.', 'success');
         } catch (err) {
             showStatus(`AI parsing failed: ${err.message}`, 'error');
@@ -1352,7 +1370,7 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
         }
     }
 
-    function applyParsedData(d) {
+    function applyParsedData(d, options = {}) {
         // Category — override to 1 if no nodule found
         if (d.lung_rads_category) {
             let cat = d.lung_rads_category;
@@ -1371,11 +1389,19 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
             if (qRadio) qRadio.checked = true;
         }
 
-        // Prior CT
+        // Prior CT. Gemini only sees the impression text, so preserve a date
+        // that the user already entered unless the AI returns an explicit prior.
+        const priorInputState = options.priorInputState || getPriorCTInputState();
         const normalizedPriorDate = normalizeDateInput(d.prior_date);
         if (d.prior_available || normalizedPriorDate) {
             document.getElementById('noPriorCT').checked = false;
             if (normalizedPriorDate) document.getElementById('priorDate').value = normalizedPriorDate;
+        } else if (priorInputState.hasPriorDate) {
+            document.getElementById('noPriorCT').checked = false;
+            document.getElementById('priorDate').value = priorInputState.priorDate;
+        } else if (priorInputState.noPrior) {
+            document.getElementById('noPriorCT').checked = true;
+            document.getElementById('priorDate').value = '';
         } else {
             document.getElementById('noPriorCT').checked = true;
             document.getElementById('priorDate').value = '';
