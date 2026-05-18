@@ -100,10 +100,13 @@ radtracker/
 ### CT 子分類
 | 子類別 | 判定條件 |
 |--------|----------|
+| **LDCT** | exam_name 含 `Low Dose CT` 或 `LDCT`，**或 order_code 開頭 `33904`** |
 | Brain | exam_name 含 `Brain` 或 `Head`，且非顯影劑 order_code |
 | Brain-C | exam_name 含 `Brain`/`Head` + order_code 含 33072 或 33090 |
 | Neck/CTA | exam_name 含 `Neck`/`C-Spine`/`C Spine`，或開頭為 `CTA-` |
 | Chest/Abd | 以上皆不符（預設） |
+
+> **LDCT 註**：order_code 33904-* 系列（33904-3 / 33904-8 等）皆為低劑量肺癌篩檢 CT。多數 source=2(門診) 但臨床性質屬健檢，依新策略應歸 **P2 (10d SLA)**，見〈臨床優先 Triage 策略〉。
 
 ### US 子分類
 | 子類別 | 判定條件 |
@@ -118,6 +121,49 @@ radtracker/
 | 困難 | 非急打，unique exam_name 種類 >= 3 |
 | 中等 | 非急打，unique exam_name 種類 = 2 |
 | 普通 | 非急打，unique exam_name 種類 = 1 |
+
+---
+
+## 臨床優先 Triage 策略（2026-05-14 起採用）
+
+當 backlog 超過單人合理上限（如 W20 XR 1158 件），改採**按臨床急迫性 triage**，**XR 絕對總量不再是主要指標**。
+
+### 優先級定義
+
+| 優先級 | 條件 | SLA | 策略 |
+|---|---|---|---|
+| **P1 急打** | source = 1(急診) **或** 3(住院) | ≤24hr | ASAP，同日完成 |
+| **P2a 健檢 XR** | source = 4 | ≤10d | 10 天內 |
+| **P2b LDCT** | exam=LDCT 或 order_code 開頭 `33904` | ≤10d | 每日搭配一般 CT 處理（LDCT 較快 ~5-7/hr） |
+| **P3 門診新** | source = 2 且 age < 3d | ≤3d | 維持讀 |
+| **P4 門診舊** | source = 2 且 age ≥ 3d | — | **可放棄** |
+
+> 注意：CT 也適用 P1（急診/住院 CT）；US/Mammo 多為 source=2/4，依此規則自動歸類。
+
+### 監控指標（取代「XR 期末總量」）
+
+| 新 KPI | 警示閾值 |
+|---|---|
+| P1 急打 pending > 24hr | > 10 件 |
+| P2 健檢/LDCT 超 10 天 | > 5 件 |
+| P3 門診新單 pending | > 50 件 |
+| CT/US/Mammo 週末剩餘 | > 10 件 |
+
+### 工具
+
+```bash
+# 跑 priority breakdown（pending CSV 模式）
+python priority_breakdown.py --csv csv_input/{pending}.csv --pending --today YYYY-MM-DD --json output/priority_{week}.json
+
+# 完成 CSV 模式（回顧 TAT）
+python priority_breakdown.py --csv csv_input/1150515_CL.csv
+```
+
+→ 輸出供 weekly_report **Section 11 Priority Triage Status** 引用（見 `weekly_review_prompt.md`）。
+
+### 已知限制
+- 需可匯出 **pending CSV**（含 order_date 但無 report_date 的開單）才能即時監控
+- 若僅有 completed CSV，只能事後檢視 TAT，不能反映當前 backlog 健康度
 
 ---
 
@@ -163,6 +209,18 @@ CSV 無法精確測量每筆報告的花費時間（61.4% 為批次簽發同一�
 - 值班 X光+CT 需當日處理
 - 值班期間會有額外急診 CT/X光
 
+#### 永康值班典型量（W19 2026-05-08 驗證）
+| 模態 | 典型件數 | 備註 |
+|---|---|---|
+| XR 急打 | **50+ 件** | 含本院積壓 + 永康急診（W19 實際 133 件，極端值）|
+| Brain CT | **5-10 件** | 預估 rate 7/hr |
+| 一般 CT | 0-5 件 | |
+| MR | 0-1 件 | |
+
+排程 W{N}_schedule 時，永康值班週的 XR/CT new 量約：
+- XR new ~580/週（vs 非值班 ~450/週）
+- CT new ~44/週（vs 非值班 ~25/週，多出來自 Brain CT）
+
 ### Mammo 場地限制
 - 週一、週六：18:00 後可排
 - 週五：21:00 後可排
@@ -187,6 +245,7 @@ CSV 無法精確測量每筆報告的花費時間（61.4% 為批次簽發同一�
 | Brain (non-contrast) | ct-br | 7份/hr | 10.0份/hr |
 | Neck/CTA | ct-nk | 3.5份/hr | 2.8份/hr |
 | Brain contrast | ct-brc | 3份/hr | — |
+| **LDCT** | ct-ldct | **5-7份/hr** | — | 屬 P2 健檢 SLA 10d；建議每日搭配一般 CT 1-2 件 |
 
 ### US
 | 子類別 | 代碼 | 基準速率 | 最新實測 | 建議更新 |
@@ -201,6 +260,20 @@ CSV 無法精確測量每筆報告的花費時間（61.4% 為批次簽發同一�
 | MR | mr | 2份/hr | 2.0份/hr |
 | IVP | ivp | 12份/hr | — |
 | BMD | bmd | 60份/hr | ~49份/hr |
+
+### 週新增量 baseline（2026-05 觀察）
+
+排程預測 backlog 期末時使用，**新增量集中於 Mon-Fri，週末/假日通常無新單（除急診外）**。
+
+| 模態 | 非值班週 new | 值班週 new | 母親節 surge |
+|---|---|---|---|
+| XR | ~450 | ~580 | 同 |
+| CT | ~25 | ~44 | 同 |
+| US | ~70（週二 surge） | 同 | 同 |
+| Mammo | ~46 | 同 | **+120**（一/二/五 集中）|
+| IVP | ~5-7 | 同 | 同 |
+
+⚠ **週末/假日 plan 折扣**：歷史教訓（W19 母親節 5/10 計畫 164 件、實際 4 件），週末/假日工作量**以「平日同類 × 50% 」估算**，避免 over-commit。
 
 ---
 
@@ -282,6 +355,35 @@ python update_history.py output/weekly_report.json
 python archive_week.py
 ```
 
+### priority_breakdown.py（2026-05-14 起新增）
+依臨床優先 triage 分桶 P1-P4，輸出 SLA KPI。
+
+```bash
+# pending CSV 模式（即時 backlog 監控）— 需可匯出未完成單
+python priority_breakdown.py --csv csv_input/{pending}.csv --pending --today YYYY-MM-DD --json output/priority_W{NN}.json
+
+# completed CSV 模式（事後 TAT 回顧）
+python priority_breakdown.py --csv csv_input/1150515_CL.csv --modality CT
+```
+
+### update_planned_with_actuals.py（2026-05-11 起新增）
+週日覆盤時對比 schedule 計畫 vs 實際完成（日層級，by modality）。
+
+```bash
+python update_planned_with_actuals.py W{NN} --csv csv_input/{week_csv}.csv [--yk ...]
+# 輸出 output/w{nn}_actuals.json — 含 GCal description 回填區塊
+```
+
+> 為何日層級：CSV report_time 為 batch sign-off（~60%）非實際讀片時間，slot-level 時間比對僅能 catch ~15%。日層級彙總 by modality 才誠實。
+
+### build_trends.py（每月一次）
+多週趨勢視覺化：週新增量、週點值、週完成、GitHub 強度熱力圖、Backlog 趨勢。
+
+```bash
+python build_trends.py
+# 輸出 output/trends.html — 拿來看 4 週 backlog 走勢、和主任談話的數據
+```
+
 ### parse_csv.py 單獨使用
 ```bash
 # 自動偵測 ROC 日曆檔名的週次（--week 可省略）
@@ -304,6 +406,33 @@ python generate_report.py --xlsx csv_input/legacy/radiology_tracker.xlsx --input
 - CSV 模式提供工作點值（work_points），xlsx 模式不提供
 - [Legacy] xlsx 模態欄位不一致：子類別可能在「子類別」或「難度」欄位，需合併判斷
 - [Legacy] other/雜務/臨床 的時間計入非報告時間，不計入報告效率
+
+### 週日覆盤 SOP（2026-05-14 標準化）
+
+每週日 21:00 GCal 已有 recurring 週覆盤 event。順序：
+
+1. **跑 weekly report**
+   ```bash
+   /weekly-report   # 或 python generate_report.py + 產 HTML
+   ```
+2. **產出計畫 vs 實際對比**
+   ```bash
+   python update_planned_with_actuals.py W{NN} --csv csv_input/{latest_CL}.csv [--yk ...]
+   ```
+3. **（若有 pending CSV）跑 priority triage**
+   ```bash
+   python priority_breakdown.py --csv csv_input/{pending}.csv --pending --json output/priority_W{NN}.json
+   ```
+4. **填 GCal 週覆盤 event template**（成長/生活/工作三帳戶）
+5. **歸檔**
+   ```bash
+   python update_history.py output/weekly_report.json
+   python archive_week.py
+   ```
+6. **每月一次跑 trends**
+   ```bash
+   python build_trends.py
+   ```
 
 ### 錯誤處理
 - 遺失 week_input → 提示使用者補充期初/期末剩餘量

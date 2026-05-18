@@ -209,6 +209,53 @@ XLSX 模式：
 
 ---
 
+### 區段十一：Priority Triage Status（2026-05-14 起新增）
+
+依「臨床優先級三層 triage 策略」追蹤 backlog 健康度。資料來自 `priority_breakdown.py` 產生的 JSON（如 `output/priority_{week}.json`）。
+
+#### 11a. KPI 卡片（最上方，4 個格）
+
+| 指標 | 計算 | 警示閾值 |
+|------|------|----------|
+| P1 急打 SLA 達成率 | (P1 ≤24hr 件數) / P1 總數 | < 80% 紅色 |
+| P2 健檢逾期 (>10d) | P2 中 age>10d 件數 | > 5 件 黃色 / > 10 件 紅色 |
+| P3 門診新單 pending | source=2 且 age<3d 件數 | > 50 件 黃色 |
+| 急打最大延遲 | P1 中最舊 age | > 3 天 紅色 |
+
+#### 11b. Priority 分布表
+
+```
+| 優先級 | 件數 | 中位 age | 最舊 age | 逾期 | Modality 分布 |
+| P1 急打 | ... | ... | ... | ⚠ | XR:.. CT:.. US:.. |
+| P2 健檢 | ... | ... | ... | ⚠ | ... |
+| P3 門診新 | ... | ... | ... | — | ... |
+| P4 門診舊 | ... | ... | ... | (可放棄) | ... |
+```
+
+#### 11c. P1/P2 逾期清單（最舊 10 件）
+
+每列：病歷號 + 模態 + age + 來源 + exam_name 縮寫
+- P1 逾期：橘色框（>24hr）
+- P2 逾期：黃色框（>10d）
+
+#### 11d. 樣式
+
+- KPI 卡片用大字 + 顏色（綠/黃/紅）
+- 「放棄」門診舊用淡灰，提示「策略性放棄」而非「失職」
+- 註：若 mode=completed，標註「TAT 回顧（過去）」；若 mode=pending，標註「即時 backlog（目前）」
+
+#### 11e. 操作流程
+
+```bash
+# 1. 跑 priority_breakdown（最近 CSV）
+python priority_breakdown.py --csv csv_input/{latest}.csv --json output/priority_{week}.json
+
+# 2. weekly_report 產生時引用 priority_{week}.json 填 Section 11
+# 3. HTML 中 KPI 卡片與表格用該 JSON 的數據
+```
+
+---
+
 ### HTML 樣式要求
 
 - 深色主題（#0c0e14 背景）
