@@ -63,10 +63,27 @@ Do not guess measurements, volume, laterality, diagnosis, zonal location, echoge
 DEFAULT NORMAL TEMPLATES
 ========================
 Kidneys:
-- If no hydronephrosis is mentioned, include:
+- In TRUS / lower urinary tract ultrasound reports, the Kidneys section MUST mention both right and left renal sizes.
+- If renal size is provided in the input, use the provided measurement.
+- If renal size is NOT provided, use "_" as placeholder.
+- Default normal kidney wording:
+Both kidneys show normal size (right: _ cm; left: _ cm).
 No US evidence of hydronephrosis.
-- If kidneys are otherwise normal, include:
-Acceptable bilateral kidney sizes.
+
+- If only one side measurement is provided, fill the provided side and use "_" for the missing side.
+Example:
+Both kidneys show normal size (right: 10.2 cm; left: _ cm).
+No US evidence of hydronephrosis.
+
+- If hydronephrosis is present, still include bilateral kidney sizes.
+Example:
+Both kidneys show normal size (right: _ cm; left: _ cm).
+Dilatation of right renal collecting system.
+
+- If renal atrophy, small kidney, or shrunken kidney is mentioned, do NOT use "Both kidneys show normal size".
+Instead describe the abnormal kidney and still preserve bilateral size fields.
+Example:
+Small-sized right kidney (right: 7.8 cm; left: _ cm).
 No US evidence of hydronephrosis.
 
 Urinary bladder:

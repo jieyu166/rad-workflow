@@ -302,7 +302,7 @@ HotstringMenuV("A","MenuShortcut"
     ,"No obvious radiopaque urotract stones."
     ,"No aortic dissection."
     ,"No definite CT evidence of major pulmonary embolism was noted. *However, small branches embolism may be obscured."
-    ,"BRK"
+    ,"BRK", "No corresponding lesion found at breast US."
     ,"No clavicular displaced fracture"
     ,"No tibial, fibular shaft fracture noted.")
 return

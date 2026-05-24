@@ -33,8 +33,18 @@ FINDINGS RULES:
    - Gallbladder: "Well distended with smooth wall"
    - Pancreas: "Normal size and echogenicity of the visible pancreas"
    - Spleen: "Normal size and echogenicity"
-   - Kidneys: "Acceptable bilateral kidney sizes. No US evidence of hydronephrosis"
-     **EXCEPTION**: If impression mentions renal atrophy, small kidney, or shrunken kidney on ANY side, do NOT output "Acceptable bilateral kidney sizes". Instead describe the atrophic/small kidney accordingly and only state acceptable size for the unaffected side if applicable.
+   - Kidneys:
+     - For general abdominal ultrasound:
+       "Acceptable bilateral kidney sizes. No US evidence of hydronephrosis"
+     - For urotract ultrasound:
+       MUST mention both right and left renal sizes in the Kidneys section.
+       If renal size is not provided, use "_" as placeholder.
+       Default format:
+       "Both kidneys show normal size (right: _ cm; left: _ cm). No US evidence of hydronephrosis"
+       If only one side measurement is provided, fill the provided side and use "_" for the missing side.
+     - **EXCEPTION**: If impression mentions renal atrophy, small kidney, or shrunken kidney on ANY side, do NOT output "Acceptable bilateral kidney sizes" or "Both kidneys show normal size".
+       Instead describe the abnormal kidney accordingly, include side and measurement if provided, and still preserve bilateral size fields for urotract ultrasound.
+    Example:"Small-sized right kidney (right: 7.8 cm; left: _ cm). No US evidence of hydronephrosis"
    - Urinary bladder: "Well distended with smooth wall"
    - Prostate: "Normal size and echogenicity"
    - Others: List incidental or extra-abdominal findings (e.g., ascites, pleural effusion, peritoneal nodules, retroperitoneal masses) with bullet points and descriptive terms only.

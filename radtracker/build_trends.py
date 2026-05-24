@@ -165,11 +165,17 @@ def render():
     n = len(weekly)
 
     # Compute max for scaling
+    # XR is ~10x larger than CT/US/Mammo, so use separate scales/charts
     max_added = max(max(w["add_xr"] for w in weekly), 1)
     max_comp = max(w["comp_xr"] + w["comp_ct"] + w["comp_us"] + w["comp_mm"] for w in weekly)
     max_pts = max((w["points"] for w in weekly), default=1)
     max_hr = max((w["report_hr"] for w in weekly), default=1)
     max_end = max(w["end_xr"] for w in weekly)
+
+    # --- Non-XR (CT/US/Mammo) separate scales so small modalities are readable ---
+    max_added_oth = max((max(w["add_ct"], w["add_us"], w["add_mm"]) for w in weekly), default=1) or 1
+    max_comp_oth = max((w["comp_ct"] + w["comp_us"] + w["comp_mm"] for w in weekly), default=1) or 1
+    max_end_oth = max((max(w["end_ct"], w["end_us"], w["end_mm"]) for w in weekly), default=1) or 1
 
     # SVG dimensions
     W = 760
@@ -268,25 +274,26 @@ def render():
         out.append('</svg>')
         return "".join(out)
 
-    # Series
-    add_series = [
-        ("XR", "#5b8af0", [w["add_xr"] for w in weekly]),
+    # Series — XR separated from CT/US/Mammo (XR ~10x larger)
+    add_series_xr = [("XR", "#5b8af0", [w["add_xr"] for w in weekly])]
+    add_series_oth = [
         ("CT", "#e8923a", [w["add_ct"] for w in weekly]),
         ("US", "#4caf7d", [w["add_us"] for w in weekly]),
         ("Mammo", "#e06090", [w["add_mm"] for w in weekly]),
     ]
-    comp_series = [
-        ("XR", "#5b8af0", [w["comp_xr"] for w in weekly]),
+    comp_series_xr = [("XR", "#5b8af0", [w["comp_xr"] for w in weekly])]
+    comp_series_oth = [
         ("CT", "#e8923a", [w["comp_ct"] for w in weekly]),
         ("US", "#4caf7d", [w["comp_us"] for w in weekly]),
         ("Mammo", "#e06090", [w["comp_mm"] for w in weekly]),
     ]
-    end_series = [
-        ("XR", "#5b8af0", [w["end_xr"] for w in weekly]),
+    end_series_xr = [("XR", "#5b8af0", [w["end_xr"] for w in weekly])]
+    end_series_oth = [
         ("CT", "#e8923a", [w["end_ct"] for w in weekly]),
         ("US", "#4caf7d", [w["end_us"] for w in weekly]),
         ("Mammo", "#e06090", [w["end_mm"] for w in weekly]),
     ]
+    max_comp_xr = max((w["comp_xr"] for w in weekly), default=1) or 1
     pts_vals = [round(w["points"]) for w in weekly]
     hr_vals = [w["report_hr"] for w in weekly]
     grand_total_vals = [w["grand_total"] or sum(
@@ -422,13 +429,18 @@ def render():
 <div class="section">
   <div class="section-title"><span class="num">1</span>各檢查每週新增份數變化（推算值，&gt;= 期末-期初+完成）</div>
   <div class="card">
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">① X光（單獨刻度，量大）</div>
     <div class="legend">
-      <div class="legend-item"><span class="legend-dot" style="background:var(--xr)"></span>X光</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--xr)"></span>X光（峰值 {max_added}）</div>
+    </div>
+    {render_line_chart(add_series_xr, max_added)}
+    <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px">② CT / US / Mammo（放大刻度，峰值 {max_added_oth}）</div>
+    <div class="legend">
       <div class="legend-item"><span class="legend-dot" style="background:var(--ct)"></span>CT</div>
       <div class="legend-item"><span class="legend-dot" style="background:var(--us)"></span>US</div>
       <div class="legend-item"><span class="legend-dot" style="background:var(--mm)"></span>Mammo</div>
     </div>
-    {render_line_chart(add_series, max_added)}
+    {render_line_chart(add_series_oth, max_added_oth)}
   </div>
 </div>
 
@@ -445,15 +457,20 @@ def render():
 
 <!-- 3. 每週完成件數 -->
 <div class="section">
-  <div class="section-title"><span class="num">3</span>每週完成件數變化（依模態堆疊）</div>
+  <div class="section-title"><span class="num">3</span>每週完成件數變化</div>
   <div class="card">
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">① X光完成（單獨刻度，峰值 {max_comp_xr}）</div>
     <div class="legend">
       <div class="legend-item"><span class="legend-dot" style="background:var(--xr)"></span>X光</div>
+    </div>
+    {render_bar([w["comp_xr"] for w in weekly], max_comp_xr, "#5b8af0", "XR")}
+    <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px">② CT / US / Mammo 完成（堆疊，放大刻度，峰值 {max_comp_oth}）</div>
+    <div class="legend">
       <div class="legend-item"><span class="legend-dot" style="background:var(--ct)"></span>CT</div>
       <div class="legend-item"><span class="legend-dot" style="background:var(--us)"></span>US</div>
       <div class="legend-item"><span class="legend-dot" style="background:var(--mm)"></span>Mammo</div>
     </div>
-    {render_stacked_bar(comp_series, max_comp)}
+    {render_stacked_bar(comp_series_oth, max_comp_oth)}
   </div>
 </div>
 
@@ -482,13 +499,18 @@ def render():
 <div class="section">
   <div class="section-title"><span class="num">5</span>期末剩餘量趨勢（積案壓力指標）</div>
   <div class="card">
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">① X光剩餘（單獨刻度，峰值 {max_end}）— 主要壓力源</div>
     <div class="legend">
       <div class="legend-item"><span class="legend-dot" style="background:var(--xr)"></span>X光</div>
+    </div>
+    {render_line_chart(end_series_xr, max_end)}
+    <div style="font-size:12px;color:var(--text-dim);margin:14px 0 6px">② CT / US / Mammo 剩餘（放大刻度，峰值 {max_end_oth}）</div>
+    <div class="legend">
       <div class="legend-item"><span class="legend-dot" style="background:var(--ct)"></span>CT</div>
       <div class="legend-item"><span class="legend-dot" style="background:var(--us)"></span>US</div>
       <div class="legend-item"><span class="legend-dot" style="background:var(--mm)"></span>Mammo</div>
     </div>
-    {render_line_chart(end_series, max_end)}
+    {render_line_chart(end_series_oth, max_end_oth)}
     <div style="font-size:12px;color:var(--text-dim);margin-top:8px">
       X光剩餘量持續累積（W08 518 → W17 731 → W18 720），仍是主要壓力源。
     </div>

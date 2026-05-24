@@ -20,20 +20,26 @@
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
         
         h1 {
-            text-align: center;
             color: #333;
-            margin-bottom: 30px;
+            margin: 0;
             font-size: 2.2em;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
         
         .spine-selector {
             display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 30px;
+            justify-content: flex-end;
+            gap: 12px;
         }
         
         .spine-btn {
@@ -239,7 +245,7 @@
             display: flex;
             justify-content: center;
             gap: 20px;
-            margin: 20px 0;
+            margin: 20px 0 0;
             padding: 15px;
             background: #f8f9fa;
             border-radius: 10px;
@@ -320,9 +326,13 @@
         }
         
         @media (max-width: 768px) {
-            .spine-selector {
+            .header-row {
                 flex-direction: column;
-                align-items: center;
+                align-items: stretch;
+            }
+
+            .spine-selector {
+                justify-content: center;
             }
             
             .level-row {
@@ -349,33 +359,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>椎間孔狹窄報告輔助工具</h1>
-        
-        <div class="spine-selector">
-            <button class="spine-btn active" onclick="selectSpine('c-spine')">C-spine</button>
-            <button class="spine-btn" onclick="selectSpine('l-spine')">L-spine</button>
-        </div>
-        
-        <div class="legend">
-            <div class="legend-item">
-                <div class="legend-color" style="background: #d4edda; border-color: #28a745;"></div>
-                <span>Mild</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #fff3cd; border-color: #ffc107;"></div>
-                <span>Moderate</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #f8d7da; border-color: #dc3545;"></div>
-                <span>Severe</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #d1ecf1; border-color: #17a2b8;"></div>
-                <span>Grade 4</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #e2e3e5; border-color: #6c757d;"></div>
-                <span>Grade 5</span>
+        <div class="header-row">
+            <h1>椎間孔狹窄報告輔助工具</h1>
+            
+            <div class="spine-selector">
+                <button class="spine-btn active" onclick="selectSpine('c-spine')">C-spine</button>
+                <button class="spine-btn" onclick="selectSpine('l-spine')">L-spine</button>
             </div>
         </div>
         
@@ -478,6 +467,29 @@
             <div id="report-output" class="report-output">點選按鈕開始標註...</div>
             <button class="copy-btn" onclick="copyReport()">複製報告</button>
             <button class="clear-btn" onclick="clearAll()">清除全部</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #d4edda; border-color: #28a745;"></div>
+                <span>Mild</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #fff3cd; border-color: #ffc107;"></div>
+                <span>Moderate</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f8d7da; border-color: #dc3545;"></div>
+                <span>Severe</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #d1ecf1; border-color: #17a2b8;"></div>
+                <span>Grade 4</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e2e3e5; border-color: #6c757d;"></div>
+                <span>Grade 5</span>
+            </div>
         </div>
     </div>
 
@@ -682,7 +694,7 @@
                 
                 if (parts.length > 0) {
                     const severityName = severityText[severity];
-                    reports.push(`- ${severityName} ${parts.join(', ')} neuroforaminal narrowing.`);
+                    reports.push(`${severityName} ${parts.join(', ')} neuroforaminal narrowing.`);
                 }
             });
             
@@ -709,7 +721,7 @@
             ['grade1', 'grade2', 'grade3', 'grade4', 'grade5'].forEach(grade => {
                 if (spondylolisthesisGroups[grade].length > 0) {
                     const levels = spondylolisthesisGroups[grade].join(', ');
-                    reports.push(`- ${spondylolisthesisText[grade]} spondylolisthesis of ${levels}.`);
+                    reports.push(`${spondylolisthesisText[grade]} spondylolisthesis of ${levels}.`);
                 }
             });
             
@@ -734,14 +746,14 @@
             ['severe', 'moderate', 'mild'].forEach(severity => {
                 if (retrolisthesisGroups[severity].length > 0) {
                     const levels = retrolisthesisGroups[severity].join(', ');
-                    reports.push(`- ${retrolisthesisText[severity]} retrolisthesis of ${levels}.`);
+                    reports.push(`${retrolisthesisText[severity]} retrolisthesis of ${levels}.`);
                 }
             });
             
             // 處理Disc space narrowing
             const discLevels = Object.keys(discNarrowing);
             if (discLevels.length > 0) {
-                reports.push(`- ${discLevels.join(', ')} disc space narrowing.`);
+                reports.push(`${discLevels.join(', ')} disc space narrowing.`);
             }
             
             reportDiv.textContent = reports.length > 0 ? reports.join('\n') : '點選按鈕開始標註...';

@@ -203,9 +203,9 @@ Skull AP and lateral views:
 (
 - No significant bony fracture or dislocation.
 - Bilateral TMJs are intact.
-mixed dentition
-Periapical lucency, could be periodontitis or others.
 Mild TMJ anterior subluxation.
+Mixed dentition
+Periapical lucency, could be periodontitis or others.
 Multiple teeth loss.
 Mild clouding of bilateral maxillary sinuses, could be sinusitis, bony overlapping or others.
 
@@ -599,6 +599,8 @@ WinSpine:
 WinGet, ActiveId, ID, A ;紀錄目前視窗
 ; 重置每次開啟時的緩衝（buffer 為陣列，元素為 {sev: int, text: str}）
 SpineBuffer := []
+desc := ""
+desc_sev := ""
 Gui Font, s14
 
 ; 移除所有 CheckBox，改為按鈕配置
@@ -632,14 +634,14 @@ Gui Add, Button, xp+160 yp w150 h50 gUncovertebralJoint, Uncovertebral(&U)
 Gui Add, Button, xp+160 yp w150 h50 gNoHypermobility, &No hypermobility
 
 Gui Add, Button, x10 yp+60 w150 h50 gUFJoint, Facet+Unco(&B)
-Gui Add, Button, xp+160 yp w150 h50 gC1C2OA, C1-C2 OA(&1)
+Gui Add, Button, xp+160 yp w150 h50 gC1C2OA, C1-C2 OA(&6)
 Gui Add, Button, xp+160 yp w150 h50 gPostOP, 術後組套(&P)
 
 ; 右側控制按鈕
 Gui Add, Button, x500 y10 w120 h40 gSpineClose, 切換到 CXR(&Q)
 Gui Add, Button, xp yp+50 w120 h40 gMergeExams, 合併檢查(&Z)
 Gui Add, Button, xp yp+50 w120 h40 gCopyOldFromSpine, 複製舊報告(&X)
-Gui Add, Button, xp yp+50 w120 h40 gOpenForamenWeb, 裂孔網頁(&V)
+Gui Add, Button, xp yp+50 w120 h40 gOpenForamenWeb, 裂孔網頁(&5)
 
 ; 緩衝排序輸出區（永遠先收集，按 [輸出全部] 才依嚴重度排序貼出）
 Gui Font, s10, Segoe UI
@@ -648,7 +650,12 @@ Gui Font, s14
 Gui Add, Button, x500 yp+22 w120 h44 Default gFlushSpineBuffer, 輸出全部(&G)
 Gui Add, Button, xp yp+50 w120 h32 gClearSpineBuffer, 清空緩衝(&E)
 
-Gui Show, w640 h450, Spine phases
+; 常用非 spine finding
+Gui Add, Text, x10 y370 w470 h2 0x10
+Gui Add, Button, x10 y385 w150 h50 gBowelGasFinding, 腸氣增加(&2)
+Gui Add, Button, xp+230 yp w150 h50 gAortaCalcFinding, 動脈鈣化(&1)
+
+Gui Show, w640 h470, Spine phases
 ; 記錄視窗標題，用於後續 focus 回來
 WinGet, SpineWinID, ID, Spine phases
 return
@@ -758,16 +765,22 @@ CspineDefault:
     desc := "Degenerative disc disease with _ disc space narrowing.`r"
     desc .= "Loss of lordosis of spine.`r"
     desc .= "Spondylosis of spine.`r"
-    desc .= "`r*Below C_ couldn't be evaluated at lateral view.`r"
-    desc .= "The atlantoaxial distance is within normal limit.`r"
-    desc .= "No widening of retropharyngeal and retrotracheal space.`r"
     desc_sev := 6   ; 退化背景組套
 	gosub SpineOutput
+
+    ; C-spine lateral/soft tissue 補充段固定最後輸出
+    desc := "`r*Below C_ couldn't be evaluated at lateral view.`r"
+    desc .= "The atlantoaxial distance is within normal limit.`r"
+    desc .= "No widening of retropharyngeal and retrotracheal space.`r"
+    desc_sev := 10
+    gosub SpineOutput
 return
 
 
 ; 術後組套按鈕
 PostOP:
+    Gui, Submit, NoHide
+    desc := ""
     desc .= "Status post _ vertebroplasty.`r"
     desc .= "Status post transpedicular screws fixation at _.`r"
     desc .= "Status post interbody cage fixation between _.`r"
@@ -789,6 +802,19 @@ return
 BoneDensity2:
     desc := "Osteoporotic change of visible bony structures.`r"
     desc_sev := 4   ; 全身性骨質
+    gosub SpineOutput
+return
+
+; 常用非 spine finding
+BowelGasFinding:
+    desc := "Mild increased bowel gas _or mild ileus.`r"
+    desc_sev := 9
+    gosub SpineOutput
+return
+
+AortaCalcFinding:
+    desc := "Intimal calcification of aorta.`r"
+    desc_sev := 9
     gosub SpineOutput
 return
 
@@ -817,6 +843,7 @@ return
 
 FacetArthrosis:
 ; 根據 Radio Button 選擇改變輸出內容
+    Gui, Submit, NoHide
     if (SpineLoc1) {
         ; 選擇了 C-spine
         desc := "Facet joint arthrosis of cervical spine.`r"
@@ -857,6 +884,7 @@ return
 
 ; 複製舊報告（從 Spine2 視窗呼叫）
 CopyOldFromSpine:
+    Gui, Submit, NoHide
     if(LTitle) {
 		if (SpineLoc1) {   ; 選擇了 C-spine
 			desc := "C-spine:`r`r"

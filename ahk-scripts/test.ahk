@@ -1230,6 +1230,7 @@ XButton1::
     Menu, XB1Menu, Add, 設定管理器 (&G), XB1_OpenConfig
     Menu, XB1Menu, Add, 測試目前座標 (&T), WizTestCurrentCoords
     Menu, XB1Menu, Add, 顯示快速鍵 (&H), XB1_ShowHotkeys
+    Menu, XB1Menu, Add, 置頂, XB1_OnTop
     Menu, XB1Menu, Add, 複製 Gemini API Key (&K), XB1_CopyGeminiKey
     Menu, XB1Menu, Add, 重新載入腳本 (&E), XB1_Reload
     
@@ -1313,6 +1314,10 @@ return
 ; 新增功能 7：開啟設定管理器
 XB1_OpenConfig:
     CreateConfigManager()
+return
+
+XB1_OnTop:
+	Winset, Alwaysontop, , A
 return
 
 ; 顯示快速鍵提示

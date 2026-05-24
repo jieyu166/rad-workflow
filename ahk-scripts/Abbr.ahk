@@ -23,12 +23,12 @@ HotstringMenuV("A","MenuShortcut"
     ,"<6mm _solid nodules in both lungs.(Arrows in Srs:_)"
     ,""
     ,"BRK"
-    ,"solid nodule"
-    ,"ground-glass nodule"
-    ,"part-solid nodule"
+    ,"solid nodule","subsegmental airway nodule"
+    ,"ground-glass nodule","part-solid nodule"
     ,"juxtapleural nodule")
 return
 :O:lap;::lymphadenopathy
+:O:drain;::Drainage tube in situ. 
 
 
 :O:---+::----------------------------------------------------------------------`r
@@ -106,13 +106,13 @@ return
 ; GI, GU
 ;============================================================================================
 
-:O:uvj::ureterovesical junction (UVJ)
-:O:upj::ureteropelvic junction (UPJ)
-:O:esrd::end-stage renal disease (ESRD)
-:O:capd::continuous ambulatory peritoneal dialysis (CAPD)
-:O:gist::gastrointestinal stromal tumor (GIST)
-:O:fnh::focal nodular hyperplasia (FNH)
-
+:O:uvj::ureterovesical junction(UVJ)
+:O:upj::ureteropelvic junction(UPJ)
+:O:esrd::end-stage renal disease(ESRD)
+:O:capd::continuous ambulatory peritoneal dialysis(CAPD)
+:O:gist::gastrointestinal stromal tumor(GIST)
+:O:fnh::focal nodular hyperplasia(FNH)
+:O:uc::urothelial carcinoma(UC)
 :O:crpd::chronic renal parenchyma disease.
 :O:clpd::chronic liver parenchyma disease.
 :O:lpd::liver parenchyma disease.
@@ -123,10 +123,10 @@ return
 ; Neuro
 ;============================================================================================
 
-::sae::subcortical arteriosclerotic encephalopathy (SAE)
-::sdh::subdural hemorrhage (SDH)
-::sah::subarachnoid hemorrhage (SAH)
-::dai::diffuse axonal injury (DAI)
+::sae::subcortical arteriosclerotic encephalopathy(SAE)
+::sdh::subdural hemorrhage(SDH)
+::sah::subarachnoid hemorrhage(SAH)
+::dai::diffuse axonal injury(DAI)
 ::sov::Superior ophthalmic vein
 ::ctsae::- Periventricular low density change around bilateral lateral ventricle may be due to leukoarosis, subcortical arteriosclerotic encephalopathy (SAE) or others.
 
@@ -135,7 +135,7 @@ return
 ;============================================================================================
 :O:pau::penetrating atherosclerotic ulcer
 :O:ild::interstitial lung disease 
-:O:cvc;::central venous catheter (CVC)
+:O:cvc;::central venous catheter(CVC)
 ::av;::aortic valvular
 ::mv;::mitral valvular _annulus
 ::amv;::aortic, mitral valvular
@@ -155,7 +155,12 @@ HotstringMenuV("A","MenuShortcut", "Bilateral lung metastases","Suspect lung met
 return
 
 :O:ate;::
-HotstringMenuV("A","MenuShortcut","focal atelectasis.","nodular atelectasis","subsegmental atelectasis")
+HotstringMenuV("A","MenuShortcut"
+    ,"atelectasis"
+    ,"atelectasis in _"
+    ,"focal atelectasis."
+    ,"nodular atelectasis"
+    ,"subsegmental atelectasis")
 return
 
 :O:pna;::pneumonia
@@ -180,6 +185,7 @@ HotstringMenuV("A","MenuShortcut"
     ,"Calcified LN(s) in _"
     ,"Calcified mediastinal LNs, suspect old inflammatory changes"
     ,"BRK"
+	,"Valvular calcification"
     ,"Dystrophic calcification in _."
     ,"chondrocalcinosis/CPPD"
     ,"pleural calcifications"

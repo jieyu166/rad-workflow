@@ -9,7 +9,7 @@ The output must ALWAYS follow this exact format:
 Impression:
 - bullet points describing urotract-related impression items
 
-===============================================================================
+================================================================================
 Intravenous urography (IVU):
 - bullet points describing imaging findings
 
@@ -19,7 +19,7 @@ Formatting rules:
 - Do NOT add explanations outside the report
 - Keep wording concise and radiology-style
 - Plain ASCII English only
-- Do NOT use <<FINDINGS>> or <<IMPRESSION>> tags for IVP output.
+- Do NOT use tags like FINDINGS or IMPRESSION for IVP output.
 
 ==================================================
 SECTION 1 - Impression
@@ -57,32 +57,63 @@ Rules:
    Do NOT add any line to Impression. Handle in Findings only.
 
 ==================================================
+CRITICAL RULES - Impression vs Findings separation
+==================================================
+
+Impression section - STRICT language rules:
+- Impression bullets must use CLINICAL summary language, NOT imaging observation language.
+- Do NOT use phrases like "A calcified nodular lesion is projected over..." in Impression.
+- Do NOT use phrases like "Dilatation of the renal pelvis, calyces, and ureter..." in Impression.
+- Correct Impression wording examples:
+    Stone: "[Left/Right] [location] ureteral stone, measuring X cm, with obstructive uropathy."
+    Renal stone: "[Left/Right] renal stone in the [location] calyx."
+    Prostate: "Mild enlarged prostate." or "Suspect enlarged prostate."
+    Hydronephrosis: "Mild/Moderate/Severe [left/right] hydronephrosis."
+    Residual urine: "Mild post-void residual urine is present."
+    Bladder wall: "Mild urinary bladder wall thickening; chronic cystitis or other etiology cannot be excluded."
+
+Obstructive uropathy - STRICT:
+- If input explicitly states "with obstructive uropathy", this MUST appear in the Impression bullet for that stone.
+- Do NOT omit it.
+
+Srs/Img tag placement in Findings - STRICT:
+- Attach the Srs/Img tag to the bullet that DESCRIBES the stone or lesion.
+- For ureteral stones: the tag goes on the Scout film description line where the stone is described.
+- Scout film line must NEVER carry a Srs/Img tag unless the input explicitly attaches one to the scout film itself.
+- Correct example for stone with tag (Srs/Img:1/1):
+    CORRECT:
+    - Scout film: A calcified nodular lesion is projected over the right paraspinal region at the L[x] level along the expected upper ureter, measuring 0.4 cm. (Srs/Img:1/1)
+    WRONG:
+    - Scout film: No abnormal calcified nodular lesion is identified. (Srs/Img:1/1)
+
+==================================================
 SECTION 2 - Intravenous urography (IVU) Findings
 ==================================================
 
 Structure:
 
-1. Comparison line — STRICT CONDITIONAL RULE:
+1. Comparison line - STRICT CONDITIONAL RULE:
    - Output the comparison bullet ONLY IF the input explicitly contains "Comparison with previous study" or "Compared with previous study" plus a date.
    - Format: "- Comparison with previous study dated YYYY-MM-DD."
    - Convert date to ISO format YYYY-MM-DD.
    - If present, this MUST be the FIRST bullet of Findings.
-   - **NEGATIVE RULE**: If no comparison info exists in the input, OMIT this bullet entirely. Do NOT invent a date. Do NOT add "no prior study" placeholder.
+   - NEGATIVE RULE: If no comparison info exists in the input, OMIT this bullet entirely.
+     Do NOT invent a date. Do NOT add "no prior study" placeholder.
 
 2. Scout film line (always present):
    - Scout film: No abnormal calcified nodular lesion is identified.
-   If stones present: describe calcified lesions here.
+   If stones present: describe calcified lesions on Scout film line.
    If mild increased bowel gas only: append to this line.
    Example: Scout film: No abnormal calcified nodular lesion is identified. Mild increased bowel gas is present.
    If ileus: Scout film: No abnormal calcified nodular lesion is identified. Increased bowel gas is present, mild ileus cannot be excluded.
 
-3. Pelvic phleboliths (if present): separate bullet after Scout film.
+3. Pelvic phleboliths (if present): separate bullet after Scout film line.
    - Pelvic calcified nodular densities are consistent with pelvic phleboliths.
 
 4. Post contrast line (always present):
    - After intravenous contrast administration, normal bilateral nephrograms and opacifications of the bilateral collecting systems are appreciated.
 
-5. Obstruction / hydronephrosis findings
+5. Obstruction / hydronephrosis / hydroureter findings
 
 6. Bladder findings
 
@@ -90,12 +121,12 @@ Structure:
    spine, osteopenia, scoliosis, compression fracture, gastritis, etc.
 
 8. Post-device / post-procedure findings (Foley, double-J stent, nephrostomy, etc.):
-   - Use phrasing "Post [device] insertion" (e.g., "- Post Foley insertion.").
-   - Place each device near the bullet describing the organ it occupies / drains:
-     - Foley catheter → adjacent to bladder findings (group with bladder bullets).
-     - Double-J / ureteral stent → adjacent to ureter findings.
-     - Nephrostomy tube / PCN → adjacent to renal collecting system bullets.
-     - Non-organ drains (peritoneal, abscess) → end of findings.
+   - Use phrasing "Post [device] insertion."
+   - Place each device near the bullet describing the organ it occupies or drains:
+     Foley catheter: adjacent to bladder findings.
+     Double-J / ureteral stent: adjacent to ureter findings.
+     Nephrostomy tube / PCN: adjacent to renal collecting system bullets.
+     Non-organ drains: end of findings.
 
 ==================================================
 Srs/Img Tag Rule
@@ -137,10 +168,10 @@ Hydroureteronephrosis without stone:
 Enlarged prostate:
 - The urinary bladder is indented by the prostate.
 
-Residual urine (Findings):
+Residual urine in Findings:
 - Post-void residual urine is present within the urinary bladder.
 
-Residual urine (Impression):
+Residual urine in Impression:
 - Mild post-void residual urine is present.
 
 Bladder wall thickening:
