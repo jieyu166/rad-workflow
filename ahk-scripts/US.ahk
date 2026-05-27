@@ -799,7 +799,7 @@ return
 ; ============================================================================
 ; AI Findings Generator (Impression -> Findings), AutoHotkey v1
 ; Requires: API_KEY global (loaded by 簡碼 jai.ahk from radiologist_settings.ini)
-; Prompts: external files in ahk-scripts/prompts/{us_abd,us_trus,us_ivp}.md
+; Prompts: external files in ahk-scripts/prompts/{us_abd,us_trus,us_ivp,ct_chest}.md
 ; Hot entry point: gAI_FindOpen from Abd US 簡化 GUI
 ; ============================================================================
 
@@ -817,14 +817,15 @@ g_I2F_History := []
 Gui, I2F:New, -AlwaysOnTop +Resize, Impression → Findings (AI)
 Gui, I2F:Font, s10, Segoe UI
 
-; 超音波類型選擇
-Gui, I2F:Add, GroupBox, x10 y10 w480 h80, 超音波類型
-Gui, I2F:Add, Radio, x20 y30 w140 vI2F_TypeUpperAbd Checked, &Upper abdomen
-Gui, I2F:Add, Radio, x170 y30 w140 vI2F_TypeUroM, Urotract (&M)
-Gui, I2F:Add, Radio, x320 y30 w140 vI2F_TypeUroF, Urotract (&F)
+; 檢查類型選擇
+Gui, I2F:Add, GroupBox, x10 y10 w480 h110, 檢查選項
+Gui, I2F:Add, Text, x20 y30 w70 h20 vI2F_OptionLabel, 腹超:
+Gui, I2F:Add, Radio, x100 y30 w120 vI2F_TypeUpperAbd Checked, &Upper abd
+Gui, I2F:Add, Radio, x230 y30 w120 vI2F_TypeUroM, Urotract(&M)
+Gui, I2F:Add, Radio, x360 y30 w120 vI2F_TypeUroF, Urotract(&F)
 ; --- Prompt 情境選擇 ---
 Gui, I2F:Add, Text, x20 y60 w80 h20, 輸出模式:
-Gui, I2F:Add, DropDownList, x100 y55 w360 vI2F_Scenario Choose1, 腹超||TRUS||IVP
+Gui, I2F:Add, DropDownList, x100 y55 w360 vI2F_Scenario gI2F_OnScenarioChange Choose1, 腹超||TRUS||IVP||CT-Chest
 
 Gui, I2F:Add, Text, xm y+25, Impression:
 Gui, I2F:Add, Edit, vI2F_Impression w480 h160
@@ -847,6 +848,39 @@ LV_ModifyCol(4, 60)
 LV_ModifyCol(5, 240)
 
 Gui, I2F:Show
+Gosub, I2F_OnScenarioChange
+return
+
+I2F_OnScenarioChange:
+Gui, I2F:Submit, NoHide
+if (InStr(I2F_Scenario, "腹超")) {
+    GuiControl, I2F:, I2F_OptionLabel, 腹超:
+    GuiControl, I2F:, I2F_TypeUpperAbd, &Upper abdomen
+    GuiControl, I2F:, I2F_TypeUroM, Urotract (&M)
+    GuiControl, I2F:, I2F_TypeUroF, Urotract (&F)
+    GuiControl, I2F:Enable, I2F_TypeUroF
+    GuiControl, I2F:Show, I2F_OptionLabel
+    GuiControl, I2F:Show, I2F_TypeUpperAbd
+    GuiControl, I2F:Show, I2F_TypeUroM
+    GuiControl, I2F:Show, I2F_TypeUroF
+} else if (InStr(I2F_Scenario, "CT-Chest")) {
+    GuiControl, I2F:, I2F_OptionLabel, CT:
+    GuiControl, I2F:, I2F_TypeUpperAbd, 打藥
+    GuiControl, I2F:, I2F_TypeUroM, 不打藥
+    GuiControl, I2F:, I2F_TypeUroF,
+    GuiControl, I2F:Disable, I2F_TypeUroF
+    if (I2F_TypeUroF)
+        GuiControl, I2F:, I2F_TypeUpperAbd, 1
+    GuiControl, I2F:Show, I2F_OptionLabel
+    GuiControl, I2F:Show, I2F_TypeUpperAbd
+    GuiControl, I2F:Show, I2F_TypeUroM
+    GuiControl, I2F:Show, I2F_TypeUroF
+} else {
+    GuiControl, I2F:Hide, I2F_OptionLabel
+    GuiControl, I2F:Hide, I2F_TypeUpperAbd
+    GuiControl, I2F:Hide, I2F_TypeUroM
+    GuiControl, I2F:Hide, I2F_TypeUroF
+}
 return
 
 I2F_Clear:
@@ -909,6 +943,16 @@ if (I2F_TypeUpperAbd) {
     conditionalOutput := "Do NOT output: Uterus/adnexa, Others, Aorta/IVC, Prostate (unless specifically mentioned in impression)"
 }
 
+if (!InStr(I2F_Scenario, "CT-Chest") || I2F_TypeUpperAbd) {
+    ctMethod := "METHOD: (1) HRCT (2) Noncontrast survey (3) contrast enhancement were performed"
+    ctContrastNote := "Before and after the administration of intravenous contrast there was no adverse effect."
+    ctLimitationNote := ""
+} else {
+    ctMethod := "METHOD: (1) HRCT (2) Noncontrast survey were performed"
+    ctContrastNote := ""
+    ctLimitationNote := "*This is a Non contrast medium injection image.`nLimited evaluation for lymphadenopathy, vascular structure, soft tissue density organs and soft tissue lesions survey;"
+}
+
 ; 從外部檔讀取對應 scenario 的 prompt（找不到 → 友善錯誤）
 if (InStr(I2F_Scenario, "腹超"))
     promptFile := g_I2F_PromptDir "\us_abd.md"
@@ -916,6 +960,8 @@ else if (InStr(I2F_Scenario, "IVP"))
     promptFile := g_I2F_PromptDir "\us_ivp.md"
 else if (InStr(I2F_Scenario, "TRUS"))
     promptFile := g_I2F_PromptDir "\us_trus.md"
+else if (InStr(I2F_Scenario, "CT-Chest"))
+    promptFile := g_I2F_PromptDir "\ct_chest.md"
 
 if (!FileExist(promptFile)) {
     MsgBox, 16, Error, 找不到 prompt 檔案：%promptFile%`n請確認 ahk-scripts/prompts/ 內有對應 .md 檔。
@@ -932,6 +978,9 @@ if (ErrorLevel || sysPrompt = "") {
 sysPrompt := StrReplace(sysPrompt, "{{usTitle}}", usTitle)
 sysPrompt := StrReplace(sysPrompt, "{{organSystems}}", organSystems)
 sysPrompt := StrReplace(sysPrompt, "{{conditionalOutput}}", conditionalOutput)
+sysPrompt := StrReplace(sysPrompt, "{{ctMethod}}", ctMethod)
+sysPrompt := StrReplace(sysPrompt, "{{ctContrastNote}}", ctContrastNote)
+sysPrompt := StrReplace(sysPrompt, "{{ctLimitationNote}}", ctLimitationNote)
 
 ; 建立 userPrompt + JSON
 userPrompt := "Impression:`n" . I2F_Impression

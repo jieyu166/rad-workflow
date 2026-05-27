@@ -16,11 +16,6 @@ return
 HotstringMenuV("A","MenuShortcut"
     ,"lymph node"
     ,"Visible LNs short axis <1cm."
-    ,"BRK"
-    ,"A <_6mm solid nodule in _.(Srs/Img:_/_)"
-    ,"A <6mm juxtapleural nodule in _.(Srs/Img:_/_)"
-    ,"BRK"
-    ,"<6mm _solid nodules in both lungs.(Arrows in Srs:_)"
     ,""
     ,"BRK"
     ,"solid nodule","subsegmental airway nodule"
@@ -101,6 +96,9 @@ return
 :O:pat::
 HotstringMenuV("A","MenuShortcut","patella alta","patella baja","patellar fracture","patellar")
 return
+:O:if;::internal fixation
+:O:ss;::supraspinatus
+:O:is;::infraspinatus
 
 ;============================================================================================
 ; GI, GU

@@ -53,6 +53,29 @@ HotstringMenuV("A","MenuShortcut"
     ,"_However, some lesion may have normal mammographic appearance, regular follow up is still suggested.")
 return
 
+:O:madds;::
+HotstringMenuMulti("A","MenuShortcut"
+    ,"Stable focal asymmetry in _ breast, concluded as benign."
+    ,"Stable focal asymmetry in _UOQ _medial _outer breast, concluded as benign."
+    ,"Global asymmetry in _ breast, favor asymmetric gland, concluded as benign."
+    ,"Stable global asymmetry of both breasts, concluded as asymmetric glands, concluded as benign."
+    ,"BRK"
+    ,"Benign scattered microcalcifications of bilateral breasts."
+    ,"Benign scattered microcalcifications of _ breast."
+    ,"Round calcifications with lucent center of _ breast, typically mammographic benign due to fat necrosis."
+    ,"Coarse calcifications of both breasts, concluded as benign fat necrosis calcifications."
+    ,"BRK"
+    ,"Stable multiple equal density circumscribed masses of both breasts, typical mammographic appearance of cysts, fibroadenomas, asymmetric glands, concluded as benign."
+    ,"Multiple equal density circumscribed masses of _ breast, typical mammographic appearance of cysts, fibroadenomas, asymmetric glands, concluded as benign."
+    ,"BRK"
+    ,"New grouped amorphous microcalcifications in _ breast, concluded as suspicious microcalcifications."
+    ,"New segmental coarse heterogeneous and linear branching microcalcifications in _ breast, concluded as suspicious microcalcifications."
+    ,"Interval increased amount regional amorphous microcalcifications in _ breast, nature to be determined."
+    ,"BRK"
+    ,"However, some lesion may have normal mammographic appearance, regular follow up is still suggested."
+    ,"No corresponding lesion found at breast US.")
+return
+
 :O:mic::microcalcification
 
 ;=====================================================================

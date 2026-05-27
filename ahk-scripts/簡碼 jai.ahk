@@ -192,6 +192,35 @@ HotstringMenuV("A","MenuShortcut"
 return
 
 
+:O:cxrm;::
+HotstringMenuMulti("A","MenuShortcut"
+    ,"心肺無明顯異常."
+    ,"心肺無其他明顯異常."
+    ,"BRK"
+    ,"主動脈弓鈣化."
+    ,"冠狀動脈鈣化或支架."
+    ,"瓣膜鈣化."
+    ,"心臟擴大."
+    ,"邊緣心臟擴大."
+    ,"縱膈腔擴大."
+    ,"雙側肺門擴大."
+    ,"右側肺門擴大."
+    ,"BRK"
+    ,"疑似骨密度降低."
+    ,"疑似骨質疏鬆."
+    ,"_輕微胸腰椎脊柱側彎."
+    ,"BRK"
+    ,"肺氣腫樣變化."
+    ,"疑似肺水腫."
+    ,"雙側輕微肋膜積液."
+    ,"BRK"
+    ,"無法排除藏有其他病灶之可能."
+    ,"無法排除合併肺炎或其他病灶之可能."
+    ,"宜追蹤."
+    ,"與舊片比較無明顯變化.")
+return
+
+
 :O:emphy;::
 HotstringMenuV("A","MenuShortcut2"
     ,"Emphysematous change of both lungs"
@@ -392,7 +421,7 @@ HotstringMenuV("A","MenuShortcut2"
     ,"Suggest correlate with other studies"
     ,"Suggest abdominal correlation."
     ,"BRK"
-    ,"Suggest thyroid follow-up."
+    ,"Suggest thyroid US follow-up."
     ,"Suggest breast US correlation."
     ,"Suggest diagnostic mammography with spot magnification for further evaluation."
     ,"Suggest 6-month follow-up mammography."
@@ -404,14 +433,7 @@ HotstringMenuV("A","MenuShortcut"
     ,"A _hyperechoic nodule in _left lobe of liver, _ cm.(Srs/Img:_/_)"
     ,"A _hypoechoic nodule in _left lobe of liver, _ cm.(Srs/Img:_/_)"
     ,"A _hyperechoic nodule in _left kidney, _ cm.(Srs/Img:_/_)"
-    ,"A hypoechoic nodule in _ peripheral zone of prostate , _ cm. (Srs/Img:1/_) "
-    ,"BRK"
-    ,"A solid nodule in _, mean diameter _mm .(Srs/Img:_/_)"
-    ,"A partsolid nodule in _, solid part _mm, total _mm.(Srs/Img:_/_)"
-    ,"A ground-glass nodule in _, _ mm.(Srs/Img:_/_)"
-    ,"<6mm _solid_partsolid_ground-glass nodules in _.(Srs/Img:_/_)"
-    ,"_subsegmental airway nodules.(Srs/Img:_/_)"
-    ,"<4mm juxtapleural nodule in _.(Srs/Img:_/_)")
+    ,"A hypoechoic nodule in _ peripheral zone of prostate , _ cm. (Srs/Img:1/_) ")
 return
 
 

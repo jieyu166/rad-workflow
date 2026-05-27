@@ -182,7 +182,7 @@ Mild enlarged bilateral _inferior nasal turbinates.
 :O:sin;::
 HotstringMenuV("A","MenuShortcut"
   , "Mild clouding of _ sinus_es, could be sinusitis, bony overlapping or others."
-  , "Air-fluid levels in _ sinuses, could be sinusitis or others."
+  , "Air-fluid levels in _ sinus_es, could be sinusitis or others."
   , "Mild enlarged bilateral _inferior nasal turbinates."
   , "Sphenoid sinus pneumatization")
 return
@@ -287,7 +287,71 @@ HotstringMenuV("A","MenuShortcut2"
     ,"minimal pleural effusion or pleural changes.")
 return
 
+:O:cxra;::
+HotstringMenuMulti("A","MenuShortcut"
+    ,"Normal heart size."
+    ,"Borderline cardiomegaly."
+    ,"Cardiomegaly."
+    ,"BRK"
+    ,"Intimal calcification of aorta."
+    ,"Tortuous aorta with intimal calcification."
+    ,"Mild mediastinal widening."
+    ,"Obvious mediastinum widening."
+    ,"BRK"
+    ,"Bilateral hilar fullness, could be vascular shadows or others."
+    ,"Bilateral hilar fullness, could be vessels but lymphadenopathy or other lesions can not be excluded."
+    ,"BRK"
+    ,"Emphysematous change of both lungs."
+    ,"Pulmonary congestion pattern or emphysematous change of both lungs."
+	,"Mild infiltration in both lungs, could be pneumonia, _or others."
+    ,"Mild increased hazy bronchovascular marking over bilateral lung.`r  DDx: inflammatory process or others."
+    ,"Superimposed pneumonia or other occult entities can not be excluded."
+    ,"Occult entities can not be excluded.")
+return
 
+:O:cxrb;::
+HotstringMenuMulti("A","MenuShortcut"
+    ,"Degenerative change and spur formation of spine"
+    ,"Degenerative and osteoporotic change of spine"
+    ,"Suspect osteopenia"
+    ,"Suspect osteoporosis"
+    ,"Mild scoliosis"
+    ,"BRK"
+    ,"{LtRt} ribs old fracture"
+    ,"Suspect _ rib old fracture"
+    ,"{LtRt} clavicular old fracture"
+    ,"Suspect _ clavicular old fracture"
+	,"Fracture of _"
+    ,"BRK"
+    ,"T_ compression fracture" ,"L_ compression fracture"
+    ,"Mild T_ collapse" ,"Mild L_ collapse"
+    ,"Multiple vertebral compression fracture","Multiple vertebral collapse")
+return
+
+:O:cxrc;::
+HotstringMenuMulti("A","MenuShortcut"
+    ,"Emphysematous change of both lungs."
+    ,"Emphysematous change or hyperaerated appearance of both lungs."
+    ,"Pulmonary congestion pattern or emphysematous change of both lungs."
+    ,"Mild increased hazy bronchovascular marking over bilateral lung.`r  DDx: inflammatory process or others."
+    ,"BRK"
+    ,"Mild infiltration in {LungSel}, could be pneumonia, or others."
+    ,"Mild infiltration in bilateral lower lungs, could be pneumonia, or others."
+    ,"Mild infiltration in bilateral lungs, could be pneumonia, edema or others."
+    ,"Patchy consolidations in bilateral lungs, could be pneumonia or others.`r  Occult entities growth can not be excluded." 
+    ,"Superimposed pneumonia or other occult entities can not be excluded."
+    ,"BRK"
+    ,"Focal atelectasis in bilateral lower lung ."
+    ,"{LungSel} focal atelectasis."
+    ,"Insufficient inspiration and focal atelectasis of both lungs."
+    ,"BRK"
+    ,"Fibrocalcified change in both upper lungs, suspect old infection/inflammatory changes, eg. old TB or others."
+    ,"Bilateral apical pleural thickening."
+    ,"Chronic/post infection/inflammatory changes or others in both lungs."
+    ,"BRK"
+    ,"Bilateral minimal pleural effusion or pleural changes."
+    ,"{LtRt} minimal pleural effusion or pleural changes.")
+return
 
 ;============================================================================================
 ; CXR, spine, knee UI 程式

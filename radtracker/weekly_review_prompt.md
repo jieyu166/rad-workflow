@@ -256,6 +256,47 @@ python priority_breakdown.py --csv csv_input/{latest}.csv --json output/priority
 
 ---
 
+### 區段十二：報告單位時間產值（2026-05-27 起；改為真實計時）
+
+回答「哪種報告單位時間最賺錢（pt/hr）」。**全模態**，資料來自 `xr_value.py` 的 JSON（如 `output/xr_value_{month}.json`）。
+
+#### 計時方法（真實 CSV 簽發間隔，非估算）
+- 依 case_id 取最早簽發時間，全 case 排序，每件耗時 = 與前一件的簽發間隔
+- 間隔 = 0（同分鐘批次）→ 剔除；間隔 > 30min（休息）→ 剔除
+- pt/hr = 平均點值 × 60/中位間隔(min)
+
+#### 12a. 產值排名表（依 pt/hr 排序，列 20-30 類）
+
+```
+| 類別 | n件 | n計時 | 中位 min | 平均點值 | pt/hr |
+```
+
+- **全模態 + 子分類**：CT(LDCT/Brain/Neck/Chest)、US(一般/困難)、XR 部位
+- **Spine 依 protocol 拆**：AP/Lat、Flex/Ext、4view（Flex/Ext 較慢、pt/hr 較低）
+- **平均點值**＝硬數據；**pt/hr**＝真實間隔中位數推算
+- 計時樣本 n < 15 標「⚠少」（不納入可信排名）
+
+#### 12b. 重點呈現（典型結論，2026-05 大樣本）
+- 🥇 **Mammo (422) / XR Knee (409)** 並列最賺
+- 高產值：Shoulder、L/C-spine AP/Lat、BMD、US 一般
+- 低產值高量：**Chest (97, 但佔量 30%)**、CT/LDCT（中位 15-18min 真的慢）
+
+#### 12c. 樣式
+- 冠軍綠標；Chest 標「量大值低」；低樣本標 ⚠少
+- 註明：pt/hr 真實間隔中位（report_time 僅到分→次分鐘 floor 1min）
+
+#### 12d. 操作流程
+
+```bash
+# 建議餵多週/整月 CSV 累積足夠計時樣本
+python xr_value.py --csv csv_input/115*_CL.csv --min-n 15 --json output/xr_value_{month}.json
+```
+
+> 用途：門診 XR 無法全做時，優先讀高 pt/hr 部位（Knee/Shoulder/多 view 肌骨）。
+> 注意：臨床重要性（如 Chest 肺結節）不可純以點值取捨。
+
+---
+
 ### HTML 樣式要求
 
 - 深色主題（#0c0e14 背景）

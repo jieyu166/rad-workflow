@@ -3,6 +3,126 @@
 ; CT
 ;============================================================================================
 
+:O:cta;::
+HotstringMenuMulti("A","MenuShortcut"
+    ,"Atherosclerotic change of coronary arteries, aorta and its major branches"
+    ,"Atherosclerotic change of aorta and its major branches"
+    ,"Aortic valvular calcification."
+    ,"Aortic, mitral valvular annulus calcification."
+    ,"Cardiomegaly."
+    ,"BRK"
+    ,"Bilateral renal cysts. Bosniak classification category I"
+    ,"Left renal cyst. Bosniak classification category I"
+    ,"Bilateral renal cysts. Bosniak classification category II."
+    ,"Hepatic cysts in both lobes of liver."
+    ,"Hepatic cysts or hypodense lesions in both lobes of liver."
+    ,"Mild fatty liver"
+    ,"Moderate fatty liver"
+    ,"Gallstones."
+    ,"BRK"
+    ,"Mild esophagitis."
+    ,"Mild esophagitis, gastritis."
+    ,"Colonic diverticula"
+    ,"Periampullary duodenal diverticulum"
+    ,"An accessory spleen.(Srs/Img:_/_)"
+    ,"Accessory spleens.(Srs/Img:_/_)")
+return
+	
+:O:ctb;::
+HotstringMenuMulti("A","MenuShortcut"
+    ,"Bilateral thyroid nodules. Suggest thyroid US follow up."
+    ,"Right thyroid nodule.(Srs/Img:_/_) Suggest thyroid US follow up."
+    ,"Left thyroid nodule.(Srs/Img:_/_) Suggest thyroid US follow up."
+    ,"Suspect bilateral thyroid nodules."
+    ,"BRK"
+    ,"Degenerative and osteoporotic change of spine."
+    ,"Degenerative change and spur formation of spine."
+    ,"Mild scoliosis."
+    ,"Bilateral shoulder osteoarthritis (OA)"
+    ,"BRK"
+    ,"Focal atelectasis in bilateral lung ."
+    ,"Focal atelectasis in both lungs ."
+    ,"Focal atelectasis in bilateral lower lung ."
+    ,"Centrilobular emphysema of both lungs."
+    ,"Paraseptal, centrilobular emphysema of both lungs"
+    ,"No significant >3mm lung nodules."
+    ,"No significant >3mm lung nodules found.")
+return
+
+:O:ctn;::
+HotstringMenuV("A","MenuShortcut"
+    ,"A <6mm solid nodule in RUL.(Srs/Img:_/_)"
+    ,"A <6mm solid nodule in RML.(Srs/Img:_/_)"
+    ,"A <6mm solid nodule in RLL.(Srs/Img:_/_)"
+    ,"A <6mm solid nodule in LUL.(Srs/Img:_/_)"
+    ,"A <6mm solid nodule in LLL.(Srs/Img:_/_)"
+    ,"BRK"
+    ,"A _mm solid nodule in _.(Srs/Img:_/_)"
+    ,"A _mm ground-glass nodule in _.(Srs/Img:_/_)"
+    ,"A _mm part-solid nodule in _, solid part _mm.(Srs/Img:_/_)"
+    ,"A <6mm juxtapleural nodule in _.(Srs/Img:_/_)"
+    ,"A <6mm subpleural nodule in _.(Srs/Img:_/_)"
+    ,"BRK"
+	,"Subsegmental airway nodules in _.(Srs/Img:_/_)"
+    ,"<4mm nonspecific nodules in both lungs.(Arrows in Srs:_)"
+    ,"<6mm solid nodules in both lungs.(Arrows in Srs:_)"
+    ,"<6mm ground-glass nodules in both lungs.(Arrows in Srs:_)"
+    ,"Some <6mm stable solid and subsolid nodules in both lungs.(Arrows in Srs:_)"
+    ,"BRK"
+    ,"No significant >3mm lung nodules."
+    ,"No significant >3mm lung nodules found in both lungs."
+    ,"Prior CT noted _ nodule is not found."
+    ,"Limited change of _ nodule, _mm.(Srs/Img:_/_)"
+    ,"Stable _ nodule in _, _mm.(Srs/Img:_/_)"
+    ,"BRK"
+    ,"Suspect inflammatory nodules or others."
+    ,"Suspect _ peripheral nodules or nodular atelectasis in _.(Srs/Img:_/_)"
+    ,"Stable _ focal atelectasis or <6mm solid nodule.(Srs/Img:_/_)")
+return
+	
+	
+:O:ctc;::
+HotstringMenuV("A","MenuShortcut"
+    ,"Focal atelectasis in both lungs."
+    ,"Focal atelectasis in bilateral lower lungs."
+    ,"Focal atelectasis in _.(Srs/Img:_/_)"
+    ,"BRK"
+    ,"Centrilobular emphysema of both lungs."
+    ,"Paraseptal, centrilobular emphysema of both lungs."
+    ,"Mixed centrilobular and paraseptal emphysema with blebs and bullaes."
+    ,"BRK"
+    ,"RUL fibrocalcified change."
+    ,"Calcified granuloma in _.(Srs/Img:_/_)"
+    ,"Calcified fibronodular consolidation in bilateral apical lungs."
+    ,"Old Pulmonary TB is suspected."
+    ,"BRK"
+    ,"Mild right pleural effusion."
+    ,"Bilateral minimal pleural effusion."
+    ,"Bilateral pleural effusion, {LtRt} more severe."
+    ,"Left pleural effusion.")
+return
+
+:O:ctl;::
+HotstringMenuV("A","MenuShortcut"
+    ,"Visible LNs short axis <1cm."
+    ,"Nonenlarged mediastinal lymph nodes, suspect reactive changes."
+    ,"Some nonenlarged mediastinal, subcarinal, paraesophageal, right hilar LNs."
+    ,"BRK"
+    ,"Borderline mediastinal LN.(Srs/Img:_/_)"
+    ,"Borderline mediastinal, subcarinal LNs.(Srs/Img:_/_)"
+    ,"Stable borderline mediastinal lymphadenopathy, could be reactive changes or other."
+    ,"BRK"
+    ,"Mediastinal lymphadenopathy(Srs/Img:_/_)"
+    ,"Mediastinal, subcarinal lymphadenopathy(Srs/Img:_/_)"
+    ,"Mediastinal, subcarinal, right hilar lymphadenopathy(Srs/Img:_/_)"
+    ,"Mediastinal lymphadenopathy(Srs/Img:_/_) Suspect reactive changes or others."
+    ,"BRK"
+    ,"Calcified mediastinal lymph node.(Srs/Img:_/_)"
+    ,"Calcified subcarinal lymph node.(Srs/Img:_/_)"
+    ,"Calcified lymph nodes at mediastinum, bilateral hila, subcarina.")
+return
+
+
 :O:div;::
 HotstringMenuV("A","MenuShortcut"
     ,"Periampullary duodenal diverticulum"

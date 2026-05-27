@@ -85,6 +85,102 @@ def load_daily():
     return out
 
 
+BIOPSY_XLSX = ROOT / "output" / "biopsy_tracker_2026.xlsx"
+BIOPSY_PROCS = ("Thyroid FNA", "Breast CNB", "CT-Biopsy", "US-Neck FNA", "Mammo Stereotactic Bx")
+
+
+def load_biopsy_qc():
+    """Read biopsy_tracker_2026.xlsx → aggregate QC stats (no PHI in return except follow-up list).
+
+    Returns dict with per-procedure counts + Thyroid ND rate + Breast/CT PPV +
+    follow-up lists (B3 atypical, malignant, discordant) with chart_no for action.
+    Returns None if xlsx missing or openpyxl unavailable.
+    """
+    try:
+        import openpyxl
+    except ImportError:
+        return None
+    if not BIOPSY_XLSX.exists():
+        return None
+    wb = openpyxl.load_workbook(BIOPSY_XLSX, read_only=True, data_only=True)
+    ws = wb.worksheets[0]
+    from collections import Counter
+    procs = {}            # proc -> Counter(result)
+    cystic_nd = {}        # proc -> count of cystic-expected ND
+    followups = {"malignant": [], "atypical": [], "discordant": []}
+    # Thyroid FNA monthly trend: month -> {total, nd, cystic}
+    thy_monthly = {}
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if not row or len(row) < 6:
+            continue
+        date_v, proc, chart, _pre, res, note = row[0], row[1], row[2], row[3], row[4], row[5]
+        if proc not in BIOPSY_PROCS:
+            continue
+        if res in (None, "", "pending"):
+            continue
+        res = str(res).strip().lower()
+        note_s = str(note or "")
+        procs.setdefault(proc, Counter())[res] += 1
+        if proc == "Thyroid FNA" and res == "nondiagnostic" and "cyst" in note_s.lower():
+            cystic_nd[proc] = cystic_nd.get(proc, 0) + 1
+        # Thyroid monthly trend (by 執行日)
+        if proc == "Thyroid FNA" and hasattr(date_v, "strftime"):
+            mk = date_v.strftime("%Y-%m")
+            m = thy_monthly.setdefault(mk, {"total": 0, "nd": 0, "cystic": 0})
+            m["total"] += 1
+            if res == "nondiagnostic":
+                m["nd"] += 1
+                if "cyst" in note_s.lower():
+                    m["cystic"] += 1
+        # follow-up collection — skip cases already resolved (備註 含「結案」)
+        resolved = "結案" in note_s
+        label = f"{proc} {chart}"
+        if res == "malignant":
+            followups["malignant"].append((label, note_s))
+        elif res == "atypical" and not resolved:
+            followups["atypical"].append((label, note_s))
+        if ("discordant" in note_s.lower() or "limited" in note_s.lower()) and not resolved:
+            followups["discordant"].append((label, note_s))
+    wb.close()
+
+    summary = []
+    for proc in BIOPSY_PROCS:
+        if proc not in procs:
+            continue
+        c = procs[proc]
+        total = sum(c.values())
+        row = {"proc": proc, "total": total, "counts": dict(c)}
+        if proc == "Thyroid FNA":
+            nd = c.get("nondiagnostic", 0)
+            cy = cystic_nd.get(proc, 0)
+            row["nd_rate"] = round(nd / total * 100) if total else 0
+            row["nd_rate_real"] = round((nd - cy) / (total - cy) * 100) if (total - cy) else 0
+            row["nd_raw"] = nd
+            row["nd_cystic"] = cy
+        if proc in ("Breast CNB", "CT-Biopsy", "Mammo Stereotactic Bx"):
+            mal = c.get("malignant", 0)
+            row["ppv"] = round(mal / total * 100) if total else 0
+            row["malignant"] = mal
+        summary.append(row)
+
+    total_malignant = sum(r.get("malignant", 0) for r in summary)
+    # Build sorted monthly thyroid trend with real (ex-cystic) ND rate
+    thy_trend = []
+    for mk in sorted(thy_monthly):
+        m = thy_monthly[mk]
+        denom = m["total"] - m["cystic"]
+        real_nd = m["nd"] - m["cystic"]
+        thy_trend.append({
+            "month": mk,
+            "total": m["total"],
+            "nd": m["nd"],
+            "nd_rate": round(m["nd"] / m["total"] * 100) if m["total"] else 0,
+            "nd_rate_real": round(real_nd / denom * 100) if denom else 0,
+        })
+    return {"summary": summary, "followups": followups,
+            "total_malignant": total_malignant, "thy_trend": thy_trend}
+
+
 def build_weekly_summary(weeks):
     """Normalize per-week summary."""
     rows = []
@@ -159,6 +255,7 @@ def render():
     weekly = build_weekly_summary(weeks_raw)
     daily = load_daily()
     cells, start, last = build_heatmap_grid(daily)
+    biopsy_qc = load_biopsy_qc()
 
     # Build SVG line chart for added
     weeks_lbl = [w["week"][-3:] for w in weekly]  # W08, W09 ...
@@ -394,6 +491,7 @@ def render():
   .stat-card {{ background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }}
   .stat-num {{ font-size: 26px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }}
   .stat-label {{ font-size: 11px; color: var(--text-dim); margin-top: 4px; }}
+  .info-box {{ background: rgba(91,138,240,.08); border: 1px solid rgba(91,138,240,.25); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--accent); }}
   table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
   th {{ background: var(--bg3); color: var(--text-dim); font-weight: 500; padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--border); }}
   td {{ padding: 5px 8px; border-bottom: 1px solid var(--border); text-align: right; }}
@@ -571,7 +669,103 @@ def render():
     </table>
   </div>
 </div>
+"""
 
+    # --- Section 8: 切片/FNA QC ---
+    if biopsy_qc and biopsy_qc["summary"]:
+        thy = next((r for r in biopsy_qc["summary"] if r["proc"] == "Thyroid FNA"), None)
+        brc = next((r for r in biopsy_qc["summary"] if r["proc"] == "Breast CNB"), None)
+        kpi_cards = []
+        if thy:
+            cls = "fail" if thy["nd_rate_real"] > 15 else ("warn" if thy["nd_rate_real"] > 10 else "ok")
+            kpi_cards.append(
+                f'<div class="stat-card" style="border-color:{"#e05c5c" if cls=="fail" else "#d4a94a" if cls=="warn" else "#4caf7d"}">'
+                f'<div class="stat-num" style="color:{"#e05c5c" if cls=="fail" else "#d4a94a" if cls=="warn" else "#4caf7d"}">{thy["nd_rate_real"]}%</div>'
+                f'<div class="stat-label">Thyroid FNA 真實 ND 率<br>(扣囊性, 標準&lt;15%)</div></div>')
+        if brc:
+            kpi_cards.append(
+                f'<div class="stat-card"><div class="stat-num" style="color:var(--us)">{brc["ppv"]}%</div>'
+                f'<div class="stat-label">Breast CNB PPV<br>(惡性 {brc.get("malignant",0)}/{brc["total"]})</div></div>')
+        kpi_cards.append(
+            f'<div class="stat-card"><div class="stat-num" style="color:var(--mm)">{biopsy_qc["total_malignant"]}</div>'
+            f'<div class="stat-label">累計偵測惡性數</div></div>')
+
+        # per-procedure rows
+        proc_rows = ""
+        for r in biopsy_qc["summary"]:
+            counts = r["counts"]
+            detail = " / ".join(f"{k} {v}" for k, v in sorted(counts.items(), key=lambda x: -x[1]))
+            extra = ""
+            if r["proc"] == "Thyroid FNA":
+                extra = f"ND {r['nd_raw']}/{r['total']} = {r['nd_rate']}%（扣囊性 {r['nd_cystic']} → 真實 {r['nd_rate_real']}%）"
+            elif "ppv" in r:
+                extra = f"惡性 {r.get('malignant',0)}/{r['total']} = {r['ppv']}%"
+            proc_rows += (f"<tr><td><strong>{r['proc']}</strong></td><td class='mono'>{r['total']}</td>"
+                          f"<td style='font-size:12px'>{detail}</td><td style='font-size:12px;color:var(--text-dim)'>{extra}</td></tr>\n")
+
+        # follow-up list
+        fu = biopsy_qc["followups"]
+        fu_html = ""
+        if fu["atypical"]:
+            items = "".join(f"<li>{lbl} — {note}</li>" for lbl, note in fu["atypical"])
+            fu_html += f'<div style="margin-top:10px"><strong style="color:var(--yellow)">⚠ Atypical/B3（需手術或追蹤）{len(fu["atypical"])} 件：</strong><ul style="margin:4px 0 0 18px;font-size:12px">{items}</ul></div>'
+        if fu["discordant"]:
+            items = "".join(f"<li>{lbl} — {note}</li>" for lbl, note in fu["discordant"])
+            fu_html += f'<div style="margin-top:10px"><strong style="color:var(--red)">🔴 影像病理 discordant/limited（建議重切）{len(fu["discordant"])} 件：</strong><ul style="margin:4px 0 0 18px;font-size:12px">{items}</ul></div>'
+
+        # Thyroid ND 月趨勢（horizontal bars，紅色＝真實 ND 率）
+        thy_trend_html = ""
+        tt = biopsy_qc.get("thy_trend", [])
+        if tt:
+            bars = ""
+            for m in tt:
+                pct = m["nd_rate_real"]
+                color = "#e05c5c" if pct > 15 else ("#d4a94a" if pct > 10 else "#4caf7d")
+                w = min(pct, 100)
+                bars += (
+                    f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+                    f'<div style="width:60px;font-size:12px;color:var(--text-dim);font-family:JetBrains Mono">{m["month"]}</div>'
+                    f'<div style="flex:1;background:var(--bg3);border-radius:3px;height:18px;overflow:hidden">'
+                    f'<div style="width:{w}%;height:100%;background:{color}"></div></div>'
+                    f'<div style="width:120px;font-size:12px;font-family:JetBrains Mono">{pct}% (ND {m["nd"]}/{m["total"]})</div></div>')
+            thy_trend_html = (
+                '<h4 style="font-size:13px;color:#fff;margin:14px 0 8px">Thyroid FNA 真實 ND 月趨勢（紅&gt;15% 超標）</h4>'
+                f'{bars}'
+                '<div style="font-size:12px;color:var(--text-dim);margin-top:4px">'
+                '上升集中於近月，已知待改進；後續每月追蹤操作改善狀況。</div>')
+
+        thy_note = ""
+        if thy and thy["nd_rate_real"] > 15:
+            thy_note = (f'<div class="info-box" style="margin-top:12px;background:rgba(224,92,92,.08);'
+                        f'border-color:rgba(224,92,92,.3);color:#e05c5c">'
+                        f'Thyroid FNA 真實 ND 率 {thy["nd_rate_real"]}%（n={thy["total"]}）持續超標（標準 &lt;15%）。'
+                        f'acellular 案件多註「影像應該有/小軟難抽」→ 取樣/定位技巧可改善，或考慮 ROSE/超音波導引輔助。</div>')
+
+        html += f"""
+<!-- 8. 切片/FNA QC -->
+<div class="section">
+  <div class="section-title"><span class="num">8</span>切片／FNA 病理 QC（2026 累計）</div>
+  <div class="card">
+    <div class="stat-grid" style="margin-bottom:14px">
+      {''.join(kpi_cards)}
+    </div>
+    {thy_trend_html}
+    <table>
+      <thead><tr><th>程序</th><th>判讀數</th><th>結果分布</th><th>關鍵指標</th></tr></thead>
+      <tbody>
+        {proc_rows}
+      </tbody>
+    </table>
+    {fu_html}
+    {thy_note}
+    <div style="font-size:12px;color:var(--text-dim);margin-top:10px">
+      資料來源：biopsy_tracker_2026.xlsx（含病患資料，本檔 .gitignore 排除；trends.html 為本地檢視用）。
+    </div>
+  </div>
+</div>
+"""
+
+    html += """
 <div style="text-align:center;color:var(--text-dim);font-size:11px;margin-top:30px;padding:20px 0;border-top:1px solid var(--border)">
   Generated by build_trends.py · radtracker · 純 SVG/CSS，無 JS 依賴
 </div>

@@ -378,12 +378,27 @@ python update_planned_with_actuals.py W{NN} --csv csv_input/{week_csv}.csv [--yk
 
 > 為何日層級：CSV report_time 為 batch sign-off（~60%）非實際讀片時間，slot-level 時間比對僅能 catch ~15%。日層級彙總 by modality 才誠實。
 
+### xr_value.py（2026-05-27 新增，後改真實計時）
+全模態報告單位時間產值（pt/hr）。回答「哪種報告最賺錢」。
+
+```bash
+# 建議餵多週/整月 CSV 累積足夠計時樣本
+python xr_value.py --csv csv_input/115*_CL.csv --min-n 15 --json output/xr_value_{month}.json
+```
+
+→ 輸出供 weekly_report **Section 12** 引用。
+- **計時法**：真實 CSV 簽發間隔（間隔 0=批次剔除、>30min=休息剔除、用中位數），非估算
+- 全模態 + 子分類；**Spine 依 protocol 拆**（AP/Lat vs Flex/Ext vs 4view）
+- 平均點值＝硬數據；計時樣本 n<15 標「⚠少」
+- 典型結論（2026-05 大樣本）：Mammo 422 / Knee 409 最高；Chest 97（量大值低，佔量 30%）；CT/LDCT 88-109（中位 15-18min）
+- 限制：report_time 僅到分 → 次分鐘讀片 floor 1min
+
 ### build_trends.py（每月一次）
-多週趨勢視覺化：週新增量、週點值、週完成、GitHub 強度熱力圖、Backlog 趨勢。
+多週趨勢視覺化：週新增量、週點值、週完成、GitHub 強度熱力圖、Backlog 趨勢、**切片 QC（Thyroid ND 月趨勢 / Breast PPV / B3 追蹤）**。
 
 ```bash
 python build_trends.py
-# 輸出 output/trends.html — 拿來看 4 週 backlog 走勢、和主任談話的數據
+# 輸出 output/trends.html — 拿來看 4 週 backlog 走勢、切片 QC、和主任談話的數據
 ```
 
 ### parse_csv.py 單獨使用
@@ -424,6 +439,10 @@ python generate_report.py --xlsx csv_input/legacy/radiology_tracker.xlsx --input
 3. **（若有 pending CSV）跑 priority triage**
    ```bash
    python priority_breakdown.py --csv csv_input/{pending}.csv --pending --json output/priority_W{NN}.json
+   ```
+3b. **跑 XR 部位別產值（Section 12）**
+   ```bash
+   python xr_value.py --csv csv_input/{week_csv}.csv --json output/xr_value_W{NN}.json
    ```
 4. **填 GCal 週覆盤 event template**（成長/生活/工作三帳戶）
 5. **歸檔**
