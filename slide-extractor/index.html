@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Slide Extractor</title>
+<style>
+  :root { --bg:#0c0e14; --bg2:#13161f; --bg3:#1a1d28; --border:#2a2d3a; --text:#c8ccd8; --dim:#6b7088; --accent:#5b8af0; --green:#4caf7d; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Noto Sans TC", system-ui, sans-serif; padding: 20px; }
+  h1 { font-size: 18px; color: #fff; margin-bottom: 14px; }
+  .bar { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+  select, input, button { background: var(--bg3); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; font-size: 13px; font-family: inherit; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  button:hover { filter: brightness(1.1); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  label { font-size: 12px; color: var(--dim); margin-right: 4px; }
+  #status { font-size: 12px; color: var(--dim); padding: 4px 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; cursor: pointer; transition: border-color .15s; }
+  .card.selected { border-color: var(--green); box-shadow: 0 0 0 2px rgba(76,175,125,.3); }
+  .card img { width: 100%; display: block; }
+  .card .info { padding: 6px 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; font-family: "JetBrains Mono", monospace; }
+  .check { color: var(--green); font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>🎞 Slide Extractor</h1>
+
+<div class="bar">
+  <label>影片</label>
+  <select id="video"></select>
+
+  <label>偵測</label>
+  <select id="detector">
+    <option value="adaptive">adaptive (預設)</option>
+    <option value="content">content</option>
+    <option value="ffmpeg">ffmpeg</option>
+  </select>
+
+  <label>threshold</label>
+  <input id="threshold" type="number" step="0.5" style="width:70px" placeholder="auto">
+
+  <label>min_scene_len(s)</label>
+  <input id="min_scene_len" type="number" step="0.5" value="1.5" style="width:70px">
+
+  <button id="detectBtn" class="primary">偵測</button>
+
+  <span style="flex:1"></span>
+
+  <label>輸出寬度</label>
+  <input id="width" type="number" value="1920" style="width:80px">
+  <button id="selectAll">全選</button>
+  <button id="clearAll">清除</button>
+  <button id="exportBtn" class="primary" disabled>匯出 (<span id="selCount">0</span>)</button>
+</div>
+
+<div id="status"></div>
+<div id="grid" class="grid"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let frames = [];
+const selected = new Set();
+
+async function loadVideos() {
+  const r = await fetch('/api/videos');
+  const d = await r.json();
+  $('video').innerHTML = d.videos.map(v => `<option>${v}</option>`).join('');
+  if (!d.videos.length) $('status').textContent = '此資料夾無 mp4/mkv 影片';
+}
+
+async function detect() {
+  const v = $('video').value;
+  if (!v) return;
+  const det = $('detector').value;
+  const thr = $('threshold').value;
+  const msl = $('min_scene_len').value || '1.5';
+  $('status').textContent = `偵測中…（${v} / ${det}）`;
+  $('detectBtn').disabled = true;
+  $('grid').innerHTML = '';
+  selected.clear(); updateSelCount();
+
+  const params = new URLSearchParams({ video: v, detector: det, min_scene_len: msl });
+  if (thr) params.set('threshold', thr);
+  const r = await fetch('/api/frames?' + params);
+  const d = await r.json();
+  $('detectBtn').disabled = false;
+  if (d.error) { $('status').textContent = '❌ ' + d.error; return; }
+  frames = d.frames;
+  $('status').textContent = `偵測到 ${frames.length} 張投影片（影片長度 ${d.duration_display}）`;
+  renderGrid();
+}
+
+function renderGrid() {
+  $('grid').innerHTML = frames.map((f, i) =>
+    `<div class="card" data-i="${i}">
+      <img src="${f.thumb}" loading="lazy">
+      <div class="info">
+        <span>${f.timestamp_display}</span>
+        <span class="check" style="display:none">✓</span>
+      </div>
+    </div>`
+  ).join('');
+  $('grid').querySelectorAll('.card').forEach(c => {
+    c.addEventListener('click', () => toggle(+c.dataset.i, c));
+  });
+}
+
+function toggle(i, el) {
+  if (selected.has(i)) { selected.delete(i); el.classList.remove('selected'); el.querySelector('.check').style.display='none'; }
+  else { selected.add(i); el.classList.add('selected'); el.querySelector('.check').style.display='inline'; }
+  updateSelCount();
+}
+
+function updateSelCount() {
+  $('selCount').textContent = selected.size;
+  $('exportBtn').disabled = selected.size === 0;
+}
+
+$('selectAll').onclick = () => {
+  frames.forEach((_, i) => selected.add(i));
+  $('grid').querySelectorAll('.card').forEach(c => { c.classList.add('selected'); c.querySelector('.check').style.display='inline'; });
+  updateSelCount();
+};
+$('clearAll').onclick = () => {
+  selected.clear();
+  $('grid').querySelectorAll('.card').forEach(c => { c.classList.remove('selected'); c.querySelector('.check').style.display='none'; });
+  updateSelCount();
+};
+
+$('exportBtn').onclick = async () => {
+  const v = $('video').value;
+  const w = parseInt($('width').value) || 1920;
+  const timestamps = [...selected].map(i => frames[i].timestamp_sec);
+  $('status').textContent = `匯出 ${timestamps.length} 張中…`;
+  $('exportBtn').disabled = true;
+  const r = await fetch('/api/export', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ video: v, timestamps, output_dir: 'output', width: w })
+  });
+  const d = await r.json();
+  $('exportBtn').disabled = false;
+  if (d.error) $('status').textContent = '❌ ' + d.error;
+  else $('status').textContent = `✅ 匯出 ${d.exported_count} 張到 ${d.directory}`;
+};
+
+$('detectBtn').onclick = detect;
+loadVideos();
+</script>
+</body>
+</html>
