@@ -40,6 +40,11 @@ Radiology workflow automation toolkit for Dr. Jieyu, containing:
 - CSV files are cp950 (Big5) encoded, Tab-separated
 - Default reporter ID: A80748
 - Language preference: Traditional Chinese for user-facing content, English for code/comments
+- OneDrive 同步資料夾的程式碼有遺失風險（slide-extractor 曾遺失 .py，靠 .pyc 重建）→ 寫完立即 commit；`~/.claude/hooks/check-uncommitted.sh` Stop hook 會自動警告未 commit 的 .py/.md/.html/.yaml/.ahk 等
+- Python `http.server` 服務靜態檔時，`urlparse(path).path` **不會** percent-decode → 中文檔名需手動 `unquote()` 才能命中磁碟
+- git bash 不支援 PowerShell here-string `@'...'@`；多行 commit message 寫到 `.git/CM.txt` 後 `git commit -F .git/CM.txt`
+- Claude Code settings.json 的 hook command 若需 shell 跳脫，外部化成 `~/.claude/hooks/*.sh` 避免 JSON 跳脫地獄
+- Python 寫檔腳本 + Edit tool 同時操作同一檔案 → 後執行者覆蓋前者；同一 response 內操作相同檔案後必須驗證結果
 
 ## Quick Reference
 
@@ -54,8 +59,11 @@ Then use `weekly_review_prompt.md` to generate HTML from the JSON.
 ### AHK Scripts
 Located in `ahk-scripts/`. Modality-specific report templates:
 - `CT.ahk`, `US.ahk`, `Xray.ahk`, `Mammo.ahk`, `IR.ahk` — Report hotstrings
-- `Abbr.ahk` — Abbreviation expansion
+- `Abbr.ahk` — Abbreviation expansion（含跨模態通用縮寫，如 CA;、FR; 等；CA; 在此而非 CT.ahk）
 - `radiologist_settings.ini` — Personal settings (never commit secrets)
+- AHK 檔案編碼：`utf-8-sig`（非 cp950）
+- `HotstringMenuV` 標準格式：每引數獨立一行、前綴 `,`，單行 ≤ 150 字元
+- Keylogger 分析：`cd ahk-scripts/logs && python analyze_keylog.py <file> -o out.json`；跨多檔彙整用 `aggregate_raw.json` 模式
 
 ### Web Tools
 Located in `tool/`. Deployed via GitHub Pages at:
