@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>探頭切面模擬器 · Probe → CT Plane</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#111722; --panel2:#0d131c; --line:#1d2733;
+    --txt:#c8d4df; --muted:#69788a; --muted2:#46556593;
+    --cyan:#3fd0c9; --cyan-dim:#1f6f6b; --amber:#ffb347; --amber-dim:#7a5320;
+    --bad:#ff6b6b;
+    --mono:'SFMono-Regular',ui-monospace,'JetBrains Mono','Consolas','Cascadia Mono',monospace;
+    --sans:'Inter',system-ui,'Segoe UI','Noto Sans TC',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;overflow:hidden}
+  #app{display:grid;grid-template-columns:1fr 380px;grid-template-rows:auto minmax(0,1fr);height:100vh}
+  header{grid-column:1/3;grid-row:1;display:flex;align-items:baseline;gap:14px;padding:10px 18px;
+    border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0d131c,#0a0e14)}
+  header .mark{font-family:var(--mono);font-size:12px;letter-spacing:.32em;color:var(--cyan);
+    border:1px solid var(--cyan-dim);padding:3px 9px;border-radius:3px}
+  header h1{font-size:15px;font-weight:600;margin:0;letter-spacing:.01em}
+  header .sub{font-size:12px;color:var(--muted)}
+  header .spacer{flex:1}
+  header .hint{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+  header .hint b{color:var(--amber);font-weight:600}
+
+  /* 3D viewport */
+  #view{grid-column:1;grid-row:2;min-width:0;min-height:0;position:relative;background:
+    radial-gradient(120% 120% at 50% 0%,#10171f 0%,#070a0f 70%);overflow:hidden}
+  #gl{position:absolute;inset:0;display:block}
+  #vlabel{position:absolute;left:14px;top:12px;font-family:var(--mono);font-size:11px;
+    color:var(--muted);letter-spacing:.05em;pointer-events:none}
+  #vlabel b{color:var(--cyan)}
+  #orient{position:absolute;left:14px;bottom:12px;font-family:var(--mono);font-size:10.5px;
+    color:var(--muted2);line-height:1.5;pointer-events:none}
+  #recenter{position:absolute;right:14px;top:12px;font-family:var(--mono);font-size:11px;
+    color:var(--muted);background:#0f1620cc;border:1px solid var(--line);border-radius:4px;
+    padding:5px 10px;cursor:pointer}
+  #recenter:hover{color:var(--cyan);border-color:var(--cyan-dim)}
+  #dropzone{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:#050709d9;z-index:20;font-family:var(--mono);color:var(--cyan);font-size:14px;
+    border:2px dashed var(--cyan-dim);letter-spacing:.05em}
+
+  /* right rail */
+  aside{grid-column:2;grid-row:2;min-height:0;background:var(--panel);border-left:1px solid var(--line);
+    display:flex;flex-direction:column;overflow:hidden}
+  /* sonogram panel */
+  #sono{position:relative;background:#000;border-bottom:1px solid var(--line);
+    height:min(380px,46vh);flex:0 0 auto}
+  #sonocanvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:auto}
+  #sonohud{position:absolute;left:10px;top:8px;font-family:var(--mono);font-size:10.5px;
+    color:#9fe9e2;text-shadow:0 1px 2px #000;line-height:1.45;pointer-events:none}
+  #sonohud .k{color:var(--amber)}
+  #sonomode{position:absolute;right:10px;top:8px;font-family:var(--mono);font-size:10px;
+    color:var(--muted);text-shadow:0 1px 2px #000;pointer-events:none;text-align:right}
+
+  /* controls */
+  .controls{flex:1 1 auto;min-height:0;overflow-y:auto;padding:4px 0 24px}
+  .controls::-webkit-scrollbar{width:8px}
+  .controls::-webkit-scrollbar-thumb{background:#1c2735;border-radius:4px}
+  .grp{padding:13px 16px;border-bottom:1px solid var(--line)}
+  .grp h2{margin:0 0 11px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;font-family:var(--mono)}
+  .seg{display:flex;gap:6px}
+  .seg button{flex:1;font-family:var(--sans);font-size:12px;padding:7px 4px;background:var(--panel2);
+    color:var(--muted);border:1px solid var(--line);border-radius:5px;cursor:pointer}
+  .seg button.on{color:#06231f;background:var(--cyan);border-color:var(--cyan);font-weight:600}
+  .seg button:not(.on):hover{color:var(--txt);border-color:#2b3a4c}
+  .row{display:flex;align-items:center;gap:10px;margin:9px 0}
+  .row label{flex:0 0 92px;font-size:12px;color:var(--txt)}
+  .row .val{flex:0 0 56px;text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--cyan)}
+  input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:#243140;border-radius:2px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+    background:var(--cyan);cursor:pointer;border:2px solid #0a0e14;box-shadow:0 0 0 1px var(--cyan)}
+  input[type=range].amber::-webkit-slider-thumb{background:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+  input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--cyan);
+    border:2px solid #0a0e14;cursor:pointer}
+  .toggle{display:flex;align-items:center;justify-content:space-between;margin:9px 0;font-size:12px}
+  .switch{width:38px;height:21px;background:#243140;border-radius:11px;position:relative;cursor:pointer;
+    transition:background .15s;flex:0 0 38px}
+  .switch.on{background:var(--cyan)}
+  .switch::after{content:'';position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;
+    background:#0a0e14;transition:left .15s}
+  .switch.on::after{left:19px}
+  .btn{display:block;width:100%;text-align:center;font-family:var(--sans);font-size:12.5px;padding:9px;
+    background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;cursor:pointer;margin-top:4px}
+  .btn:hover{border-color:var(--cyan-dim);color:var(--cyan)}
+  .note{font-size:11px;color:var(--muted);line-height:1.55;margin-top:8px}
+  .note.warn{color:var(--amber)}
+  .dirsel{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+  .dirsel button{font-size:11px;padding:6px 2px;background:var(--panel2);color:var(--muted);
+    border:1px solid var(--line);border-radius:4px;cursor:pointer}
+  .dirsel button.on{color:var(--amber);border-color:var(--amber-dim);background:#1a140a}
+  .hidden{display:none!important}
+  input[type=file]{display:none}
+  @media (max-width:860px){
+    #app{grid-template-columns:1fr;grid-template-rows:auto 40vh minmax(0,1fr)}
+    #view{grid-column:1;grid-row:2}
+    aside{grid-column:1;grid-row:3;border-left:none;border-top:1px solid var(--line)}
+    #sono{height:260px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="mark">SONO·PLAN</span>
+    <h1>探頭切面模擬器</h1>
+    <span class="sub">探頭擺位 → 對應的 CT 重組切面</span>
+    <span class="spacer"></span>
+    <span class="hint">在身體上 <b>點一下</b> 放探頭　·　拖曳旋轉視角　·　滾輪縮放（DICOM：滾輪換切面、<b>Ctrl+滾輪</b>縮放）</span>
+  </header>
+
+  <section id="view">
+    <canvas id="gl"></canvas>
+    <div id="vlabel">3D · <b id="vmodelname">數位腹部假體</b></div>
+    <div id="orient"></div>
+    <button id="recenter">重新置中</button>
+    <div id="dropzone">放開以載入 DICOM 序列</div>
+  </section>
+
+  <aside>
+    <div id="sono">
+      <canvas id="sonocanvas"></canvas>
+      <div id="sonohud"></div>
+      <div id="sonomode">CT 重組（灰階）</div>
+    </div>
+
+    <div class="controls">
+      <div class="grp">
+        <h2>探頭 Transducer</h2>
+        <div class="seg" id="ptype">
+          <button data-t="convex" class="on">Convex 凸陣</button>
+          <button data-t="linear">Linear 線陣</button>
+          <button data-t="phased">Phased 相位</button>
+        </div>
+        <div class="row"><label>深度 Depth</label><input type="range" id="depth" min="3" max="25" step="0.5" value="14"><span class="val" id="depthv">14.0</span></div>
+        <div class="row" id="rowwidth"><label>足跡寬 Width</label><input type="range" id="width" min="2" max="10" step="0.5" value="5"><span class="val" id="widthv">5.0</span></div>
+        <div class="row" id="rowsector"><label>扇角 Sector</label><input type="range" id="sector" min="30" max="100" step="1" value="62"><span class="val" id="sectorv">62°</span></div>
+      </div>
+
+      <div class="grp">
+        <h2>擺位 Pose</h2>
+        <div class="row"><label>旋轉 Rotate</label><input type="range" class="amber" id="rot" min="0" max="360" step="1" value="0"><span class="val" id="rotv">0°</span></div>
+        <div class="row"><label>傾角A Toe/Heel</label><input type="range" class="amber" id="tiltA" min="-45" max="45" step="1" value="0"><span class="val" id="tiltAv">0°</span></div>
+        <div class="row"><label>傾角B 側傾</label><input type="range" class="amber" id="tiltB" min="-45" max="45" step="1" value="0"><span class="val" id="tiltBv">0°</span></div>
+        <div id="dicomPose" class="hidden">
+          <div class="note">DICOM 模式：方向 + 位置定位入射點（自動貼到皮膚）。也可直接點 3D 裡的參考切面放探頭。</div>
+          <div class="dirsel" id="dirsel" style="margin:8px 0">
+            <button data-d="A" class="on">前 A</button><button data-d="P">後 P</button><button data-d="L">左 L</button>
+            <button data-d="R">右 R</button><button data-d="S">上 S</button><button data-d="I">下 I</button>
+          </div>
+          <div class="row"><label>位置 X</label><input type="range" class="amber" id="posX" min="0" max="100" step="0.5" value="50"><span class="val" id="posXv">50</span></div>
+          <div class="row"><label>位置 Y</label><input type="range" class="amber" id="posY" min="0" max="100" step="0.5" value="50"><span class="val" id="posYv">50</span></div>
+          <div class="row"><label>切面 Slice</label><input type="range" class="amber" id="slice" min="0" max="100" step="1" value="50"><span class="val" id="slicev">–</span></div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <h2>影像 Window / Level</h2>
+        <div class="row"><label>Window</label><input type="range" id="ww" min="50" max="2000" step="10" value="400"><span class="val" id="wwv">400</span></div>
+        <div class="row"><label>Level</label><input type="range" id="wl" min="-600" max="1000" step="5" value="40"><span class="val" id="wlv">40</span></div>
+        <div class="seg" id="wlpreset" style="margin-top:6px">
+          <button data-ww="400" data-wl="40">腹部</button>
+          <button data-ww="1500" data-wl="-600">肺</button>
+          <button data-ww="2000" data-wl="400">骨</button>
+          <button data-ww="350" data-wl="50">軟組織</button>
+        </div>
+        <div class="toggle" style="margin-top:12px">
+          <span>超音波風格疊加 <span style="color:var(--muted)">(示意)</span></span>
+          <div class="switch" id="usstyle"></div>
+        </div>
+        <div class="note">疊加僅模擬扇形、深度衰減與介面回音的「外觀」，<b>不是</b>真實聲阻抗回波。CT 只能給出幾何上對應的切面。</div>
+      </div>
+
+      <div class="grp">
+        <h2>資料 Data</h2>
+        <button class="btn" id="loadbtn">載入我的 CT（DICOM 序列）</button>
+        <input type="file" id="file" multiple accept=".dcm,application/dicom,*">
+        <button class="btn" id="phantombtn">回到數位假體</button>
+        <div class="note" id="datanote">目前使用內建腹部假體。可一次選取整個未壓縮 CT 序列（.dcm）。壓縮序列（JPEG/JPEG2000）無法在瀏覽器內解碼。</div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+   探頭切面模擬器
+   核心：探頭擺位 → 掃描切面 (lateral × depth) → 在 CT 體積上重採樣 (oblique MPR)
+   ========================================================================= */
+
+const TAU = Math.PI*2, D2R = Math.PI/180;
+
+/* ---------- 體積資料模型 ---------- */
+// volume: { data:Int16Array(HU), nx,ny,nz, sx,sy,sz }  世界座標以體積中心為原點
+let VOL = null;
+
+function worldToVox(v){ // THREE.Vector3 -> {fi,fj,fk}
+  return {
+    fi: v.x/VOL.sx + (VOL.nx-1)/2,
+    fj: v.y/VOL.sy + (VOL.ny-1)/2,
+    fk: v.z/VOL.sz + (VOL.nz-1)/2
+  };
+}
+function sampleHU(x,y,z){ // trilinear，界外回 -1000 (空氣)
+  const fi = x/VOL.sx + (VOL.nx-1)/2;
+  const fj = y/VOL.sy + (VOL.ny-1)/2;
+  const fk = z/VOL.sz + (VOL.nz-1)/2;
+  if(fi<0||fj<0||fk<0||fi>VOL.nx-1||fj>VOL.ny-1||fk>VOL.nz-1) return -1000;
+  const i0=fi|0, j0=fj|0, k0=fk|0;
+  const i1=Math.min(i0+1,VOL.nx-1), j1=Math.min(j0+1,VOL.ny-1), k1=Math.min(k0+1,VOL.nz-1);
+  const dx=fi-i0, dy=fj-j0, dz=fk-k0;
+  const d=VOL.data, nx=VOL.nx, nxy=VOL.nx*VOL.ny;
+  const idx=(i,j,k)=>i+j*nx+k*nxy;
+  const c000=d[idx(i0,j0,k0)],c100=d[idx(i1,j0,k0)],c010=d[idx(i0,j1,k0)],c110=d[idx(i1,j1,k0)];
+  const c001=d[idx(i0,j0,k1)],c101=d[idx(i1,j0,k1)],c011=d[idx(i0,j1,k1)],c111=d[idx(i1,j1,k1)];
+  const c00=c000*(1-dx)+c100*dx, c10=c010*(1-dx)+c110*dx;
+  const c01=c001*(1-dx)+c101*dx, c11=c011*(1-dx)+c111*dx;
+  const c0=c00*(1-dy)+c10*dy, c1=c01*(1-dy)+c11*dy;
+  return c0*(1-dz)+c1*dz;
+}
+
+/* ---------- 內建腹部假體 (analytic phantom) ---------- */
+function bodyHalfX(z){ const zc=z/210; return 150*(1-0.10*zc*zc); }   // 左右半寬 mm
+function bodyHalfY(z){ const zc=z/210; return 108*(1-0.08*zc*zc); }   // 前後半寬 mm
+
+function phantomHU(x,y,z){
+  const a=bodyHalfX(z), b=bodyHalfY(z);
+  const r=Math.sqrt((x/a)*(x/a)+(y/b)*(y/b));
+  if(r>1.0) return -1000;                       // 空氣
+  let hu;
+  if(r>0.93) hu=-95;                            // 皮下脂肪
+  else if(r>0.84) hu=42;                         // 腹壁肌肉
+  else hu=18;                                     // 內臟脂肪/腹腔背景
+
+  // 肝臟 (RUQ, x>0 上腹)
+  if(((x-58)/72)**2+((y-18)/56)**2+((z-90)/68)**2 < 1) hu=58;
+  // 脾臟 (LUQ)
+  if(((x+78)/30)**2+((y-8)/34)**2+((z-95)/40)**2 < 1) hu=50;
+  // 膽囊 (肝下緣，膽汁)
+  if(((x-46)/15)**2+((y-12)/15)**2+((z-58)/22)**2 < 1) hu=14;
+  // 腎臟 ×2 (後腹腔)
+  for(const sx of [-1,1]){
+    const cx=58*sx, cy=-46, cz=28;
+    if(((x-cx)/24)**2+((y-cy)/19)**2+((z-cz)/34)**2 < 1){
+      hu=44;
+      if(((x-cx)/9)**2+((y-cy)/8)**2+((z-cz)/16)**2 < 1) hu=22; // 腎盂
+    }
+  }
+  // 腸氣 (前腹腔幾個氣泡)
+  if(((x+20)/26)**2+((y-30)/24)**2+((z+10)/30)**2 < 1) hu=-280;
+  if(((x-30)/22)**2+((y-38)/20)**2+((z-30)/26)**2 < 1) hu=-260;
+  // 主動脈 (中線偏左、脊椎前) 打顯影
+  if(((x+13)/12)**2+((y+30)/12)**2 < 1) hu=270;
+  // 下腔靜脈 (中線偏右)
+  if(((x-19)/13)**2+((y+32)/12)**2 < 1) hu=125;
+  // 脊椎 (後正中)，並做出椎間盤節律
+  const ydisc = Math.abs(((z+1000)%34)-17); // 0..17
+  if((x/24)**2+((y+58)/18)**2 < 1){
+    hu = (ydisc<5) ? 90 : 470;                // 椎間盤 vs 椎體骨
+  }
+  // 脊椎管 (椎體後方)
+  if((x/9)**2+((y+78)/9)**2 < 1) hu=28;
+  // 棘突
+  if((x/7)**2+((y+86)/14)**2 < 1) hu=430;
+  return hu;
+}
+
+function buildPhantomVolume(){
+  const nx=120, ny=100, nz=140, sx=2.6, sy=2.6, sz=3.1;
+  const data=new Int16Array(nx*ny*nz);
+  let p=0;
+  for(let k=0;k<nz;k++){
+    const z=(k-(nz-1)/2)*sz;
+    for(let j=0;j<ny;j++){
+      const y=(j-(ny-1)/2)*sy;
+      for(let i=0;i<nx;i++){
+        const x=(i-(nx-1)/2)*sx;
+        data[p++]=phantomHU(x,y,z)|0;
+      }
+    }
+  }
+  return {data,nx,ny,nz,sx,sy,sz,phantom:true};
+}
+
+// 假體皮膚的外向法向量（橢圓梯度，穩定）
+function phantomNormal(x,y,z){
+  const a=bodyHalfX(z), b=bodyHalfY(z);
+  const n=new THREE.Vector3(x/(a*a), y/(b*b), 0);
+  if(n.lengthSq()<1e-9) n.set(0,1,0);
+  return n.normalize();
+}
+
+/* ============================ THREE.js 場景 ============================ */
+const viewEl=document.getElementById('view');
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('gl'),antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000000,0);
+renderer.sortObjects=true;
+const scene=new THREE.Scene();
+scene.background=null;
+const camera=new THREE.PerspectiveCamera(42,1,1,5000);
+
+scene.add(new THREE.AmbientLight(0x9fb4c8,0.55));
+const dl=new THREE.DirectionalLight(0xffffff,0.9); dl.position.set(220,180,320); scene.add(dl);
+const dl2=new THREE.DirectionalLight(0x6fa0c0,0.35); dl2.position.set(-260,-120,-200); scene.add(dl2);
+
+let bodyGroup=new THREE.Group(); scene.add(bodyGroup);   // 皮膚或 bbox/參考切面
+let probeGroup=new THREE.Group(); scene.add(probeGroup); // 探頭 + 扇形 + 切面
+let skinMesh=null;
+
+// 探頭狀態
+const probe={
+  pos:new THREE.Vector3(0,108,0),
+  normal:new THREE.Vector3(0,1,0),
+  type:'convex', depth:14, width:5, sector:62,
+  rot:0, tiltA:0, tiltB:0,
+  // dicom 模式定位
+  dir:'A', px:50, py:50, slice:0
+};
+
+/* ---- 假體皮膚網格 ---- */
+function buildSkinMesh(){
+  const zSteps=70, tSteps=84;
+  const Hz=(VOL.nz-1)*VOL.sz, z0=-Hz/2;
+  const pos=[], idx=[];
+  for(let zi=0;zi<=zSteps;zi++){
+    const z=z0 + Hz*zi/zSteps;
+    const a=bodyHalfX(z)*0.995, b=bodyHalfY(z)*0.995;
+    for(let ti=0;ti<=tSteps;ti++){
+      const th=TAU*ti/tSteps;
+      pos.push(a*Math.cos(th), b*Math.sin(th), z);
+    }
+  }
+  const W=tSteps+1;
+  for(let zi=0;zi<zSteps;zi++)for(let ti=0;ti<tSteps;ti++){
+    const A=zi*W+ti,B=A+1,C=A+W,Dd=C+1;
+    idx.push(A,C,B, B,C,Dd);
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setIndex(idx); g.computeVertexNormals();
+  const m=new THREE.MeshPhongMaterial({color:0xd9a98a,transparent:true,opacity:0.17,
+    shininess:8,side:THREE.DoubleSide,depthWrite:false});
+  const mesh=new THREE.Mesh(g,m); mesh.renderOrder=1; mesh.name='skin';
+  return mesh;
+}
+
+/* ---- DICOM：bbox + 中央軸狀參考切面 ---- */
+function buildBBox(){
+  const hx=VOL.nx*VOL.sx/2, hy=VOL.ny*VOL.sy/2, hz=VOL.nz*VOL.sz/2;
+  const g=new THREE.BoxGeometry(hx*2,hy*2,hz*2);
+  const edges=new THREE.EdgesGeometry(g);
+  const line=new THREE.LineSegments(edges,new THREE.LineBasicMaterial({color:0x2b3a4c}));
+  return line;
+}
+function buildRefSlice(k){
+  // 指定 k 的軸狀切面，貼上灰階紋理供定位參考
+  k=Math.max(0,Math.min(VOL.nz-1,k|0));
+  const cv=document.createElement('canvas'); cv.width=VOL.nx; cv.height=VOL.ny;
+  const ctx=cv.getContext('2d'); const img=ctx.createImageData(VOL.nx,VOL.ny);
+  const ww=400,wl=40, lo=wl-ww/2;
+  const nxy=VOL.nx*VOL.ny;
+  for(let j=0;j<VOL.ny;j++)for(let i=0;i<VOL.nx;i++){
+    const hu=VOL.data[i+j*VOL.nx+k*nxy];
+    let g=((hu-lo)/ww)*255; g=g<0?0:g>255?255:g;
+    const o=(i+j*VOL.nx)*4; img.data[o]=img.data[o+1]=img.data[o+2]=g; img.data[o+3]=200;
+  }
+  ctx.putImageData(img,0,0);
+  const tex=new THREE.CanvasTexture(cv);
+  // flipY=false：canvas 第 j 列（voxel j，世界 y=(j-(ny-1)/2)*sy）對應到平面 v=0 端（y=-hy）
+  // → 切片紋理與世界座標一致，探頭/扇形可直接疊在正確位置上
+  tex.flipY=false; tex.needsUpdate=true;
+  const hx=VOL.nx*VOL.sx/2, hy=VOL.ny*VOL.sy/2;
+  const g=new THREE.PlaneGeometry(hx*2,hy*2);
+  const mesh=new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:tex,transparent:true,
+    opacity:0.5,side:THREE.DoubleSide,depthWrite:false}));
+  mesh.renderOrder=1; mesh.name='refslice';
+  mesh.position.z=(k-(VOL.nz-1)/2)*VOL.sz;
+  return mesh;
+}
+
+let refSliceMesh=null;
+function rebuildBody(){
+  while(bodyGroup.children.length) bodyGroup.remove(bodyGroup.children[0]);
+  refSliceMesh=null;
+  if(VOL.phantom){
+    skinMesh=buildSkinMesh(); bodyGroup.add(skinMesh);
+    document.getElementById('vmodelname').textContent='數位腹部假體';
+  }else{
+    skinMesh=null;
+    bodyGroup.add(buildBBox());
+    refSliceMesh=buildRefSlice(probe.slice);
+    bodyGroup.add(refSliceMesh);
+    document.getElementById('vmodelname').textContent='已載入 CT';
+  }
+}
+function updateRefSlice(){
+  if(VOL.phantom) return;
+  if(refSliceMesh){
+    bodyGroup.remove(refSliceMesh);
+    refSliceMesh.geometry.dispose();
+    if(refSliceMesh.material.map) refSliceMesh.material.map.dispose();
+    refSliceMesh.material.dispose();
+  }
+  refSliceMesh=buildRefSlice(probe.slice);
+  bodyGroup.add(refSliceMesh);
+}
+
+/* ---- 探頭基底向量計算（核心幾何）---- */
+function probeBasis(){
+  const n=probe.normal.clone().normalize();         // 外向皮膚法向
+  let beam=n.clone().negate();                       // 波束：進入體內
+  let lat;
+  if(!VOL.phantom){
+    // DICOM：掃描切面與軸狀參考切面共面 — beam 與 lat 都落在 X-Y 平面 (elev=+Z)
+    // A: beam=(0,-1,0)→lat=(1,0,0)；P→(-1,0,0)；L: beam=(1,0,0)→lat=(0,1,0)；R→(0,-1,0)
+    if(Math.abs(beam.z)>0.99) lat=new THREE.Vector3(1,0,0);   // S/I：beam 沿 Z，無法與軸狀共面，取 X-Z 切面
+    else lat=new THREE.Vector3(-beam.y,beam.x,0).normalize();
+  }else{
+    // 假體：初始 lateral 以世界上方(頭側 +z)投影到與 beam 垂直
+    const up=new THREE.Vector3(0,0,1);
+    lat=up.clone().sub(beam.clone().multiplyScalar(up.dot(beam)));
+    if(lat.lengthSq()<1e-4){ lat.set(1,0,0).sub(beam.clone().multiplyScalar(beam.x)); }
+    lat.normalize();
+  }
+  let elev=new THREE.Vector3().crossVectors(beam,lat).normalize();
+  // 繞法向旋轉 (探頭自轉)
+  const qRot=new THREE.Quaternion().setFromAxisAngle(n, probe.rot*D2R);
+  lat.applyQuaternion(qRot); elev.applyQuaternion(qRot);
+  // 傾角A：在切面內前後傾（繞 elev）
+  const qA=new THREE.Quaternion().setFromAxisAngle(elev, probe.tiltA*D2R);
+  beam.applyQuaternion(qA); lat.applyQuaternion(qA);
+  // 傾角B：切面外側傾（繞 lat）
+  const qB=new THREE.Quaternion().setFromAxisAngle(lat, probe.tiltB*D2R);
+  beam.applyQuaternion(qB); elev.applyQuaternion(qB);
+  beam.normalize(); lat.normalize(); elev.normalize();
+  return {n,beam,lat,elev,P:probe.pos.clone()};
+}
+
+/* ---- 探頭/扇形/切面 3D 視覺 ---- */
+let planeMesh=null, planeTex=null;
+const sonoCanvas=document.getElementById('sonocanvas');
+const SONO=512; sonoCanvas.width=SONO; sonoCanvas.height=SONO;
+const sctx=sonoCanvas.getContext('2d');
+// 3D 扇形貼圖用獨立 canvas：不含深度刻度等 overlay，且 flipY=false 與 UV(canvas 像素座標) 一致
+const texCanvas=document.createElement('canvas'); texCanvas.width=SONO; texCanvas.height=SONO;
+const tctx=texCanvas.getContext('2d');
+
+function rebuildProbeVisual(){
+  while(probeGroup.children.length){
+    const c=probeGroup.children[0];
+    if(c.geometry)c.geometry.dispose(); probeGroup.remove(c);
+  }
+  const B=probeBasis();
+  // 探頭外殼 (沿 -beam 立於皮膚上)
+  const housing=new THREE.Mesh(
+    new THREE.BoxGeometry(probe.type==='linear'?probe.width*10:32, 16, 26),
+    new THREE.MeshPhongMaterial({color:0x2a3340,shininess:30}));
+  const foot=new THREE.Mesh(
+    new THREE.BoxGeometry(probe.type==='linear'?probe.width*10:34, 5, 28),
+    new THREE.MeshPhongMaterial({color:0xffb347,emissive:0x4a3208}));
+  // 以基底建立旋轉矩陣： x=lat, y=-beam(往上=離開身體), z=elev
+  const m=new THREE.Matrix4().makeBasis(B.lat, B.beam.clone().negate(), B.elev);
+  const q=new THREE.Quaternion().setFromRotationMatrix(m);
+  housing.quaternion.copy(q); foot.quaternion.copy(q);
+  housing.position.copy(B.P).add(B.beam.clone().multiplyScalar(-21));
+  foot.position.copy(B.P).add(B.beam.clone().multiplyScalar(-3));
+  probeGroup.add(housing); probeGroup.add(foot);
+
+  // 掃描切面網格（貼上 sonogram 紋理）+ 邊框
+  if(!planeTex){ planeTex=new THREE.CanvasTexture(texCanvas); planeTex.flipY=false; }
+  const geom=buildPlaneGeometry(B);
+  planeMesh=new THREE.Mesh(geom, new THREE.MeshBasicMaterial({
+    map:planeTex, side:THREE.DoubleSide, transparent:true, depthWrite:false}));
+  planeMesh.renderOrder=3; planeMesh.material.map.needsUpdate=true;
+  probeGroup.add(planeMesh);
+  probeGroup.add(buildPlaneOutline(B));
+}
+
+// sonogram 畫布的極座標佈局參數（扇形：頂點在上方中央）
+function sonoLayout(){
+  const D=probe.depth*10, R=apexRadius();         // mm
+  const cx=SONO/2, top=SONO*0.07;
+  const usable=SONO-top-SONO*0.06;
+  const scale=usable/(R+D);                        // px per mm
+  return {D,R,cx,top,scale};
+}
+function apexRadius(){
+  if(probe.type==='linear') return 0;
+  if(probe.type==='phased') return 12;             // 小頂點 → 寬扇
+  return Math.max(40, probe.width*10*0.9);         // convex 曲率半徑近似
+}
+// (β,rr_mm) → sonogram 像素座標
+function polarToPx(beta,rr,L){
+  return { x:L.cx + (rr*L.scale)*Math.sin(beta), y:L.top + (rr*L.scale)*Math.cos(beta) };
+}
+
+function buildPlaneGeometry(B){
+  const L=sonoLayout(); const D=probe.depth*10;
+  const pos=[], uv=[], idx=[];
+  if(probe.type==='linear'){
+    const W=probe.width*10;
+    const corners=[
+      {s:-W/2,t:0},{s:W/2,t:0},{s:-W/2,t:D},{s:W/2,t:D}
+    ];
+    // 線陣 sonogram 為矩形：x∈[cx-W*scale/2, cx+W*scale/2], y∈[top, top+D*scale]
+    const hw=W*L.scale/2;
+    const u=[(L.cx-hw)/SONO,(L.cx+hw)/SONO];
+    const v=[(L.top)/SONO,(L.top+D*L.scale)/SONO];
+    const wp=(c)=>B.P.clone().add(B.lat.clone().multiplyScalar(c.s)).add(B.beam.clone().multiplyScalar(c.t));
+    [ [corners[0],u[0],v[0]],[corners[1],u[1],v[0]],[corners[2],u[0],v[1]],[corners[3],u[1],v[1]] ]
+      .forEach(([c,uu,vv])=>{const p=wp(c);pos.push(p.x,p.y,p.z);uv.push(uu,vv);});
+    idx.push(0,2,1, 1,2,3);
+  }else{
+    const R=apexRadius(), half=probe.sector/2*D2R, segs=40;
+    const A=B.P.clone().add(B.beam.clone().multiplyScalar(-R)); // 頂點
+    // 內弧(rr=R) 與外弧(rr=R+D)
+    for(let s=0;s<=segs;s++){
+      const beta=-half+2*half*s/segs;
+      const rdir=B.beam.clone().applyAxisAngle(B.elev,beta);
+      for(const rr of [R, R+D]){
+        const p=A.clone().add(rdir.clone().multiplyScalar(rr));
+        pos.push(p.x,p.y,p.z);
+        const px=polarToPx(beta,rr,L); uv.push(px.x/SONO, px.y/SONO);
+      }
+    }
+    for(let s=0;s<segs;s++){
+      const a=s*2,b=a+1,c=a+2,d=a+3;
+      idx.push(a,c,b, b,c,d);
+    }
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+function buildPlaneOutline(B){
+  const D=probe.depth*10, pts=[];
+  if(probe.type==='linear'){
+    const W=probe.width*10;
+    const c=[[-W/2,0],[W/2,0],[W/2,D],[-W/2,D],[-W/2,0]];
+    c.forEach(([s,t])=>{const p=B.P.clone().add(B.lat.clone().multiplyScalar(s)).add(B.beam.clone().multiplyScalar(t));pts.push(p);});
+  }else{
+    const R=apexRadius(), half=probe.sector/2*D2R, segs=28;
+    const A=B.P.clone().add(B.beam.clone().multiplyScalar(-R));
+    for(let s=0;s<=segs;s++){const beta=-half+2*half*s/segs;
+      pts.push(A.clone().add(B.beam.clone().applyAxisAngle(B.elev,beta).multiplyScalar(R)));}
+    for(let s=segs;s>=0;s--){const beta=-half+2*half*s/segs;
+      pts.push(A.clone().add(B.beam.clone().applyAxisAngle(B.elev,beta).multiplyScalar(R+D)));}
+    pts.push(pts[0].clone());
+  }
+  const g=new THREE.BufferGeometry().setFromPoints(pts);
+  return new THREE.Line(g,new THREE.LineBasicMaterial({color:0xffb347}));
+}
+
+/* ---- sonogram 重採樣（在 CT 體積上沿切面取值）---- */
+const usStyle=()=>document.getElementById('usstyle').classList.contains('on');
+function renderSonogram(){
+  const B=probeBasis();
+  const L=sonoLayout(); const D=probe.depth*10, R=apexRadius();
+  const ww=probe.ww, wl=probe.wl, lo=wl-ww/2;
+  const half=probe.sector/2*D2R;
+  const img=sctx.createImageData(SONO,SONO);
+  const dat=img.data;
+  const linear = probe.type==='linear';
+  const Whalf = probe.width*10/2;
+  const A = B.P.clone().add(B.beam.clone().multiplyScalar(-R)); // 扇形頂點
+  const beamN=B.beam, latN=B.lat, elevN=B.elev;
+  const us=usStyle();
+  // 3D 扇形貼圖：DICOM 模式固定顯示 CT 灰階（即使面板開超音波風格）；假體模式與面板相同
+  const img2=(us && !VOL.phantom)? sctx.createImageData(SONO,SONO) : null;
+  const dat2=img2? img2.data : null;
+
+  for(let py=0;py<SONO;py++){
+    for(let px=0;px<SONO;px++){
+      const o=(py*SONO+px)*4;
+      let inside=false, wx,wy,wz, depthFrac=0, prevHU=null, beta=0;
+      if(linear){
+        const hw=Whalf*L.scale;
+        const s=(px-L.cx)/L.scale;                 // mm，橫向
+        const t=(py-L.top)/L.scale;                // mm，深度
+        if(Math.abs(s)<=Whalf && t>=0 && t<=D){
+          inside=true; depthFrac=t/D;
+          wx=B.P.x+latN.x*s+beamN.x*t; wy=B.P.y+latN.y*s+beamN.y*t; wz=B.P.z+latN.z*s+beamN.z*t;
+        }
+      }else{
+        const dx=px-L.cx, dy=py-L.top;
+        const rr=Math.hypot(dx,dy)/L.scale;         // mm 自頂點
+        beta=Math.atan2(dx,dy);
+        if(rr>=R && rr<=R+D && Math.abs(beta)<=half){
+          inside=true; depthFrac=(rr-R)/D;
+          // 繞 elev 把 beam 轉 β：elev×beam = lat，故 rdir = beam·cosβ + lat·sinβ
+          const cb=Math.cos(beta), sb=Math.sin(beta);
+          const rdx=beamN.x*cb+latN.x*sb, rdy=beamN.y*cb+latN.y*sb, rdz=beamN.z*cb+latN.z*sb;
+          wx=A.x+rdx*rr; wy=A.y+rdy*rr; wz=A.z+rdz*rr;
+        }
+      }
+      if(!inside){ dat[o]=dat[o+1]=dat[o+2]=0; dat[o+3]=255; continue; }
+      const hu=sampleHU(wx,wy,wz);
+      let g=((hu-lo)/ww)*255; g=g<0?0:g>255?255:g;
+      if(dat2){ dat2[o]=dat2[o+1]=dat2[o+2]=g; dat2[o+3]=255; }
+
+      if(!us){
+        dat[o]=dat[o+1]=dat[o+2]=g; dat[o+3]=255;
+      }else{
+        // 超音波風格示意：沿波束梯度=介面回音 + 深度衰減 + 斑點
+        const step=2.0;
+        const ahead=sampleHU(wx+beamN.x*step,wy+beamN.y*step,wz+beamN.z*step);
+        let grad=Math.abs(ahead-hu); // HU 變化
+        let echo = 28 + grad*0.55;                 // 介面亮
+        echo *= Math.exp(-depthFrac*1.15);         // 深度衰減
+        // 斑點
+        const sp=0.78+0.44*pseudoNoise(px,py);
+        echo*=sp;
+        let e=echo; e=e<0?0:e>255?255:e;
+        // 琥珀/sepia 色調
+        dat[o]=Math.min(255,e*1.0); dat[o+1]=Math.min(255,e*0.86); dat[o+2]=Math.min(255,e*0.62);
+        dat[o+3]=255;
+      }
+    }
+  }
+  sctx.putImageData(img,0,0);
+  tctx.putImageData(img2||img,0,0);   // 3D 貼圖不含 overlay 刻度
+  drawSonoOverlay(L);
+  if(planeTex) planeTex.needsUpdate=true;
+}
+function pseudoNoise(x,y){ const v=Math.sin(x*12.9898+y*78.233)*43758.5453; return v-Math.floor(v); }
+
+function drawSonoOverlay(L){
+  // 深度刻度（每 cm）
+  sctx.save();
+  sctx.strokeStyle='rgba(120,200,200,0.35)'; sctx.fillStyle='rgba(150,220,215,0.8)';
+  sctx.font='11px '+getComputedStyle(document.body).getPropertyValue('--mono');
+  sctx.lineWidth=1;
+  const D=probe.depth*10, R=apexRadius();
+  for(let cm=1;cm*10<=D;cm++){
+    const rr=R+cm*10, ypx=L.top+rr*L.scale;
+    if(probe.type==='linear'){
+      sctx.beginPath(); sctx.moveTo(L.cx-probe.width*10*L.scale/2-6,ypx);
+      sctx.lineTo(L.cx-probe.width*10*L.scale/2-2,ypx); sctx.stroke();
+      sctx.fillText(cm+'cm', L.cx-probe.width*10*L.scale/2-30, ypx+3);
+    }else{
+      const px=L.cx + rr*L.scale*Math.sin(probe.sector/2*D2R)+5;
+      const py=L.top + rr*L.scale*Math.cos(probe.sector/2*D2R);
+      sctx.fillText(cm, px, py);
+    }
+  }
+  sctx.restore();
+  // HUD
+  const hud=document.getElementById('sonohud');
+  const t={convex:'Convex',linear:'Linear',phased:'Phased'}[probe.type];
+  hud.innerHTML=`<span class="k">${t}</span>　D <span class="k">${probe.depth.toFixed(0)}</span> cm`+
+    `<br>旋轉 ${probe.rot}°　傾角 ${probe.tiltA}/${probe.tiltB}°`;
+  document.getElementById('sonomode').textContent = usStyle()? '超音波風格（示意）':'CT 重組（灰階 HU）';
+}
+
+/* ============================ 互動：相機 + 放置探頭 ============================ */
+let target=new THREE.Vector3(0,0,0);
+let camR=620, camTheta=Math.PI*0.5, camPhi=Math.PI*0.42;
+function updateCamera(){
+  camPhi=Math.max(0.08,Math.min(Math.PI-0.08,camPhi));
+  camera.position.set(
+    target.x+camR*Math.sin(camPhi)*Math.cos(camTheta),
+    target.y+camR*Math.cos(camPhi),
+    target.z+camR*Math.sin(camPhi)*Math.sin(camTheta));
+  camera.up.set(0,0,1);                 // z 為頭側
+  camera.lookAt(target);
+}
+function recenter(){
+  target.set(0,0,0); camR=Math.max(420, (VOL.nz*VOL.sz)*1.6);
+  camTheta=-Math.PI*0.5; camPhi=Math.PI*0.46; updateCamera();
+}
+
+const raycaster=new THREE.Raycaster(), mouseNDC=new THREE.Vector2();
+let down=null, dragging=false, panning=false;
+const gl=renderer.domElement;
+gl.addEventListener('pointerdown',e=>{
+  gl.setPointerCapture(e.pointerId);
+  down={x:e.clientX,y:e.clientY,btn:e.button}; dragging=false;
+  panning=(e.button===2||e.button===1);
+});
+gl.addEventListener('contextmenu',e=>e.preventDefault());
+gl.addEventListener('pointermove',e=>{
+  if(!down) return;
+  const dx=e.clientX-down.x, dy=e.clientY-down.y;
+  if(Math.abs(dx)+Math.abs(dy)>4) dragging=true;
+  if(!dragging) return;
+  if(panning){
+    const k=camR*0.0016;
+    const right=new THREE.Vector3().subVectors(camera.position,target).cross(camera.up).normalize();
+    const upv=camera.up.clone();
+    target.addScaledVector(right,-dx*k); target.addScaledVector(upv, dy*k); updateCamera();
+  }else{
+    camTheta-=dx*0.008; camPhi-=dy*0.008; updateCamera();
+  }
+  down.x=e.clientX; down.y=e.clientY;
+});
+gl.addEventListener('pointerup',e=>{
+  if(down && !dragging && down.btn===0) tryPlaceProbe(e);
+  down=null; dragging=false; panning=false;
+});
+gl.addEventListener('wheel',e=>{
+  e.preventDefault();
+  if(!VOL.phantom && !e.ctrlKey && !e.metaKey){
+    // DICOM 模式：滾輪換切面（Ctrl/⌘+滾輪 = 縮放）
+    setSlice(probe.slice + (e.deltaY>0?1:-1));
+  }else{
+    camR*=Math.exp(e.deltaY*0.0011);
+    camR=Math.max(120,Math.min(2600,camR)); updateCamera();
+  }
+},{passive:false});
+
+/* 切換軸狀切面 k：refslice、探頭、sonogram 取樣面同步移動 */
+function setSlice(k){
+  k=Math.max(0,Math.min(VOL.nz-1,Math.round(k)));
+  if(k===probe.slice) return;
+  probe.slice=k;
+  const s=document.getElementById('slice');
+  s.value=k; setVal('slicev',k+'/'+(VOL.nz-1));
+  updateRefSlice(); applyDicomPose(); refresh();
+}
+
+function tryPlaceProbe(e){
+  const r=gl.getBoundingClientRect();
+  mouseNDC.x=((e.clientX-r.left)/r.width)*2-1;
+  mouseNDC.y=-((e.clientY-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(mouseNDC,camera);
+  if(VOL.phantom){
+    if(!skinMesh) return;
+    const hits=raycaster.intersectObject(skinMesh,false);
+    if(hits.length){
+      const p=hits[0].point;
+      probe.pos.copy(p);
+      probe.normal.copy(phantomNormal(p.x,p.y,p.z));
+      refresh();
+    }
+  }else{
+    // DICOM：點參考切面 → 取 (x,y) 反算 posX/posY，beam 仍依方向鈕
+    if(!refSliceMesh) return;
+    const hits=raycaster.intersectObject(refSliceMesh,false);
+    if(hits.length){
+      const p=hits[0].point;
+      const hx=VOL.nx*VOL.sx/2, hy=VOL.ny*VOL.sy/2;
+      probe.px=Math.max(0,Math.min(100,(p.x/(2*hx)+0.5)*100));
+      probe.py=Math.max(0,Math.min(100,(p.y/(2*hy)+0.5)*100));
+      document.getElementById('posX').value=probe.px; setVal('posXv',probe.px.toFixed(0));
+      document.getElementById('posY').value=probe.py; setVal('posYv',probe.py.toFixed(0));
+      applyDicomPose(); refresh();
+    }
+  }
+}
+
+/* DICOM 模式：方向 + 位置 → 沿 -beam ray-march 找真正體表（HU > -300）*/
+const SKIN_HU=-300;
+function applyDicomPose(){
+  const hx=VOL.nx*VOL.sx/2, hy=VOL.ny*VOL.sy/2, hz=VOL.nz*VOL.sz/2;
+  const fx=(probe.px/100-0.5)*2, fy=(probe.py/100-0.5)*2;
+  const dirs={A:[0,1,0],P:[0,-1,0],L:[-1,0,0],R:[1,0,0],S:[0,0,1],I:[0,0,-1]};
+  const d=dirs[probe.dir];
+  probe.normal.set(d[0],d[1],d[2]);
+  const sliceZ=(probe.slice-(VOL.nz-1)/2)*VOL.sz;
+  // 起點：法向軸推到體外，其餘兩軸由 slider / slice 決定
+  // A/P：x=posX、z=sliceZ；L/R：y=posY、z=sliceZ；S/I：x=posX、y=posY（z 由 march 決定）
+  let x=fx*hx, y=fy*hy, z=sliceZ;
+  if(d[0]) x=d[0]*hx*1.05;
+  if(d[1]) y=d[1]*hy*1.05;
+  if(d[2]) z=d[2]*hz*1.05;
+  // 沿 beam (= -normal) 往體內步進，命中軟組織即為皮膚點
+  const bx=-d[0], by=-d[1], bz=-d[2];
+  const step=Math.max(0.4, Math.min(VOL.sx,VOL.sy,VOL.sz)*0.5);
+  const maxT=2.2*Math.max(hx,hy,hz);
+  probe.pos.set(x,y,z);                       // 預設：沒命中就停在體外（視覺警示）
+  for(let t=0;t<=maxT;t+=step){
+    if(sampleHU(x+bx*t, y+by*t, z+bz*t)>SKIN_HU){
+      probe.pos.set(x+bx*t, y+by*t, z+bz*t);
+      break;
+    }
+  }
+}
+
+/* ============================ UI 綁定 ============================ */
+function setVal(id,txt){document.getElementById(id).textContent=txt;}
+probe.ww=400; probe.wl=40;
+
+function bindRange(id,vid,fmt,onset){
+  const el=document.getElementById(id);
+  el.addEventListener('input',()=>{const v=parseFloat(el.value); onset(v); setVal(vid,fmt(v)); refresh();});
+}
+bindRange('depth','depthv',v=>v.toFixed(1),v=>probe.depth=v);
+bindRange('width','widthv',v=>v.toFixed(1),v=>probe.width=v);
+bindRange('sector','sectorv',v=>v+'°',v=>probe.sector=v);
+bindRange('rot','rotv',v=>v+'°',v=>probe.rot=v);
+bindRange('tiltA','tiltAv',v=>v+'°',v=>probe.tiltA=v);
+bindRange('tiltB','tiltBv',v=>v+'°',v=>probe.tiltB=v);
+bindRange('ww','wwv',v=>v,v=>probe.ww=v);
+bindRange('wl','wlv',v=>v,v=>probe.wl=v);
+bindRange('posX','posXv',v=>v,v=>{probe.px=v;applyDicomPose();});
+bindRange('posY','posYv',v=>v,v=>{probe.py=v;applyDicomPose();});
+bindRange('slice','slicev',v=>(v|0)+'/'+(VOL.nz-1),v=>{probe.slice=v|0;updateRefSlice();applyDicomPose();});
+
+document.getElementById('ptype').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  probe.type=b.dataset.t;
+  document.getElementById('rowwidth').classList.toggle('hidden',probe.type!=='linear');
+  document.getElementById('rowsector').classList.toggle('hidden',probe.type==='linear');
+  refresh();
+});
+document.getElementById('wlpreset').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  probe.ww=+b.dataset.ww; probe.wl=+b.dataset.wl;
+  document.getElementById('ww').value=probe.ww; document.getElementById('wl').value=probe.wl;
+  setVal('wwv',probe.ww); setVal('wlv',probe.wl); refresh();
+});
+document.getElementById('usstyle').addEventListener('click',e=>{e.currentTarget.classList.toggle('on');refresh();});
+document.getElementById('dirsel').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  probe.dir=b.dataset.d; applyDicomPose(); refresh();
+});
+document.getElementById('recenter').onclick=recenter;
+document.getElementById('phantombtn').onclick=()=>loadPhantom();
+document.getElementById('loadbtn').onclick=()=>document.getElementById('file').click();
+document.getElementById('file').addEventListener('change',e=>loadDicomFiles(e.target.files));
+
+// 拖放 DICOM
+const dz=document.getElementById('dropzone');
+viewEl.addEventListener('dragover',e=>{e.preventDefault();dz.style.display='flex';});
+viewEl.addEventListener('dragleave',e=>{if(e.target===viewEl)dz.style.display='none';});
+viewEl.addEventListener('drop',e=>{e.preventDefault();dz.style.display='none';
+  if(e.dataTransfer.files.length)loadDicomFiles(e.dataTransfer.files);});
+
+/* ---- 載入流程 ---- */
+function refresh(){ rebuildProbeVisual(); renderSonogram(); }
+
+function loadPhantom(){
+  VOL=buildPhantomVolume();
+  document.getElementById('dicomPose').classList.add('hidden');
+  document.querySelector('#ptype').parentElement.querySelectorAll('.row,.seg').forEach(()=>{});
+  document.getElementById('datanote').textContent='目前使用內建腹部假體。可一次選取整個未壓縮 CT 序列（.dcm）。';
+  document.getElementById('datanote').classList.remove('warn');
+  // 假體：探頭預設在前腹壁
+  probe.pos.set(0,108,0); probe.normal.set(0,1,0);
+  document.getElementById('rot').value=0; probe.rot=0; setVal('rotv','0°');
+  rebuildBody(); recenter(); refresh();
+  // 顯示「點皮膚」說明
+  document.getElementById('orient').innerHTML='＋Z 頭側　＋Y 前側<br>點身體放探頭，拖曳旋轉視角';
+}
+
+/* ---- 內建輕量 DICOM 解析器（未壓縮 LE，無外部依賴）---- */
+function parseDICOMFile(buf){
+  const dv=new DataView(buf), u8=new Uint8Array(buf), len=buf.byteLength;
+  const VR_LONG={OB:1,OW:1,OF:1,SQ:1,UT:1,UN:1,UC:1,UR:1};
+  let pos=0, explicit=true, little=true, switched=false, transfer=null;
+  const tags={};
+  const dec=(s,l)=>{let r='';for(let i=0;i<l;i++)r+=String.fromCharCode(u8[s+i]);return r.replace(/\0+$/,'').trim();};
+  if(len>132 && u8[128]===0x44&&u8[129]===0x49&&u8[130]===0x43&&u8[131]===0x4D){ pos=132; }
+  else { pos=0; const c1=u8[4],c2=u8[5]; explicit=(c1>=65&&c1<=90&&c2>=65&&c2<=90); switched=true; }
+  while(pos+8<=len){
+    const group=dv.getUint16(pos,true), elem=dv.getUint16(pos+2,true); pos+=4;
+    if(!switched && group!==0x0002){
+      if(transfer==='1.2.840.10008.1.2'){explicit=false;little=true;}
+      else if(transfer==='1.2.840.10008.1.2.1'){explicit=true;little=true;}
+      else if(transfer==='1.2.840.10008.1.2.2'){throw{code:'be'};}
+      else if(transfer&&(transfer.indexOf('1.2.840.10008.1.2.4')===0||transfer.indexOf('1.2.840.10008.1.2.5')===0)){throw{code:'compressed'};}
+      switched=true;
+    }
+    let length, vr=null;
+    if(explicit){
+      vr=String.fromCharCode(u8[pos],u8[pos+1]); pos+=2;
+      if(VR_LONG[vr]){ pos+=2; length=dv.getUint32(pos,little); pos+=4; }
+      else { length=dv.getUint16(pos,little); pos+=2; }
+    }else{ length=dv.getUint32(pos,little); pos+=4; }
+    const key=('0000'+group.toString(16)).slice(-4)+('0000'+elem.toString(16)).slice(-4);
+    if(length===0xFFFFFFFF){ if(key==='7fe00010') throw{code:'compressed'}; throw{code:'seq'}; }
+    if(key==='00020010') transfer=dec(pos,length);
+    tags[key]={start:pos,len:length,little};
+    pos+=length;
+    if(key==='7fe00010') break;
+  }
+  const g16=(k,d)=>tags[k]?dv.getUint16(tags[k].start,tags[k].little):d;
+  const ds=(k)=>tags[k]?dec(tags[k].start,tags[k].len):null;
+  const rows=g16('00280010',0), cols=g16('00280011',0), pd=tags['7fe00010'];
+  if(!rows||!cols||!pd) throw{code:'nopix'};
+  const ps=(ds('00280030')||'1\\1').split('\\').map(parseFloat);
+  const ipp=(ds('00200032')||'0\\0\\0').split('\\').map(parseFloat);
+  const iop=(ds('00200037')||'1\\0\\0\\0\\1\\0').split('\\').map(parseFloat);
+  const slope=parseFloat(ds('00281053')||'1')||1, inter=parseFloat(ds('00281052')||'0')||0;
+  const signed=g16('00280103',0)===1, bits=g16('00280100',16);
+  const n=rows*cols;
+  const slice=buf.slice(pd.start, pd.start+(bits<=8?n:n*2));
+  const raw = bits<=8 ? new Uint8Array(slice) : (signed?new Int16Array(slice):new Uint16Array(slice));
+  const hu=new Int16Array(n);
+  for(let i=0;i<n;i++) hu[i]=(raw[i]*slope+inter)|0;
+  const rv=[iop[0],iop[1],iop[2]], cv=[iop[3],iop[4],iop[5]];
+  const nrm=[rv[1]*cv[2]-rv[2]*cv[1], rv[2]*cv[0]-rv[0]*cv[2], rv[0]*cv[1]-rv[1]*cv[0]];
+  return {rows,cols,sy:ps[0]||1,sx:ps[1]||1,hu,proj:ipp[0]*nrm[0]+ipp[1]*nrm[1]+ipp[2]*nrm[2]};
+}
+
+async function loadDicomFiles(fileList){
+  const files=[...fileList].filter(f=>!f.name.startsWith('.'));
+  if(!files.length) return;
+  setNote('讀取中… ('+files.length+' 檔)',false);
+  await new Promise(r=>setTimeout(r,10));
+  const slices=[]; let comp=false, fail=0;
+  for(const f of files){
+    try{ slices.push(parseDICOMFile(await f.arrayBuffer())); }
+    catch(err){ if(err&&err.code==='compressed') comp=true; else fail++; }
+  }
+  if(!slices.length){
+    setNote(comp?'此序列為壓縮格式（JPEG/JPEG2000），瀏覽器內無法解碼，請改用未壓縮序列。'
+                :'未能解析任何切片（'+fail+' 檔失敗）。請確認是未壓縮 CT 的 .dcm。',true);
+    return;
+  }
+  slices.sort((a,b)=>a.proj-b.proj);
+  const cols=slices[0].cols, rows=slices[0].rows;
+  const use=slices.filter(s=>s.cols===cols&&s.rows===rows);
+  const nz=use.length;
+  const deltas=[]; for(let i=1;i<nz;i++) deltas.push(Math.abs(use[i].proj-use[i-1].proj));
+  deltas.sort((a,b)=>a-b);
+  const sz=(deltas.length&&deltas[deltas.length>>1])?deltas[deltas.length>>1]:(use[0].sy||3);
+  const data=new Int16Array(cols*rows*nz);
+  for(let k=0;k<nz;k++) data.set(use[k].hu, k*cols*rows);
+  VOL={data,nx:cols,ny:rows,nz, sx:use[0].sx,sy:use[0].sy,sz, phantom:false};
+  document.getElementById('dicomPose').classList.remove('hidden');
+  probe.dir='A'; probe.px=50; probe.py=50; probe.slice=(nz/2)|0;
+  ['posX','posY'].forEach(id=>document.getElementById(id).value=50);
+  const sEl=document.getElementById('slice');
+  sEl.min=0; sEl.max=nz-1; sEl.step=1; sEl.value=probe.slice;
+  setVal('slicev',probe.slice+'/'+(nz-1));
+  applyDicomPose();
+  rebuildBody(); recenter(); refresh();
+  document.getElementById('orient').innerHTML='已載入 '+nz+' 切片　'+cols+'×'+rows+
+    '<br>體素 '+VOL.sx.toFixed(2)+'×'+VOL.sy.toFixed(2)+'×'+VOL.sz.toFixed(2)+' mm'+
+    '<br>滾輪換切面　Ctrl+滾輪縮放　點切面放探頭';
+  setNote('已載入 '+nz+' 張切片。方向 + 位置放探頭（自動貼皮膚），滾輪換切面。'+(fail?'（'+fail+' 檔略過）':''),false);
+}
+function setNote(t,warn){const n=document.getElementById('datanote');n.textContent=t;n.classList.toggle('warn',!!warn);}
+
+/* ---- resize ---- */
+function resize(){
+  const w=viewEl.clientWidth,h=viewEl.clientHeight;
+  renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',resize);
+
+/* ---- 主迴圈 ---- */
+function loop(){ renderer.render(scene,camera); requestAnimationFrame(loop); }
+
+/* ---- 啟動 ---- */
+loadPhantom(); resize(); updateCamera(); loop();
+</script>
+</body>
+</html>
