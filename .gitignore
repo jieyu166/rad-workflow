@@ -21,6 +21,12 @@ radtracker/output/*.html
 radtracker/output/*.csv
 radtracker/output/*.json
 radtracker/output/W*/
+# 含病歷號與病理診斷，public repo 不宜公開
+radtracker/week_input.yaml
+
+# 大型產物 / 暫存目錄（勿進版控）
+/output/
+/tmp/
 
 # Generated analysis reports
 ahk-scripts/logs/*_report.html

@@ -418,6 +418,7 @@ python generate_report.py --xlsx csv_input/legacy/radiology_tracker.xlsx --input
 ### 資料解析注意事項
 - **CSV 模式**：模態/難度/子分類全部由 `parse_csv.py` 自動判定
 - **case_id 分組**：已驗證與 xlsx 手動計數一致（W09 Mon/Tue/Fri XR 完全吻合）
+- **openpyxl 操作 biopsy_tracker_2026.xlsx**：`insert_rows()` 不會位移 merged cells，遇 merged 範圍要先 `ws.unmerge_cells(...)` 再插入，否則新行的 B-F 欄位會被併入 A 欄
 - BMD 不計入主要追蹤模態（X光/CT/US/Mammo 為四大追蹤模態）
 - CSV 模式無法追蹤非報告活動（臨床/雜務/交通），僅記錄報告工作
 - CSV 模式提供工作點值（work_points），xlsx 模式不提供
