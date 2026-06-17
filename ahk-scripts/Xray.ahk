@@ -440,7 +440,8 @@ FlushCXRBuffer:
         desc .= item
     CXRBuffer := []
     GuiControl, , CXRStatus, % "已選 0 項"
-    OutputFinish(2, "CXR 範例", false, false, false)
+    ; 輸出後重設 GUI（resetCXR=true → Gosub CXRClean：重勾 No active lung lesion + 心臟正常）
+    OutputFinish(2, "CXR 範例", false, true, false)
 return
 
 ; CXR 共用報告函式
@@ -486,22 +487,26 @@ CXRCommon(pL2 := 0, pL3 := 0) {
 CXR1:
 CXRCommon(0, 0)
 gosub CXROutput
+gosub FlushCXRBuffer
 return
 
 CXR3:
 CXRCommon(1, 0)
 gosub CXROutput
+gosub FlushCXRBuffer
 return
 
 
 CXR4:
 CXRCommon(1, 1)
 gosub CXROutput
+gosub FlushCXRBuffer
 return
 
 CXR5:
 CXRCommon(1, 2)
 gosub CXROutput
+gosub FlushCXRBuffer
 return
 
 CXR6:

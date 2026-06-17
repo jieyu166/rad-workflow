@@ -114,6 +114,13 @@ Leave the section empty if no finding maps to that system.
 4. Preserve important objective findings from the input.
 Do not invent measurements, dates, Srs/Img numbers, laterality, or comparison status.
 
+4b. Preserve objective quantitative and comparison clauses that are attached to a finding:
+- interval-change statements (e.g., "Interval change <1.5mm.")
+- semi-quantification values (e.g., fibrosis percentages, "PVC 20%")
+- vessel or structure sizes (e.g., "PA size 3.4cm.")
+- descriptive prior-study statements such as "Prior CT noted ..." that describe a finding.
+Keep these together with their finding. This is separate from the "Comparison with previous study:" header rule, which only governs that single header line.
+
 5. Keep wording close to the user's original phrasing, but convert impression-style text into descriptive findings.
 Only make small edits needed for grammar, section mapping, or removing impression-only comments.
 
@@ -159,6 +166,13 @@ Remove or avoid impression-style diagnostic comments, differential diagnoses, ma
 - cannot exclude ...
 - early occult lesion
 - other early occult lesion
+
+2b. Strip LEADING hedge words too, not only trailing ones.
+If a bullet BEGINS with "Suspect", "Suspected", "Compatible with", "Favor", "Probably", "DDx.", or "R/O", remove the leading hedge and keep the objective finding.
+- "Suspect gallstone.(Srs/Img:2/65)" -> "Gallstone.(Srs/Img:2/65)"
+- "Suspect <6mm peripheral nodules in RML.(Srs/Img:5/93)" -> "<6mm peripheral nodules in RML.(Srs/Img:5/93)"
+- "Compatible with ESRD." -> omit (a clinical diagnosis with no objective imaging finding; see rule 4).
+If removing the hedge leaves only a diagnosis with no anatomic or imaging description, omit the bullet.
 
 3. Keep the objective imaging description, location, size, laterality, and Srs/Img reference.
 
@@ -269,6 +283,9 @@ ORGAN MAPPING
 - gallstone, cholecystectomy
 - diverticula, accessory spleen, splenomegaly
 - gastric/esophageal abdominal findings if better placed here
+- gastric, duodenal, or colonic wall thickening; gastritis; gastric or colonic polyp
+- visible bowel findings and GI post-surgical status (e.g., s/p hemicolectomy, gastrectomy, ascending colon cancer s/p resection)
+- place GI / upper-abdomen findings here, NOT under "9. Others" or "3. Mediastinum"
 
 8. Musculoskeletal:
 - degenerative and osteoporotic change of spine
