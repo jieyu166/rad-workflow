@@ -609,6 +609,7 @@ HotstringMenuV("A","MenuShortcut"
     ,"Mild enlarged bilateral kidney sizes. Could be related to DM or other chronic renal parenchyma disease."
     ,"Coarse echotexture of the liver with uneven surface, suggesting cirrhosis of liver. "
     ,"No US evidence of hydronephrosis.","Both kidneys show normal size(right: _ cm; left: _ cm)."
+	,"* Urinary bladder is not distended, limited evaluation.",
     ,"* Gas block/Poor visualization of _pancreas_right lobe of liver from subcostal area. Lesion may be obscured.`r")
 return
 

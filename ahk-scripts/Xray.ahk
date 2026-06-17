@@ -272,7 +272,7 @@ HotstringMenuV("A","MenuShortcut2"
     ,"BRK"
     ,"Emphysematous change or hyperaerated appearance of both lungs. "
     ,"Pulmonary congestion pattern _or emphysematous change of both lungs."
-    ,"Mild increased hazy bronchovascular marking over bilateral lung.`r  DDx: inflammatory process or others."
+    ,"Mild increased hazy bronchovascular marking over bilateral lung.`r  DDx: _edema, inflammatory process or others."
     ,"Patchy consolidations in {LungSel} , could be pneumonia or others.`r  Occult entities growth can not be excluded."
     ,"Suspect chronic inflammatory/ infection changes or others in both lungs."
     ,"Reticulations/Infiltrations in both lungs, could be related to emphysema, interstitial lung disease, pulmonary edema or others."
@@ -360,6 +360,9 @@ return
 :O:cxr2;::
 WinCXR:
 WinGet, ActiveId, ID, A ;記錄目前視窗
+; 重置每次開啟時的緩衝（仿 spine2：先暫存，按「一次輸出全部」才合併貼出）
+CXRBuffer := []
+desc := ""
 Gui, Font, s14
 Gui Add, Text, x10 y-25, " " ;定位用
 
@@ -402,8 +405,43 @@ Gui Add, Button, x10 yp+40 w120 h30 gSeeCXRAI, 看AI報告(&1)
 Gui Add, Button, x140 yp w120 h30 gCopyOld2, 顯示舊報告(&2)
 Gui Add, Button, x270 yp w120 h30 gCopyOldSmart, 複製舊報告(&3)
 
-Gui Show, w460 h440, CXR 範例
+; === 緩衝輸出區（仿 spine2）===
+Gui Add, Text, x10 yp+42 w120 h32 +0x200 vCXRStatus, 已選 0 項
+Gui Add, Button, x140 yp w250 h34 Default gFlushCXRBuffer, 一次輸出全部(&Q)
+
+Gui Show, w460 h500, CXR 範例
 Return
+
+; ============================================
+; CXR 緩衝機制（仿 spine2）：每個發現按鈕先暫存，按「一次輸出全部」才合併貼到 HIS
+; ============================================
+; 將目前 desc 推入 CXRBuffer（依點擊順序），不立即貼上
+CXROutput:
+    if (desc != "")
+        CXRBuffer.Push(desc)
+    desc := ""
+    GuiControl, , CXRStatus, % "已選 " . CXRBuffer.Length() . " 項"
+return
+
+; 異常發現按鈕專用：先取消「No active lung lesion」勾選（有發現即非 clear），再暫存
+CXRFindingOutput:
+    GuiControl, , L1, 0
+    gosub CXROutput
+return
+
+; 依點擊順序一次合併貼到 HIS
+FlushCXRBuffer:
+    if (!IsObject(CXRBuffer) || CXRBuffer.Length() = 0) {
+        MsgBox, 48, , 緩衝為空，請先選擇任一發現項目。
+        return
+    }
+    desc := ""
+    for _, item in CXRBuffer
+        desc .= item
+    CXRBuffer := []
+    GuiControl, , CXRStatus, % "已選 0 項"
+    OutputFinish(2, "CXR 範例", false, false, false)
+return
 
 ; CXR 共用報告函式
 ; pL2: 0=無硬化, 1=有硬化
@@ -447,23 +485,23 @@ CXRCommon(pL2 := 0, pL3 := 0) {
 
 CXR1:
 CXRCommon(0, 0)
-OutputFinish(2, "CXR 範例", false, true, false)
+gosub CXROutput
 return
 
 CXR3:
 CXRCommon(1, 0)
-OutputFinish(2, "CXR 範例", false, true, false)
+gosub CXROutput
 return
 
 
 CXR4:
 CXRCommon(1, 1)
-OutputFinish(2, "CXR 範例", false, true, false)
+gosub CXROutput
 return
 
 CXR5:
 CXRCommon(1, 2)
-OutputFinish(2, "CXR 範例", false, true, false)
+gosub CXROutput
 return
 
 CXR6:
@@ -472,7 +510,7 @@ GuiControl,, L5, 1
 CXRCommon(1, 1)
 desc .= "Mild mediastinal widening.`r"
 desc .= "Status post permcath catheter insertion at _right_left _chest.`r"
-OutputFinish(2, "CXR 範例", false, true, false)
+gosub CXROutput
 return
 
 
@@ -483,6 +521,8 @@ GuiControl,, L3, 0
 GuiControl,, L5, 0
 GuiControl,, L7, 1
 desc := ""
+CXRBuffer := []
+GuiControl, , CXRStatus, % "已選 0 項"
 GuiControl,, OldReportContent, %desc% ; 清空 Edit 內容
 return
 
@@ -494,12 +534,12 @@ CXR7:
 desc .= "Mild increased lung markings in bilateral perihilar region.`r"
 desc .= "No cardiomegaly.`r"
 desc .= "The bony structure is unremarkable.`r"
-OutputFinish(1, "CXR 範例", false, false, false)
+gosub CXRFindingOutput
 return
 
 CXR8:
 desc .= "Insufficient inspiration _and focal atelectasis of both lungs.`r"
-OutputFinish(1, "CXR 範例", false, false, true)
+gosub CXRFindingOutput
 return
 
 CXR10:
@@ -511,7 +551,7 @@ desc .= "Cardiomegaly.`rIntimal calcification of aorta.`rMild mediastinal wideni
 desc .= "Status post sternotomy with metallic wire fixation, _CABG, _valvular replacement.`r"
 desc .= "Status post nasogastric tube insertion with tip in stomach.`r"
 desc .= "Status post central venous catheter insertion via right neck.`r"
-OutputFinish(1, "CXR 範例", false, false, true)
+gosub CXRFindingOutput
 return
 
 CXR11:
@@ -519,37 +559,37 @@ desc .= "Pulmonary congestion pattern or emphysematous change of both lungs.`r"
 desc .= "Superimposed pneumonia or other occult entities can not be excluded.`r"
 desc .= "_Bilateral minimal pleural effusion or pleural changes. `r"
 desc .= "Bilateral hilar fullness, could be vascular shadows or others. `r"
-OutputFinish(1, "CXR 範例", false, false, true)
+gosub CXRFindingOutput
 return
 
 BtnApicalPleural:
     desc := "Bilateral apical pleural thickening.`r"
-    OutputFinish(1, "CXR 範例", false, false, true)
+    gosub CXRFindingOutput
 return
 
 BtnEmphysema:
     desc := "Emphysematous change of both lungs.`r"
-    OutputFinish(1, "CXR 範例", false, false, true)
+    gosub CXRFindingOutput
 return
 
 BtnHilarFullness:
     desc := "Bilateral hilar fullness, could be vascular shadows or others.`r"
-    OutputFinish(1, "CXR 範例", false, false, true)
+    gosub CXRFindingOutput
 return
 
 BtnMediastinal:
     desc := "Mild mediastinal widening.`r"
-    OutputFinish(1, "CXR 範例", false, false, true)
+    gosub CXRFindingOutput
 return
 
 BtnCongestion:
     desc := "Mild pulmonary congestion pattern.`r"
-    OutputFinish(1, "CXR 範例", false, false, true)
+    gosub CXRFindingOutput
 return
 
 BtnEff:
     desc := "Bilateral _minimal pleural effusion or pleural changes.`r"
-    OutputFinish(1, "CXR 範例", false, false, true)
+    gosub CXRFindingOutput
 return
 
 
@@ -634,7 +674,7 @@ return
 ; outputMode: 1=只換行, 2=完整移動 呼叫 CopyCXRtoHISWithParam 的參數
 ; windowName: 視窗名稱 ("CXR 範例" 或 "Spine phases")
 ; applyDash : 保留以維持呼叫端相容；目前所有呼叫端皆傳 false（項目符號已移除）
-; resetCXR  : 是否呼叫 CXR9 重置
+; resetCXR  : 是否呼叫 CXRClean 重置
 ; backWindow: 輸出後是否回原視窗
 OutputFinish(outputMode := 2, windowName := "", applyDash := false, resetCXR := false, backWindow := true) {
     global desc
@@ -705,7 +745,7 @@ Gui Add, Button, xp+160 yp w150 h50 gPostOP, 術後組套(&P)
 Gui Add, Button, x500 y10 w120 h40 gSpineClose, 切換到 CXR(&Q)
 Gui Add, Button, xp yp+50 w120 h40 gMergeExams, 合併檢查(&Z)
 Gui Add, Button, xp yp+50 w120 h40 gCopyOldFromSpine, 複製舊報告(&X)
-Gui Add, Button, xp yp+50 w120 h40 gOpenForamenWeb, 裂孔網頁(&5)
+Gui Add, Button, xp yp+50 w120 h40 gOpenForamenWeb, 裂孔網頁(&O)
 
 ; 緩衝排序輸出區（永遠先收集，按 [輸出全部] 才依嚴重度排序貼出）
 Gui Font, s10, Segoe UI
@@ -716,7 +756,7 @@ Gui Add, Button, xp yp+50 w120 h32 gClearSpineBuffer, 清空緩衝(&E)
 
 ; 常用非 spine finding
 Gui Add, Text, x10 y370 w470 h2 0x10
-Gui Add, Button, x10 y385 w150 h50 gBowelGasFinding, 腸氣增加(&2)
+Gui Add, Button, x10 y385 w150 h50 gBowelGasFinding, 腸氣增加(&4)
 Gui Add, Button, xp+230 yp w150 h50 gAortaCalcFinding, 動脈鈣化(&1)
 
 Gui Show, w640 h470, Spine phases
@@ -775,7 +815,7 @@ BtnInsertTitle:
         ; 如果都沒選，預設輸出 Spine: 或是提示
         desc := "Spine"
     }
-	MsgBox, 4,, "(AP+Flex.+Ext.)?"
+	MsgBox, 4,, (AP+Flex.+Ext.)?
 	IfMsgBox, Yes
 	{
 		desc .= "(AP{+}Flex.{+}Ext.)"

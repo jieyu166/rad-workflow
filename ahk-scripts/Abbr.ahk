@@ -59,7 +59,7 @@ return
 HotstringMenuV("A","MenuShortcut","middle phalanx","metacarpophalangeal (MCP)","metatarsophalangeal(MTP)")
 return
 :O:oa;::
-HotstringMenuV("A","MenuShortcut","osteoarthritis (OA)","OA", "Both hips osteoarthritis (OA)")
+HotstringMenuV("A","MenuShortcut","osteoarthritis (OA)","OA", "Both hips osteoarthritis (OA)","Osteoarthritis (OA) of visible interphalangeal (PIP, DIP) joints.","Basal joint osteoarthritis (OA)","Bilateral shoulder osteoarthritis (OA)")
 return
 
 :O:oci::osteitis condensans ilii
@@ -93,13 +93,16 @@ return
 :O:pp::proximal phalanx
 :O:dish;::Diffuse idiopathic skeletal hyperostosis (DISH)
 :O:cla::clavicular
+:O:clav::clavicular
 :O:pat::
-HotstringMenuV("A","MenuShortcut","patella alta","patella baja","patellar fracture","patellar")
+HotstringMenuV("A","MenuShortcut","patella alta","patella baja","patellar fracture","patellar","mild patellar tilting.")
 return
 :O:if;::internal fixation
 :O:ss;::supraspinatus
 :O:is;::infraspinatus
-
+:O:gen;::
+HotstringMenuV("A","MenuShortcut","Genu valgus","Genu varum")
+return
 ;============================================================================================
 ; GI, GU
 ;============================================================================================

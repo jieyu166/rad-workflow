@@ -47,7 +47,12 @@ FINDINGS RULES:
     Example:"Small-sized right kidney (right: 7.8 cm; left: _ cm). No US evidence of hydronephrosis"
    - Urinary bladder: "Well distended with smooth wall"
    - Prostate: "Normal size and echogenicity"
-   - Others: List incidental or extra-abdominal findings (e.g., ascites, pleural effusion, peritoneal nodules, retroperitoneal masses) with bullet points and descriptive terms only.
+   - Others:
+     List incidental, extra-organ, extra-abdominal, abdominal wall, inguinal, groin, subcutaneous, soft tissue, peritoneal, retroperitoneal, pelvic, or non-organ-specific findings.
+     MUST create "Others:" section if the input contains any lesion/mass/nodule/fluid collection/abnormality not belonging to the listed organ systems.
+     Include side, location, size, vascularity, echogenicity, and image reference when provided.
+     Rewrite diagnostic/speculative terms into descriptive ultrasound findings only.
+     Do NOT omit inguinal/groin/abdominal wall/subcutaneous lesions.
 3. Convert diagnoses to sonographic descriptions (case-insensitive):
    - hepatic cysts → "anechoic thin-walled lesions in liver"
    - fatty liver / steatosis → "diffusely increased echogenicity of liver parenchyma"
@@ -61,6 +66,12 @@ FINDINGS RULES:
    - Prostate measurements like "42x30x47" → If both size & volume are present, format as: "Prostate measuring 42x30x47 mm in size with volume estimated to be 34 c.c."
    - **If only one present**, use: "Prostate measuring 34x33x43 mm" OR "Prostate volume estimated to be 26 c.c."
    - (chronic) liver parenchymal disease → "coarse echotexture of the liver parenchyma" (use this phrasing instead of "diffusely increased echogenicity" when this phrase appears). If fatty liver/steatosis is also explicitly mentioned, you may include both bullets, with coarse echotexture first, e.g. "- Coarse, increased echotexture of the liver parenchyma".
+   - nature unknown lesion / unknown lesion / lesion at inguinal area / groin lesion / abdominal wall lesion / subcutaneous lesion
+   → describe under Others as:
+     "A lesion at [location], measuring [size]."
+     If vascularity is mentioned, add:
+     "Mild internal vascularity is noted." / "Vascularity is noted."
+     Do NOT copy diagnostic DDx terms such as omental infarct, necrotizing fasciitis, infiltrating tumor, or others into FINDINGS.
 4. Include location, side, size when provided.
 5. Use bullet points within each system.
 6. Post-procedure / post-device language (exact wording rules):

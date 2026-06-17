@@ -120,7 +120,7 @@ HotstringMenuMulti("A","MenuShortcut"
     ,"endotracheal tube insertion and tip at _"
     ,"tracheostomy"
     ,"BRK"
-    ,"VP shunt"
+    ,"Ventriculoperitoneal Shunt(VP shunt)"
     ,"Foley insertion.","_"
     ,"pigtail insertion with tip at _"
     ,"double J stent implantation in {LtRt} urotract.")
@@ -331,7 +331,7 @@ HotstringMenuV("A","MenuShortcut"
     ,"No obvious radiopaque urotract stones."
     ,"No aortic dissection."
     ,"No definite CT evidence of major pulmonary embolism was noted. *However, small branches embolism may be obscured."
-    ,"BRK", "No corresponding lesion found at breast US."
+    ,"BRK", "No corresponding lesion found at breast US.","No x-ray evidence of pneumoperitoneum.","BRK"
     ,"No clavicular displaced fracture"
     ,"No tibial, fibular shaft fracture noted.")
 return
@@ -346,6 +346,9 @@ return
 :O:cb;::could be
 :O:pif;::post internal fixation.
 :O:ofr;::old fracture of _
+:O:old;::
+HotstringMenuV("A","MenuShortcut2","old fracture of _","old fracture of {LtRt} ribs.")
+return
 
 :O:cx;::
 HotstringMenuV("A","MenuShortcut2"
@@ -395,9 +398,8 @@ HotstringMenuV("A","MenuShortcut"
     ,"Left renal stone, _ cm"
     ,"Right renal stone, _ cm"
     ,"Bilateral renal stones, up to _cm"
-    ,"{LtRt} renal stone, _ cm"
-    ,"{LtRt} renal stone(s)."
     ,"{LtRt} renal stones, up to _ cm"
+    ,"{LtRt} renal stone(s)."
     ,"BRK"
     ,"Gallstone or right renal stone or other."
     ,"Right renal stone or bowel content or other."
