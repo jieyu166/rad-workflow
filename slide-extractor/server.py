@@ -45,7 +45,9 @@ class SlideHandler(http.server.BaseHTTPRequestHandler):
         if u.path == "/" or u.path == "/index.html":
             return self._serve_file(BASE_DIR / "index.html", "text/html; charset=utf-8")
         if u.path.startswith("/_thumbs/"):
-            return self._serve_file(BASE_DIR / u.path.lstrip("/"), "image/png")
+            # u.path 是 percent-encoded（中文檔名會變 %E7%AC%AC...），需手動 decode
+            decoded = unquote(u.path)
+            return self._serve_file(BASE_DIR / decoded.lstrip("/"), "image/png")
         if u.path == "/api/videos":
             return self._handle_list_videos()
         if u.path == "/api/frames":
