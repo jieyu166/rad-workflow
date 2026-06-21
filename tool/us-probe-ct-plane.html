@@ -817,7 +817,8 @@ function tryPlaceProbe(e){
 }
 
 /* DICOM 模式：方向 + 位置 → 沿 -beam ray-march 找真正體表（HU > -300）*/
-const SKIN_HU=-300;
+// SKIN_HU：軟組織門檻；MIN_BODY_MM：命中後須持續為組織的深度 → 跳過薄床板/導管，落在真正身體
+const SKIN_HU=-300, MIN_BODY_MM=20;
 function applyDicomPose(){
   const hx=VOL.nx*VOL.sx/2, hy=VOL.ny*VOL.sy/2, hz=VOL.nz*VOL.sz/2;
   const fx=(probe.px/100-0.5)*2, fy=(probe.py/100-0.5)*2;
@@ -831,15 +832,19 @@ function applyDicomPose(){
   if(d[0]) x=d[0]*hx*1.05;
   if(d[1]) y=d[1]*hy*1.05;
   if(d[2]) z=d[2]*hz*1.05;
-  // 沿 beam (= -normal) 往體內步進，命中軟組織即為皮膚點
+  // 沿 beam (= -normal) 往體內步進，命中「持續為組織」的點才是皮膚（薄床板/導管會被跳過）
   const bx=-d[0], by=-d[1], bz=-d[2];
   const step=Math.max(0.4, Math.min(VOL.sx,VOL.sy,VOL.sz)*0.5);
   const maxT=2.2*Math.max(hx,hy,hz);
+  const huAt=t=>sampleHU(x+bx*t, y+by*t, z+bz*t);
   probe.pos.set(x,y,z);                       // 預設：沒命中就停在體外（視覺警示）
   for(let t=0;t<=maxT;t+=step){
-    if(sampleHU(x+bx*t, y+by*t, z+bz*t)>SKIN_HU){
-      probe.pos.set(x+bx*t, y+by*t, z+bz*t);
-      break;
+    if(huAt(t)>SKIN_HU){
+      // 確認體表：往內 MIN_BODY_MM 須多數為組織。薄床板（HU~182）後方接空氣 → 不通過
+      let solid=0, total=0;
+      for(let u=0;u<=MIN_BODY_MM;u+=step){ total++; if(huAt(t+u)>SKIN_HU) solid++; }
+      if(solid/total>=0.7){ probe.pos.set(x+bx*t, y+by*t, z+bz*t); break; }
+      while(t<=maxT && huAt(t)>SKIN_HU) t+=step;   // 跳過此薄結構直到再次遇空氣，繼續找體表
     }
   }
 }
