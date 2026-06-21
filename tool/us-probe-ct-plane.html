@@ -174,7 +174,11 @@
           <span>超音波風格疊加 <span style="color:var(--muted)">(示意)</span></span>
           <div class="switch" id="usstyle"></div>
         </div>
-        <div class="note">疊加僅模擬扇形、深度衰減與介面回音的「外觀」，<b>不是</b>真實聲阻抗回波。CT 只能給出幾何上對應的切面。</div>
+        <div class="toggle" style="margin-top:10px">
+          <span>肋骨聲影 <span style="color:var(--muted)">(&gt;500HU)</span></span>
+          <div class="switch" id="ribshadow"></div>
+        </div>
+        <div class="note">疊加僅模擬扇形、深度衰減與介面回音的「外觀」，<b>不是</b>真實聲阻抗回波。CT 只能給出幾何上對應的切面。聲影模擬骨頭（&gt;500HU）後方被遮擋的暗區。</div>
       </div>
 
       <div class="grp">
@@ -563,6 +567,17 @@ function buildPlaneOutline(B){
 
 /* ---- sonogram 重採樣（在 CT 體積上沿切面取值）---- */
 const usStyle=()=>document.getElementById('usstyle').classList.contains('on');
+const ribShadow=()=>document.getElementById('ribshadow').classList.contains('on');
+// 肋骨聲影：累積骨厚(mm) → 振幅衰減係數（dB 模型，臨床上 1–2mm 皮質骨即近乎全遮蔽）
+// L(dB)=介面損失 + 骨內往返衰減 2·α·f·d；mask = 10^(-L/20)。係數依探頭頻率（convex/phased≈5MHz、linear≈10MHz）
+const BONE_HU=500, SHADOW_NB=256, SHADOW_ND=256;
+const RIB_INTERFACE_DB=7, RIB_DB_PER_MM_LOW=20, RIB_DB_PER_MM_HIGH=35, RIB_BLACK_FLOOR=0.02;
+function shadowRamp(bone, dbPerMm){
+  if(bone<=0) return 1;
+  const L=RIB_INTERFACE_DB + dbPerMm*bone;                  // dB：5MHz~20/mm、10MHz~35/mm
+  const a=Math.pow(10, -L/20);
+  return a<RIB_BLACK_FLOOR ? 0 : a;                          // 低於顯示黑位門檻 → 全黑 clean shadow
+}
 function renderSonogram(){
   const B=probeBasis();
   const L=sonoLayout(); const D=probe.depth*10, R=apexRadius();
@@ -579,10 +594,44 @@ function renderSonogram(){
   const img2=(us && !VOL.phantom)? sctx.createImageData(SONO,SONO) : null;
   const dat2=img2? img2.data : null;
 
+  // 肋骨聲影 pre-pass：逐波束 march，累積骨厚 → shadow[b*ND+d] 亮度係數（沿深度單調不增）
+  const NB=SHADOW_NB, ND=SHADOW_ND;
+  let shadow=null;
+  if(ribShadow()){
+    shadow=new Float32Array(NB*ND);
+    const dbPerMm = linear? RIB_DB_PER_MM_HIGH : RIB_DB_PER_MM_LOW;  // 頻率：linear≈10MHz 遮蔽更強
+    for(let b=0;b<NB;b++){
+      let ox,oy,oz, dirx,diry,dirz, r0;          // 波束起點 + 方向 + 起始深度
+      if(linear){
+        const s=-Whalf+(b+0.5)/NB*(2*Whalf);
+        ox=B.P.x+latN.x*s; oy=B.P.y+latN.y*s; oz=B.P.z+latN.z*s;
+        dirx=beamN.x; diry=beamN.y; dirz=beamN.z; r0=0;
+      }else{
+        const beta=-half+(b+0.5)/NB*(2*half);
+        const cb=Math.cos(beta), sb=Math.sin(beta);
+        dirx=beamN.x*cb+latN.x*sb; diry=beamN.y*cb+latN.y*sb; dirz=beamN.z*cb+latN.z*sb;
+        ox=A.x; oy=A.y; oz=A.z; r0=R;             // 自頂點起算，掃描帶從 R 開始
+      }
+      let bone=0, shF=1;
+      for(let d=0;d<ND;d++){
+        const rr=r0+(d+0.5)/ND*D;
+        const hu=sampleHU(ox+dirx*rr, oy+diry*rr, oz+dirz*rr);
+        shadow[b*ND+d]=shF;                       // 套用「前方」累積骨厚的衰減 → 亮皮質線保留、後方變黑
+        if(hu>BONE_HU){ bone+=D/ND; const f=shadowRamp(bone,dbPerMm); if(f<shF) shF=f; }
+        else bone=0;
+      }
+    }
+  }
+  const shLookup=(b,d)=>{
+    if(!shadow) return 1;
+    b=b<0?0:b>=NB?NB-1:b; d=d<0?0:d>=ND?ND-1:d;
+    return shadow[b*ND+d];
+  };
+
   for(let py=0;py<SONO;py++){
     for(let px=0;px<SONO;px++){
       const o=(py*SONO+px)*4;
-      let inside=false, wx,wy,wz, depthFrac=0, prevHU=null, beta=0;
+      let inside=false, wx,wy,wz, depthFrac=0, prevHU=null, beta=0, shF=1;
       if(linear){
         const hw=Whalf*L.scale;
         const s=(px-L.cx)/L.scale;                 // mm，橫向
@@ -590,6 +639,7 @@ function renderSonogram(){
         if(Math.abs(s)<=Whalf && t>=0 && t<=D){
           inside=true; depthFrac=t/D;
           wx=B.P.x+latN.x*s+beamN.x*t; wy=B.P.y+latN.y*s+beamN.y*t; wz=B.P.z+latN.z*s+beamN.z*t;
+          shF=shLookup(((s+Whalf)/(2*Whalf)*NB)|0, (t/D*ND)|0);
         }
       }else{
         const dx=px-L.cx, dy=py-L.top;
@@ -601,15 +651,16 @@ function renderSonogram(){
           const cb=Math.cos(beta), sb=Math.sin(beta);
           const rdx=beamN.x*cb+latN.x*sb, rdy=beamN.y*cb+latN.y*sb, rdz=beamN.z*cb+latN.z*sb;
           wx=A.x+rdx*rr; wy=A.y+rdy*rr; wz=A.z+rdz*rr;
+          shF=shLookup(((beta+half)/(2*half)*NB)|0, ((rr-R)/D*ND)|0);
         }
       }
       if(!inside){ dat[o]=dat[o+1]=dat[o+2]=0; dat[o+3]=255; continue; }
       const hu=sampleHU(wx,wy,wz);
       let g=((hu-lo)/ww)*255; g=g<0?0:g>255?255:g;
-      if(dat2){ dat2[o]=dat2[o+1]=dat2[o+2]=g; dat2[o+3]=255; }
+      if(dat2){ dat2[o]=dat2[o+1]=dat2[o+2]=g; dat2[o+3]=255; }  // 3D 貼圖：純 CT，不套聲影
 
       if(!us){
-        dat[o]=dat[o+1]=dat[o+2]=g; dat[o+3]=255;
+        const gs=g*shF; dat[o]=dat[o+1]=dat[o+2]=gs; dat[o+3]=255;
       }else{
         // 超音波風格示意：沿波束梯度=介面回音 + 深度衰減 + 斑點
         const step=2.0;
@@ -620,6 +671,7 @@ function renderSonogram(){
         // 斑點
         const sp=0.78+0.44*pseudoNoise(px,py);
         echo*=sp;
+        echo*=shF;                                 // 肋骨聲影：骨後變暗
         let e=echo; e=e<0?0:e>255?255:e;
         // 琥珀/sepia 色調
         dat[o]=Math.min(255,e*1.0); dat[o+1]=Math.min(255,e*0.86); dat[o+2]=Math.min(255,e*0.62);
@@ -821,6 +873,7 @@ document.getElementById('wlpreset').addEventListener('click',e=>{
   setVal('wwv',probe.ww); setVal('wlv',probe.wl); refresh();
 });
 document.getElementById('usstyle').addEventListener('click',e=>{e.currentTarget.classList.toggle('on');refresh();});
+document.getElementById('ribshadow').addEventListener('click',e=>{e.currentTarget.classList.toggle('on');refresh();});
 document.getElementById('dirsel').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b)return;
   [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
