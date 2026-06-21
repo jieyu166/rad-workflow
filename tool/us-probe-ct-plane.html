@@ -120,7 +120,7 @@
     <div id="vlabel">3D · <b id="vmodelname">數位腹部假體</b></div>
     <div id="orient"></div>
     <button id="recenter">重新置中</button>
-    <div id="dropzone">放開以載入 DICOM 序列</div>
+    <div id="dropzone">放開以載入 DICOM 序列或影像堆疊（JPG/PNG）</div>
   </section>
 
   <aside>
@@ -185,8 +185,14 @@
         <h2>資料 Data</h2>
         <button class="btn" id="loadbtn">載入我的 CT（DICOM 序列）</button>
         <input type="file" id="file" multiple accept=".dcm,application/dicom,*">
+        <button class="btn" id="loadimgbtn">載入影像堆疊（JPG/PNG · 退路）</button>
+        <input type="file" id="imgfile" multiple accept="image/*,.jpg,.jpeg,.png">
+        <div id="imgscale" class="hidden">
+          <div class="row"><label>平面 mm/px</label><input type="range" class="amber" id="imgpx" min="0.2" max="2" step="0.05" value="0.7"><span class="val" id="imgpxv">0.70</span></div>
+          <div class="row"><label>切片間距</label><input type="range" class="amber" id="imgsz" min="0.5" max="10" step="0.5" value="5"><span class="val" id="imgszv">5.0</span></div>
+        </div>
         <button class="btn" id="phantombtn">回到數位假體</button>
-        <div class="note" id="datanote">目前使用內建腹部假體。可一次選取整個未壓縮 CT 序列（.dcm）。壓縮序列（JPEG/JPEG2000）無法在瀏覽器內解碼。</div>
+        <div class="note" id="datanote">目前使用內建腹部假體。可一次選取整個未壓縮 CT 序列（.dcm）。壓縮序列（JPEG/JPEG2000）無法在瀏覽器內解碼。影像堆疊為退路：灰階轉假 HU，幾何/聲影為近似。</div>
       </div>
     </div>
   </aside>
@@ -883,13 +889,18 @@ document.getElementById('recenter').onclick=recenter;
 document.getElementById('phantombtn').onclick=()=>loadPhantom();
 document.getElementById('loadbtn').onclick=()=>document.getElementById('file').click();
 document.getElementById('file').addEventListener('change',e=>loadDicomFiles(e.target.files));
+document.getElementById('loadimgbtn').onclick=()=>document.getElementById('imgfile').click();
+document.getElementById('imgfile').addEventListener('change',e=>loadImageStack(e.target.files));
+document.getElementById('imgpx').addEventListener('input',e=>{setVal('imgpxv',(+e.target.value).toFixed(2));rescaleImageVol();});
+document.getElementById('imgsz').addEventListener('input',e=>{setVal('imgszv',(+e.target.value).toFixed(1));rescaleImageVol();});
 
-// 拖放 DICOM
+// 拖放：依檔案型別路由（影像 → 堆疊；其餘 → DICOM）
 const dz=document.getElementById('dropzone');
 viewEl.addEventListener('dragover',e=>{e.preventDefault();dz.style.display='flex';});
 viewEl.addEventListener('dragleave',e=>{if(e.target===viewEl)dz.style.display='none';});
 viewEl.addEventListener('drop',e=>{e.preventDefault();dz.style.display='none';
-  if(e.dataTransfer.files.length)loadDicomFiles(e.dataTransfer.files);});
+  const fs=e.dataTransfer.files; if(!fs.length) return;
+  if(imgFilesOnly(fs).length) loadImageStack(fs); else loadDicomFiles(fs);});
 
 /* ---- 載入流程 ---- */
 function refresh(){ rebuildProbeVisual(); renderSonogram(); }
@@ -897,6 +908,7 @@ function refresh(){ rebuildProbeVisual(); renderSonogram(); }
 function loadPhantom(){
   VOL=buildPhantomVolume();
   document.getElementById('dicomPose').classList.add('hidden');
+  document.getElementById('imgscale').classList.add('hidden');
   document.querySelector('#ptype').parentElement.querySelectorAll('.row,.seg').forEach(()=>{});
   document.getElementById('datanote').textContent='目前使用內建腹部假體。可一次選取整個未壓縮 CT 序列（.dcm）。';
   document.getElementById('datanote').classList.remove('warn');
@@ -984,6 +996,7 @@ async function loadDicomFiles(fileList){
   for(let k=0;k<nz;k++) data.set(use[k].hu, k*cols*rows);
   VOL={data,nx:cols,ny:rows,nz, sx:use[0].sx,sy:use[0].sy,sz, phantom:false};
   document.getElementById('dicomPose').classList.remove('hidden');
+  document.getElementById('imgscale').classList.add('hidden');
   probe.dir='A'; probe.px=50; probe.py=50; probe.slice=(nz/2)|0;
   ['posX','posY'].forEach(id=>document.getElementById(id).value=50);
   const sEl=document.getElementById('slice');
@@ -997,6 +1010,77 @@ async function loadDicomFiles(fileList){
   setNote('已載入 '+nz+' 張切片。方向 + 位置放探頭（自動貼皮膚），滾輪換切面。'+(fail?'（'+fail+' 檔略過）':''),false);
 }
 function setNote(t,warn){const n=document.getElementById('datanote');n.textContent=t;n.classList.toggle('warn',!!warn);}
+
+/* ---- 退路：影像堆疊（JPG/PNG）→ 單通道假 HU pseudo-volume ---- */
+function loadImageEl(file){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file);
+    const im=new Image();
+    im.onload=()=>{ URL.revokeObjectURL(url); res(im); };
+    im.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('decode')); };
+    im.src=url;
+  });
+}
+function imgFilesOnly(list){
+  return [...list].filter(f=>!f.name.startsWith('.') &&
+    (/(\.jpe?g|\.png|\.bmp|\.gif|\.webp)$/i.test(f.name) || (f.type||'').startsWith('image/')));
+}
+async function loadImageStack(fileList){
+  const files=imgFilesOnly(fileList);
+  if(!files.length){ setNote('未選到影像檔（JPG/PNG）。',true); return; }
+  // 檔名自然數排序（IMG_2 在 IMG_10 之前）
+  files.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
+  setNote('讀取影像中… ('+files.length+' 檔)',false);
+  await new Promise(r=>setTimeout(r,10));
+  const imgs=[]; let fail=0;
+  for(const f of files){ try{ imgs.push(await loadImageEl(f)); }catch(e){ fail++; } }
+  if(!imgs.length){ setNote('影像解碼失敗（'+fail+' 檔）。',true); return; }
+  const cols=imgs[0].naturalWidth, rows=imgs[0].naturalHeight;
+  const use=imgs.filter(im=>im.naturalWidth===cols&&im.naturalHeight===rows);
+  const skipped=fail+(imgs.length-use.length);
+  const nz=use.length;
+  const cv=document.createElement('canvas'); cv.width=cols; cv.height=rows;
+  const cctx=cv.getContext('2d',{willReadFrequently:true});
+  const data=new Int16Array(cols*rows*nz);
+  for(let k=0;k<nz;k++){
+    cctx.clearRect(0,0,cols,rows); cctx.drawImage(use[k],0,0,cols,rows);
+    const px=cctx.getImageData(0,0,cols,rows).data;
+    const base=k*cols*rows;
+    for(let p=0,q=0;p<cols*rows;p++,q+=4){
+      const lum=0.299*px[q]+0.587*px[q+1]+0.114*px[q+2];
+      data[base+p]=((lum/255)*2000-1000)|0;     // 灰階 0..255 → 假 HU −1000..+1000
+    }
+  }
+  const spx=parseFloat(document.getElementById('imgpx').value)||0.7;
+  const ssz=parseFloat(document.getElementById('imgsz').value)||5;
+  VOL={data,nx:cols,ny:rows,nz, sx:spx,sy:spx,sz:ssz, phantom:false, pseudo:true};
+  document.getElementById('dicomPose').classList.remove('hidden');
+  document.getElementById('imgscale').classList.remove('hidden');
+  // 預設 W2000/L0：灰階→假HU→視窗 恰好還原原圖灰階（骨>500HU ⟺ 灰階>192）
+  probe.ww=2000; probe.wl=0;
+  document.getElementById('ww').value=2000; document.getElementById('wl').value=0;
+  setVal('wwv',2000); setVal('wlv',0);
+  probe.dir='A'; probe.px=50; probe.py=50; probe.slice=(nz/2)|0;
+  ['posX','posY'].forEach(id=>document.getElementById(id).value=50);
+  const sEl=document.getElementById('slice');
+  sEl.min=0; sEl.max=Math.max(0,nz-1); sEl.step=1; sEl.value=probe.slice;
+  setVal('slicev',probe.slice+'/'+(nz-1));
+  applyDicomPose();
+  rebuildBody(); recenter(); refresh();
+  document.getElementById('vmodelname').textContent='影像堆疊（假 HU）';
+  document.getElementById('orient').innerHTML='影像堆疊 '+nz+' 層　'+cols+'×'+rows+
+    '<br>假設 '+spx.toFixed(2)+' mm/px、間距 '+ssz.toFixed(1)+' mm（可調）'+
+    '<br>滾輪換切面　Ctrl+滾輪縮放';
+  setNote('已載入 '+nz+' 張影像（退路模式）。灰階→假 HU，W/L 與骨聲影為近似；建議仍優先用未壓縮 DICOM。'+
+    (skipped?'（'+skipped+' 檔尺寸不符/失敗略過）':''),false);
+}
+// 影像堆疊比例尺即時重建
+function rescaleImageVol(){
+  if(!VOL||VOL.phantom||!VOL.pseudo) return;
+  VOL.sx=VOL.sy=parseFloat(document.getElementById('imgpx').value)||0.7;
+  VOL.sz=parseFloat(document.getElementById('imgsz').value)||5;
+  applyDicomPose(); rebuildBody(); recenter(); refresh();
+}
 
 /* ---- resize ---- */
 function resize(){
