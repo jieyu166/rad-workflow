@@ -99,6 +99,18 @@ XLSX 模式：
 - 標註「CSV 模式：無逐筆計時，效率為每日粗估」
 - 工作點值可作為產出密度的參考
 
+#### 區段五-b：平日時段 cases/hr 折線圖（每週必做，2026-06-23 起）
+
+資料來自 JSON `hourly_weekday` 欄位（由 `generate_report.py` 自動產出，鍵為 "0"~"23"，值含 `n`/`cph`/`irate`/`med`/`top`）。
+
+- 畫一張 **08–23 時的 cases/hr 折線圖**（純 SVG，深色主題；可直接呼叫 `tod_efficiency.linechart_svg()` 的同款樣式）
+- 只連有 `n>0` 的點，避免假性下凹；`n<30` 的點淡化（opacity 0.4）
+- X 軸 = 整點 8..23、Y 軸 = cases/hr；標出當週最高/最低時段
+- 底部一句話：本週你最有效率的時段（對照全期基準：午後 13-17 最高、晚間 19-23 最低）
+- 註：cases/hr 由相鄰簽發間隔推估（>20min 截斷），report_time 精度到分；批次簽發時段會偏高，需對照件數與模態判讀
+- 若 `hourly_weekday_meta.weekday_cases < 30`，標「本週平日樣本不足，折線僅供參考」
+- 全期完整 0–23 熱力圖（含平日/假日對照）見 `output/tod_efficiency.html`，每月由 `build_trends.py` 自動更新至 `output/trends.html` 區段九
+
 **XLSX 模式（精確計時）：**
 ```
 | 模態(子類別) | 份數 | 時間 | 基準 | 實測 | 差異% | 評估 |

@@ -580,6 +580,29 @@ Examples:
         except Exception as e:
             print(f"  biopsy_tracker skipped: {e}", file=sys.stderr)
 
+    # ── Weekday hour-of-day cases/hr (for weekly summary line chart) ──
+    if args.csv:
+        try:
+            import tod_efficiency as tod
+            paths = list(args.csv) + ([args.yk] if args.yk else [])
+            recs, _ = tod.load_records(paths, args.reporter)
+            # ISO week filter to this report's week
+            wy, ww = None, None
+            m = re.match(r"(\d{4})-W(\d+)", week_str)
+            if m:
+                wy, ww = int(m.group(1)), int(m.group(2))
+            wk = [r for r in recs if (not wy) or
+                  (r["wdate"].isocalendar()[0] == wy and r["wdate"].isocalendar()[1] == ww)]
+            wd = [r for r in wk if not r["weekend"]]
+            ht = tod.hour_table(wd)
+            report_data['hourly_weekday'] = {str(h): ht[h] for h in range(24)}
+            report_data['hourly_weekday_meta'] = {
+                'weekday_cases': len(wd), 'week_cases': len(wk)}
+            print(f"\n── Hour-of-day (weekday) ──")
+            print(f"  weekday cases in week: {len(wd)} (for weekly line chart)")
+        except Exception as e:
+            print(f"  tod_efficiency (weekly) skipped: {e}", file=sys.stderr)
+
     # Print summary
     print_report(report_data)
 

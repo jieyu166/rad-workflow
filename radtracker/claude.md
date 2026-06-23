@@ -394,12 +394,24 @@ python xr_value.py --csv csv_input/115*_CL.csv --min-n 15 --json output/xr_value
 - 限制：report_time 僅到分 → 次分鐘讀片 floor 1min
 
 ### build_trends.py（每月一次）
-多週趨勢視覺化：週新增量、週點值、週完成、GitHub 強度熱力圖、Backlog 趨勢、**切片 QC（Thyroid ND 月趨勢 / Breast PPV / B3 追蹤）**。
+多週趨勢視覺化：週新增量、週點值、週完成、GitHub 強度熱力圖、Backlog 趨勢、**切片 QC（Thyroid ND 月趨勢 / Breast PPV / B3 追蹤）**、**區段九 時段效率（每整點 0–23 熱力圖 + 平日 cases/hr 折線，2026-06-23 起，呼叫 tod_efficiency.py）**。
 
 ```bash
 python build_trends.py
-# 輸出 output/trends.html — 拿來看 4 週 backlog 走勢、切片 QC、和主任談話的數據
+# 輸出 output/trends.html — 拿來看 4 週 backlog 走勢、切片 QC、時段效率、和主任談話的數據
 ```
+
+### tod_efficiency.py（時段效率分析，2026-06-23 新增）
+全期「每整點 0–23」報告產出效率，回答「一天哪個時段效率最高/最低」。
+- **計時法**：完成時間戳（report_date+report_time，精度到分）；00:00-05:59 歸前一工作日（深夜桶）；有效工時＝相鄰簽發間隔加總（單一間隔 >20min 截斷為 20，濾掉午休/被打斷的長空檔）；cases/hr＝件數÷有效工時；中位間隔為輔；中斷率＝間隔 >20min 佔比；依 case_id 去重
+- **已知限制**：report_time 僅到分→中位間隔地板 1min；批次簽發（間隔 0）時段 cases/hr 偏高（如週末值班 XR），須對照件數與主要模態判讀
+- **典型結論（2026-03~06，n≈8400）**：午後 13-17 最高（18.1 c/hr、中斷率 7% 全日最低）；晚間 19-23 最低（15.7）；平日最熱在 15 點（19.9）；「下午不被打斷」勝「晚餐後」
+- 三處使用：
+  ```bash
+  python tod_efficiency.py            # 單獨重產 output/tod_efficiency.html（全 115*_CL/YK 去重）
+  # build_trends.py 自動呼叫 → trends.html 區段九（月熱力圖 + 平日折線）
+  # generate_report.py 自動寫 hourly_weekday 進 weekly_report.json → 週報區段五-b 折線圖
+  ```
 
 ### parse_csv.py 單獨使用
 ```bash
