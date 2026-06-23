@@ -10,6 +10,10 @@ tmp.*
 .DS_Store
 Thumbs.db
 .claude/
+# 共用技能庫：canonical 在 skills/（進版控）；各家 AI 代理資料夾為 sync_skills.py 產生的衍生 copy，不進版控
+.agents/
+.opencode/
+.agent/
 __pycache__/
 *.py[cod]
 *.dcm

@@ -46,6 +46,17 @@ Radiology workflow automation toolkit for Dr. Jieyu, containing:
 - Claude Code settings.json 的 hook command 若需 shell 跳脫，外部化成 `~/.claude/hooks/*.sh` 避免 JSON 跳脫地獄
 - Python 寫檔腳本 + Edit tool 同時操作同一檔案 → 後執行者覆蓋前者；同一 response 內操作相同檔案後必須驗證結果
 
+## 共用技能庫（Claude Code / OpenAI Codex / OpenCode）
+三家 AI 代理共用同一份技能，**單一真實來源在 `skills/`**（進版控 → GitHub 多機同步）。
+- **編輯只改 `skills/<name>/SKILL.md`**，然後跑 `python sync_skills.py` 散佈到各家資料夾
+- 各家路徑（皆為 sync 產生的衍生 copy，已 gitignore）：
+  - Claude Code → `.claude/skills/`
+  - OpenAI Codex → `.agents/skills/`（複數 s）
+  - OpenCode → `.opencode/skills/`（OpenCode 亦原生讀 `.claude/skills/` 與 `.agents/skills/`）
+- **不用 symlink**：專案在 OneDrive，symlink 會被當實體檔上傳而失效 → 改用「canonical + 複製腳本 + Git」
+- `python sync_skills.py --check` 檢查各家是否與 canonical 一致（drift 時 exit 2）
+- frontmatter 走最大公因數（`name` + `description`）；Claude 專屬欄位三家共用時不要用
+
 ## Quick Reference
 
 ### Radtracker Weekly Report
