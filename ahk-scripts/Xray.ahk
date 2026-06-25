@@ -371,10 +371,10 @@ Gui Add, Button, x10 y10 w140 h35 gBtnApicalPleural, Apical pleural(&A)
 Gui Add, Button, x160 yp w140 h35 gBtnEmphysema, Emphysema(&E)
 Gui Add, Button, x310 yp w140 h35 gBtnHilarFullness, Hilar fullness(&H)
 Gui Add, Button, x10 yp+40 w140 h35 gBtnMediastinal, Mediastinal(&M)
-Gui Add, Button, x160 yp w140 h35 gBtnEff, 積液(&F)
-Gui Add, Button, x310 yp w140 h35 gBtnCongestion, Congestion(&G)
+Gui Add, Button, x160 yp w140 h35 gBtnEff, 積液(&W)
+Gui Add, Button, x310 yp w140 h35 gBtnCongestion, Congestion(&R)
 Gui Add, Button, x10 yp+40 w140 h35 gCXR8, 吸氣不足(&I)
-Gui Add, Button, x160 yp w140 h35 gCXR11, Edema通殺(&D)
+Gui Add, Button, x160 yp w140 h35 gCXR11, Edema通殺(&4)
 
 ; === 分隔線 ===
 Gui Add, Text, x10 yp+40 w440 h2 0x10
@@ -387,19 +387,19 @@ Gui Add, Radio, xp+150 yp w140 h23 vL5, 邊緣擴大(&B)
 Gui Add, Radio, xp+150 yp w100 h23 vL7 checked1, 心臟正常
 
 ; === 範本按鈕區 ===
-Gui Add, Button, x10 yp+30 w140 h45 gCXR1, 正常(&7)
+Gui Add, Button, x10 yp+30 w140 h45 gCXR1, 正常(&N)
 Gui Add, Button, x160 yp w140 h45 gCXR3, 硬化+輕退化
-Gui Add, Button, x310 yp w140 h45 gCXR4, 硬化+骨密低(&8)
-Gui Add, Button, xp yp+50 w140 h45 gCXR5, 硬化+骨鬆(&9)
+Gui Add, Button, x310 yp w140 h45 gCXR4, 硬化+骨密低(&D)
+Gui Add, Button, xp yp+50 w140 h45 gCXR5, 硬化+骨鬆(&F)
 
-Gui Add, Button, x10 yp+5 w140 h45 gCXR6, 洗腎
-Gui Add, Button, x160 yp w140 h45 gCXR10, 心臟手術術後
+Gui Add, Button, x10 yp+5 w140 h45 gCXR6, 洗腎(&J)
+Gui Add, Button, x160 yp w140 h45 gCXR10, 心臟手術術後(&L)
 Gui Add, Button, x10 yp+50 w140 h45 gCXR7, 小孩(&K)
 
 ; === 分隔線 ===
 Gui Add, Text, x10 yp+50 w440 h2 0x10
 Gui Add, Button, x10 yp+5 w120 h30 gMergeExams, 合併標題(&Z)
-Gui Add, Button, x140 yp w120 h30 gCXRClean, 清除選項(&R)
+Gui Add, Button, x140 yp w120 h30 gCXRClean, 清除選項(&Q)
 Gui Add, Button, x270 yp w120 h30 gCXRclose, 切換&Spine
 Gui Add, Button, x10 yp+40 w120 h30 gSeeCXRAI, 看AI報告(&1)
 Gui Add, Button, x140 yp w120 h30 gCopyOld2, 顯示舊報告(&2)
@@ -407,7 +407,7 @@ Gui Add, Button, x270 yp w120 h30 gCopyOldSmart, 複製舊報告(&3)
 
 ; === 緩衝輸出區（仿 spine2）===
 Gui Add, Text, x10 yp+42 w120 h32 +0x200 vCXRStatus, 已選 0 項
-Gui Add, Button, x140 yp w250 h34 Default gFlushCXRBuffer, 一次輸出全部(&Q)
+Gui Add, Button, x140 yp w250 h34 Default gFlushCXRBuffer, 一次輸出全部(&G)
 
 Gui Show, w460 h500, CXR 範例
 Return
@@ -718,28 +718,28 @@ Gui Font, s14
 Gui Add, CheckBox, x10 y10 w120 h23 vLTitle, 包含標題(&5)
 ; [新增] 部位選擇 Radio Button
 ; 預設不勾選，保留彈性；若選了就會固定輸出該部位
-Gui Add, Radio, x140 y10 w90 h23 vSpineLoc1, C-spine(&2)
-Gui Add, Radio, x240 y10 w90 h23 checked1 vSpineLoc2, L-spine(&3)
+Gui Add, Radio, x140 y10 w90 h23 vSpineLoc1, C-spine(&1)
+Gui Add, Radio, x240 y10 w90 h23 checked1 vSpineLoc2, L-spine(&2)
 
 ; 第二排按鈕
-Gui Add, Button, x10 yp+50 w150 h50 gLspineDefault, L-spine 預設(&L)
-Gui Add, Button, xp+160 yp w150 h50 gCspineDefault, C-spine 預設(&C)
+Gui Add, Button, x10 yp+50 w150 h50 gLspineDefault, &L-spine 預設
+Gui Add, Button, xp+160 yp w150 h50 gCspineDefault, &C-spine 預設
 Gui Add, Button, xp+160 yp w150 h50 gBtnInsertTitle, 輸出標題(&T)
 
 ; 第三排按鈕
 Gui Add, Button, x10 yp+60 w150 h50 gBoneDensity1, 骨密低(&A)
 Gui Add, Button, xp+160 yp w150 h50 gBoneDensity2, 骨質疏鬆(&D)
-Gui Add, Button, xp+160 yp w150 h50 gBtnWedging, Ant. Wedging(&W)
+Gui Add, Button, xp+160 yp w150 h50 gBtnWedging, Ant. &Wedging
 
 
 ; 第四排按鈕 - 原有功能
 Gui Add, Button, x10 yp+60 w150 h50 gSpondylolisthesis, &Spondylolisthesis
 Gui Add, Button, xp+160 yp w150 h50 gRetrolisthesis, &Retrolisthesis
-Gui Add, Button, xp+160 yp w150 h50 gHypermobility, Hypermobility(&H)
+Gui Add, Button, xp+160 yp w150 h50 gHypermobility, &Hypermobility
 
 ; 第五排按鈕
-Gui Add, Button, x10 yp+60 w150 h50 gFacetArthrosis, Facet arthrosis(&F)
-Gui Add, Button, xp+160 yp w150 h50 gUncovertebralJoint, Uncovertebral(&U)
+Gui Add, Button, x10 yp+60 w150 h50 gFacetArthrosis, &Facet arthrosis
+Gui Add, Button, xp+160 yp w150 h50 gUncovertebralJoint, &Uncovertebral
 Gui Add, Button, xp+160 yp w150 h50 gNoHypermobility, &No hypermobility
 
 Gui Add, Button, x10 yp+60 w150 h50 gUFJoint, Facet+Unco(&B)
@@ -747,9 +747,9 @@ Gui Add, Button, xp+160 yp w150 h50 gC1C2OA, C1-C2 OA(&6)
 Gui Add, Button, xp+160 yp w150 h50 gPostOP, 術後組套(&P)
 
 ; 右側控制按鈕
-Gui Add, Button, x500 y10 w120 h40 gSpineClose, 切換到 CXR(&Q)
+Gui Add, Button, x500 y10 w120 h40 gSpineClose, 切換到 C&XR
 Gui Add, Button, xp yp+50 w120 h40 gMergeExams, 合併檢查(&Z)
-Gui Add, Button, xp yp+50 w120 h40 gCopyOldFromSpine, 複製舊報告(&X)
+Gui Add, Button, xp yp+50 w120 h40 gCopyOldFromSpine, 複製舊報告(&3)
 Gui Add, Button, xp yp+50 w120 h40 gOpenForamenWeb, 裂孔網頁(&O)
 
 ; 緩衝排序輸出區（永遠先收集，按 [輸出全部] 才依嚴重度排序貼出）
@@ -757,12 +757,12 @@ Gui Font, s10, Segoe UI
 Gui Add, Text, x500 yp+55 w120 h18 vSpineStatus, 已選 0 項
 Gui Font, s14
 Gui Add, Button, x500 yp+22 w120 h44 Default gFlushSpineBuffer, 輸出全部(&G)
-Gui Add, Button, xp yp+50 w120 h32 gClearSpineBuffer, 清空緩衝(&E)
+Gui Add, Button, xp yp+50 w120 h32 gClearSpineBuffer, 清空緩衝(&Q)
 
 ; 常用非 spine finding
 Gui Add, Text, x10 y370 w470 h2 0x10
-Gui Add, Button, x10 y385 w150 h50 gBowelGasFinding, 腸氣增加(&4)
-Gui Add, Button, xp+230 yp w150 h50 gAortaCalcFinding, 動脈鈣化(&1)
+Gui Add, Button, x10 y385 w150 h50 gBowelGasFinding, 腸氣增加
+Gui Add, Button, xp+230 yp w150 h50 gAortaCalcFinding, 動脈鈣化(&E)
 
 Gui Show, w640 h470, Spine phases
 ; 記錄視窗標題，用於後續 focus 回來
