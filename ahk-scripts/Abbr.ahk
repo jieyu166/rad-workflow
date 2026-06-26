@@ -7,6 +7,7 @@
 :O:susp::suspect
 :O:bil::bilateral
 :O:fu;::follow up.
+:O:br;::breast
 :O:lc::Limited change.
 :O:olc::
 HotstringMenuV("A","MenuShortcut","Otherwise limited change.","Overall limited change.")
@@ -183,6 +184,7 @@ HotstringMenuV("A","MenuShortcut"
     ,"Calcified tendinitis in _"
     ,"calcified tendinitis"
     ,"BRK", "calcification"
+    ,"calcifications"
     ,"Calcified LN(s) in _"
     ,"Calcified mediastinal LNs, suspect old inflammatory changes"
     ,"BRK"
