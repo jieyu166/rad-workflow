@@ -738,6 +738,7 @@ The following is the complete prompt to use (or provide to the user for API usag
    ```bash
    python scripts/slide_frames.py "<影片檔>" --json "<剛存的.json>" --width 1280
    ```
+   - ⚠️ **必須前景同步執行、等它印完「截圖張數＋併入」訊息再繼續**。長片場景偵測要數分鐘；**切勿丟到背景後就結束這一回合**（曾發生：截圖跑背景、回合提早結束 → JSON 併入了但 V4 沒寫成，留下半成品）。委派子代理時務必在指示中明寫這點。
    - 沿用 slide-extractor 的場景偵測（PySceneDetect adaptive，無則退 ffmpeg scene filter）抓「真正換頁」那張，存到 `frames/<stem>-MMSS.png`（1280px）。
    - 自動把每段的 `frame`/`frames` 欄位併回 JSON（見上方 schema 說明），web player 即可顯示縮圖。
    - 另產 `<stem>.frames.json` 換頁清單 manifest。
@@ -753,6 +754,13 @@ The following is the complete prompt to use (or provide to the user for API usag
     - **.pbf 主檔名必須與影片同名**：腳本會自動對齊同目錄影片檔（同名或前綴相符，如 JSON `…原則.json` 對應影片 `…原則-2937.mp4`）；找不到才退用 JSON 主檔名。
     - PotPlayer 開影片時會自動載入同名 `.pbf`。重建 JSON 後重跑本步即可讓章節與筆記同步。
     - 與 web player 用的 `frame`/`frames` 並存、互不影響；這是「本機播放器導航」的平行輸出。
+11. **（可選）挑出筆記用到的截圖搬進 Obsidian（2026-06-26 新增）** — V4 筆記常只嵌入 `frames/` 裡眾多截圖的一小部分（例 12/155）。要把筆記搬進 Obsidian 時，只需「用到的那幾張」：
+    ```bash
+    python scripts/collect_note_images.py "<某.v4.md>"            # 解析引用 → 複製到 ./_note_images/
+    python scripts/collect_note_images.py "<資料夾>"             # 批次：夾內每篇 *.v4.md 各自輸出
+    ```
+    - 同時支援 Markdown `![](frames/xxx.png)`（含 %20）與 Obsidian wikilink `![[xxx.png]]`；預設來源夾為筆記同層 `frames/`，可用 `--frames` 指定。
+    - **改名場次後要重跑**：若先用 `reorg`/改 stem 改了 frames 檔名與筆記引用，這裡要在「改名後」才執行，挑出的檔名才會與筆記一致。
 
 ### Special Characters
 
