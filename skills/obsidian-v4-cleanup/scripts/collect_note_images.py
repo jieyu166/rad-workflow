@@ -10,7 +10,7 @@
   - Obsidian wikilink：![[xxx.png]]
 
 用法：
-  python collect_note_images.py NOTE.v4.md                 # 預設找同層 frames/，輸出到 ./_note_images/
+  python collect_note_images.py NOTE.v4.md                 # 預設找同層 frames/，輸出到 ./images/
   python collect_note_images.py NOTE.v4.md --frames DIR    # 指定原始圖來源夾
   python collect_note_images.py NOTE.v4.md -o OUTDIR       # 指定輸出夾
   python collect_note_images.py DIR                        # 資料夾內所有 *.v4.md（各自輸出到 OUT/<note-stem>/）
@@ -51,7 +51,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("path", help="筆記 .md，或含多篇 *.v4.md 的資料夾")
     ap.add_argument("--frames", help="原始圖來源夾（預設：筆記同層的 frames/）")
-    ap.add_argument("-o", "--out", default="_note_images", help="輸出夾（預設 ./_note_images）")
+    ap.add_argument("-o", "--out", default="images", help="輸出夾（預設 ./images）")
     args = ap.parse_args()
 
     target = Path(args.path)

@@ -756,7 +756,7 @@ The following is the complete prompt to use (or provide to the user for API usag
     - 與 web player 用的 `frame`/`frames` 並存、互不影響；這是「本機播放器導航」的平行輸出。
 11. **（可選）挑出筆記用到的截圖搬進 Obsidian（2026-06-26 新增）** — V4 筆記常只嵌入 `frames/` 裡眾多截圖的一小部分（例 12/155）。要把筆記搬進 Obsidian 時，只需「用到的那幾張」：
     ```bash
-    python scripts/collect_note_images.py "<某.v4.md>"            # 解析引用 → 複製到 ./_note_images/
+    python scripts/collect_note_images.py "<某.v4.md>"            # 解析引用 → 複製到 ./images/（使用者偏好夾名）
     python scripts/collect_note_images.py "<資料夾>"             # 批次：夾內每篇 *.v4.md 各自輸出
     ```
     - 同時支援 Markdown `![](frames/xxx.png)`（含 %20）與 Obsidian wikilink `![[xxx.png]]`；預設來源夾為筆記同層 `frames/`，可用 `--frames` 指定。
