@@ -42,7 +42,7 @@
 - `HotstringMenuV` 標準格式：每引數獨立一行、前綴 `,`、單行 ≤150 字元
 - 跨模態通用縮寫放 `Abbr.ahk`（如 CA;、FR;），不放 CT.ahk
 - 新 hotstring 提議前先比對所有 .ahk（含簡碼/選單）防 trigger 衝突；報告用 trigger 慣例帶 `;`
-- Keylogger 分析：`cd ahk-scripts/logs && python analyze_keylog.py <file> -o out.json`；跨檔彙整用 `aggregate_raw.json` 模式
+- Keylogger 分析：`cd ahk-scripts && python analyze_keylog.py logs/<file> -o out.json`（腳本在 `ahk-scripts/`，log 檔在 `logs/`；舊文件寫 `cd ahk-scripts/logs` 是錯的，2026-07 實測修正）；跨檔彙整用 `aggregate_raw.json` 模式
 
 ## GitHub / 部署
 
