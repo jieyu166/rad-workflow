@@ -1,0 +1,4 @@
+interface:
+  display_name: "Novel to Manga"
+  short_description: "Turn novel text into manga pages and image prompts."
+  default_prompt: "Use $novel-to-manga to adapt this novel excerpt into manga pages with character bibles and image prompts."
