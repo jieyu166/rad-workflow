@@ -43,8 +43,11 @@ def read_iuser(default: str = REPORTER) -> str:
 
 
 def in_allowed_window() -> bool:
+    import os
+    start = int(os.environ.get("MAMMO_WINDOW_START", ALLOWED_START))
+    end = int(os.environ.get("MAMMO_WINDOW_END", ALLOWED_END))
     h = datetime.now().hour
-    return h >= ALLOWED_START or h < ALLOWED_END
+    return h >= start or h < end
 
 
 def _report_url(case_id: str, iuser: str, ihost: int = 14) -> str:
