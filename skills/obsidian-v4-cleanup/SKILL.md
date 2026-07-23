@@ -8,7 +8,8 @@ description: >-
   課程筆記, course listing.
   7-task pipeline: (1) YAML V4 frontmatter fix, (2) citation→footnote,
   (3) 閱片 table→callout, (4) video content from subtitles/audio/slides,
-  (5) paper PDF summarization with L3 deep-study template + visual canvas map,
+  (5) PDF-grounded L3 reconstruction with faithful full-text translation,
+  measurable coverage gates, complete figure/table audit, and visual canvas map,
   (6) SRT→segmented JSON for web player navigation,
   (7) course series listing note with media links.
   Use even for partial requests like "fix the YAML", "整理這個影片",
@@ -31,8 +32,8 @@ Task 4: Organize video/lecture content
   Check Task 6 JSON exists → Read subtitle/audio + slide images (無投影片資料夾但有影片檔 → scripts/slide_frames.py 自動抓換頁截圖再 Read) + 官方筆記/講義 .html/.md (defuddle 解析，最高優先 ground truth) → Cross-reference to correct & enrich → Output V4 note
 
 Task 5: PDF 閱讀筆記（L3 深度筆記 + Canvas 視覺地圖）
-  Mode A (期刊論文): Read PDF → L3 template → structured note → canvas
-  Mode B (教科書章節): Read PDF → 兩階段翻譯+重組 → 階層式大綱筆記 → canvas
+  Mode A (期刊論文): resolve PDF → extract + render every page → source inventory → faithful Stage 1 → quality gate → Stage 2 → canvas → verify
+  Mode B (教科書章節): resolve PDF → extract + render every page → source-order full translation → quality gate → hierarchical reorganization → canvas → verify
 
 Task 6: SRT → 分段 JSON（字幕導航檔）
   Read SRT + (optional) slide images/PDF → view images to correct terminology → segment into 8-15 chapters → (有影片檔 → scripts/slide_frames.py 抓換頁截圖併入每段 frame) → Output JSON for web player → (可選 → scripts/json_to_pbf.py 產 PotPlayer 章節檔 .pbf)
@@ -272,7 +273,7 @@ Applies when the user provides video-related materials (subtitle files, audio fi
 2c. **檢查官方筆記／講義（最高優先 ground truth，2026-06-24 新增）**：若同層有 `.html`/`.md`/講義 PDF（講者官方整理）：
    - `.html` → `defuddle parse "<檔>" --md`（去雜訊、保留 SECTION/標題結構）；`.md` 直接 Read；PDF 用 `pdftotext`。
    - **以它為準校正逐字稿**：ASR 常把專有名詞、數字、史實聽錯（甚至整段漏聽或誤解因果）。官方筆記 > 投影片截圖 > ASR 逐字稿。
-   - 範例（實證）：某 AI 講座 ASR 把「Naval 三槓桿」誤傳為四槓桿、把「增冊」說成別的詞、整段 Chomsky/Claude routine 被壓縮——皆靠官方 `.html` 筆記校回。
+   - 範例（實證）：某 AI 講座 ASR 把「Naval 三槓桿」誤傳為四槓桿、把「增冊」說成別的詞、整段 Chomsky/Codex routine 被壓縮——皆靠官方 `.html` 筆記校回。
 3. **Read all provided materials**:
    - **官方筆記／講義** = 最高優先文字 ground truth（術語/數值/史實/因果以此為準）
    - **Subtitles** = primary spoken content source
@@ -356,12 +357,48 @@ def parse_srt(filepath):
 
 Applies when the user provides a PDF (journal paper, textbook chapter, or reference material) and asks for reading notes. This task always produces **L3 deep-study notes** plus a **visual canvas map**.
 
+### Mandatory Default: PDF-grounded Reconstruction
+
+Treat the actual PDF as the only medical-content ground truth. An existing `.md` may help locate omissions and preserve personal artifacts, but never use its prose, numbers, recommendations, figure interpretations, or citations as evidence.
+
+For an existing note:
+
+1. Resolve the exact PDF uniquely. If missing or ambiguous, stop that note as `source_pending`; do not overwrite it.
+2. Before overwriting, archive the original note at the user-designated archive root while preserving its vault-relative path.
+3. Record SHA-256 for the original, archive, PDF, and rebuilt note when working in an audit or batch.
+4. Carry forward only personal artifacts that remain valid:
+   - preserve SR comments exactly;
+   - preserve Dataview blocks only when still semantically applicable;
+   - preserve image embeds only when the target exists and the image belongs to this source;
+   - preserve wikilinks only when the target exists and the relationship is useful;
+   - otherwise leave the artifact only in the archived original.
+5. Do not create placeholder wikilinks such as `[[]]`, speculative Topics, or automatic Parent links merely to preserve the old layout.
+
+This Task 5 policy overrides the generic preservation rules under **Critical Safety Rules** when rebuilding an L3 note from a PDF.
+
+### Non-negotiable Quality Gate
+
+Define:
+
+```text
+Stage 1 coverage ratio =
+non-whitespace characters between the Stage 1 and Stage 2 headings
+÷
+non-whitespace characters extracted from the PDF
+```
+
+- Require `ratio >= 0.20` by default. Treat this as a minimum anti-summary gate, not proof of completeness.
+- If extracted PDF text is usable and the ratio is below 0.20, continue translating; do not write around the gate with filler, duplicated prose, figure-number lists, or copied English source text.
+- If the PDF is scanned, OCR-poor, or extraction is clearly incomplete, mark the numeric ratio `N/A` and use page/section coverage plus visual verification instead. State the reason in the audit.
+- Require every source section, figure ID, table ID, box, equation, and appendix to have an explicit disposition: translated/reconstructed, explained in a callout, or marked N/A with the source reason.
+- Do not begin final Stage 2 condensation until Stage 1 passes the coverage and source-inventory checks.
+
 ### Core Design: Two-Stage Model
 
 This is the most critical design decision. Splitting the work into two stages prevents the quality collapse that happens when translation, comprehension, restructuring, and condensation all compete in a single pass.
 
 **Stage 1 — 忠實翻譯底稿**
-Translate the original text segment by segment into Taiwan Traditional Chinese (正體中文). Every definition, numeric value, condition, causal chain, and clinical implication must survive intact.
+Translate the original text in source order, segment by segment, into Taiwan Traditional Chinese (正體中文). Translate the substantive full text rather than producing a section summary. Every definition, numeric value, sample size, method, acquisition parameter, diagnostic threshold, condition, comparison, causal chain, limitation, and clinical implication must survive intact. Include figure captions, table contents, boxes, equations, and appendix material. Omit only running headers/footers, duplicated boilerplate, and the bibliography unless the user asks for it.
 
 **Stage 2 — 結構重組**
 Working from the Stage 1 draft, do two things:
@@ -370,13 +407,20 @@ Working from the Stage 1 draft, do two things:
 
 ### Workflow
 
-1. **Read the PDF** using available tools (Read tool for PDF, or `pdftotext`)
-2. **Determine subspecialty** from the content
-3. **Stage 1**: Translate the full text faithfully
-4. **Stage 2**: Restructure + distill into hierarchical outline
-5. **Output** the L3 deep-study note (.md)
-6. **Create visual canvas** (.canvas) in `Learning Map/` subfolder
-7. **Add canvas link** to the .md `# Summary` section
+1. **Resolve source**: locate the exact PDF; record its path, page count, citation, edition, and SHA-256 when applicable.
+2. **Archive existing note** before overwriting; confirm the archive hash equals the original hash.
+3. **Extract text** page by page with page boundaries retained.
+4. **Render every PDF page** to images. Build contact sheets for efficient review, then inspect full-resolution pages containing figures, tables, equations, small labels, or extraction anomalies.
+5. **Build a source inventory**: original section hierarchy, page ranges, all figure/table/box/equation IDs, study design, sample size, important numbers, and appendices.
+6. **Determine subspecialty** and create correct V4 YAML using the source edition—not newer classifications or outside knowledge.
+7. **Write Stage 1 in source order** with bilingual headings mirroring the PDF. Work in bounded chunks and re-check the PDF after each chunk.
+8. **Run the Stage 1 gate**: calculate the coverage ratio, check section coverage, and compare every figure/table ID against the inventory. Continue translating until all checks pass.
+9. **Write Stage 2** from the verified Stage 1: restructure into a hierarchical clinical learning note without adding content.
+10. **Write Summary**: Canvas link, One-liner, KEY TAKEAWAYS, and Slides Outline.
+11. **Create and validate Canvas** in `Learning Map/`.
+12. **Verify final artifacts**: YAML, citation, ratios, figures/tables, numbers, Canvas JSON, preserved artifacts, archive hashes, and absence of unresolved placeholders.
+
+For batch work, finish and verify one PDF at a time. A failure blocks only that note; continue other uniquely resolved notes and record the exact blocker.
 
 ### Writing Rules (apply to all levels)
 
@@ -395,6 +439,8 @@ This is essential because the reader will cross-reference the notes against the 
 
 Figures and tables often contain information not mentioned in the body text. Skipping them is a significant loss.
 
+First enumerate the source IDs from extracted text and visual pages. After writing the note, compare the two sets mechanically: every `Figure X-Y` and `Table X-Y` in the PDF must appear in Stage 1. Visually inspect every page containing a figure or table; extracted captions alone are insufficient for image findings, arrows, labels, graphs, or multi-panel relationships.
+
 **For each figure**, add a collapsible analysis block:
 
 ```markdown
@@ -405,6 +451,8 @@ Figures and tables often contain information not mentioned in the body text. Ski
 > **常見誤解**：Grade III often confused with Grade IV when NP signal is intermediate
 > **臨床情境**：used in pre-surgical planning to determine candidacy for disc replacement
 ```
+
+Only include `常見誤解` or `臨床情境` when the PDF supports it. Otherwise write `N/A（原文未涵蓋）`. Do not infer diagnoses from an unseen figure or invent a “typical” image to fill a template.
 
 **For each table**, translate and reconstruct in markdown, then add a collapsible reading guide:
 
@@ -419,6 +467,8 @@ Figures and tables often contain information not mentioned in the body text. Ski
 > **教學用途**：systematic grading approach for residents
 > **常見陷阱**：disc height preserved in early degeneration (Grade II) may be falsely reassuring
 ```
+
+Reconstruct the actual rows, columns, units, denominators, footnotes, and statistical qualifiers. If a table is too large for practical Markdown, preserve all information through a faithful structured synopsis and state exactly what was not reproduced.
 
 The collapsible design is intentional — expand when first learning, collapse afterward for quick review.
 
@@ -457,16 +507,11 @@ subspecialty: XX
 source:
   - "Author et al. Journal. Year" or "Author(s). Book Title. Edition. Publisher, Year. Chapter X."
 ---
-Topics :: [[relevant topics]] <br>
-Parent Link :: [[=索引頁]] <br>
-Related Papers :: [[]] <br>
-
----
 
 # Summary
-[[Note Title.canvas]]
+[[Learning Map/Note Title.canvas|Note Title]]
 
-## One-liner
+> [!abstract] One-liner
 > 一句話核心價值
 
 ## KEY TAKEAWAYS
@@ -520,7 +565,7 @@ Related Papers :: [[]] <br>
 | 診斷 | 影像特徵 | 鑑別重點 |
 |------|---------|---------|
 |      |         |         |
-（at least 3 rows）
+（只列 PDF 支持的診斷；原文未涵蓋時寫 N/A，不強補三項）
 
 ## Classification / Staging｜分類分期
 - ...
@@ -540,16 +585,16 @@ Related Papers :: [[]] <br>
 - ...
 
 # Management & Treatment｜處置與治療
-- 影像在治療決策中的角色
-- Follow-up protocol
+- 只寫 PDF 明確支持的治療、影像決策角色與 follow-up
+- 原文未涵蓋時寫 `N/A（原文未涵蓋）`
 
 # Pearls
 1. ...
 2. ...
 
 # 和我的知識庫的連結
-- 與 [[existing note]] 的關聯
-- 補充了 [[another note]] 中關於___的不足
+- 僅加入已確認存在且確實有用的 wikilink
+- 沒有可靠連結時寫 N/A；不得產生 placeholder link
 
 # Questions for Further Study
 - ...
@@ -593,6 +638,8 @@ Follow the **JSON Canvas Spec 1.0** format. The canvas should visualize the note
 
 **File node** linking back to the original .md (path: vault-relative, e.g., `2. Areas/NR相關知識/2024 RG Paper Title.md`).
 
+For a normal L3 source, default to approximately 9 nodes and 9 labeled edges: central concept, 6–7 major knowledge units/pitfalls, and one file node. Use a smaller 6-node/5-edge map only when the source is genuinely short. Node count is secondary to covering all major source units.
+
 #### Layout Guidelines
 
 - Spread nodes across x range -900 to 900, y range -500 to 700
@@ -608,7 +655,7 @@ After creating the canvas, add a wikilink in the `.md` file's `# Summary` sectio
 
 ```markdown
 # Summary
-[[Note Title.canvas]]
+[[Learning Map/Note Title.canvas|Note Title]]
 ```
 
 #### Minimal Canvas
@@ -630,10 +677,12 @@ After writing each canvas file, validate:
 1. 每個定義、數值、條件、因果推理、臨床意涵都必須保留，一個都不能丟
 2. **source 欄位**格式：期刊用 `"First Author et al. Journal Abbreviation. Year;Volume:Pages"`；書籍用 `"Author(s). Book Title. Edition. Publisher, Year. Chapter X."`
 3. 不可省略 imaging modality section — 即使只涉及一種影像模式，也要填寫並標註其他為 N/A
-4. DDx table 至少 3 行
-5. Important Figures: 提取教學價值最高的圖片描述
-6. 若有包含數據的表格，需解讀基本數據走勢
-7. **Canvas 必須產生** — 每份 L3 筆記都要搭配一份 .canvas 視覺地圖
+4. DDx、classification、management、treatment、follow-up 只寫 PDF 支持的內容；原文未涵蓋時明確寫 `N/A（原文未涵蓋）`
+5. 不得把一般醫學知識、新版 WHO／guideline、典型 imaging pattern 或外部 cutoff 冒充原文內容；需要更新資訊時另立「外部更新」區並附來源，除非使用者要求，預設不加
+6. Important Figures: 提取教學價值最高的圖片描述；完整 figure inventory 仍須在 Stage 1 逐號交代
+7. 若有包含數據的表格，需解讀原文支持的數據走勢並保留 denominators、units、conditions 與 uncertainty
+8. 所有關鍵數值、公式、sample size、scan parameters、diagnostic thresholds、treatment recommendations 與 conclusions 必須能定位至 PDF 頁面或章節
+9. **Canvas 必須產生** — 每份 L3 筆記都要搭配一份 .canvas 視覺地圖
 
 ---
 
@@ -840,13 +889,13 @@ sibling :: [[前一年課程筆記]] <br>
 
 ## Critical Safety Rules
 
-These are things that must NEVER be modified or deleted during cleanup:
+For Tasks 1–4 and 6–7 cleanup, preserve the following exactly. For Task 5 PDF-grounded rebuilds, apply the stricter artifact policy under **Mandatory Default: PDF-grounded Reconstruction**: archive first, always preserve SR comments, and carry forward embeds/Dataview/wikilinks only after validating target existence and semantic relevance.
 
 1. **Spaced Repetition comments**: `<!--SR:!2024-01-15,30,270-->` — do not touch these under any circumstance
-2. **Image embeds**: `![[image.png]]` — preserve exactly as-is
-3. **Embed references**: `![[other note#heading]]` — preserve exactly
-4. **Dataview queries**: ` ```dataview ... ``` ` blocks — preserve exactly
-5. **Existing wikilinks**: `[[any link]]` — never break these
+2. **Image embeds**: `![[image.png]]` — preserve exactly during ordinary cleanup; validate before carrying into a Task 5 rebuild
+3. **Embed references**: `![[other note#heading]]` — preserve exactly during ordinary cleanup; validate before carrying into a Task 5 rebuild
+4. **Dataview queries**: ` ```dataview ... ``` ` blocks — preserve during ordinary cleanup; retain in Task 5 only when still applicable
+5. **Existing wikilinks**: `[[any link]]` — never break them during ordinary cleanup; do not blindly copy stale or placeholder links into a Task 5 rebuild
 
 ---
 
@@ -911,25 +960,42 @@ OLD_INLINE_PATTERNS = [
 - [ ] **Terminology matches slides** — English medical terms in note match the slide image content, not the garbled ASR transcript
 
 ### Task 5 (PDF 閱讀筆記)
+- [ ] Exact PDF resolved uniquely; unresolved/ambiguous sources were not overwritten
+- [ ] Existing note archived before overwrite; original and archive SHA-256 match
+- [ ] PDF text extracted with page boundaries and all pages rendered
+- [ ] Every PDF page visually reviewed via renders/contact sheets
+- [ ] Full-resolution visual review completed for every figure/table/equation page and extraction anomaly
+- [ ] Source inventory covers every section, figure, table, box, equation, and appendix
 - [ ] L3 format used (Stage 1 + Stage 2 both output)
+- [ ] Stage 1 is a substantive source-order full translation, not a summary or translated outline
+- [ ] Stage 1 non-whitespace/PDF extracted non-whitespace ratio is ≥0.20, or ratio is N/A with documented OCR/extraction reason and page-based coverage proof
+- [ ] Ratio was not inflated with filler, duplication, copied English text, or identifier-only lists
+- [ ] Stage 2 was written only after Stage 1 passed coverage checks
 - [ ] Two-stage process applied (Stage 1 忠實翻譯 + Stage 2 結構重組)
 - [ ] V4 YAML complete (source in proper citation format, tags: ["L3"])
+- [ ] YAML parses; required fields and types are correct
 - [ ] subspecialty correctly identified
 - [ ] Title structure mirrors original with bilingual headings and numbering
 - [ ] Hierarchical outline with proper indentation (not flat prose)
 - [ ] All logical connectors preserved (因為、所以、導致、若、則、除非、然而)
 - [ ] Every figure has collapsible `[!figure]-` analysis block
 - [ ] Every table has collapsible `[!table-guide]-` reading guide
+- [ ] Mechanical figure/table ID comparison reports no missing source IDs
 - [ ] Summary contains: One-liner + KEY TAKEAWAYS + Slides Outline
 - [ ] All imaging modality sections addressed (even if N/A)
-- [ ] DDx table has at least 3 rows
+- [ ] DDx/classification/management contain only PDF-supported content; absent topics are explicitly N/A
+- [ ] No newer classification, guideline, external threshold, typical finding, or recommendation is presented as source content
+- [ ] Every important number, formula, sample size, parameter, threshold, recommendation, and conclusion is locatable in the PDF
 - [ ] Important Figures described
 - [ ] 台灣正體中文, 專有名詞 English with Chinese in parentheses
 - [ ] No preamble or closing statements
 - [ ] **Canvas file created** in `Learning Map/` subfolder with valid JSON
-- [ ] **Canvas link added** in `# Summary` section with `.canvas` extension: `[[filename.canvas]]`
+- [ ] **Canvas link added** in `# Summary` section with `.canvas` extension and correct relative path
 - [ ] Canvas nodes cover all major sections with semantic color coding
 - [ ] Canvas edges labeled with concept relationships in Chinese
+- [ ] Canvas IDs are unique 16-character lowercase hex; all edges reference existing nodes
+- [ ] SR comments preserved; retained embeds/Dataview/wikilinks are valid; unresolved artifacts remain only in archive
+- [ ] Rebuilt note hash recorded and final batch/report status updated when auditing
 
 ### Task 6 (SRT → JSON)
 - [ ] JSON parses without errors
