@@ -44,3 +44,7 @@ slide-extractor/_thumbs/
 slide-extractor/output/
 .spectra/
 openspec/.vector-search.db*
+
+# Superpowers isolated worktrees and task ledgers
+.worktrees/
+.superpowers/
