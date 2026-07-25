@@ -428,16 +428,23 @@ python xr_value.py --csv csv_input/115*_CL.csv --min-n 15 --json output/xr_value
 從報告時間戳推算每日簽到/簽退草稿，供**人工**輸入「主治醫師刷卡補登作業」網頁。→ 週報 **區段十三**。
 
 ```bash
-python attendance_draft.py --csv csv_input/{week_csv}.csv --exclude-night \
+python attendance_draft.py --csv csv_input/{week_csv}.csv \
   --json output/attendance_W{NN}.json --out-csv output/attendance_W{NN}.csv
 ```
 
-- **算法**：篩 `reporter_id`(col17) → `report_date`(col13)+`report_time`(col14) 組 datetime → 依**日曆日**分組 → 最早−45min＝草稿簽到、最晚+20min＝草稿簽退（`--checkin-buffer`/`--checkout-buffer` 可調）
-- **`--exclude-night`（建議一律加）**：忽略 00:00-05:59 的深夜簽發再取最早值。實例：W30 週一最早 01:42 → 簽到會變 00:57(13.2hr)；排除後為 09:07 → 簽到 08:22(5.8hr) 才合理
-- 自動標記需人工確認的列：`深夜N筆` / `假日` / `僅1筆` / `簽到已夾到00:00`（簽到/簽退一律夾在同一日曆日內，因補登頁一次只選一個日期）
+**工作段模型（2026-07-23 使用者定義）**：
+- **深夜視為前一天延續**：`00:00–05:00`（`--night-cutoff 5`）的簽發歸**前一個工作日** → 該日簽退跨日
+- **收工通常不超過 04:00、早上最早 06:00 開始** → cutoff 取 05:00 落在兩者之間
+- **簽到不早於 06:00**（`--earliest-start`）；即使最早報告 06:30 減緩衝也夾在 06:00
+
+其他：
+- **算法**：篩 `reporter_id`(col17) → `report_date`(col13)+`report_time`(col14) 組 datetime → 依**工作日**分組 → 最早−45min＝簽到、最晚+20min＝簽退（`--checkin-buffer`/`--checkout-buffer` 可調）
+- 實例（W29/W30）：07/19(日) 21:59→07/20 02:14 ⇒ 簽到 21:14、**簽退 07/20 02:34**；07/20(一) 自身則乾淨為 09:07–13:47
+- 自動標記：`簽退跨日` / `深夜N筆` / `簽到偏晚需確認`(簽到≥12:00) / `簽到夾到06:00` / `假日` / `僅1筆`
+- ⚠ **已知限制**：只反映「簽報告」時間。當天若上午做臨床/開會/處置而未簽報告，簽到會被低估 → 標「簽到偏晚需確認」由人工補正
 - 件數依 case_id 去重；輸出 console 表格 + JSON + CSV(utf-8-sig)
-- ⚠ **僅產草稿表，不碰網頁、不自動提交**；補登頁 `#DDL_date`/`#txt_HHMM`/`#btnSubmit`，同一天按兩次（系統依打卡狀態自動判簽到/簽退）
-- 註：`exec_date`/`exec_time`(col11/12) 目前僅讀入未使用（檢查施作時間≠醫師工作時間）
+- ⚠ **僅產草稿表，不碰網頁、不自動提交**；補登頁 `#DDL_date`/`#txt_HHMM`/`#btnSubmit`，逐筆送出、系統依打卡狀態自動判簽到/簽退；**跨日簽退直接用它自己的日期送出**
+- 註：`exec_date`/`exec_time`(col11/12) 未使用（檢查施作時間≠醫師工作時間）
 
 ### build_trends.py（每月一次）
 多週趨勢視覺化：週新增量、週點值、週完成、GitHub 強度熱力圖、Backlog 趨勢、**切片 QC（Thyroid ND 月趨勢 / Breast PPV / B3 追蹤）**、**區段九 時段效率（每整點 0–23 熱力圖 + 平日 cases/hr 折線，2026-06-23 起，呼叫 tod_efficiency.py）**。
@@ -505,7 +512,7 @@ python generate_report.py --xlsx csv_input/legacy/radiology_tracker.xlsx --input
    ```
 3c. **跑出勤補登草稿（Section 13）**
    ```bash
-   python attendance_draft.py --csv csv_input/{week_csv}.csv --exclude-night \
+   python attendance_draft.py --csv csv_input/{week_csv}.csv \
      --json output/attendance_W{NN}.json --out-csv output/attendance_W{NN}.csv
    ```
 4. **填 GCal 週覆盤 event template**（成長/生活/工作三帳戶）
