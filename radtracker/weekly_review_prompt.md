@@ -309,6 +309,35 @@ python xr_value.py --csv csv_input/115*_CL.csv --min-n 15 --json output/xr_value
 
 ---
 
+### 區段十三：出勤補登草稿（每週結算必做，2026-07-23 起）
+
+**用途**：從報告時間戳推算每日簽到/簽退草稿，供使用者**手動**輸入奇美「主治醫師刷卡補登作業」網頁。**純資料輸出，不串接網頁、不自動提交。**
+
+資料來源：`attendance_draft.py` 產生的 JSON（如 `output/attendance_W{NN}.json`）。
+
+```bash
+python attendance_draft.py --csv csv_input/{week_csv}.csv --exclude-night \
+  --json output/attendance_W{NN}.json --out-csv output/attendance_W{NN}.csv
+```
+
+#### 13a. 表格欄位（放在報告最下方，方便逐日對照抄寫）
+
+```
+| 日期 | 週 | 件數 | 最早報告 | 最晚報告 | 草稿簽到 | 草稿簽退 | 時數 | 備註 |
+```
+
+- **草稿簽到** = 最早報告 −45min；**草稿簽退** = 最晚報告 +20min（緩衝可調）
+- 時間欄位用 `JetBrains Mono` 等寬字型並加大，方便照著打字
+- 有備註者（深夜/假日/僅1筆/已夾到邊界）整列標黃底提示需人工確認
+
+#### 13b. 必附提醒
+
+- 「此為草稿，請人工檢視後再補登」
+- 手動流程：`#DDL_date` 選日期 → `#txt_HHMM` 填時間 → 按 `#btnSubmit`，**同一天按兩次**（一次簽到、一次簽退）；系統依打卡狀態自動判定簽到/簽退，前端不區分
+- **深夜簽發（00:00-05:59）**會把簽到拉到凌晨 → 預設用 `--exclude-night` 排除，並在備註標「深夜N筆」提醒該日可能是前一日工作延續
+
+---
+
 ### HTML 樣式要求
 
 - 深色主題（#0c0e14 背景）
