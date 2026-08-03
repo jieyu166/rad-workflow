@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""check_task6.py — Task 6 分段 JSON + V4 筆記的機械稽核。
+"""check_lecture.py — 分段 JSON + V4 筆記的機械稽核。
 
-Task 5 有 coverage ratio gate，Task 4/6 之前沒有任何自動檢查，半成品要靠人眼發現：
+整條管線之前沒有任何自動檢查，半成品要靠人眼發現：
 JSON 併好了但截圖沒抓、改名後筆記引用的圖不存在、時間碼重疊或不單調。
 這支腳本把「機器查得出來的錯」一次查完，不做任何內容品質判斷。
 
@@ -13,10 +13,10 @@ JSON 併好了但截圖沒抓、改名後筆記引用的圖不存在、時間碼
   [筆記] V4 筆記引用的圖片（Markdown 與 wikilink 兩種寫法）實際存在
 
 用法
-  python check_task6.py "<某.json>"
-  python check_task6.py "<某.json>" --note "<某.v4.md>"
-  python check_task6.py "<資料夾>"                # 批次，自動配對同名 .v4.md
-  python check_task6.py "<資料夾>" --strict       # 警告也算失敗
+  python check_lecture.py "<某.json>"
+  python check_lecture.py "<某.json>" --note "<某.v4.md>"
+  python check_lecture.py "<資料夾>"                # 批次，自動配對同名 .v4.md
+  python check_lecture.py "<資料夾>" --strict       # 警告也算失敗
 
 離開碼：0 全過 / 1 只有警告 / 2 有錯誤
 """

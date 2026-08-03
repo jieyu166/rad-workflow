@@ -285,6 +285,10 @@ drag($('#vsplit'),m=>document.body.style.setProperty('--vcol',Math.min(Math.max(
 drag($('#hsplit'),m=>{const r=$('#notes').getBoundingClientRect();
   document.body.style.setProperty('--srow',Math.min(Math.max(m.clientY-r.top,100),r.height-120)+'px');});
 setMode('split'); paint();
+/* ?t=<秒> 深連結：課程首頁的搜尋結果可直接指到某一場的某個時間點 */
+(function(){ const t=Number(new URLSearchParams(location.search).get('t'));
+  if(!isNaN(t)&&t>0){ V.addEventListener('loadedmetadata',()=>{try{V.currentTime=t;}catch(e){} sync(t,true);},{once:true});
+    if(V.readyState) { try{V.currentTime=t;}catch(e){} sync(t,true); } } })();
 """
 
 
