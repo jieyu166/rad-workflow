@@ -58,13 +58,17 @@ def lectures(folder: Path, only: str | None) -> list[dict]:
     return out
 
 
-def run(cmd: list[str], label: str) -> bool:
-    """前景同步跑，把子行程輸出直接透傳——長跑的步驟必須看得到進度。"""
+def run_code(cmd: list[str], label: str) -> int:
+    """前景同步跑，把子行程輸出直接透傳——長跑的步驟必須看得到進度。回傳離開碼。"""
     print(f"    $ {label}")
     t0 = time.time()
     r = subprocess.run([sys.executable, *cmd])
     print(f"      ({time.time()-t0:.0f}s, exit={r.returncode})")
-    return r.returncode in (0, 1)  # 1 = 稽核只有警告，不算失敗
+    return r.returncode
+
+
+def run(cmd: list[str], label: str) -> bool:
+    return run_code(cmd, label) in (0, 1)  # 1 = 稽核只有警告，不算失敗
 
 
 def main():
@@ -128,15 +132,15 @@ def main():
             ok = run(cmd, "build_lecture_viewer")
             status.append("viewer" + ("" if ok else "失敗"))
 
-        ok = run([str(HERE / "check_lecture.py"), str(it["json"])], "check_lecture")
-        status.append("稽核" + ("通過" if ok else "有錯"))
+        code = run_code([str(HERE / "check_lecture.py"), str(it["json"])], "check_lecture")
+        status.append("稽核" + {0: "通過", 1: "有警告"}.get(code, "有錯"))
         report.append((stem, "、".join(status)))
 
     print("\n" + "=" * 60)
     print(f"完成 {len(report)} 場，總耗時 {(time.time()-t_all)/60:.1f} 分")
     for stem, s in report:
         print(f"  {stem[:44]:46s} {s}")
-    bad = [r for r in report if "失敗" in r[1] or "有錯" in r[1] or r[1] == "無影片"]
+    bad = [r for r in report if "失敗" in r[1] or "有錯" in r[1] or "有警告" in r[1] or r[1] == "無影片"]
     if bad:
         print(f"\n需要處理 {len(bad)} 場：" + "、".join(b[0][:24] for b in bad))
     print("\n下一步：python build_course_hub.py \"<資料夾>\"  產生課程首頁")

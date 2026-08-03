@@ -30,7 +30,8 @@ from urllib.parse import unquote
 
 VIDEO_EXT = (".mp4", ".mkv", ".mov", ".webm", ".m4v", ".avi")
 # 排除非分段 JSON：slide_frames 的 manifest 與底線開頭的暫存
-SKIP_JSON = re.compile(r"\.frames\.json$|^_")
+# 排除衍生檔：slide_frames 的 manifest 與 ocr_frames 的快取都不是分段 JSON
+SKIP_JSON = re.compile(r"\.frames\.json$|\.frames_ocr\.json$|\.corrections\.json$|^_")
 
 MD_IMG = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
 WIKI_IMG = re.compile(r"!\[\[([^\]|]+?)(?:\|[^\]]*)?\]\]")
