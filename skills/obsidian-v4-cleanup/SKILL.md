@@ -761,6 +761,15 @@ The following is the complete prompt to use (or provide to the user for API usag
     ```
     - 同時支援 Markdown `![](frames/xxx.png)`（含 %20）與 Obsidian wikilink `![[xxx.png]]`；預設來源夾為筆記同層 `frames/`，可用 `--frames` 指定。
     - **改名場次後要重跑**：若先用 `reorg`/改 stem 改了 frames 檔名與筆記引用，這裡要在「改名後」才執行，挑出的檔名才會與筆記一致。
+12. **收尾稽核（2026-08-03 新增，建議必跑）** — Task 5 有 coverage ratio gate，Task 4/6 之前完全沒有自動檢查，半成品只能靠人眼發現（JSON 併好但截圖沒抓、改名後筆記引用的圖不存在、時間碼重疊）：
+    ```bash
+    python scripts/check_task6.py "<某.json>" --note "<某.v4.md>"
+    python scripts/check_task6.py "<資料夾>"          # 批次，自動配對同名 .v4.md
+    python scripts/check_task6.py "<資料夾>" --strict # 警告也算失敗
+    ```
+    - 檢查：必要 key / index 連號 / `start_sec < end_sec` / 單調不重疊 / `start_time` 與 `start_sec` 一致 / title 與 summary_zh 非空 / 每段至少一張 frame（僅當該檔已併入截圖）/ frame 與筆記引用的圖片實際存在 / 無 BOM。
+    - 離開碼 **0 全過、1 只有警告、2 有錯誤**；只做機械檢查，不判斷內容品質。
+    - **改名或重跑 slide_frames 之後務必再跑一次**——這兩個動作最常留下「JSON 指向已不存在的檔名」。
 
 ### Special Characters
 
