@@ -145,7 +145,7 @@
 
       <div class="grp">
         <h2>擺位 Pose</h2>
-        <div class="row"><label>旋轉 Rotate</label><input type="range" class="amber" id="rot" min="0" max="360" step="1" value="0"><span class="val" id="rotv">0°</span></div>
+        <div class="row"><label>旋轉 Rotate</label><input type="range" class="amber" id="rot" min="-180" max="180" step="1" value="0"><span class="val" id="rotv">0°</span></div>
         <div class="row"><label>傾角A Toe/Heel</label><input type="range" class="amber" id="tiltA" min="-45" max="45" step="1" value="0"><span class="val" id="tiltAv">0°</span></div>
         <div class="row"><label>傾角B 側傾</label><input type="range" class="amber" id="tiltB" min="-45" max="45" step="1" value="0"><span class="val" id="tiltBv">0°</span></div>
         <div id="dicomPose" class="hidden">
@@ -198,6 +198,16 @@
   </aside>
 </div>
 
+<script id="interaction-logic">
+const ORBIT_DRAG_RADIANS_PER_PIXEL=0.004;
+function orbitAfterPointerDrag(theta,phi,dx,dy){
+  return {
+    theta:theta-dx*ORBIT_DRAG_RADIANS_PER_PIXEL,
+    phi:phi-dy*ORBIT_DRAG_RADIANS_PER_PIXEL
+  };
+}
+function dicomSliceDelta(deltaY){ return deltaY>0?-1:1; }
+</script>
 <script>
 "use strict";
 /* =========================================================================
@@ -757,7 +767,8 @@ gl.addEventListener('pointermove',e=>{
     const upv=camera.up.clone();
     target.addScaledVector(right,-dx*k); target.addScaledVector(upv, dy*k); updateCamera();
   }else{
-    camTheta-=dx*0.008; camPhi-=dy*0.008; updateCamera();
+    const orbit=orbitAfterPointerDrag(camTheta,camPhi,dx,dy);
+    camTheta=orbit.theta; camPhi=orbit.phi; updateCamera();
   }
   down.x=e.clientX; down.y=e.clientY;
 });
@@ -769,7 +780,7 @@ gl.addEventListener('wheel',e=>{
   e.preventDefault();
   if(!VOL.phantom && !e.ctrlKey && !e.metaKey){
     // DICOM 模式：滾輪換切面（Ctrl/⌘+滾輪 = 縮放）
-    setSlice(probe.slice + (e.deltaY>0?1:-1));
+    setSlice(probe.slice + dicomSliceDelta(e.deltaY));
   }else{
     camR*=Math.exp(e.deltaY*0.0011);
     camR=Math.max(120,Math.min(2600,camR)); updateCamera();
