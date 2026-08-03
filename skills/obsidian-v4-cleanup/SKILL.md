@@ -336,7 +336,11 @@ A: 答案 + 解釋
 6. Subtitle parsing: strip timestamps, merge fragmented sentences, handle overlapping lines
 7. **Slide image embeds**: When slide images exist (手動投影片資料夾，或由 `scripts/slide_frames.py` 自動抓的 `frames/*.png`), embed them at the matching note sections with `![[filename.png]]`. Every major section should have at least one relevant slide image if available. Place the embed right after the section heading or before the content it illustrates. 自動換頁截圖的檔名帶時間碼（`<stem>-MMSS.png`），可依此對齊到對應段落。
 8. **Ground-truth 優先順序（校正逐字稿時）**：**官方筆記／講義（.html/.md/PDF）> 投影片截圖 > ASR 逐字稿**。ASR 常把英文醫學/專有名詞、數字、史實、甚至因果關係聽錯（如 "Lunnerate" → "Lung-RADS"、"Infisima" → "emphysema"，或把「三」聽成「四」）。當官方筆記或投影片清楚顯示正確內容時，以它為準，不可盲信 SRT。
-9. **Slide image reading strategy**: For large slide sets (>20 images), read them in batches or use filenames' timestamps to prioritize slides that correspond to the current transcript segment. You don't need to read every single image upfront — read them as you process each section of the transcript.
+9. **Slide image reading strategy**: 若 Task 6 JSON 已含 `frame_ocr`（跑過 `ocr_frames.py`），
+   **先讀 JSON 裡的 OCR 文字決定哪幾張值得開**，不要一開始就整批 Read 圖——長片 100+ 張時
+   這是最大的一筆浪費。需要開圖的情況：表格、分類標準、影像（CT/MRI/US）、OCR 文字明顯亂掉、
+   以及任何要寫進筆記的數值與術語（OCR 有誤差，不可直接抄）。
+   沒有 `frame_ocr` 時退回舊做法：>20 張就分批讀，或依檔名時間碼只讀當前段落對應的那幾張。
 
 ### Subtitle File Parsing
 
@@ -761,9 +765,11 @@ The following is the complete prompt to use (or provide to the user for API usag
       "summary_zh": "繁中2-4句摘要",
       "bullets_zh": ["重點1", "重點2", "重點3"],
       "frame": "frames/<stem>-MMSS.png",
-      "frames": ["frames/<stem>-MMSS.png", "..."]
+      "frames": ["frames/<stem>-MMSS.png", "..."],
+      "frame_ocr": [{"frame": "frames/<stem>-MMSS.png", "text": "投影片上的文字…"}]
     }
-  ]
+  ],
+  "ocr_meta": {"engine": "rapidocr-onnxruntime", "frames_total": 0, "note": "…"}
 }
 ```
 
@@ -771,6 +777,15 @@ The following is the complete prompt to use (or provide to the user for API usag
 > `scripts/slide_frames.py` 自動填入。`frames` = 該段時間範圍內偵測到的所有「換頁截圖」
 > 相對路徑；`frame` = 代表圖（該段第一張換頁；若該段無換頁則為段落開始時螢幕上那張）。
 > web player 可用 `frame` 顯示縮圖、用 `frames` 做段內輪播。無影片檔時這兩個欄位省略。
+
+> **`frame_ocr` / `ocr_meta` 欄位（2026-08-03 新增，投影片文字內嵌）**：由
+> `scripts/ocr_frames.py` 填入，每段列出該段截圖的 OCR 文字。有了它，寫 Task 4 筆記時
+> 不必逐張 Read 圖就知道該段投影片寫了什麼——長片（100+ 張）省下大量往返。
+> ==OCR 文字是定位線索，不是 ground truth。== 來源優先序不變：**官方講義 > 投影片截圖
+> （人眼看的）> ASR 逐字稿**，OCR 只排在「幫你決定要不要打開那張圖」的位置。實測 OCR
+> 會把「分類與追蹤」讀成「分類興追蹦」、「處置」讀成「鬣置」；英數與英文術語通常正確
+> （Lung-RADS、BI-RADS、3-6 mm、< 10% 都讀對）。==術語、數值、分類標準一律回頭看原圖
+> 或對講義==，不可直接抄 `frame_ocr` 進筆記。
 
 ### Workflow
 
@@ -796,6 +811,20 @@ The following is the complete prompt to use (or provide to the user for API usag
    - 另產 `<stem>.frames.json` 換頁清單 manifest。
    - **若已有手動投影片資料夾**：以手動資料夾為準（畫質/挑選較佳），可跳過本步或僅作補充。
    - **無影片檔**：跳過，JSON 不含 frame 欄位（行為與舊版相同）。
+9b. **把截圖 OCR 文字併入 JSON（2026-08-03 新增，建議跑）** — 截圖抓完後接著跑：
+   ```bash
+   python scripts/ocr_frames.py "<剛存的.json>"
+   python scripts/ocr_frames.py "<剛存的.json>" --force        # 忽略快取重跑
+   python scripts/ocr_frames.py "<frames 資料夾>" --no-merge    # 只建快取
+   ```
+   - 每張截圖 OCR 一次（RapidOCR，CPU，約 0.5 s/張），結果寫進各段 `frame_ocr`，並產
+     `<stem>.frames_ocr.json` 快取（以檔案大小＋mtime 為指紋，重跑只補新圖）。有進度與 ETA。
+   - **為什麼要做**：Task 4 寫筆記時原本得逐張 Read 圖才知道投影片內容，長片動輒 100+ 張。
+     有了 `frame_ocr`，讀一次 JSON 就知道每段投影片寫什麼，只在需要看表格/影像時才開圖。
+   - ==不可直接抄進筆記==：OCR 有辨識誤差（實測「分類與追蹤」→「分類興追蹦」）。它決定
+     「要不要打開那張圖」，術語與數值仍以官方講義 > 原圖為準。
+   - 需要 `pip install rapidocr-onnxruntime`；缺套件會直接報錯退出（exit 3），不會默默略過。
+     另會用 opencc 把 OCR 常見的簡體輸出轉繁（`--no-s2t` 可關）。
 10. **（可選）產 PotPlayer 章節檔 .pbf（2026-06-25 新增）** — 若使用者用 PotPlayer 本機看影片，可把分段 JSON 轉成章節書籤，於進度條顯示可點擊章節（`Ctrl+PgUp/PgDn` 跳轉）：
     ```bash
     python scripts/json_to_pbf.py "<分段 JSON 或整個資料夾>"

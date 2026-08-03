@@ -115,6 +115,8 @@ defuddle parse "<講義.html>" -m > _ref.md
 #    → 寫 "<stem>.json"
 # 4) 場景截圖併入 JSON（**前景同步、等印完再繼續，勿丟背景**）
 python "$SK/slide_frames.py" "<影片.mp4>" --json "<stem>.json" --width 1280
+# 4b) 截圖 OCR 併入 JSON（寫筆記時就不必逐張 Read 圖；OCR 僅供定位，不可直接抄）
+python "$SK/ocr_frames.py" "<stem>.json"
 # 5) PotPlayer 章節檔（自動對齊影片檔名）
 python "$SK/json_to_pbf.py" "<stem>.json"
 # 6) 寫 V4 筆記（以講義為最高真實來源，嵌入 frames）→ "<stem>.v4.md"
