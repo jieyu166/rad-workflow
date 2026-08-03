@@ -98,8 +98,10 @@ def check_json(path: Path, rep: Report) -> dict | None:
             rep.err(f"缺少必要欄位 {key}")
 
     summary = data.get("overall_summary_zh", "")
-    if isinstance(summary, str) and summary and not 100 <= len(summary) <= 180:
-        rep.warn(f"overall_summary_zh {len(summary)} 字（規格 100-180）")
+    # 上限 500：實跑十場乳房影像系列後放寬。原本 180 字的規格對一場 30 分鐘、
+    # 十幾段的講座根本寫不完，每場都會亮警告——每次都亮的警告等於沒有警告。
+    if isinstance(summary, str) and summary and not 100 <= len(summary) <= 500:
+        rep.warn(f"overall_summary_zh {len(summary)} 字（規格 100-500）")
 
     takeaways = data.get("takeaways_zh")
     if isinstance(takeaways, list) and not 6 <= len(takeaways) <= 12:

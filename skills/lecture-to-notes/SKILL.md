@@ -72,7 +72,7 @@ python ~/.claude/skills/whisper-srt-zh/scripts/transcribe.py "<影片或資料�
    - 每段給 start_time/end_time (mm:ss 或 hh:mm:ss)，同時給 start_sec/end_sec
 2) 每段輸出：title（像投影片標題，用投影片上的正確術語）、summary_zh（繁中 2–4 句）、
    bullets_zh（繁中 2–6 點，保留英文專有名詞）
-3) 全片輸出：overall_summary_zh（100–180 字）、takeaways_zh（6–12 點）
+3) 全片輸出：overall_summary_zh（100–500 字，長講座寫滿沒關係）、takeaways_zh（6–12 點）
 
 【校正規則】
 - 專有名詞若字幕明顯錯字，必須用投影片/講義校正（血管名稱、器材、術式、分類系統）
@@ -89,7 +89,7 @@ python ~/.claude/skills/whisper-srt-zh/scripts/transcribe.py "<影片或資料�
 
 ```json
 {
-  "overall_summary_zh": "100-180字繁中整體摘要",
+  "overall_summary_zh": "100-500字繁中整體摘要",
   "takeaways_zh": ["結論/可應用原則 1", "...最多12點"],
   "segments": [{
     "index": 1, "start_time": "mm:ss", "end_time": "mm:ss",
