@@ -38,6 +38,9 @@ radtracker/malignancy_log.md
 ahk-scripts/logs/*_report.html
 ahk-scripts/logs/*_report.json
 
+# GUI 截圖：每次調版面就整張重存，diff 全是雜訊
+ahk-scripts/usai_cropped.png
+
 # Slide extraction inputs and generated output
 slide-extractor/*.mp4
 slide-extractor/_thumbs/
