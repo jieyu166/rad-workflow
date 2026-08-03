@@ -69,11 +69,18 @@ def parse_srt(path: Path) -> list[dict]:
 
 
 def find_sibling(base: Path, stem: str, exts) -> Path | None:
+    """同名優先，再退同前綴。==排除 .raw.srt==：那是 correct_srt.py 留下的未校正原始檔，
+    字面排序會讓 `.raw.srt` 排在 `.srt` 前面，不排除就會拿到錯字版。"""
+    def ok(p: Path) -> bool:
+        return p.exists() and ".raw." not in p.name.lower()
+
     for ext in exts:
-        for cand in (base / f"{stem}{ext}", *sorted(base.glob(f"{stem}*{ext}"))):
-            if cand.exists():
+        if ok(base / f"{stem}{ext}"):
+            return base / f"{stem}{ext}"
+        for cand in sorted(base.glob(f"{stem}*{ext}")):
+            if ok(cand):
                 return cand
-    hits = [p for p in sorted(base.iterdir()) if p.suffix.lower() in exts]
+    hits = [p for p in sorted(base.iterdir()) if p.suffix.lower() in exts and ok(p)]
     return hits[0] if len(hits) == 1 else None
 
 
@@ -92,8 +99,19 @@ def build_blocks(data: dict, cues: list[dict]) -> tuple[list[dict], list[dict]]:
             "end": s1,
             "summary": seg.get("summary_zh") or "",
             "frames": seg.get("frames") or ([seg["frame"]] if seg.get("frame") else []),
-            "ocr": [e.get("text", "") for e in (seg.get("frame_ocr") or [])],
         })
+        # 每張投影片的 OCR 各自成一個可點的 block：檔名末四碼就是 MMSS，
+        # 所以點 OCR 文字能直接跳到那張投影片出現的時間點。
+        for e in seg.get("frame_ocr") or []:
+            text = (e.get("text") or "").strip()
+            if not text:
+                continue
+            m = re.search(r"-(\d{2})(\d{2})\.\w+$", str(e.get("frame", "")))
+            t = (int(m.group(1)) * 60 + int(m.group(2))) if m else s0
+            blocks.append({"id": f"{sid}f{len(blocks)}", "seg": sid, "kind": "slide",
+                           "start": float(t), "end": float(t) + 1,
+                           "text": text, "est": False,
+                           "frame": str(e.get("frame", ""))})
         bullets = [b for b in (seg.get("bullets_zh") or []) if str(b).strip()]
         span = max(s1 - s0, 0.001)
         # bullets 沒有自己的時間碼 -> 在段落內平均插補，並標記 estimated
@@ -160,6 +178,10 @@ body.only-tr #notes{grid-template-rows:1fr}
 .blk.est .ts::after{content:"~";color:var(--dim)}
 #tpane .blk{font-size:.86rem;padding:.1rem .5rem}
 .thumbs{display:flex;gap:.3rem;flex-wrap:wrap;margin:.3rem 0 .5rem}
+.ocr{margin:.3rem 0 .2rem}
+.ocr>summary{cursor:pointer;color:var(--dim);font-size:.78rem;padding:.15rem .5rem}
+.blk.slide{white-space:pre-wrap;font-size:.8rem;color:var(--dim);border-left-color:#3a4557}
+.blk.slide:hover{color:var(--fg)}
 .thumbs img{height:72px;border-radius:4px;border:1px solid var(--line);cursor:zoom-in}
 .note{font-size:.75rem;color:var(--dim);padding:.3rem .9rem;border-top:1px solid var(--line)}
 mark{background:var(--hit);color:#111}
@@ -239,9 +261,10 @@ function search(qs){
   const hits=B.filter(b=>terms.every(t=>b.text.toLowerCase().includes(t))).slice(0,80);
   if(!hits.length){ box.innerHTML='<div class="count">無符合結果</div>'; box.classList.add('open'); return; }
   box.innerHTML='<div class="count">'+hits.length+' 筆</div>'+hits.map(b=>{
-    let t=esc(b.text.slice(0,110));
+    const pos=Math.max(0,b.text.toLowerCase().indexOf(terms[0])-20);
+    let t=esc((pos?'…':'')+b.text.slice(pos,pos+110));
     for(const q of terms) t=t.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+')','ig'),'<mark>$1</mark>');
-    return '<button class="sr" data-t="'+b.start+'"><span class="k">'+(b.kind==='summary'?'摘要':'逐字')+'</span>'
+    return '<button class="sr" data-t="'+b.start+'"><span class="k">'+({summary:'摘要',transcript:'逐字',slide:'投影片'}[b.kind]||b.kind)+'</span>'
       +'<span class="t">'+t+'</span><span class="ts">'+fmt(b.start)+'</span></button>';
   }).join('');
   box.classList.add('open');
@@ -285,12 +308,22 @@ def render(data: dict, segs: list[dict], blocks: list[dict], title: str,
         thumbs = "".join(
             f'<img src="{html.escape(media_dir + f)}" loading="lazy" alt="">'
             for f in s["frames"])
+        slides = [b for b in mine if b["kind"] == "slide"]
+        ocr_html = ""
+        if slides:
+            rows = "".join(
+                f'<button class="blk slide" id="b-{b["id"]}" data-t="{b["start"]}">'
+                f'<span class="ts">{int(b["start"])//60:02d}:{int(b["start"])%60:02d}</span>'
+                f'{html.escape(b["text"])}</button>' for b in slides)
+            ocr_html = ('<details class="ocr"><summary>投影片文字 '
+                        f'{len(slides)} 張（OCR，有誤差，僅供定位／搜尋）</summary>{rows}</details>')
         sum_html.append(
             f'<section class="seg"><h3><span class="no">{s["index"]:02d}</span> '
             f'{html.escape(s["title"])}</h3>'
             + (f'<div class="thumbs">{thumbs}</div>' if thumbs else "")
             + f'<p class="sum">{html.escape(s["summary"])}</p>'
             + "".join(blk_html(b) for b in mine if b["kind"] == "summary")
+            + ocr_html
             + "</section>")
         cues = [b for b in mine if b["kind"] == "transcript"]
         if cues:
