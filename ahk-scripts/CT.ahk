@@ -544,12 +544,14 @@ F. LT renal artery: not involved
 G. RT common iliac artery: not involved
 H. LT common iliac artery: not involved
 
-2.Lung, pleura and airway: The lung parenchyma was normal.
-3.Mediastinum: unremarkable.
-4.Pericardium and heart: not unusual for age.
-5.Chest wall and bony structure: not unusual for age.
+2.Lung, pleura and airway: 
+3.Mediastinum: 
+4.Pericardium and heart: 
+5.Chest wall and bony structure: 
 6.Neck:
-7.Upper abdomen and adrenals: not unusual for age.
+7.Upper abdomen and adrenals: 
+
+_not unusual for age.
 )
 
 ;============================================================================================

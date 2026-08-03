@@ -821,7 +821,7 @@ Gui, I2F:Font, s10, Segoe UI
 ; 檢查類型選擇
 Gui, I2F:Add, GroupBox, x10 y10 w480 h110, 檢查選項
 Gui, I2F:Add, Text, x20 y30 w70 h20 vI2F_OptionLabel, 腹超:
-Gui, I2F:Add, Radio, x100 y30 w120 vI2F_TypeUpperAbd Checked, &Upper abd
+Gui, I2F:Add, Radio, x100 y30 w120 vI2F_TypeUpperAbd Checked, Upper &abd
 Gui, I2F:Add, Radio, x230 y30 w120 vI2F_TypeUroM, Urotract(&M)
 Gui, I2F:Add, Radio, x360 y30 w120 vI2F_TypeUroF, Urotract(&F)
 ; --- Prompt 情境選擇 ---
@@ -831,13 +831,13 @@ Gui, I2F:Add, DropDownList, x100 y55 w360 vI2F_Scenario gI2F_OnScenarioChange Ch
 Gui, I2F:Add, Text, xm y+25, Impression:
 Gui, I2F:Add, Edit, vI2F_Impression w480 h160
 Gui, I2F:Add, Button, gI2F_DoGenerate w120 h28 Default vI2F_BtnGen, &Generate
-Gui, I2F:Add, Button, gI2F_Clear x+10 w80 h28, Clear
+Gui, I2F:Add, Button, gI2F_Clear x+10 w80 h28, Clea&r
 Gui, I2F:Add, Text, x+10 yp+5 w220 h20 vI2F_Status, （閒置）
 
 Gui, I2F:Add, Text, xm y+12 Section, Findings (descriptive, system-organized):
 Gui, I2F:Add, Edit, vI2F_Findings w480 h200
-Gui, I2F:Add, Button, gI2F_CopyFindings w140 h26, &Copy Findings
-Gui, I2F:Add, Button, gI2F_CopyFindImpr x+10 w180 h26, Copy F + &Impression
+Gui, I2F:Add, Button, gI2F_CopyFindings w140 h26, Copy Findings
+Gui, I2F:Add, Button, gI2F_CopyFindImpr x+10 w180 h26, &Copy F + &Impression
 
 ; 歷史紀錄（雙擊還原 Impression + Findings）
 Gui, I2F:Add, Text, xm y+15, 歷史紀錄（雙擊列還原；最多保留 %g_I2F_HistoryMax% 筆，視窗關閉即清除）:

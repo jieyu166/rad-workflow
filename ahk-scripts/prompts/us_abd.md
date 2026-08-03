@@ -42,6 +42,17 @@ FINDINGS RULES:
        Default format:
        "Both kidneys show normal size (right: _ cm; left: _ cm). No US evidence of hydronephrosis"
        If only one side measurement is provided, fill the provided side and use "_" for the missing side.
+     - **SIZE THRESHOLD RULE (apply per side whenever a numeric renal length is provided)**:
+       Normal renal length reference is 9–12 cm. For each side that has a measurement, classify by length:
+       - length > 12 cm → describe as "enlarged" (e.g., "Enlarged right kidney")
+       - length < 9 cm → describe as "small" (e.g., "Small right kidney")
+       - 9–12 cm (inclusive) → normal size
+       If ANY side is enlarged or small, do NOT output "Acceptable bilateral kidney sizes" or "Both kidneys show normal size". Describe each side by its category, include side and measurement, and still preserve bilateral size fields for urotract ultrasound.
+       Examples:
+       - One side enlarged: "Enlarged right kidney (right: 13.2 cm; left: 10.5 cm). No US evidence of hydronephrosis"
+       - One side small: "Small left kidney (right: 10.4 cm; left: 8.2 cm). No US evidence of hydronephrosis"
+       - Both abnormal: "Enlarged size of both kidneys (right: 12.6 cm; left: 13.1 cm). No US evidence of hydronephrosis"
+       An explicit impression descriptor (e.g., "renal atrophy", "small kidney", "enlarged kidney") always takes precedence and is honored even if the measurement is missing or borderline.
      - **EXCEPTION**: If impression mentions renal atrophy, small kidney, or shrunken kidney on ANY side, do NOT output "Acceptable bilateral kidney sizes" or "Both kidneys show normal size".
        Instead describe the abnormal kidney accordingly, include side and measurement if provided, and still preserve bilateral size fields for urotract ultrasound.
     Example:"Small-sized right kidney (right: 7.8 cm; left: _ cm). No US evidence of hydronephrosis"
@@ -59,7 +70,8 @@ FINDINGS RULES:
    - renal stone → "echogenic focus with posterior acoustic shadowing in kidney"
    - gallstones → "echogenic foci with acoustic shadowing in gallbladder"
    - hydronephrosis → "dilatation of renal collecting system"
-   - renal atrophy / small kidney / shrunken kidney → "small-sized [side] kidney" or "decreased size of [side] kidney" (include measurement if provided). Do NOT combine with "acceptable bilateral kidney sizes".
+   - renal atrophy / small kidney / shrunken kidney / renal length < 9 cm → "small-sized [side] kidney" or "decreased size of [side] kidney" (include measurement if provided). Do NOT combine with "acceptable bilateral kidney sizes".
+   - enlarged kidney / renal enlargement / renal length > 12 cm → "enlarged [side] kidney" (include measurement if provided). Do NOT combine with "acceptable bilateral kidney sizes".
    - s/p cholecystectomy → "post-surgical changes, gallbladder not visualized"
    - prostate calcifications → "echogenic foci within prostate parenchyma"
    - prostate volume X cc → (combine with measurement, see below)

@@ -354,7 +354,17 @@ return
 HotstringMenuV("A","MenuShortcut2"
     ,"Chronic/post infection/inflammatory changes or others in both lungs."
     ,"suspect post infection/inflammatory changes or others."
+	,"post infection/inflammatory changes or others."
     ,"suspect chronic infection/inflammatory changes or others."
+	,"chronic infection/inflammatory changes or others."
+    ,"")
+return
+
+:O:post;::
+HotstringMenuV("A","MenuShortcut2"
+    ,"Posterior"
+    ,"post infection/inflammatory changes or others."
+    ,"chronic infection/inflammatory changes or others."
     ,"")
 return
 

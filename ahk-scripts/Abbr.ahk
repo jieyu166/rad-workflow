@@ -60,7 +60,7 @@ return
 HotstringMenuV("A","MenuShortcut","middle phalanx","metacarpophalangeal (MCP)","metatarsophalangeal(MTP)")
 return
 :O:oa;::
-HotstringMenuV("A","MenuShortcut","osteoarthritis (OA)","OA", "Both hips osteoarthritis (OA)","Osteoarthritis (OA) of visible interphalangeal (PIP, DIP) joints.","Basal joint osteoarthritis (OA)","Bilateral shoulder osteoarthritis (OA)")
+HotstringMenuV("A","MenuShortcut","osteoarthritis (OA)","OA", "Mild both hips osteoarthritis (OA)","Osteoarthritis (OA) of visible interphalangeal (PIP, DIP) joints.","Basal joint osteoarthritis (OA)","Bilateral shoulder osteoarthritis (OA)")
 return
 
 :O:oci::osteitis condensans ilii
@@ -89,12 +89,14 @@ HotstringMenuV("A","MenuShortcut"
     ,"stress fracture."
     ,"avulsion fracture.")
 return
+:O:olf;::old fracture
 :O:sub;::subluxation.
 :O:dp::distal phalanx
 :O:pp::proximal phalanx
 :O:dish;::Diffuse idiopathic skeletal hyperostosis (DISH)
 :O:cla::clavicular
 :O:clav::clavicular
+:O:sca;::scapular
 :O:pat::
 HotstringMenuV("A","MenuShortcut","patella alta","patella baja","patellar fracture","patellar","mild patellar tilting.")
 return
@@ -120,6 +122,9 @@ return
 :O:lpd::liver parenchyma disease.
 :O:bso::bilateral salpingo-oophorectomy
 :O:pel::Pelvic phleboliths.
+:O:aml::
+HotstringMenuV("A","MenuShortcut","angiomyolipoma","adrenal myelolipoma")
+return
 
 ;============================================================================================
 ; Neuro
