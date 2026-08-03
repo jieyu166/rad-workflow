@@ -133,8 +133,8 @@ def build_blocks(data: dict, cues: list[dict]) -> tuple[list[dict], list[dict]]:
 CSS = """
 :root{--bg:#0f1115;--panel:#171a21;--line:#272c37;--fg:#e6e9ef;--dim:#9aa3b2;--accent:#4da3ff;--hit:#f5c451}
 *{box-sizing:border-box}
-body{margin:0;font:16px/1.65 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;background:var(--bg);color:var(--fg)}
-header{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;padding:.5rem .8rem;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+body{margin:0;font:16px/1.65 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;background:var(--bg);color:var(--fg);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{flex:0 0 auto;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;padding:.5rem .8rem;background:var(--panel);border-bottom:1px solid var(--line);z-index:40}
 header h1{font-size:1rem;margin:0 .6rem 0 0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34vw}
 button{background:#222833;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:.25rem .6rem;cursor:pointer;font-size:.85rem}
 button:hover{border-color:var(--accent)}
@@ -150,18 +150,20 @@ button.active{background:var(--accent);color:#08101c;border-color:var(--accent);
 .sr .t{font-size:.82rem}
 .sr .ts{color:var(--accent);font-size:.75rem;text-align:right}
 .count{padding:.3rem .6rem;color:var(--dim);font-size:.75rem}
-main{display:grid;grid-template-columns:var(--vcol,44%) 6px 1fr;height:calc(100vh - 46px)}
-#vpane{padding:.6rem;overflow:auto}
+html{height:100%;overflow:hidden}
+main{flex:1 1 auto;min-height:0;overflow:hidden;display:grid;grid-template-columns:var(--vcol,44%) 6px 1fr}
+#vpane{padding:.6rem;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+#vhead{flex:0 0 auto}
 video{width:100%;background:#000;border-radius:8px}
 #now{font-size:.8rem;color:var(--dim);margin-top:.4rem;min-height:1.4em}
-#segnav{margin-top:.7rem;display:flex;flex-direction:column;gap:.3rem}
+#segnav{flex:1 1 auto;min-height:0;overflow:auto;margin-top:.7rem;display:flex;flex-direction:column;gap:.3rem}
 .segcard{text-align:left;padding:.4rem .6rem;font-size:.85rem;line-height:1.4}
 .segcard.on{border-color:var(--accent);background:#1b2635}
 .segcard b{color:var(--accent);margin-right:.4rem;font-weight:600}
 #vsplit,#hsplit{background:var(--line);cursor:col-resize}
 #hsplit{cursor:row-resize;height:6px}
-#notes{display:grid;grid-template-rows:var(--srow,45%) 6px 1fr;min-width:0}
-.pane{overflow:auto;padding:.6rem .9rem}
+#notes{display:grid;grid-template-rows:var(--srow,45%) 6px 1fr;min-width:0;min-height:0;overflow:hidden}
+.pane{overflow:auto;min-height:0;padding:.6rem .9rem}
 .pane h2{font-size:.8rem;color:var(--dim);margin:.2rem 0 .6rem;font-weight:600;letter-spacing:.05em}
 body.only-sum #hsplit,body.only-sum #tpane{display:none}
 body.only-sum #notes{grid-template-rows:1fr}
@@ -183,7 +185,7 @@ body.only-tr #notes{grid-template-rows:1fr}
 .blk.slide{white-space:pre-wrap;font-size:.8rem;color:var(--dim);border-left-color:#3a4557}
 .blk.slide:hover{color:var(--fg)}
 .thumbs img{height:72px;border-radius:4px;border:1px solid var(--line);cursor:zoom-in}
-.note{font-size:.75rem;color:var(--dim);padding:.3rem .9rem;border-top:1px solid var(--line)}
+.note{flex:0 0 auto;font-size:.72rem;color:var(--dim);padding:.25rem .9rem;background:var(--panel);border-top:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 mark{background:var(--hit);color:#111}
 body.float #vpane{position:fixed;right:1rem;bottom:1rem;width:var(--fw,26rem);z-index:60;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 30px #0009;resize:both;overflow:auto;max-height:80vh}
 body.float #segnav{display:none}
@@ -214,7 +216,9 @@ function sync(t,force){
   $$('.blk.on').forEach(e=>e.classList.remove('on'));
   const seg=(hits.find(b=>b.kind==='summary')||hits[0]).seg;
   if(seg!==activeSeg){ activeSeg=seg;
-    $$('.segcard').forEach(e=>e.classList.toggle('on',e.dataset.seg===seg)); }
+    $$('.segcard').forEach(e=>e.classList.toggle('on',e.dataset.seg===seg));
+    // 段落清單自己會捲，換段時要把新卡片帶進視野，否則播到後段就看不到自己在哪
+    const c=$('.segcard.on'); if(c&&(force||follow())) scrollInto(c); }
   const lead=hits.find(b=>b.kind==='summary')||hits[0];
   $('#now').textContent='▶ '+fmt(lead.start)+' — '+lead.text.slice(0,60);
   for(const h of hits){
@@ -225,13 +229,13 @@ function sync(t,force){
 }
 function follow(){ return auto && Date.now()>suspend && !V.paused; }
 function scrollInto(el){
-  const pane=el.closest('.pane'); if(!pane) return;
+  const pane=el.closest('.pane, #segnav'); if(!pane) return;
   const target=pane.scrollTop+(el.getBoundingClientRect().top-pane.getBoundingClientRect().top)-pane.clientHeight*0.42;
   progScroll=true; pane.scrollTo({top:Math.max(0,target),behavior:'auto'});
   setTimeout(()=>progScroll=false,80);
 }
 /* 手動捲動時暫停自動跟隨 5 秒——否則使用者往回看一眼就被拉回去 */
-$$('.pane').forEach(p=>p.addEventListener('wheel',()=>{ if(!progScroll&&auto&&!V.paused){ suspend=Date.now()+5000; paint(); } },{passive:true}));
+$$('.pane, #segnav').forEach(p=>p.addEventListener('wheel',()=>{ if(!progScroll&&auto&&!V.paused){ suspend=Date.now()+5000; paint(); } },{passive:true}));
 function paint(){ const b=$('#autoscroll');
   b.textContent='自動捲動：'+(!auto?'關':(Date.now()<suspend?'暫停':'開'));
   b.classList.toggle('active',auto&&Date.now()>=suspend); }
@@ -353,8 +357,10 @@ def render(data: dict, segs: list[dict], blocks: list[dict], title: str,
 </header>
 <main>
   <div id="vpane">
-    <video id="player" controls preload="metadata" src="{html.escape(video_rel)}"></video>
-    <div id="now">尚未播放</div>
+    <div id="vhead">
+      <video id="player" controls preload="metadata" src="{html.escape(video_rel)}"></video>
+      <div id="now">尚未播放</div>
+    </div>
     <div id="segnav">{"".join(nav_html)}</div>
   </div>
   <div id="vsplit"></div>
@@ -365,8 +371,7 @@ def render(data: dict, segs: list[dict], blocks: list[dict], title: str,
     <div class="pane" id="tpane"><h2>逐字稿（時間層）</h2>{"".join(tr_html)}</div>
   </div>
 </main>
-<div class="note">摘要層的時間碼標「~」＝段落內平均插補的推估值（Task 6 bullets 沒有各自的時間碼）；
-逐字稿層是 SRT 的真實時間碼。點任一行跳播，播放時兩層同時高亮跟隨。</div>
+<div class="note">點任一行跳播，播放時兩層同時高亮跟隨　·　摘要層時間標「~」＝段落內插補的推估值，逐字稿與投影片為真實時間碼</div>
 <script>const DATA={payload};</script><script>{JS}</script></body></html>
 """
 
