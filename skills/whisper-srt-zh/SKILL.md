@@ -79,6 +79,34 @@ ct2-transformers-converter --model MediaTek-Research/Breeze-ASR-25   --output_di
 ⚠️ **不要用 Breeze-ASR-26**（台語版）做需要時間碼的工作：預設解碼下它每 30 秒才吐一段，
 字幕對齊直接失效，除非加 `word_timestamps=True`。
 
+### 本機實測（2026-08-04，3 場乳房影像講座，共 90 分鐘）
+
+比較對象是**現行預設 `ggml-large-v3-turbo`**（不是官方 benchmark 用的 large-v3 完整版）。
+兩邊都是未套錯字表的原始輸出，詞庫 = 通用英文 52k + 8 份講義 PDF 抽出的領域詞。
+
+| 講座 | 模型 | capture | garbage | precision |
+|---|---|---|---|---|
+| 02 黃彥綾 MRI | turbo | 260 | 52 | 83.3% |
+| | **breeze25** | **261** | **13** | **95.3%** |
+| 06 羅竹君 切片導引 | turbo | 121 | 30 | 80.1% |
+| | **breeze25** | **128** | **9** | **93.4%** |
+| 09 陳詩華 乳攝切片 | turbo | 195 | 80 | 70.9% |
+| | **breeze25** | **223** | **28** | **88.8%** |
+| **合計** | turbo | 576 | 162 | 78.1% |
+| | **breeze25** | **612** | **50** | **92.5%** |
+
+==三場方向一致，沒有任何一場反轉。==
+
+**真正的差距不在「聽到更多」，在「不再亂拼」**：capture 只多 6%，但 garbage 少 69%。
+turbo 把 mammogram 拼成 marmogram/mommogram/mormogram/marmography/marmol/marmor/marmul
+七種變體，biopsy 拼成 bepsy/binopsy/biopsic/biopsin/biopsis，ultrasound 拼成
+outrasound/ultrosound/ultrastan/usobi，還吐出 `axerleinpneumatasis` 這種東西。
+breeze25 的 50 個「garbage」裡有好幾個其實是詞庫沒收的真詞（downstaging、oncoplastic、
+lumenal、dbt），所以它的真實 precision 比 92.5% 更高。
+
+輸出量幾乎一樣（漢字 18006 vs 18275，英文 token 2118 vs 2047）——不是講得比較少，
+是同樣的量拼對了。關鍵詞：biopsy 40 vs 24、asymmetry 50 vs 30、architectural 6 vs 2。
+
 ## 錯字修正（兩段式）
 
 ### 1) 對照表（deterministic，腳本自動）
