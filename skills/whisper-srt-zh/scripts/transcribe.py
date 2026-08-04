@@ -2,8 +2,13 @@
 """transcribe.py — 本機 GPU Whisper 批次轉錄（取代 bat.bat），含錯字修正。
 
 對資料夾內（或指定）影片/音檔：
-  ffmpeg → 16kHz mono WAV → PotPlayer Whisper CUDA main.exe (-osrt) → .srt
+  ffmpeg → 16kHz mono WAV → ASR → .srt
   → correct_srt.py 套用錯字對照表 → 校正後 .srt（原始保留為 .raw.srt）
+
+引擎預設 faster-whisper + Breeze-ASR-25：教學/醫學講座實測 precision 92.5% vs
+ggml-large-v3-turbo 的 78.1%（3 場乳房影像講座，見 SKILL.md）。turbo 快很多但會把
+mammogram 拼成七種變體，術語要拿去對講義時那個代價比時間貴。趕時間就 --engine
+whisper.cpp。
 全本機、用 GPU（CUDA），不需網路、不上傳雲端。
 
 預設路徑沿用使用者 bat.bat（可用環境變數 / CLI 覆寫）：
@@ -108,10 +113,10 @@ def main():
     ap.add_argument("--ffmpeg")
     # 刻意「沒有預設值」：語言猜錯會產生看不出壞掉的幻覺逐字稿，見模組 docstring。
     ap.add_argument("--lang", help="講者語言：zh / en / ja / auto ...（必填，無預設）")
-    ap.add_argument("--engine", default="whisper.cpp",
-                    choices=["whisper.cpp", "faster-whisper"],
-                    help="whisper.cpp = PotPlayer CUDA + ggml（預設，行為不變）；"
-                         "faster-whisper = CT2 模型，如 Breeze-ASR-25")
+    ap.add_argument("--engine", default="faster-whisper",
+                    choices=["faster-whisper", "whisper.cpp"],
+                    help="faster-whisper = Breeze-ASR-25（預設，術語精確率高）；"
+                         "whisper.cpp = PotPlayer CUDA + ggml-turbo（快很多，術語較差）")
     ap.add_argument("--ct2-model", help="faster-whisper 的模型目錄（預設 breeze-asr-25-ct2）")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--compute-type", default="float16")
@@ -138,10 +143,18 @@ def main():
     needed = [("FFmpeg", ffmpeg)]
     if args.engine == "whisper.cpp":
         needed = [("Whisper", args.whisper), ("Model", args.model)] + needed
+    else:
+        needed = [("CT2 模型", args.ct2_model or DEFAULT_CT2_MODEL)] + needed
     for label, p in needed:
         if not p or not Path(p).exists():
             print(f"[錯誤] 找不到 {label}: {p}", file=sys.stderr)
-            print("  → 用 --whisper/--model/--ffmpeg 或環境變數指定路徑", file=sys.stderr)
+            if label == "CT2 模型":
+                print("  這台機器還沒有 Breeze-ASR-25，轉一次即可（約 3 GB 下載）：", file=sys.stderr)
+                print("    ct2-transformers-converter --model MediaTek-Research/Breeze-ASR-25 "
+                      f"--output_dir \"{p}\" --quantization float16", file=sys.stderr)
+                print("  或改用較快的舊引擎：--engine whisper.cpp", file=sys.stderr)
+            else:
+                print("  用 --whisper/--model/--ffmpeg 或環境變數指定路徑", file=sys.stderr)
             sys.exit(1)
 
     tgt = Path(args.target)

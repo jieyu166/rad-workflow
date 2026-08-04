@@ -44,8 +44,14 @@ LLM 只做兩件機器做不了的事：**切段落**與**寫筆記**。
 python ~/.claude/skills/whisper-srt-zh/scripts/transcribe.py "<影片或資料夾>" --lang zh
 ```
 
-本機 GPU Whisper + 錯字對照表校正，產 `<stem>.srt`（原始留 `<stem>.raw.srt`、
+本機 GPU ASR + 錯字對照表校正，產 `<stem>.srt`（原始留 `<stem>.raw.srt`、
 取代紀錄留 `<stem>.corrections.json`）。細節與對照表維護見 whisper-srt-zh。
+
+==預設引擎是 Breeze-ASR-25==（聯發創新基地的台灣口音/中英夾雜模型）。教學講座實測
+precision **92.5% vs turbo 的 78.1%**，關鍵在它不會亂拼術語——turbo 把 mammogram
+拼成七種變體，那些全要人回頭對講義改。代價是慢十倍（約 1.2 倍實時）。
+這條管線的產物要拿去對講義、寫筆記、做跨場搜尋，術語拼錯的代價遠高於等待時間，
+所以==走完整管線的講座不要改用 turbo==；只想快速拿字幕才加 `--engine whisper.cpp`。
 
 已經有字幕就跳過這步。
 

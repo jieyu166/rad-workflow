@@ -21,6 +21,7 @@ description: 用本機 GPU Whisper（PotPlayer CUDA + ggml-large-v3-turbo）把�
 | Whisper CUDA `main.exe` | GPU 辨識 | `C:\Program Files\DAUM\PotPlayer\Module\Whisper\CUDA\main.exe` |
 | 模型 `ggml-large-v3-turbo.bin` | 辨識模型 | `C:\Users\jai16\AppData\Roaming\PotPlayerMini64\Model\ggml-large-v3-turbo.bin` |
 | `ffmpeg` | 轉 16kHz mono wav | PATH 優先，退 FormatFactory 版 |
+| Breeze-ASR-25（CT2） | **預設** 引擎的模型（約 2.9 GB） | `%LOCALAPPDATA%\whisper-modelsreeze-asr-25-ct2` |
 
 覆寫：`--whisper / --model / --ffmpeg`，或環境變數 `WHISPER_SRT_BIN / WHISPER_SRT_MODEL / WHISPER_SRT_FFMPEG`。
 
@@ -38,7 +39,7 @@ python scripts/transcribe.py "<dir>" --lang zh --force
 python scripts/transcribe.py "<檔>" --lang zh --no-correct
 ```
 
-每檔流程：`ffmpeg 16kHz mono wav → whisper CUDA -osrt → .srt → correct_srt.py 校正`（已存在 `.srt` 預設跳過）。
+每檔流程：`ffmpeg 16kHz mono wav → ASR → .srt → correct_srt.py 校正`（已存在 `.srt` 預設跳過）。
 
 ### ⚠️ `--lang` 必填，沒有預設值
 
@@ -56,12 +57,17 @@ no-op，但對日文會把漢字轉成台灣用字。
 
 | `--engine` | 模型 | 何時用 |
 |---|---|---|
-| `whisper.cpp`（**預設**） | PotPlayer CUDA + `ggml-large-v3-turbo` | 一般批次轉字幕，最快 |
-| `faster-whisper` | CT2 模型，預設 `breeze-asr-25-ct2` | 中英夾雜的醫學/技術講座 |
+| `faster-whisper`（**預設**） | Breeze-ASR-25（CT2） | 教學／醫學／技術講座——術語要拿去對講義、寫筆記、做搜尋 |
+| `whisper.cpp` | PotPlayer CUDA + `ggml-large-v3-turbo` | 趕時間、或只要看得懂的字幕 |
 
 ```bash
-python scripts/transcribe.py "<檔>" --lang zh --engine faster-whisper
+python scripts/transcribe.py "<檔>" --lang zh                        # 預設 breeze25
+python scripts/transcribe.py "<檔>" --lang zh --engine whisper.cpp   # 要快
 ```
+
+**為什麼把預設換成慢的那個**：turbo 約 0.1 倍實時、breeze25 約 1.2 倍實時，慢十倍以上。
+但精確率 78.1% → 92.5%，而且省下的不是「讀起來順一點」——是**後面校正術語的人力**。
+一場講座裡 turbo 會把 mammogram 拼成七種變體，那些全部要人回頭對講義改。
 
 **Breeze-ASR-25** 是聯發創新基地以 Whisper-large-v2 微調的台灣口音/用語模型（Apache 2.0）。
 官方 WER：中英夾雜 CSZS-zh-en **13.01 vs 29.49**（large-v2）、CommonVoice16-zh-TW
