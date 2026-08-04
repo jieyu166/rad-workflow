@@ -1,6 +1,6 @@
 ---
 name: whisper-srt-zh
-description: 用本機 GPU Whisper（PotPlayer CUDA + ggml-large-v3-turbo）把影片/音檔批次轉成繁體中文字幕，並自動套用 ASR 錯字對照表校正。全本機、用 CUDA、不需網路不上傳雲端，適合院內/病患或大量本機講座影片。Use when 把影片轉字幕/逐字稿、批次產生 SRT、本機 whisper 轉錄、影片轉文字、字幕錯字修正、transcribe video/audio to Chinese SRT。取代手動 bat 批次轉檔；產物直接接 lecture-to-notes（分段 JSON／截圖／筆記／viewer）。
+description: 用本機 GPU ASR（預設 Breeze-ASR-25：台灣口音／中英夾雜術語精確率高；趕時間可切 --engine whisper.cpp 用 ggml-large-v3-turbo）把影片/音檔批次轉成繁體中文字幕，並自動套用 ASR 錯字對照表校正。全本機、用 CUDA、不需網路不上傳雲端，適合院內/病患或大量本機講座影片。Use when 把影片轉字幕/逐字稿、批次產生 SRT、本機 whisper 轉錄、影片轉文字、字幕錯字修正、transcribe video/audio to Chinese SRT。取代手動 bat 批次轉檔；產物直接接 lecture-to-notes（分段 JSON／截圖／筆記／viewer）。
 ---
 
 # whisper-srt-zh
@@ -21,7 +21,7 @@ description: 用本機 GPU Whisper（PotPlayer CUDA + ggml-large-v3-turbo）把�
 | Whisper CUDA `main.exe` | GPU 辨識 | `C:\Program Files\DAUM\PotPlayer\Module\Whisper\CUDA\main.exe` |
 | 模型 `ggml-large-v3-turbo.bin` | 辨識模型 | `C:\Users\jai16\AppData\Roaming\PotPlayerMini64\Model\ggml-large-v3-turbo.bin` |
 | `ffmpeg` | 轉 16kHz mono wav | PATH 優先，退 FormatFactory 版 |
-| Breeze-ASR-25（CT2） | **預設** 引擎的模型（約 2.9 GB） | `%LOCALAPPDATA%\whisper-modelsreeze-asr-25-ct2` |
+| Breeze-ASR-25（CT2） | **預設** 引擎的模型（約 2.9 GB） | `%LOCALAPPDATA%/whisper-models/breeze-asr-25-ct2` |
 
 覆寫：`--whisper / --model / --ffmpeg`，或環境變數 `WHISPER_SRT_BIN / WHISPER_SRT_MODEL / WHISPER_SRT_FFMPEG`。
 
@@ -53,7 +53,7 @@ JSON 與 V4 筆記才會發現。多問一句遠比事後重跑整條管線便�
 `--lang` 非 `zh`/`auto` 時，會自動對 `correct_srt.py` 加 `--no-s2t`：s2twp 對英文是
 no-op，但對日文會把漢字轉成台灣用字。
 
-## 引擎二選一（預設不變）
+## 引擎二選一
 
 | `--engine` | 模型 | 何時用 |
 |---|---|---|
