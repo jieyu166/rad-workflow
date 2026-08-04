@@ -52,6 +52,33 @@ JSON 與 V4 筆記才會發現。多問一句遠比事後重跑整條管線便�
 `--lang` 非 `zh`/`auto` 時，會自動對 `correct_srt.py` 加 `--no-s2t`：s2twp 對英文是
 no-op，但對日文會把漢字轉成台灣用字。
 
+## 引擎二選一（預設不變）
+
+| `--engine` | 模型 | 何時用 |
+|---|---|---|
+| `whisper.cpp`（**預設**） | PotPlayer CUDA + `ggml-large-v3-turbo` | 一般批次轉字幕，最快 |
+| `faster-whisper` | CT2 模型，預設 `breeze-asr-25-ct2` | 中英夾雜的醫學/技術講座 |
+
+```bash
+python scripts/transcribe.py "<檔>" --lang zh --engine faster-whisper
+```
+
+**Breeze-ASR-25** 是聯發創新基地以 Whisper-large-v2 微調的台灣口音/用語模型（Apache 2.0）。
+官方 WER：中英夾雜 CSZS-zh-en **13.01 vs 29.49**（large-v2）、CommonVoice16-zh-TW
+**7.97 vs 9.84**。它只發布 HF safetensors，要先轉成 CTranslate2 才能用：
+
+```bash
+ct2-transformers-converter --model MediaTek-Research/Breeze-ASR-25   --output_dir "%USERPROFILE%/AppData/Local/whisper-models/breeze-asr-25-ct2"   --quantization float16
+```
+
+==預設關 VAD 與 `condition_on_previous_text`==（要開才加 `--vad` / `--condition`）。
+這不是隨手選的：VAD 會默默吃掉停頓邊緣的輕聲，conditioning 會把聽錯的內容往後傳染，
+兩者都是 [drpwchen/asr-benchmark](https://github.com/drpwchen/asr-benchmark) 實測的結果。
+同一份實測還顯示：**餵 hotwords/prompt 沒有幫助且會扣精確率**，**兩模型合併輸出更糟**。
+
+⚠️ **不要用 Breeze-ASR-26**（台語版）做需要時間碼的工作：預設解碼下它每 30 秒才吐一段，
+字幕對齊直接失效，除非加 `word_timestamps=True`。
+
 ## 錯字修正（兩段式）
 
 ### 1) 對照表（deterministic，腳本自動）

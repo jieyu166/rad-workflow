@@ -38,6 +38,8 @@ DEFAULT_MODEL = r"C:\Users\jai16\AppData\Roaming\PotPlayerMini64\Model\ggml-larg
 FALLBACK_FFMPEG = r"C:\Users\jai16\OneDrive\Portable 應用程式\FormatFactoryPortable\App\ProgramFiles\ffmpeg.exe"
 VIDEO_EXT = (".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v")
 AUDIO_EXT = (".mp3", ".m4a", ".wav", ".flac")
+# Breeze-ASR-25 等 HF 模型轉成 CTranslate2 後放這裡（--engine faster-whisper 用）
+DEFAULT_CT2_MODEL = str(Path.home() / "AppData/Local/whisper-models/breeze-asr-25-ct2")
 
 
 def resolve_ffmpeg(cli):
@@ -48,6 +50,56 @@ def resolve_ffmpeg(cli):
     return shutil.which("ffmpeg") or FALLBACK_FFMPEG
 
 
+def fmt_ts(sec: float) -> str:
+    h, rem = divmod(max(0.0, sec), 3600)
+    m, s = divmod(rem, 60)
+    return f"{int(h):02d}:{int(m):02d}:{int(s):02d},{int(round(s % 1 * 1000)):03d}"
+
+
+def run_faster_whisper(wav: Path, srt: Path, args) -> bool:
+    """faster-whisper 引擎（給 Breeze-ASR-25 之類的 HF/CT2 模型用）。
+
+    預設關 VAD 與 condition_on_previous_text：VAD 會默默吃掉停頓邊緣的輕聲，
+    conditioning 會把聽錯的內容往後傳染。兩者都是 drpwchen/asr-benchmark 實測
+    出來的設定，不是猜的。
+    """
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        print("  [失敗] 未安裝 faster-whisper：pip install faster-whisper", file=sys.stderr)
+        return False
+    model_dir = args.ct2_model or os.environ.get("WHISPER_SRT_CT2_MODEL", DEFAULT_CT2_MODEL)
+    if not Path(model_dir).exists():
+        print(f"  [失敗] 找不到 CT2 模型目錄：{model_dir}", file=sys.stderr)
+        print("    ct2-transformers-converter --model MediaTek-Research/Breeze-ASR-25 \\",
+              file=sys.stderr)
+        print(f"      --output_dir \"{model_dir}\" --quantization float16", file=sys.stderr)
+        return False
+    model = WhisperModel(model_dir, device=args.device, compute_type=args.compute_type)
+    segments, info = model.transcribe(
+        str(wav),
+        language=None if args.lang.lower() == "auto" else args.lang,
+        beam_size=args.beam_size,
+        vad_filter=args.vad,
+        condition_on_previous_text=args.condition,
+    )
+    lines, n = [], 0
+    for seg in segments:
+        text = seg.text.strip()
+        if not text:
+            continue
+        n += 1
+        lines.append(f"{n}\n{fmt_ts(seg.start)} --> {fmt_ts(seg.end)}\n{text}\n")
+        if n % 50 == 0:
+            print(f"      {n} 段，已到 {seg.end/60:.1f} 分")
+    if not lines:
+        print("  [失敗] 沒有辨識出任何內容", file=sys.stderr)
+        return False
+    srt.write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    print(f"      偵測語言 {info.language} (p={info.language_probability:.2f})，共 {n} 段")
+    return True
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("target", nargs="?", default=".", help="影片檔或資料夾（預設當前資料夾）")
@@ -56,6 +108,18 @@ def main():
     ap.add_argument("--ffmpeg")
     # 刻意「沒有預設值」：語言猜錯會產生看不出壞掉的幻覺逐字稿，見模組 docstring。
     ap.add_argument("--lang", help="講者語言：zh / en / ja / auto ...（必填，無預設）")
+    ap.add_argument("--engine", default="whisper.cpp",
+                    choices=["whisper.cpp", "faster-whisper"],
+                    help="whisper.cpp = PotPlayer CUDA + ggml（預設，行為不變）；"
+                         "faster-whisper = CT2 模型，如 Breeze-ASR-25")
+    ap.add_argument("--ct2-model", help="faster-whisper 的模型目錄（預設 breeze-asr-25-ct2）")
+    ap.add_argument("--device", default="cuda")
+    ap.add_argument("--compute-type", default="float16")
+    ap.add_argument("--beam-size", type=int, default=5)
+    ap.add_argument("--vad", action="store_true",
+                    help="開 VAD（預設關：實測會吃掉停頓邊緣的輕聲）")
+    ap.add_argument("--condition", action="store_true",
+                    help="開 condition_on_previous_text（預設關：會把聽錯的往後傳染）")
     ap.add_argument("--force", action="store_true", help="已有 .srt 也重跑")
     ap.add_argument("--no-correct", action="store_true", help="跳過錯字修正")
     ap.add_argument("--keep-wav", action="store_true")
@@ -70,7 +134,11 @@ def main():
         sys.exit(2)
 
     ffmpeg = resolve_ffmpeg(args.ffmpeg)
-    for label, p in (("Whisper", args.whisper), ("Model", args.model), ("FFmpeg", ffmpeg)):
+    # faster-whisper 不需要 PotPlayer 的 main.exe 與 ggml 檔，別拿它們的存在當前提
+    needed = [("FFmpeg", ffmpeg)]
+    if args.engine == "whisper.cpp":
+        needed = [("Whisper", args.whisper), ("Model", args.model)] + needed
+    for label, p in needed:
         if not p or not Path(p).exists():
             print(f"[錯誤] 找不到 {label}: {p}", file=sys.stderr)
             print("  → 用 --whisper/--model/--ffmpeg 或環境變數指定路徑", file=sys.stderr)
@@ -86,7 +154,8 @@ def main():
     if not files:
         print("[錯誤] 沒有影片/音檔"); sys.exit(1)
 
-    print(f"Whisper: {args.whisper}\nModel: {Path(args.model).name}\n語言: {args.lang}")
+    shown = (args.ct2_model or DEFAULT_CT2_MODEL) if args.engine == "faster-whisper" else args.model
+    print(f"引擎: {args.engine}" + chr(10) + f"Model: {Path(shown).name}" + chr(10) + f"語言: {args.lang}")
     print(f"找到 {len(files)} 個檔案\n" + "=" * 44)
     done = 0
     for i, f in enumerate(files, 1):
@@ -104,9 +173,16 @@ def main():
                                 str(wav), "-loglevel", "error"], capture_output=True)
             if not wav.exists():
                 print(f"  [失敗] 音訊轉換：{r.stderr.decode('utf-8','replace')[:200]}"); continue
-        print("  [2/3] Whisper (CUDA) 辨識中...")
-        subprocess.run([args.whisper, "-m", args.model, "-l", args.lang,
-                        "-osrt", "-of", str(f.with_suffix("")), "-f", str(wav)])
+        print(f"  [2/3] {args.engine} (CUDA) 辨識中...")
+        if args.engine == "faster-whisper":
+            ok = run_faster_whisper(wav, srt, args)
+            if not ok:
+                if wav != f and not args.keep_wav:
+                    wav.unlink(missing_ok=True)
+                continue
+        else:
+            subprocess.run([args.whisper, "-m", args.model, "-l", args.lang,
+                            "-osrt", "-of", str(f.with_suffix("")), "-f", str(wav)])
         if wav != f and not args.keep_wav:
             wav.unlink(missing_ok=True)
         if not srt.exists():
