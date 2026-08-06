@@ -27,6 +27,19 @@ import sys
 from pathlib import Path
 
 VIDEO_EXT = (".mp4", ".m4v", ".webm", ".mov", ".mkv")
+
+
+def frame_seconds(name: str, fallback: float = 0.0) -> float:
+    """由檔名末尾的時間戳推秒數。`<stem>-MMSS.png`，但片長超過 99 分鐘時
+    分鐘會變成三位數（`-14901.png` = 149:01），所以不能寫死四位數——
+    固定取最後兩位當秒、其餘當分。"""
+    m = re.search(r"-(\d+)\.\w+$", str(name))
+    if not m:
+        return fallback
+    s = m.group(1)
+    if len(s) < 3:
+        return fallback
+    return int(s[:-2]) * 60 + int(s[-2:])
 SRT_TIME = re.compile(
     r"(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})\s*-->\s*(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})")
 
@@ -106,8 +119,7 @@ def build_blocks(data: dict, cues: list[dict]) -> tuple[list[dict], list[dict]]:
             text = (e.get("text") or "").strip()
             if not text:
                 continue
-            m = re.search(r"-(\d{2})(\d{2})\.\w+$", str(e.get("frame", "")))
-            t = (int(m.group(1)) * 60 + int(m.group(2))) if m else s0
+            t = frame_seconds(e.get("frame", ""), s0)
             blocks.append({"id": f"{sid}f{len(blocks)}", "seg": sid, "kind": "slide",
                            "start": float(t), "end": float(t) + 1,
                            "text": text, "est": False,

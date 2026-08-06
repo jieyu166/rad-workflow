@@ -24,6 +24,19 @@ from urllib.parse import quote
 VIDEO_EXT = (".mp4", ".mkv", ".mov", ".webm", ".m4v")
 
 
+def frame_seconds(name: str, fallback: float = 0.0) -> float:
+    """由檔名末尾的時間戳推秒數。`<stem>-MMSS.png`，但片長超過 99 分鐘時
+    分鐘會變成三位數（`-14901.png` = 149:01），所以不能寫死四位數——
+    固定取最後兩位當秒、其餘當分。"""
+    m = re.search(r"-(\d+)\.\w+$", str(name))
+    if not m:
+        return fallback
+    s = m.group(1)
+    if len(s) < 3:
+        return fallback
+    return int(s[:-2]) * 60 + int(s[-2:])
+
+
 def load(p: Path) -> dict:
     return json.loads(p.read_text(encoding="utf-8-sig"))
 
@@ -83,8 +96,7 @@ def build_index(items: list[dict]) -> list[dict]:
                 idx.append({"v": it["viewer"], "no": it["no"], "t": sec,
                             "k": "摘要", "x": str(b)})
             for e in s.get("frame_ocr") or []:
-                m = re.search(r"-(\d{2})(\d{2})\.\w+$", str(e.get("frame", "")))
-                ts = int(m.group(1)) * 60 + int(m.group(2)) if m else sec
+                ts = frame_seconds(e.get("frame", ""), sec)
                 text = (e.get("text") or "").strip()
                 if text:
                     idx.append({"v": it["viewer"], "no": it["no"], "t": ts,
@@ -134,13 +146,13 @@ function run(qs){
   if(!terms.length){box.classList.remove('open');box.innerHTML='';return;}
   const hits=IDX.filter(r=>terms.every(t=>r.x.toLowerCase().includes(t))).slice(0,120);
   if(!hits.length){box.innerHTML='<div class="count">無符合結果</div>';box.classList.add('open');return;}
-  const perLecture={}; hits.forEach(h=>perLecture[h.no]=(perLecture[h.no]||0)+1);
+  const perLecture={}; hits.forEach(h=>{const k=h.no||h.v.split('.')[0];perLecture[k]=(perLecture[k]||0)+1;});
   const spread=Object.keys(perLecture).sort().map(n=>n+'('+perLecture[n]+')').join('　');
   box.innerHTML='<div class="count">'+hits.length+' 筆，分布：'+spread+'</div>'+hits.map(h=>{
     const pos=Math.max(0,h.x.toLowerCase().indexOf(terms[0])-24);
     let frag=esc((pos?'…':'')+h.x.slice(pos,pos+120));
     for(const t of terms) frag=frag.replace(new RegExp('('+t.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+')','ig'),'<mark>$1</mark>');
-    return '<button class="sr" data-v="'+esc(h.v)+'" data-t="'+h.t+'"><span class="no">'+esc(h.no)
+    return '<button class="sr" data-v="'+esc(h.v)+'" data-t="'+h.t+'"><span class="no">'+esc(h.no||h.v.split('.')[0])
       +'</span><span class="k">'+esc(h.k)+'</span><span>'+frag+'</span><span class="ts">'+fmt(h.t)+'</span></button>';
   }).join('');
   box.classList.add('open');
