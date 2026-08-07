@@ -22,6 +22,7 @@
 - **症狀**：原始 .py 檔憑空消失。案例：slide-extractor 曾遺失 .py，靠 .pyc 字串重建。修法：**寫完立即 commit**；Stop hook `~/.claude/hooks/check-uncommitted.sh` 會警告未 commit 的 .py/.md/.html/.yaml/.ahk。（2026-05）
 - **症狀**：symlink 失效或被上傳成實體檔。根因：OneDrive 不支援 symlink 語義。修法：用「canonical 目錄 + 複製腳本 + git」，見 `sync_skills.py`。
 - **注意**：檔案找不到時勿先怪 OneDrive——曾有一次是使用者自行搬移。先問再修。（2026-06）
+- **症狀**：讀 OneDrive 檔案得到大小正確但內容全 `0x00` 的假檔；或 `Copy-Item` 報 "cloud operation was not completed before the time-out"。根因：online-only 佔位檔（attributes 含 `RecallOnDataAccess` 0x400000），未 hydrate 就被讀走稀疏內容。修法：先 `attrib -U +P "<file>"` 釘選觸發下載，再輪詢重讀直到 bytes 非全零才採用（實測需 2 分鐘以上）。**檢查用**：`(Get-Item $f).Attributes.value__ -band 4194304`，非 0 即尚未下載。（2026-08）
 
 ## Python
 
