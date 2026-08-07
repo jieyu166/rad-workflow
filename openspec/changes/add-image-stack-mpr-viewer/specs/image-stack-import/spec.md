@@ -77,4 +77,3 @@ The viewer SHALL estimate grayscale volume bytes before allocation, SHALL requir
 #### Scenario: Allocation fails
 - **WHEN** the browser cannot allocate a requested volume buffer
 - **THEN** the viewer reports the affected sequence and retains file assignments, geometry settings, and thumbnails
-

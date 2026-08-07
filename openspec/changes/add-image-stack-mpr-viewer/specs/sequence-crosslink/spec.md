@@ -68,4 +68,3 @@ The viewer SHALL display each anchor as a selectable marker on the related seque
 #### Scenario: Display multiple anchors
 - **WHEN** three valid anchors exist for Sequence 1 to Sequence 2
 - **THEN** both timelines display three selectable markers and three corresponding connectors
-
