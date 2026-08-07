@@ -17,7 +17,7 @@
 - [x] 3.2 實作 `validateAnchor()` 的 unique-index 與 strict monotonic checks，使 duplicate 或 crossing candidate 不改變既有資料；以 `test_strictly_monotonic_anchor_validation` 驗證 **Strictly monotonic anchor validation**。
 - [x] 3.3 實作 zero-anchor independence、one-anchor offset、multi-anchor interpolation、outer extrapolation 與 endpoint clamp，使所有 mapping boundary 明確；以 `test_piecewise_mapping_behavior` 與 concrete 7→39、27→63 examples 驗證 **Piecewise mapping behavior** 及 **Independent mode without anchors**。
 - [x] 3.4 實作 secondary→reference→other-secondary 更新路徑並保留 fractional MPR position，使任一 sequence 都能成為同步來源；以 `test_reversible_synchronization` 驗證 **Reversible synchronization**。
-- [ ] 3.5 實作 anchor add/select/edit/delete controls、timeline diamonds 與 connectors，使目前切片可建立可見且可管理的 anatomical correspondence；以 `test_anchor_creation_and_editing`, `test_timeline_crosslink_visualization` 與 Chrome pointer assertion 驗證 **Anchor creation and editing** 及 **Timeline crosslink visualization**。
+- [ ] 3.5 實作 anchor add/select/edit/delete controls、timeline diamonds 與 connectors，使目前切片可建立可見且可管理的 anatomical correspondence；以 `test_anchor_creation_and_editing`, `test_batch_anchor_creation_is_atomic`, `test_batch_anchor_button_updates_all_active_sequences`, `test_timeline_crosslink_visualization` 與 Chrome pointer assertion 驗證 **Anchor creation and editing** 及 **Timeline crosslink visualization**。
 
 ## 4. MPR 重採樣引擎
 
@@ -29,8 +29,8 @@
 
 ## 5. 工作區與影像互動
 
-- [ ] 5.1 實作 Crosslink 模式的 2–3 個 axial viewports、thumbnail timelines、wheel slice、Ctrl/Meta+wheel zoom、pan、crosshair、right-drag Intensity、Fit、Reset、Invert 與 sync toggles；以 `test_basic_image_interaction_bindings` 及 Chrome gestures 驗證 **Basic image interaction**。
-- [ ] 5.2 實作「寬螢幕 Crosslink 與 MPR 工作區」：Sequence 1 大型 2×2 grid、Sequence 2／3 comparison regions、Crosslink/MPR shared state，以及 1400/900 CSS pixel responsive rules；以 1600px 與 800px screenshots/checks 驗證 **Responsive comparison workspace**。
+- [ ] 5.1 實作 Crosslink 模式的 2–3 個 axial viewports、thumbnail timelines、wheel slice、Ctrl/Meta+wheel zoom、hover `+/-` zoom、pan、crosshair、right-drag Intensity、Fit、Reset、Invert 與 sync toggles；以 `test_basic_image_interaction_bindings`, `test_hover_keyboard_and_reversed_wheel_zoom` 及 Chrome gestures 驗證 **Basic image interaction**。
+- [ ] 5.2 實作「寬螢幕 Crosslink 與 MPR 工作區」：Sequence 1 大型 2×2 grid、Sequence 2／3 comparison regions、Crosslink/MPR shared state、portrait Crosslink single-column，以及 1400/900 CSS pixel responsive rules；以 `test_portrait_crosslink_viewports_stack_vertically`、1600px 與 800px screenshots/checks 驗證 **Responsive comparison workspace**。
 - [x] 5.3 實作 default pixel spacing 使用時的 persistent positioning-only notice，且介面只使用 Intensity、不得使用 HU 或 DICOM Window Level；以 `test_unknown_geometry_warning_and_copy` 驗證 **Unknown geometry warning**。
 
 ## 6. 整體驗證

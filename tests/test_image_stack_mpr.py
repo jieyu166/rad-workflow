@@ -258,6 +258,300 @@ def render_crosslink_filename_probe() -> dict[str, bool | str]:
     return json.loads(html.unescape(match.group(1)))
 
 
+def run_crosslink_interaction_probe() -> dict[str, object]:
+    browser_candidates = (
+        Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+        Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
+    )
+    browser = next((path for path in browser_candidates if path.exists()), None)
+    if browser is None:
+        raise unittest.SkipTest("Chrome or Edge is required for UI verification")
+
+    source, _ = parse_page()
+    app_end = """    renderOrganizer();
+  }());
+  </script>"""
+    instrumented_end = """    renderOrganizer();
+    globalThis.__interactionTest = {state, createViewport};
+  }());
+  </script>"""
+    if app_end not in source:
+        raise AssertionError("Unable to instrument the viewer app script")
+    source = source.replace(app_end, instrumented_end, 1)
+    probe = r"""
+<script>
+(() => {
+  const api = globalThis.__interactionTest;
+  const host = document.getElementById('axial-viewports');
+  host.replaceChildren();
+  [1, 2, 3].forEach(sequenceId => {
+    host.appendChild(api.createViewport(
+      sequenceId, 'AX', `cross-${sequenceId}-ax`, true
+    ));
+  });
+  const sync = document.getElementById('sync-navigation');
+  const canvas = api.state.viewports.get('cross-2-ax').canvas;
+  const zooms = () => Object.fromEntries([1, 2, 3].map(sequenceId => [
+    sequenceId,
+    api.state.viewportStates.get(`cross-${sequenceId}-ax`).zoom
+  ]));
+  const resetZooms = () => [1, 2, 3].forEach(sequenceId => {
+    api.state.viewportStates.get(`cross-${sequenceId}-ax`).zoom = 1;
+  });
+
+  canvas.dispatchEvent(new PointerEvent('pointerenter'));
+  globalThis.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '+', code: 'Equal', bubbles: true, cancelable: true
+  }));
+  const syncedPlus = zooms();
+
+  resetZooms();
+  sync.checked = false;
+  globalThis.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '-', code: 'NumpadSubtract', bubbles: true, cancelable: true
+  }));
+  const unsyncedMinus = zooms();
+
+  canvas.dispatchEvent(new PointerEvent('pointerleave'));
+  const beforeNoHover = zooms();
+  globalThis.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '+', code: 'NumpadAdd', bubbles: true, cancelable: true
+  }));
+  const noHover = zooms();
+
+  resetZooms();
+  canvas.dispatchEvent(new PointerEvent('pointerenter'));
+  const wheelStart = api.state.viewportStates.get('cross-2-ax').zoom;
+  canvas.dispatchEvent(new WheelEvent('wheel', {
+    deltaY: 100, ctrlKey: true, bubbles: true, cancelable: true
+  }));
+  const wheelDown = api.state.viewportStates.get('cross-2-ax').zoom;
+  canvas.dispatchEvent(new WheelEvent('wheel', {
+    deltaY: -100, ctrlKey: true, bubbles: true, cancelable: true
+  }));
+  const wheelUp = api.state.viewportStates.get('cross-2-ax').zoom;
+
+  const result = {
+    syncedPlus,
+    unsyncedMinus,
+    beforeNoHover,
+    noHover,
+    wheelStart,
+    wheelDown,
+    wheelUp
+  };
+  document.body.innerHTML = '<pre id="interaction-result">' +
+    JSON.stringify(result) + '</pre>';
+})();
+</script>
+"""
+    fixture = source.replace("</body>", probe + "</body>")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        fixture_path = Path(temp_dir) / "crosslink-interactions.html"
+        fixture_path.write_text(fixture, encoding="utf-8")
+        completed = subprocess.run(
+            [
+                str(browser),
+                "--headless=new",
+                "--disable-gpu",
+                "--disable-extensions",
+                "--no-first-run",
+                f"--user-data-dir={Path(temp_dir) / 'profile'}",
+                "--window-size=1200,800",
+                "--dump-dom",
+                fixture_path.as_uri(),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=20,
+        )
+    match = re.search(
+        r'<pre id="interaction-result">(\{.*?\})</pre>', completed.stdout
+    )
+    if match is None:
+        raise AssertionError("Browser did not return interaction measurements")
+    return json.loads(html.unescape(match.group(1)))
+
+
+def measure_crosslink_orientation_layout() -> dict[str, object]:
+    browser_candidates = (
+        Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+        Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
+    )
+    browser = next((path for path in browser_candidates if path.exists()), None)
+    if browser is None:
+        raise unittest.SkipTest("Chrome or Edge is required for layout verification")
+
+    source, _ = parse_page()
+    app_end = """    renderOrganizer();
+  }());
+  </script>"""
+    instrumented_end = """    renderOrganizer();
+    globalThis.__orientationTest = {state, createViewport};
+  }());
+  </script>"""
+    if app_end not in source:
+        raise AssertionError("Unable to instrument the viewer app script")
+    source = source.replace(app_end, instrumented_end, 1)
+    probe = r"""
+<script>
+(() => {
+  const api = globalThis.__orientationTest;
+  const host = document.getElementById('axial-viewports');
+  host.className = 'viewport-grid';
+  host.replaceChildren();
+  [1, 2, 3].forEach(sequenceId => {
+    host.appendChild(api.createViewport(
+      sequenceId, 'AX', `orientation-${sequenceId}`, true
+    ));
+  });
+  const hostBox = host.getBoundingClientRect();
+  const boxes = Array.from(host.children, child => child.getBoundingClientRect());
+  const result = {
+    portrait: matchMedia('(orientation: portrait)').matches,
+    rows: new Set(boxes.map(box => Math.round(box.top))).size,
+    fullWidth: boxes.map(box => Math.abs(box.width - hostBox.width) <= 2)
+  };
+  document.body.innerHTML = '<pre id="orientation-result">' +
+    JSON.stringify(result) + '</pre>';
+})();
+</script>
+"""
+    fixture = source.replace("</body>", probe + "</body>")
+
+    def measure(window_size: str) -> dict[str, object]:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fixture_path = Path(temp_dir) / "crosslink-orientation.html"
+            fixture_path.write_text(fixture, encoding="utf-8")
+            completed = subprocess.run(
+                [
+                    str(browser),
+                    "--headless=new",
+                    "--disable-gpu",
+                    "--disable-extensions",
+                    "--no-first-run",
+                    f"--user-data-dir={Path(temp_dir) / 'profile'}",
+                    f"--window-size={window_size}",
+                    "--dump-dom",
+                    fixture_path.as_uri(),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                timeout=20,
+            )
+        match = re.search(
+            r'<pre id="orientation-result">(\{.*?\})</pre>', completed.stdout
+        )
+        if match is None:
+            raise AssertionError("Browser did not return orientation measurements")
+        return json.loads(html.unescape(match.group(1)))
+
+    portrait = measure("700,1100")
+    landscape = measure("1200,700")
+    return {
+        "portraitMedia": portrait["portrait"],
+        "portraitRows": portrait["rows"],
+        "portraitFullWidth": portrait["fullWidth"],
+        "landscapeMedia": landscape["portrait"],
+        "landscapeRows": landscape["rows"],
+    }
+
+
+def run_batch_anchor_ui_probe() -> dict[str, object]:
+    browser_candidates = (
+        Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+        Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
+    )
+    browser = next((path for path in browser_candidates if path.exists()), None)
+    if browser is None:
+        raise unittest.SkipTest("Chrome or Edge is required for UI verification")
+
+    source, _ = parse_page()
+    app_end = """    renderOrganizer();
+  }());
+  </script>"""
+    instrumented_end = """    renderOrganizer();
+    globalThis.__batchAnchorTest = {state};
+  }());
+  </script>"""
+    if app_end not in source:
+        raise AssertionError("Unable to instrument the viewer app script")
+    source = source.replace(app_end, instrumented_end, 1)
+    probe = r"""
+<script>
+(() => {
+  const api = globalThis.__batchAnchorTest;
+  const sequenceCount = document.getElementById('sequence-count');
+  const addButton = document.getElementById('add-anchor');
+  const message = document.getElementById('anchor-message');
+  const snapshot = () => JSON.parse(JSON.stringify(api.state.crosslinks));
+
+  sequenceCount.value = '3';
+  api.state.crosslinks = ImageStackMprCore.createCrosslinkMaps(3);
+  api.state.positions = {1: 24, 2: 27, 3: 26};
+  addButton.click();
+  const successMaps = snapshot();
+  const successMessage = message.textContent;
+
+  const beforeRejected = snapshot();
+  api.state.positions = {1: 24, 2: 31, 3: 32};
+  addButton.click();
+  const afterRejected = snapshot();
+  const failureMessage = message.textContent;
+
+  sequenceCount.value = '2';
+  api.state.crosslinks = ImageStackMprCore.createCrosslinkMaps(2);
+  api.state.positions = {1: 4, 2: 8};
+  addButton.click();
+  const twoSequenceMaps = snapshot();
+
+  const result = {
+    successMaps,
+    successMessage,
+    beforeRejected,
+    afterRejected,
+    failureMessage,
+    twoSequenceMaps
+  };
+  document.body.innerHTML = '<pre id="batch-anchor-result">' +
+    JSON.stringify(result) + '</pre>';
+})();
+</script>
+"""
+    fixture = source.replace("</body>", probe + "</body>")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        fixture_path = Path(temp_dir) / "batch-anchor-ui.html"
+        fixture_path.write_text(fixture, encoding="utf-8")
+        completed = subprocess.run(
+            [
+                str(browser),
+                "--headless=new",
+                "--disable-gpu",
+                "--disable-extensions",
+                "--no-first-run",
+                f"--user-data-dir={Path(temp_dir) / 'profile'}",
+                "--window-size=1200,800",
+                "--dump-dom",
+                fixture_path.as_uri(),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=20,
+        )
+    match = re.search(
+        r'<pre id="batch-anchor-result">(\{.*?\})</pre>', completed.stdout
+    )
+    if match is None:
+        raise AssertionError("Browser did not return batch-anchor results")
+    return json.loads(html.unescape(match.group(1)))
+
+
 class ImageStackMprTests(unittest.TestCase):
     def test_canonical_slice_filename_mapping(self) -> None:
         result = run_core(
@@ -690,6 +984,63 @@ class ImageStackMprTests(unittest.TestCase):
             self.assertIn(element_id, parser.elements)
         self.assertIn("目前切片", source)
 
+    def test_batch_anchor_creation_is_atomic(self) -> None:
+        result = run_core(
+            r"""
+(() => {
+  const C = ImageStackMprCore;
+  if (typeof C.batchUpsertAnchors !== 'function') return {available: false};
+  const maps = {
+    2: [{referenceIndex: 5, targetIndex: 8}],
+    3: [{referenceIndex: 5, targetIndex: 6}]
+  };
+  return {
+    available: true,
+    success: C.batchUpsertAnchors(maps, {
+      2: {referenceIndex: 10, targetIndex: 14},
+      3: {referenceIndex: 10, targetIndex: 12}
+    }),
+    rejected: C.batchUpsertAnchors(maps, {
+      2: {referenceIndex: 10, targetIndex: 14},
+      3: {referenceIndex: 5, targetIndex: 12}
+    }),
+    twoSequence: C.batchUpsertAnchors({2: []}, {
+      2: {referenceIndex: 4, targetIndex: 8}
+    }),
+    original: maps
+  };
+})()
+"""
+        )
+
+        self.assertTrue(result["available"])
+        self.assertTrue(result["success"]["valid"])
+        self.assertEqual(len(result["success"]["maps"]["2"]), 2)
+        self.assertEqual(len(result["success"]["maps"]["3"]), 2)
+        self.assertFalse(result["rejected"]["valid"])
+        self.assertEqual(result["rejected"]["failedTargetId"], 3)
+        self.assertEqual(result["rejected"]["maps"], result["original"])
+        self.assertEqual(result["original"]["2"], [
+            {"referenceIndex": 5, "targetIndex": 8}
+        ])
+        self.assertTrue(result["twoSequence"]["valid"])
+        self.assertEqual(list(result["twoSequence"]["maps"]), ["2"])
+
+    def test_batch_anchor_button_updates_all_active_sequences(self) -> None:
+        source, _ = parse_page()
+        result = run_batch_anchor_ui_probe()
+
+        self.assertIn("新增全部序列錨點", source)
+        self.assertIn("編輯目標", source)
+        self.assertEqual(len(result["successMaps"]["2"]), 1)
+        self.assertEqual(len(result["successMaps"]["3"]), 1)
+        self.assertIn("S2 28", result["successMessage"])
+        self.assertIn("S3 27", result["successMessage"])
+        self.assertEqual(result["afterRejected"], result["beforeRejected"])
+        self.assertIn("S2", result["failureMessage"])
+        self.assertEqual(list(result["twoSequenceMaps"]), ["2"])
+        self.assertEqual(len(result["twoSequenceMaps"]["2"]), 1)
+
     def test_timeline_crosslink_visualization(self) -> None:
         source, parser = parse_page()
 
@@ -849,6 +1200,23 @@ class ImageStackMprTests(unittest.TestCase):
         self.assertIn("event.button === 2", source)
         self.assertNotRegex(source, r"\bHU\b|Window Level|DICOM")
 
+    def test_hover_keyboard_and_reversed_wheel_zoom(self) -> None:
+        result = run_crosslink_interaction_probe()
+
+        self.assertGreater(result["syncedPlus"]["2"], 1)
+        self.assertEqual(
+            result["syncedPlus"]["1"], result["syncedPlus"]["2"]
+        )
+        self.assertEqual(
+            result["syncedPlus"]["3"], result["syncedPlus"]["2"]
+        )
+        self.assertEqual(result["unsyncedMinus"]["1"], 1)
+        self.assertLess(result["unsyncedMinus"]["2"], 1)
+        self.assertEqual(result["unsyncedMinus"]["3"], 1)
+        self.assertEqual(result["noHover"], result["beforeNoHover"])
+        self.assertGreater(result["wheelDown"], result["wheelStart"])
+        self.assertLess(result["wheelUp"], result["wheelDown"])
+
     def test_responsive_comparison_workspace(self) -> None:
         source, parser = parse_page()
 
@@ -857,6 +1225,15 @@ class ImageStackMprTests(unittest.TestCase):
         self.assertIn("@media (min-width: 1400px)", source)
         self.assertRegex(source, r"@media \(max-width: 900px\)[\s\S]*\.mpr-layout")
         self.assertIn("grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr)", source)
+
+    def test_portrait_crosslink_viewports_stack_vertically(self) -> None:
+        result = measure_crosslink_orientation_layout()
+
+        self.assertTrue(result["portraitMedia"])
+        self.assertFalse(result["landscapeMedia"])
+        self.assertEqual(result["portraitRows"], 3)
+        self.assertTrue(all(result["portraitFullWidth"]))
+        self.assertLess(result["landscapeRows"], 3)
 
     def test_unknown_geometry_warning_and_copy(self) -> None:
         source, parser = parse_page()

@@ -105,6 +105,11 @@
       .mpr-layout { grid-template-columns: 1fr; }
       .primary-mpr-grid, .secondary-grid { grid-template-columns: 1fr; }
     }
+    @media (orientation: portrait) {
+      #axial-viewports.viewport-grid { grid-template-columns: minmax(0, 1fr); }
+      #axial-viewports .viewport-card,
+      #axial-viewports .viewport-card canvas { min-height: clamp(280px, 54vw, 620px); }
+    }
   </style>
 </head>
 <body>
@@ -149,15 +154,15 @@
           <button id="fit-view" type="button">Fit</button>
           <button id="reset-view" type="button">Reset</button>
           <button id="invert-view" type="button">Invert</button>
-          <span class="status">滾輪：切片；Ctrl/Meta＋滾輪：縮放；Shift＋拖曳：平移；右鍵拖曳：Intensity</span>
+          <span class="status">滾輪：切片；Ctrl/Meta＋滾輪：縮放；游標置於影像後按 +/-：縮放；Shift＋拖曳：平移；右鍵拖曳：Intensity</span>
         </div>
         <section id="crosslink-workspace" class="workspace">
           <div id="axial-viewports" class="empty-panel">載入至少兩組影像後，可滾動 axial 並建立跨序列錨點。</div>
           <div id="anchor-toolbar" class="anchor-toolbar">
-            <label>配對目標
+            <label>編輯目標
               <select id="anchor-target"><option value="2">Sequence 2</option></select>
             </label>
-            <button id="add-anchor" type="button">新增目前切片錨點</button>
+            <button id="add-anchor" type="button">新增全部序列錨點</button>
             <button id="update-anchor" type="button" disabled>更新所選錨點</button>
             <button id="delete-anchor" type="button" disabled>刪除所選錨點</button>
             <span id="anchor-message" class="anchor-message">目前切片尚未配對。</span>
@@ -464,6 +469,33 @@
       return { valid: true, reason: "", anchors: base };
     }
 
+    function batchUpsertAnchors(maps, candidates) {
+      const original = {};
+      Object.keys(maps || {}).forEach(function (targetId) {
+        original[targetId] = cloneAnchors(maps[targetId] || []);
+      });
+      const next = {};
+      Object.keys(original).forEach(function (targetId) {
+        next[targetId] = cloneAnchors(original[targetId]);
+      });
+      const targetIds = Object.keys(candidates || {}).map(Number).sort(function (left, right) {
+        return left - right;
+      });
+      for (const targetId of targetIds) {
+        const result = upsertAnchor(next[targetId] || [], candidates[targetId]);
+        if (!result.valid) {
+          return {
+            valid: false,
+            reason: result.reason,
+            failedTargetId: targetId,
+            maps: original
+          };
+        }
+        next[targetId] = result.anchors;
+      }
+      return { valid: true, reason: "", failedTargetId: null, maps: next };
+    }
+
     function deleteAnchor(anchors, index) {
       return cloneAnchors(anchors).filter(function (_, anchorIndex) { return anchorIndex !== Number(index); });
     }
@@ -708,6 +740,7 @@
       createCrosslinkMaps,
       validateAnchor,
       upsertAnchor,
+      batchUpsertAnchors,
       deleteAnchor,
       mapReferenceToTarget,
       mapTargetToReference,
@@ -769,6 +802,7 @@
       viewportStates: new Map(),
       viewports: new Map(),
       selectedViewport: "",
+      hoveredViewport: "",
       renderMeta: new Map(),
       obliqueAngles: { azimuth: 0, tilt: 0, roll: 0 },
       selectedAnchor: null,
@@ -1357,6 +1391,28 @@
       renderTimelines();
     }
 
+    function saveAllCurrentAnchors() {
+      const targetIds = activeSequenceIds().filter(function (sequenceId) { return sequenceId > 1; });
+      const candidates = {};
+      targetIds.forEach(function (targetId) {
+        candidates[targetId] = currentAnchorCandidate(targetId);
+      });
+      const result = Core.batchUpsertAnchors(state.crosslinks, candidates);
+      if (!result.valid) {
+        anchorMessage.textContent = `S${result.failedTargetId}：${result.reason}`;
+        anchorMessage.style.color = "var(--danger)";
+        return;
+      }
+      state.crosslinks = result.maps;
+      state.selectedAnchor = null;
+      renderTimelines();
+      anchorMessage.style.color = "var(--muted)";
+      anchorMessage.textContent = `已新增：${targetIds.map(function (targetId) {
+        const candidate = candidates[targetId];
+        return `S1 ${candidate.referenceIndex + 1} ↔ S${targetId} ${candidate.targetIndex + 1}`;
+      }).join("；")}`;
+    }
+
     function removeSelectedAnchor() {
       if (!state.selectedAnchor) return;
       const targetId = state.selectedAnchor.targetId;
@@ -1537,6 +1593,23 @@
       });
     }
 
+    function applyViewportZoom(viewport, factor) {
+      const viewState = viewportState(viewport.key);
+      viewState.zoom = Math.max(0.25, Math.min(12, viewState.zoom * factor));
+      copyNavigation(viewState);
+      renderAllViewports(true);
+    }
+
+    function handleViewportZoomKey(event) {
+      const viewport = state.viewports.get(state.hoveredViewport);
+      const zoomIn = event.key === "+" || event.code === "NumpadAdd";
+      const zoomOut = event.key === "-" || event.code === "NumpadSubtract";
+      if (!viewport || (!zoomIn && !zoomOut)) return;
+      event.preventDefault();
+      selectViewport(viewport.key);
+      applyViewportZoom(viewport, zoomIn ? 1.1 : 1 / 1.1);
+    }
+
     function copyIntensity(sourceState) {
       if (!syncIntensityControl.checked) return;
       state.viewportStates.forEach(function (targetState) {
@@ -1569,14 +1642,17 @@
     function bindViewportInteractions(viewport) {
       const canvas = viewport.canvas;
       let drag = null;
+      canvas.addEventListener("pointerenter", function () {
+        state.hoveredViewport = viewport.key;
+      });
+      canvas.addEventListener("pointerleave", function () {
+        if (state.hoveredViewport === viewport.key) state.hoveredViewport = "";
+      });
       canvas.addEventListener("wheel", function (event) {
         event.preventDefault();
         selectViewport(viewport.key);
-        const viewState = viewportState(viewport.key);
         if (event.ctrlKey || event.metaKey) {
-          viewState.zoom = Math.max(0.25, Math.min(12, viewState.zoom * (event.deltaY > 0 ? 0.9 : 1.1)));
-          copyNavigation(viewState);
-          renderAllViewports(true);
+          applyViewportZoom(viewport, event.deltaY > 0 ? 1.1 : 1 / 1.1);
         } else {
           updateSynchronizedPosition(
             viewport.sequenceId,
@@ -1812,7 +1888,7 @@
       updateObliqueInputs();
       renderAllViewports(false);
     });
-    addAnchorButton.addEventListener("click", function () { saveAnchor(false); });
+    addAnchorButton.addEventListener("click", saveAllCurrentAnchors);
     updateAnchorButton.addEventListener("click", function () { saveAnchor(true); });
     deleteAnchorButton.addEventListener("click", removeSelectedAnchor);
     anchorTarget.addEventListener("change", function () {
@@ -1834,6 +1910,7 @@
       event.preventDefault();
       if (event.dataTransfer && event.dataTransfer.files) handleFiles(event.dataTransfer.files);
     });
+    globalThis.addEventListener("keydown", handleViewportZoomKey);
     globalThis.addEventListener("resize", function () { renderAllViewports(true); });
     activeSequenceIds().forEach(geometryFor);
     resetCrosslinkState();
