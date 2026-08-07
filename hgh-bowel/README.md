@@ -21,19 +21,34 @@
 | I | CT廠牌 | Manufacturer (0008,0070) |
 | J | CT型號 | ManufacturerModelName (0008,1090) |
 
-## 操作流程
+## 分工：醫院端擷取，家裡端解析
 
-在 Excel 選取該列的申請單號、`Ctrl+C`，然後：
+**醫院電腦不能跑 Python**，所以擷取端是純 AHK，只把 DICOM 檔頭原文存進 `work/raw/<單號>.txt`。解析與回填都在家裡做。這樣切還有一個好處：解析規則之後要改，直接重跑原文即可，不必再進 PACS 一次。
 
-| 熱鍵 | 動作 |
-|---|---|
-| `Win+Shift+H` | 功能一：把單號帶進 HIS(chk060) 開啟該檢查 |
-| `Win+Shift+J` | 功能二：開 PACS 影像、抓 DICOM 檔頭、解析後追加到 `work/result.csv` |
-| `Win+Shift+F1` | 除錯：列出 chk060 控件（第一次校正查詢按鈕用） |
+`work/` 在 OneDrive 底下，會自己同步回家。
 
-功能二會**比對抓到的單號與要求的單號**，不符就中止且不寫入——這道防線是為了擋「影像還沒切換就抓到上一案」。
+### 醫院端（AHK，無需 Python）
 
-### 進度與回填
+腳本載入後會跳出一個置頂小視窗。在 Excel **點選**申請單號那一格——視窗會即時顯示它抓到的單號與是否已擷取過，確認無誤再按按鈕。
+
+| 按鈕 | 熱鍵 | 動作 |
+|---|---|---|
+| 1 | `Win+Shift+H` | 把單號帶進 HIS(chk060) 開啟該檢查 |
+| 2 | `Win+Shift+J` | 開 PACS 影像、抓 DICOM 檔頭、存成原始檔 |
+| 3 | `Win+Shift+F1` | 除錯：列出 chk060 控件 |
+|   | `Win+Shift+G` | 視窗關掉後叫回來 |
+
+單號是讀 Excel 的 `ActiveCell`，不是讀滑鼠位置——按鈕一按滑鼠就離開儲存格了，選取狀態才不受焦點轉移影響。讀不到 Excel 時退回剪貼簿。
+
+按鈕2 會**比對抓到的單號與要求的單號**，不符就中止且不寫入——這道防線是為了擋「影像還沒切換就抓到上一案」，這種錯會靜默污染資料，比漏掉一筆難查得多。已擷取過的會先問要不要重抓。
+
+### 家裡端（Python）
+
+```bash
+python parse_all_raw.py
+```
+
+把 `work/raw/` 全部重新解析成 `work/result.csv`，並列出缺漏欄位與單號不符的檔案。每次都是整份重建，重跑安全。
 
 ```bash
 python export_queue.py --xlsx "<對照表路徑>" --status --next 10
@@ -47,12 +62,11 @@ python fill_mapping.py --xlsx "<對照表路徑>" --dry-run
 
 ## 第一次在醫院電腦要做的校正
 
-`hgh_capture.ahk` 最上面四個設定：
+`hgh_capture.ahk` 最上面三個設定：
 
-1. `HGH_DIR` — 本資料夾絕對路徑
-2. `HGH_PYTHON` — python 執行檔（不在 PATH 就填絕對路徑）
-3. `HGH_HIS_QUERY_BTN` — chk060 查詢按鈕控件名，用 `Win+Shift+F1` 查出來後填入；留空則改送 `{Enter}`
-4. `HGH_PACS_WAIT` — INFINITT 載入等待秒數，網路慢就調大
+1. `HGH_DIR` — 本資料夾在**醫院電腦上**的絕對路徑（OneDrive 路徑可能不同）
+2. `HGH_HIS_QUERY_BTN` — chk060 查詢按鈕控件名，用按鈕3 查出來後填入；留空則改送 `{Enter}`
+3. `HGH_PACS_WAIT` — INFINITT 載入等待秒數，網路慢就調大
 
 另外 `test.ahk` 的 `OpenPACSImage()` 內，**佳里院區的 host `jlweb15`/`MX=14` 尚未實測**（永康 `ykweb15`/`MX=10` 是舊版實測值）。
 
