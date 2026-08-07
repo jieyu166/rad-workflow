@@ -31,7 +31,7 @@
 - Consumes: `canonicalToSource(x, y, z, sourceWidth, sourceHeight, sourceDepth, geometry)`, `includedItems(sequenceId)`, `state.positions`, and existing `createViewport()`/`renderViewportNow()` lifecycle.
 - Produces: `canonicalSliceNames(items, geometry) -> string[]`, `sliceNameAtPosition(sliceNames, position) -> string`, `volume.sliceNames`, and Crosslink-only `viewport.filename` elements.
 
-- [ ] **Step 1: Write failing mapping and browser behavior tests**
+- [x] **Step 1: Write failing mapping and browser behavior tests**
 
 Add a pure-core test with literal expected names:
 
@@ -75,7 +75,7 @@ self.assertTrue(result["footerBelowCard"])
 self.assertFalse(result["mprHasFilename"])
 ```
 
-- [ ] **Step 2: Run the two tests and confirm RED**
+- [x] **Step 2: Run the two tests and confirm RED**
 
 Run:
 
@@ -85,7 +85,7 @@ Run:
 
 Expected: FAIL because the core mapping functions and `.viewport-filename` footer do not exist.
 
-- [ ] **Step 3: Implement minimal mapping, storage, and footer rendering**
+- [x] **Step 3: Implement minimal mapping, storage, and footer rendering**
 
 Add core functions and export them:
 
@@ -119,7 +119,7 @@ Use non-overlay layout CSS:
 .viewport-filename { min-width: 0; overflow: hidden; padding: 0 4px; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 ```
 
-- [ ] **Step 4: Verify GREEN and regressions**
+- [x] **Step 4: Verify GREEN and regressions**
 
 Run:
 
@@ -132,6 +132,6 @@ git diff --check
 
 Expected: all tests PASS, no Python syntax errors, no whitespace errors, and `tool/us-probe-ct-plane.html` remains unchanged.
 
-- [ ] **Step 5: Record completion and preserve reviewability**
+- [x] **Step 5: Record completion and preserve reviewability**
 
 Mark all plan checkboxes complete only after RED and GREEN evidence exists. Show the exact feature-file scope before committing because the standalone viewer and its tests are currently untracked as whole files; do not push or merge without the user's instruction.

@@ -29,7 +29,7 @@
 - Consumes: existing `.body`, `.sidebar`, `.main`, `.boundary-row`, `.thumbnail-strip`, and `.thumbnail-card` DOM/CSS contracts.
 - Produces: a single-column rendered layout in which setup precedes the viewer, boundary controls stay contained, and 100 thumbnails form one horizontal timeline.
 
-- [ ] **Step 1: Write the failing rendered-layout test**
+- [x] **Step 1: Write the failing rendered-layout test**
 
 Add a headless-browser helper that loads the real standalone page, injects two `.boundary-row` elements and 100 `.thumbnail-card` elements, then returns bounding boxes and scroll dimensions. Assert these literal behaviors:
 
@@ -43,7 +43,7 @@ def test_setup_and_sequence_timeline_use_full_width_vertical_flow(self) -> None:
     self.assertGreater(layout["timelineScrollWidth"], layout["timelineClientWidth"])
 ```
 
-- [ ] **Step 2: Run the test and confirm RED**
+- [x] **Step 2: Run the test and confirm RED**
 
 Run:
 
@@ -53,7 +53,7 @@ Run:
 
 Expected: FAIL because `.body` currently renders 300 px setup and viewer columns side by side.
 
-- [ ] **Step 3: Implement the minimal CSS change**
+- [x] **Step 3: Implement the minimal CSS change**
 
 Use one grid column and document scrolling, while preserving the existing markup:
 
@@ -65,7 +65,7 @@ Use one grid column and document scrolling, while preserving the existing markup
 .boundary-row input { width: 100%; min-width: 0; max-width: 100%; margin: 0; }
 ```
 
-- [ ] **Step 4: Verify GREEN and regression safety**
+- [x] **Step 4: Verify GREEN and regression safety**
 
 Run:
 
@@ -77,6 +77,6 @@ git diff --check
 
 Expected: all tests PASS; `git diff --check` produces no output; `tool/us-probe-ct-plane.html` remains unchanged.
 
-- [ ] **Step 5: Record the result**
+- [x] **Step 5: Record the result**
 
 Update this task's checkboxes only after RED, GREEN, full regression, offline scan, and diff verification have each completed successfully.
