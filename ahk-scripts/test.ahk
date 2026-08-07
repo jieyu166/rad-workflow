@@ -13,7 +13,7 @@ Send, +{Right}
 return
 
 ; 系統提示訊息
-TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告`n[Win]+[C/Ctrl+F3] 複製舊報告日期`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[Q] 複製影像序列`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[XButton1] 多功能選單`n[XButton2] 依視窗切換
+TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總`n[Win]+[I] 開啟PACS影像`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告`n[Win]+[C/Ctrl+F3] 複製舊報告日期`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[Q] 複製影像序列`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[XButton1] 多功能選單`n[XButton2] 依視窗切換
 
 ; ============================================================================
 ; 基礎功能函數區
@@ -492,6 +492,44 @@ OpenReportComparison(examNo := "") {
     Run, msedge.exe %url%
 }
 
+; 開啟 PACS 影像（檢查單號 → 網頁版 PACS）
+; source: "clip" 從剪貼簿取單號（Send ^c，用於在清單中選取的舊檢查）
+;         "his"  從 chk060 目前檢查欄位取單號（不動剪貼簿）
+OpenPACSImage(source := "clip") {
+    if (source = "his") {
+        ActivateHISLight()
+        ControlGetText, examNo, ThunderRT6TextBox9, ahk_exe chk060.exe
+    } else {
+        clipboard := ""
+        Send ^c
+        ClipWait, 5
+        if ErrorLevel {
+            TrayTip, PACS, 無法取得檢查單號, 2, 2
+            return false
+        }
+        examNo := clipboard
+    }
+
+    examNo := RegExReplace(examNo, "\s")
+    if (StrLen(examNo) < 8) {
+        TrayTip, PACS, 檢查單號格式不正確：%examNo%, 2, 2
+        return false
+    }
+
+    chartNo := SubStr(examNo, 1, 8)  ; 前 8 碼 = 病歷號
+
+    ; 永康(vExamLoc=0) ykweb15/MX=10 為舊版實測值；
+    ; 佳里(vExamLoc=1) jlweb15/MX=14 依 jlmrs/ihosp=14 命名慣例推得，尚未實測，如開不起來先改這行。
+    if(vExamLoc = 1) {
+        url := "http://jlweb15.chimei.org.tw/pkg_pacs/external_interface.aspx?MX=14&LID=" . LOGI . "&LPW=" . PWD . "&PID=" . chartNo . "&AN=" . examNo
+    } else {
+        url := "http://ykweb15.chimei.org.tw/pkg_pacs/external_interface.aspx?MX=10&LID=" . LOGI . "&LPW=" . PWD . "&PID=" . chartNo . "&AN=" . examNo
+    }
+
+    Run, msedge.exe %url%
+    return true
+}
+
 ; ============================================================================
 ; 滑鼠位置函數區（根據不同工作地點）
 ; ============================================================================
@@ -671,6 +709,11 @@ return
     ControlClick, ThunderRT6CommandButton31, ahk_exe chk060.exe
 return
 
+
+; --- 開啟 PACS 影像（複製選取的檢查單號 → 網頁版 PACS）---
+<#i::
+    OpenPACSImage("clip")
+return
 
 ; --- 查看舊報告（開瀏覽器）---
 <#v::
@@ -1211,6 +1254,7 @@ XButton1::
     
     ; 建立選單項目
 	; === 第一區：影像相關 ===
+    Menu, XB1Menu, Add, 開啟 PACS 影像 (&I), XB1_OpenPACSImage
     Menu, XB1Menu, Add, 右側影像編號 (&R), XB1_RightDICOM
     Menu, XB1Menu, Add, 左側影像編號 (&L), XB1_LeftDICOM
     Menu, XB1Menu, Add  ; 分隔線
@@ -1242,6 +1286,13 @@ return
 ; ============================================================================
 ; 選單功能處理
 ; ============================================================================
+
+; 功能 0：開啟 PACS 影像（取 HIS 目前檢查單號，不動剪貼簿）
+XB1_OpenPACSImage:
+    if (OpenPACSImage("his")) {
+        TrayTip, XButton1, 已開啟 PACS 影像, 2, 1
+    }
+return
 
 ; 功能 1：右側影像編號
 XB1_RightDICOM:
@@ -1322,7 +1373,7 @@ return
 
 ; 顯示快速鍵提示
 XB1_ShowHotkeys:
-    TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告視窗`n[Win]+[C] 複製舊報告日期`n[Win]+[Q] 複製影像序列`n[XButton1] 多功能選單`n[XButton2] 依視窗切換`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[R] 病歷彙總(HIS), 20, 17
+    TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[I] 開啟PACS影像`n[Win]+[1] 看AI報告`n[Win]+[2] 複製舊報告到HIS`n[Win]+[X] 顯示舊報告視窗`n[Win]+[C] 複製舊報告日期`n[Win]+[Q] 複製影像序列`n[XButton1] 多功能選單`n[XButton2] 依視窗切換`n[Win]+[T] 視窗置頂`n[Ctrl+Shift]+[A/S] 切HIS/PACS`n[Win]+[D] Copy報告(網頁比對)`n[Win]+[R] 病歷彙總(HIS), 20, 17
 return
 
 ; 新增功能 8：重新載入腳本
