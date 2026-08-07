@@ -5,12 +5,12 @@
 ;                   GetDICOMLineData()、CallDICOMWin
 ; 由「簡碼 jai.ahk」在 test.ahk 之後 #include。
 ;
-; 用法：腳本載入後會跳出一個置頂小視窗。在 Excel 點選申請單號那一格，
-;       視窗會即時顯示它抓到的單號，確認無誤再按按鈕。
+; 用法：按 Win+Shift+G 開啟置頂小視窗（載入時不會自己跳出來）。
+;       在 Excel 點選申請單號那一格，視窗會即時顯示它抓到的單號，確認無誤再按按鈕。
 ;         按鈕1 / Win+Shift+H：該單號 -> HIS(chk060) 開啟檢查
 ;         按鈕2 / Win+Shift+J：該單號 -> PACS 開影像 -> 抓 DICOM 檔頭 -> 存原始檔
 ;         按鈕3 / Win+Shift+F1：除錯，列出 chk060 控件
-;       視窗關掉後用 Win+Shift+G 叫回來。
+;       視窗關掉後再按 Win+Shift+G 叫回來。
 ;
 ; 醫院電腦不能跑 Python，所以這裡「只擷取、不解析」：檔頭原文存進 work\raw\，
 ; 回家後再用 parse_all_raw.py 解析、fill_mapping.py 回填 xlsx。
@@ -25,9 +25,12 @@
 ; 執行。函式回傳值沒有這個問題。
 ; ---------------------------------------------------------------------------
 
-; 本資料夾在「這台電腦」上的絕對路徑
+; 本資料夾路徑。用 A_LineFile 取本檔自身位置推導，不要硬編——家用機是
+; C:\Users\jai16\OneDrive\...，醫院機是 D:\jai166\Onedrive\...，硬編必錯一邊。
+; （A_LineFile 在 #include 進來的檔案裡回傳的是「本檔」路徑，不是主腳本路徑。）
 HGH_Dir() {
-    return "C:\Users\jai16\OneDrive\00 放射科\5工作\rad-workflow-main\hgh-bowel"
+    SplitPath, A_LineFile, , thisDir
+    return thisDir
 }
 
 ; chk060 上「查詢/確定」按鈕的控件名。用按鈕3 查出來後填這裡。
@@ -50,6 +53,10 @@ HGH_Total() {
 ; GUI
 ; ============================================================================
 HGH_BuildGUI() {
+    ; Gui Add 的 v 變數必須是 global 或 static，否則在函式裡會被當成區域變數，
+    ; 載入時就報 "A control's variable must be global or static"。
+    global HGH_StatusText, HGH_ProgressText
+
     Gui, HGH:New, +AlwaysOnTop +ToolWindow, 高醫腸阻塞擷取
     Gui, HGH:Font, s10, Microsoft JhengHei
     Gui, HGH:Add, Text, x12 y10 w300 vHGH_StatusText, 單號：(在 Excel 點選申請單號)

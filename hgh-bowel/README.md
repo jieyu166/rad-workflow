@@ -33,14 +33,14 @@
 
 單獨跑會出現 `Call to nonexistent function`，而且不是加一個 `#include` 就能解決——相依是連鎖的：本檔需要 `test.ahk` 的 `ActivateHISLight()`/`OpenPACSImage()`/`GetDICOMData()`，而 `test.ahk` 又需要 `簡碼 jai.ahk` 的 `CopyCXRtoHISWithParam()`、`Xray.ahk` 的 `OutputFinish()`、以及 `LOGI`/`PWD`/`vExamLoc`/`varWhere` 等全域。硬拉進來等於載入整包，還會和你日常那份搶熱鍵。
 
-腳本載入後會跳出一個置頂小視窗。在 Excel **點選**申請單號那一格——視窗會即時顯示它抓到的單號與是否已擷取過，確認無誤再按按鈕。
+按 **`Win+Shift+G`** 開啟置頂小視窗（載入時不會自己跳出來，不干擾日常作業）。在 Excel **點選**申請單號那一格——視窗會即時顯示它抓到的單號與是否已擷取過，確認無誤再按按鈕。
 
 | 按鈕 | 熱鍵 | 動作 |
 |---|---|---|
+| — | `Win+Shift+G` | 開啟／叫回擷取視窗 |
 | 1 | `Win+Shift+H` | 把單號帶進 HIS(chk060) 開啟該檢查 |
 | 2 | `Win+Shift+J` | 開 PACS 影像、抓 DICOM 檔頭、存成原始檔 |
 | 3 | `Win+Shift+F1` | 除錯：列出 chk060 控件 |
-|   | `Win+Shift+G` | 視窗關掉後叫回來 |
 
 單號是讀 Excel 的 `ActiveCell`，不是讀滑鼠位置——按鈕一按滑鼠就離開儲存格了，選取狀態才不受焦點轉移影響。讀不到 Excel 時退回剪貼簿。
 
@@ -66,11 +66,12 @@ python fill_mapping.py --xlsx "<對照表路徑>" --dry-run
 
 ## 第一次在醫院電腦要做的校正
 
-`hgh_capture.ahk` 最上面三個設定：
+`hgh_capture.ahk` 最上面兩個設定：
 
-1. `HGH_DIR` — 本資料夾在**醫院電腦上**的絕對路徑（OneDrive 路徑可能不同）
-2. `HGH_HIS_QUERY_BTN` — chk060 查詢按鈕控件名，用按鈕3 查出來後填入；留空則改送 `{Enter}`
-3. `HGH_PACS_WAIT` — INFINITT 載入等待秒數，網路慢就調大
+1. `HGH_QueryBtn()` — chk060 查詢按鈕控件名，用按鈕3 查出來後填入；留空則改送 `{Enter}`
+2. `HGH_PacsWait()` — INFINITT 載入等待秒數，網路慢就調大
+
+路徑不必設定：`HGH_Dir()` 由 `A_LineFile` 推導本檔自身位置。家用機是 `C:\Users\jai16\OneDrive\...`、醫院機是 `D:\jai166\Onedrive\...`，硬編必錯一邊。
 
 另外 `test.ahk` 的 `OpenPACSImage()` 內，**佳里院區的 host `jlweb15`/`MX=14` 尚未實測**（永康 `ykweb15`/`MX=10` 是舊版實測值）。
 

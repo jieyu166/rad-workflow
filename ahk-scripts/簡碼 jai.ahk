@@ -75,10 +75,6 @@ LastStudyID := ""
 ; 載入設定檔案
 LoadSettingsFromFile()
 
-; 高醫腸阻塞擷取視窗（一次性專案）。必須放在 #include 之前：test.ahk 開頭就是
-; 熱鍵定義，auto-execute 段在那裡就結束了，之後 include 進來的頂層程式碼不會執行。
-HGH_BuildGUI()
-
 FileEncoding, UTF-8
 
 #include HotstringMenu.ahk

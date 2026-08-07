@@ -29,6 +29,8 @@
 - **症狀**：`#include` 進來的檔案，頂層 `global X := "值"` 是空的、頂層函式呼叫沒被執行。根因：auto-execute 段在**遇到第一個熱鍵定義就結束**，而 `簡碼 jai.ahk` 的 include 群第一個就是 `test.ahk`（第 3、7 行即熱鍵），其後所有 include 的頂層程式碼都不會跑。修法：設定改寫成函式回傳值（無執行期賦值），需要在載入時執行的呼叫放到 `簡碼 jai.ahk` 的 **include 之前**。（2026-08）
 - **症狀**：`Call to nonexistent function` 單獨執行子腳本時。根因：`hgh_capture.ahk` -> `test.ahk` -> `簡碼 jai.ahk`/`Xray.ahk` 相依連鎖，子腳本無法獨立跑。修法：一律從 `簡碼 jai.ahk` 進入。（2026-08）
 - **症狀**：`ControlClick, %MyFunc()%, ...` 沒作用。根因：傳統參數的 `%...%` 只能包變數，不能包函式呼叫。修法：改用強制運算式 `ControlClick, % MyFunc(), ...`。（2026-08）
+- **症狀**：載入即報 `A control's variable must be global or static. Specifically: vXXX`。根因：`Gui, Add, ..., vXXX` 寫在函式內，`vXXX` 被當成區域變數。修法：函式內加 `global XXX`（或 `static`）。（2026-08）
+- **症狀**：腳本在家用機正常、醫院機路徑全錯。根因：硬編絕對路徑，但家用機是 `C:\Users\jai16\OneDrive\`、醫院機是 `D:\jai166\Onedrive\`。修法：用 `A_LineFile` 推導本檔位置（在 `#include` 的檔案裡回傳的是「本檔」路徑，不是主腳本），勿用 `A_ScriptDir`。（2026-08）
 
 ## Python
 
