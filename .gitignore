@@ -28,6 +28,9 @@ radtracker/output/*.xlsx
 radtracker/output/W*/
 # 含病歷號與病理診斷，public repo 不宜公開
 radtracker/week_input.yaml
+
+# 高醫腸阻塞：申請單號可連結回個資，擷取產物一律不進版控
+hgh-bowel/work/
 radtracker/malignancy_log.md
 
 # 大型產物 / 暫存目錄（勿進版控）

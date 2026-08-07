@@ -492,11 +492,14 @@ OpenReportComparison(examNo := "") {
     Run, msedge.exe %url%
 }
 
-; 開啟 PACS 影像（檢查單號 → 網頁版 PACS）
+; 開啟 PACS 影像（檢查單號 → PACS，網址會叫起 INFINITT 桌面版）
 ; source: "clip" 從剪貼簿取單號（Send ^c，用於在清單中選取的舊檢查）
 ;         "his"  從 chk060 目前檢查欄位取單號（不動剪貼簿）
-OpenPACSImage(source := "clip") {
-    if (source = "his") {
+;         "arg"  直接用傳入的 examNo（給批次流程用）
+OpenPACSImage(source := "clip", examNo := "") {
+    if (source = "arg") {
+        ; examNo 已由呼叫端給定，不再取得
+    } else if (source = "his") {
         ActivateHISLight()
         ControlGetText, examNo, ThunderRT6TextBox9, ahk_exe chk060.exe
     } else {

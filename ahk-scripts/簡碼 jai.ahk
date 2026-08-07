@@ -83,8 +83,10 @@ FileEncoding, UTF-8
 #include US.ahk 
 #include Xray.ahk 
 #include Mammo.ahk 
-#include IR.ahk 
-#include CT.ahk 
+#include IR.ahk
+#include CT.ahk
+; 高醫腸阻塞資料擷取（一次性專案，收工後連同 hgh-bowel/ 一起移除）
+#include ..\hgh-bowel\hgh_capture.ahk
 
 ; ----------------------------------------------------------------------
 
@@ -386,16 +388,18 @@ HotstringMenuV("A","MenuShortcut"
     ,"Right renal cyst"
     ,"BRK"
     ,"Bilateral renal cysts"
-    ,"Left renal cysts, up to _ cm"
-    ,"Right renal cysts, up to _ cm"
+    ,"{LtRt} renal cysts, up to _ cm"
     ,"BRK"
-    ,"_ breast cysts"
     ,"Bilateral breast cysts"
+    ,"{LtRt} breast cysts"
     ,"BRK"
     ,"_Bilateral thyroid cysts"
+    ,"{LtRt} thyroid cysts"
     ,"BRK"
 	,"Hepatic cyst or hypodense lesion in _ of liver.(Srs/Img:_/_)"
     ,"Hepatic cysts or hypodense lesions in _both lobes of liver.(Srs/Img:_/_)"
+	,"Hepatic cysts or hypodense lesions in _both lobes of liver."
+	,"Hepatic cysts in both lobes of liver."
     ,"Hepatic cysts in both lobes of liver, up to _ cm. "
     ,"Hepatic cysts"
     ,"BRK"
@@ -412,7 +416,7 @@ HotstringMenuV("A","MenuShortcut"
     ,"{LtRt} renal stone(s)."
     ,"BRK"
     ,"Gallstone or right renal stone or other."
-    ,"Right renal stone or bowel content or other."
+    ,"{LtRt} renal stone or bowel content or other."
     ,"BRK"
     ,"A right _upper_middle_lower third ureteral stone, _ cm. "
     ,"_Right/_Left _ third ureteral stone, about _cm in diameter, complicated with hydronephrosis_hydroureteronephrosis and perinephric_periureteric infiltration"
@@ -429,12 +433,12 @@ HotstringMenuV("A","MenuShortcut2"
     ,"Suggest follow up"
     ,"Suggest clinical correlation"
     ,"Suggest short-term follow up"
-    ,"Suggest _ further evaluation"
+    ,"Suggest _ for further evaluation"
     ,"Suggest correlate with other studies"
-    ,"Suggest abdominal correlation."
     ,"BRK"
     ,"Suggest thyroid US follow-up."
     ,"Suggest breast US correlation."
+    ,"Suggest diagnostic mammography for further evaluation."
     ,"Suggest diagnostic mammography with spot magnification for further evaluation."
     ,"Suggest 6-month follow-up mammography."
     ,"Diagnostic mammo(_ breast, spot magnification)")
