@@ -6,7 +6,9 @@
 ; 由「簡碼 jai.ahk」在 test.ahk 之後 #include。
 ;
 ; 用法：按 Win+Shift+G 開啟置頂小視窗（載入時不會自己跳出來）。
-;       在 Excel 點選申請單號那一格，視窗會即時顯示它抓到的單號，確認無誤再按按鈕。
+;       在試算表點選申請單號那一格（OpenOffice Calc / Excel 都支援；Office 365
+;       網頁版沒有 COM，請改按 Ctrl+C），視窗會即時顯示抓到的單號與來源，
+;       確認無誤再按按鈕。
 ;         按鈕1 / Win+Shift+H：該單號 -> HIS(chk060) 開啟檢查
 ;         按鈕2 / Win+Shift+J：該單號 -> PACS 開影像 -> 抓 DICOM 檔頭 -> 存原始檔
 ;         按鈕3 / Win+Shift+F1：除錯，列出 chk060 控件
@@ -59,7 +61,7 @@ HGH_BuildGUI() {
 
     Gui, HGH:New, +AlwaysOnTop +ToolWindow, 高醫腸阻塞擷取
     Gui, HGH:Font, s10, Microsoft JhengHei
-    Gui, HGH:Add, Text, x12 y10 w300 vHGH_StatusText, 單號：(在 Excel 點選申請單號)
+    Gui, HGH:Add, Text, x12 y10 w300 vHGH_StatusText, 單號：(點選單號那格，或 Ctrl+C)
     Gui, HGH:Add, Text, x12 y34 w300 vHGH_ProgressText, 進度：--
     Gui, HGH:Add, Button, x12 y62 w300 h38 gHGH_Btn1, 1. 用此單號開 HIS 檢查
     Gui, HGH:Add, Button, x12 y104 w300 h38 gHGH_Btn2, 2. 開 PACS 並擷取 DICOM 檔頭
@@ -83,11 +85,13 @@ return
 
 ; 每秒把 Excel 目前選取格的單號與擷取進度顯示出來，按下按鈕前就能看出抓的對不對
 HGH_UpdateStatus:
-    hghExam := HGH_GetExamNo(false)
+    hghSource := ""
+    hghExam := HGH_GetExamNo(false, hghSource)
     if (hghExam = "")
-        GuiControl, HGH:, HGH_StatusText, % "單號：(在 Excel 點選申請單號)"
+        hghLine := "單號：(點選單號那格，或 Ctrl+C)"
     else
-        GuiControl, HGH:, HGH_StatusText, % "單號：" . hghExam . (HGH_IsCaptured(hghExam) ? "  [已擷取]" : "")
+        hghLine := "單號：" . hghExam . "（" . hghSource . "）" . (HGH_IsCaptured(hghExam) ? "  [已擷取]" : "")
+    GuiControl, HGH:, HGH_StatusText, %hghLine%
     GuiControl, HGH:, HGH_ProgressText, % "進度：" . HGH_CapturedCount() . " / " . HGH_Total()
 return
 
@@ -101,13 +105,14 @@ HGH_Btn1:
     if (examNo = "")
         return
 
+    ; 單號要打在 TextBox12（不是 XB1_Summary 用的 TextBox9，那格是另一個用途）
     ActivateHISLight()
-    ControlSetText, ThunderRT6TextBox9, %examNo%, ahk_exe chk060.exe
+    ControlSetText, ThunderRT6TextBox12, %examNo%, ahk_exe chk060.exe
     if (HGH_QueryBtn() != "") {
         ControlClick, % HGH_QueryBtn(), ahk_exe chk060.exe
     } else {
-        ControlFocus, ThunderRT6TextBox9, ahk_exe chk060.exe
-        ControlSend, ThunderRT6TextBox9, {Enter}, ahk_exe chk060.exe
+        ControlFocus, ThunderRT6TextBox12, ahk_exe chk060.exe
+        ControlSend, ThunderRT6TextBox12, {Enter}, ahk_exe chk060.exe
     }
     TrayTip, HIS, 已帶入單號 %examNo%, 2, 1
 return
@@ -183,29 +188,68 @@ return
 ; 輔助函數
 ; ============================================================================
 
-; 取申請單號。優先讀 Excel 目前選取格——按鈕一按滑鼠就離開儲存格了，
-; 靠滑鼠位置會抓不到；選取狀態則不受焦點轉移影響。
-; 讀不到 Excel 才退回剪貼簿。complain=false 供每秒輪詢用，不要跳訊息。
-HGH_GetExamNo(complain := true) {
-    examNo := ""
-    try {
-        xl := ComObjActive("Excel.Application")
-        examNo := RegExReplace(xl.ActiveCell.Value, "\D")
-    } catch e {
-        examNo := ""
+; 取申請單號。不讀滑鼠位置——按鈕一按滑鼠就離開儲存格了；選取狀態不受焦點轉移影響。
+;
+; 依序試三個來源，因為三台環境不一樣：
+;   1. OpenOffice / LibreOffice Calc（醫院）— 走 UNO
+;   2. Excel（家用）— 走 COM
+;   3. 剪貼簿 — Office 365 網頁版沒有 COM，只能靠 Ctrl+C
+; source 會帶回實際來源，顯示在狀態列上。剪貼簿的內容可能是舊的，
+; 標示來源才看得出這個數字能不能信。
+HGH_GetExamNo(complain := true, ByRef source := "") {
+    source := ""
+
+    examNo := HGH_FirstCellDigits(HGH_ReadCalcCell())
+    if (StrLen(examNo) >= 8) {
+        source := "Calc"
+        return examNo
     }
 
-    ; 剪貼簿只在真的要動作時當備援。每秒輪詢也吃剪貼簿的話，狀態列會顯示一個
-    ; 不是目前選取格的數字，反而誤導。
-    if (StrLen(examNo) < 8 && complain)
-        examNo := RegExReplace(Clipboard, "\D")
+    examNo := HGH_FirstCellDigits(HGH_ReadExcelCell())
+    if (StrLen(examNo) >= 8) {
+        source := "Excel"
+        return examNo
+    }
 
-    if (StrLen(examNo) < 8) {
-        if (complain)
-            TrayTip, 高醫擷取, 取不到申請單號`n請在 Excel 點選單號那一格, 3, 3
+    examNo := HGH_FirstCellDigits(Clipboard)
+    if (StrLen(examNo) >= 8) {
+        source := "剪貼簿"
+        return examNo
+    }
+
+    if (complain)
+        TrayTip, 高醫擷取, 取不到申請單號`n請點選單號那一格；網頁版試算表請先 Ctrl+C, 4, 3
+    return ""
+}
+
+; 只取第一格：選到整列時 getString() 會用 Tab/換行串起多格，
+; 直接抽數字會把好幾格黏成一個假單號。
+HGH_FirstCellDigits(text) {
+    StringReplace, text, text, `r, `n, All
+    firstLine := StrSplit(text, "`n")[1]
+    firstCell := StrSplit(firstLine, A_Tab)[1]
+    return RegExReplace(firstCell, "\D")
+}
+
+; OpenOffice / LibreOffice Calc（需要 Calc 正在執行且開著該檔）
+HGH_ReadCalcCell() {
+    try {
+        sm := ComObjActive("com.sun.star.ServiceManager")
+        desktop := sm.createInstance("com.sun.star.frame.Desktop")
+        doc := desktop.getCurrentComponent()
+        return doc.getCurrentSelection().getString()
+    } catch e {
         return ""
     }
-    return examNo
+}
+
+HGH_ReadExcelCell() {
+    try {
+        xl := ComObjActive("Excel.Application")
+        return xl.ActiveCell.Value
+    } catch e {
+        return ""
+    }
 }
 
 HGH_RawPath(examNo) {
