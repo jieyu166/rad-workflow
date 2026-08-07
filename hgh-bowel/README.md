@@ -29,6 +29,10 @@
 
 ### 醫院端（AHK，無需 Python）
 
+**執行方式：跑 `ahk-scripts/簡碼 jai.ahk`，不要單獨執行 `hgh_capture.ahk`。**
+
+單獨跑會出現 `Call to nonexistent function`，而且不是加一個 `#include` 就能解決——相依是連鎖的：本檔需要 `test.ahk` 的 `ActivateHISLight()`/`OpenPACSImage()`/`GetDICOMData()`，而 `test.ahk` 又需要 `簡碼 jai.ahk` 的 `CopyCXRtoHISWithParam()`、`Xray.ahk` 的 `OutputFinish()`、以及 `LOGI`/`PWD`/`vExamLoc`/`varWhere` 等全域。硬拉進來等於載入整包，還會和你日常那份搶熱鍵。
+
 腳本載入後會跳出一個置頂小視窗。在 Excel **點選**申請單號那一格——視窗會即時顯示它抓到的單號與是否已擷取過，確認無誤再按按鈕。
 
 | 按鈕 | 熱鍵 | 動作 |

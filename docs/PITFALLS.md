@@ -24,6 +24,12 @@
 - **注意**：檔案找不到時勿先怪 OneDrive——曾有一次是使用者自行搬移。先問再修。（2026-06）
 - **症狀**：讀 OneDrive 檔案得到大小正確但內容全 `0x00` 的假檔；或 `Copy-Item` 報 "cloud operation was not completed before the time-out"。根因：online-only 佔位檔（attributes 含 `RecallOnDataAccess` 0x400000），未 hydrate 就被讀走稀疏內容。修法：先 `attrib -U +P "<file>"` 釘選觸發下載，再輪詢重讀直到 bytes 非全零才採用（實測需 2 分鐘以上）。**檢查用**：`(Get-Item $f).Attributes.value__ -band 4194304`，非 0 即尚未下載。（2026-08）
 
+## AHK
+
+- **症狀**：`#include` 進來的檔案，頂層 `global X := "值"` 是空的、頂層函式呼叫沒被執行。根因：auto-execute 段在**遇到第一個熱鍵定義就結束**，而 `簡碼 jai.ahk` 的 include 群第一個就是 `test.ahk`（第 3、7 行即熱鍵），其後所有 include 的頂層程式碼都不會跑。修法：設定改寫成函式回傳值（無執行期賦值），需要在載入時執行的呼叫放到 `簡碼 jai.ahk` 的 **include 之前**。（2026-08）
+- **症狀**：`Call to nonexistent function` 單獨執行子腳本時。根因：`hgh_capture.ahk` -> `test.ahk` -> `簡碼 jai.ahk`/`Xray.ahk` 相依連鎖，子腳本無法獨立跑。修法：一律從 `簡碼 jai.ahk` 進入。（2026-08）
+- **症狀**：`ControlClick, %MyFunc()%, ...` 沒作用。根因：傳統參數的 `%...%` 只能包變數，不能包函式呼叫。修法：改用強制運算式 `ControlClick, % MyFunc(), ...`。（2026-08）
+
 ## Python
 
 - **症狀**：`http.server` 服靜態檔，中文檔名 404。根因：`urlparse(path).path` 不會 percent-decode。修法：手動 `unquote()` 再對磁碟路徑。（2026-06）

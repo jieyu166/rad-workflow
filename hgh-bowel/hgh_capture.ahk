@@ -1,4 +1,4 @@
-; ============================================================================
+﻿; ============================================================================
 ; 高醫腸阻塞資料擷取（一次性專案，收工後可整包移除）
 ;
 ; 依賴 test.ahk 的：ActivateHISLight()、OpenPACSImage()、GetDICOMData()、
@@ -17,16 +17,33 @@
 ; work\ 在 OneDrive 底下，會自己同步回家。
 ; ============================================================================
 
-; --- 需要校正的設定（第一次在醫院電腦跑之前先確認）---
-global HGH_DIR := "C:\Users\jai16\OneDrive\00 放射科\5工作\rad-workflow-main\hgh-bowel"
-; chk060 上「查詢/確定」按鈕的控件名。用按鈕3 確認後改這裡。
-; 留空則改用送 {Enter} 觸發查詢。
-global HGH_HIS_QUERY_BTN := ""
-; INFINITT 載入影像的等待秒數，網路慢就調大
-global HGH_PACS_WAIT := 6
-global HGH_TOTAL := 368
+; ---------------------------------------------------------------------------
+; 需要校正的設定（第一次在醫院電腦跑之前先確認）
+;
+; 寫成函式而不是 global 變數，是因為本檔被 #include 的位置已經在 auto-execute
+; 段之後（test.ahk 開頭就有熱鍵，auto-exec 在那裡就停了），頂層的賦值根本不會
+; 執行。函式回傳值沒有這個問題。
+; ---------------------------------------------------------------------------
 
-HGH_BuildGUI()
+; 本資料夾在「這台電腦」上的絕對路徑
+HGH_Dir() {
+    return "C:\Users\jai16\OneDrive\00 放射科\5工作\rad-workflow-main\hgh-bowel"
+}
+
+; chk060 上「查詢/確定」按鈕的控件名。用按鈕3 查出來後填這裡。
+; 留空則改用送 {Enter} 觸發查詢。
+HGH_QueryBtn() {
+    return ""
+}
+
+; INFINITT 載入影像的等待秒數，網路慢就調大
+HGH_PacsWait() {
+    return 6
+}
+
+HGH_Total() {
+    return 368
+}
 
 
 ; ============================================================================
@@ -46,9 +63,9 @@ HGH_BuildGUI() {
     Gosub, HGH_UpdateStatus
 }
 
+; 重建而不是只 Show：視窗可能還沒被建立過（例如 auto-exec 那行被拿掉時）
 <#+g::
-    Gui, HGH:Show, , 高醫腸阻塞擷取
-    SetTimer, HGH_UpdateStatus, 1000
+    HGH_BuildGUI()
 return
 
 HGHGuiClose:
@@ -64,7 +81,7 @@ HGH_UpdateStatus:
         GuiControl, HGH:, HGH_StatusText, % "單號：(在 Excel 點選申請單號)"
     else
         GuiControl, HGH:, HGH_StatusText, % "單號：" . hghExam . (HGH_IsCaptured(hghExam) ? "  [已擷取]" : "")
-    GuiControl, HGH:, HGH_ProgressText, % "進度：" . HGH_CapturedCount() . " / " . HGH_TOTAL
+    GuiControl, HGH:, HGH_ProgressText, % "進度：" . HGH_CapturedCount() . " / " . HGH_Total()
 return
 
 
@@ -79,8 +96,8 @@ HGH_Btn1:
 
     ActivateHISLight()
     ControlSetText, ThunderRT6TextBox9, %examNo%, ahk_exe chk060.exe
-    if (HGH_HIS_QUERY_BTN != "") {
-        ControlClick, %HGH_HIS_QUERY_BTN%, ahk_exe chk060.exe
+    if (HGH_QueryBtn() != "") {
+        ControlClick, % HGH_QueryBtn(), ahk_exe chk060.exe
     } else {
         ControlFocus, ThunderRT6TextBox9, ahk_exe chk060.exe
         ControlSend, ThunderRT6TextBox9, {Enter}, ahk_exe chk060.exe
@@ -114,7 +131,7 @@ HGH_Btn2:
         TrayTip, PACS, INFINITT 視窗未出現，已中止, 4, 3
         return
     }
-    Sleep, % HGH_PACS_WAIT * 1000
+    Sleep, % HGH_PacsWait() * 1000
 
     ; 抓檔頭，並確認抓到的就是這一筆（避免影像還沒換就抓到上一案）
     header := GetDICOMData()
@@ -122,7 +139,7 @@ HGH_Btn2:
 
     if (got != examNo) {
         ; 再等一輪重抓，仍不符就中止，寧可漏也不要寫錯列
-        Sleep, % HGH_PACS_WAIT * 1000
+        Sleep, % HGH_PacsWait() * 1000
         header := GetDICOMData()
         got := RegExReplace(GetDICOMLineData("accession number", header), "\D")
     }
@@ -171,7 +188,9 @@ HGH_GetExamNo(complain := true) {
         examNo := ""
     }
 
-    if (StrLen(examNo) < 8)
+    ; 剪貼簿只在真的要動作時當備援。每秒輪詢也吃剪貼簿的話，狀態列會顯示一個
+    ; 不是目前選取格的數字，反而誤導。
+    if (StrLen(examNo) < 8 && complain)
         examNo := RegExReplace(Clipboard, "\D")
 
     if (StrLen(examNo) < 8) {
@@ -183,7 +202,7 @@ HGH_GetExamNo(complain := true) {
 }
 
 HGH_RawPath(examNo) {
-    return HGH_DIR . "\work\raw\" . examNo . ".txt"
+    return HGH_Dir() . "\work\raw\" . examNo . ".txt"
 }
 
 HGH_IsCaptured(examNo) {
@@ -192,7 +211,7 @@ HGH_IsCaptured(examNo) {
 
 HGH_CapturedCount() {
     count := 0
-    rawDir := HGH_DIR . "\work\raw"
+    rawDir := HGH_Dir() . "\work\raw"
     Loop, %rawDir%\*.txt
         count += 1
     return count
@@ -201,14 +220,14 @@ HGH_CapturedCount() {
 ; 存檔頭原文。解析留到家裡做——醫院電腦沒有 Python，而且原文留著才能在
 ; 解析規則改動後重跑，不必再進 PACS 一次。
 HGH_SaveHeader(examNo, header) {
-    rawDir := HGH_DIR . "\work\raw"
+    rawDir := HGH_Dir() . "\work\raw"
     FileCreateDir, %rawDir%
     rawFile := HGH_RawPath(examNo)
 
     FileDelete, %rawFile%
     FileAppend, %header%, %rawFile%, UTF-8
     if ErrorLevel {
-        TrayTip, 高醫擷取, 檔頭寫檔失敗：%rawFile%`n（HGH_DIR 路徑對嗎？）, 6, 3
+        TrayTip, 高醫擷取, 檔頭寫檔失敗：%rawFile%`n（HGH_Dir() 的路徑設定對嗎？）, 6, 3
         return false
     }
 
