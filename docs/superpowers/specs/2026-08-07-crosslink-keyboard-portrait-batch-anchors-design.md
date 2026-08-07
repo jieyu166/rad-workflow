@@ -10,7 +10,7 @@
 - 游標位於影像時，主鍵盤 `+`、`-` 與數字鍵盤加減鍵控制該影像縮放。
 - `+` 將 zoom 乘以 `1.1`；`-` 將 zoom 除以 `1.1`；結果限制在既有 `0.25×` 至 `12×` 範圍。
 - 勾選「同步縮放／平移」時，使用既有 navigation sync 將 zoom 複製到其他 viewport；取消時只改變游標所在 viewport。
-- `Shift+拖曳` 保留為平移，`Ctrl/Meta+滾輪` 保留為縮放，不改變既有右鍵拖曳 Intensity 與一般滾輪切片。
+- `Shift+拖曳` 保留為平移；`Ctrl/Meta+滾輪` 保留為縮放，但方向改為滾輪向下放大、向上縮小；不改變既有右鍵拖曳 Intensity 與一般滾輪切片。
 - 沒有 viewport 處於 hover 狀態時，`+`／`-` 不攔截瀏覽器或表單按鍵。
 - 工具列說明補上「游標置於影像後按 +/-：縮放」，並明確保留「Shift+拖曳：平移」。
 
@@ -34,6 +34,7 @@
 ## 測試與驗收
 
 - 真實 headless Chromium 中，hover S2 後按 `+` 會增加 S2 zoom；同步開啟時 S1/S3 同步，關閉時只有 S2 改變。
+- `Ctrl/Meta+滾輪` 向下會增加 zoom，向上會減少 zoom，方向與目前版本相反。
 - 沒有 hover viewport 時，鍵盤加減鍵不改變 zoom。
 - 直式 viewport 中三個 Crosslink 影像形成三個不同的垂直 row，且每個影像使用完整欄寬；橫式仍可並排。
 - 三組 Sequence 批次新增成功時，同時產生 S2 與 S3 map；其中一組無效時兩個 map 都不變。

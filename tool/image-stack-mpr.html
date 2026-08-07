@@ -1,0 +1,1844 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' blob: data:; style-src 'unsafe-inline'; script-src 'unsafe-inline' blob:; worker-src blob:">
+  <title>影像序列 Crosslink 與 MPR</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #081018;
+      --panel: #101a25;
+      --panel-2: #162333;
+      --line: #2b4055;
+      --text: #e6f1fb;
+      --muted: #91a8bd;
+      --accent: #45c7b8;
+      --accent-2: #f0ae4b;
+      --danger: #ef6a6a;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, "Microsoft JhengHei", sans-serif; }
+    button, input, select { font: inherit; }
+    button, select, input[type="number"] { border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--text); }
+    button { min-height: 36px; padding: 7px 12px; cursor: pointer; }
+    button:hover { border-color: var(--accent); }
+    .app-shell { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+    .topbar { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: #0b151f; }
+    .topbar h1 { margin: 0; font-size: 18px; letter-spacing: .02em; }
+    .privacy { margin-left: auto; color: var(--accent); font-size: 13px; }
+    .body { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+    .sidebar { min-width: 0; padding: 14px; overflow: visible; border-bottom: 1px solid var(--line); background: #0c1621; }
+    .section { min-width: 0; padding: 12px; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .section h2 { margin: 0 0 10px; font-size: 14px; }
+    .field { display: grid; gap: 5px; margin: 9px 0; color: var(--muted); font-size: 12px; }
+    .field select, .field input { width: 100%; min-height: 34px; padding: 5px 8px; }
+    .file-button { display: grid; place-items: center; min-height: 72px; padding: 12px; border: 1px dashed var(--accent); border-radius: 10px; color: var(--accent); text-align: center; cursor: pointer; }
+    .file-button input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .main { min-width: 0; overflow: visible; padding: 14px; }
+    .mode-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .mode-tabs button[aria-selected="true"] { color: #04110f; background: var(--accent); border-color: var(--accent); }
+    .workspace { display: grid; gap: 12px; }
+    .workspace[hidden] { display: none; }
+    .empty-panel { min-height: 220px; display: grid; place-items: center; padding: 30px; border: 1px solid var(--line); border-radius: 14px; color: var(--muted); background: var(--panel); text-align: center; }
+    #organizer { min-width: 0; min-height: 120px; display: grid; gap: 10px; }
+    #sequence-lanes { min-width: 0; }
+    .status { min-height: 20px; color: var(--muted); font-size: 12px; }
+    .boundary-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) 42px; min-width: 0; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
+    .boundary-row input { width: 100%; min-width: 0; max-width: 100%; margin: 0; }
+    .sequence-lane { min-width: 0; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: #0b141e; }
+    .sequence-lane.drag-target { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .lane-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; font-size: 12px; }
+    .thumbnail-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 82px; gap: 7px; width: 100%; min-width: 0; max-width: 100%; overflow-x: auto; padding-bottom: 5px; }
+    .thumbnail-card { display: grid; gap: 4px; padding: 5px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); font-size: 10px; }
+    .thumbnail-card.excluded { opacity: .45; }
+    .thumbnail-card.failed { border-color: var(--danger); }
+    .thumbnail-card img { width: 70px; height: 56px; object-fit: contain; background: #000; }
+    .thumbnail-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .thumbnail-actions { display: grid; grid-template-columns: auto 1fr; gap: 3px; align-items: center; }
+    .thumbnail-actions select { min-width: 0; width: 100%; font-size: 10px; }
+    .geometry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; margin-top: 7px; }
+    .geometry-grid label { display: grid; gap: 2px; color: var(--muted); font-size: 10px; }
+    .geometry-grid input, .geometry-grid select { width: 100%; min-width: 0; padding: 3px; }
+    .check-row { display: flex !important; align-items: center; gap: 5px !important; }
+    .primary-action { width: 100%; margin-top: 9px; color: #04110f; font-weight: 700; background: var(--accent); border-color: var(--accent); }
+    .anchor-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 9px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+    .anchor-toolbar select { min-height: 34px; padding: 4px 8px; }
+    .anchor-message { flex: 1 1 220px; color: var(--muted); font-size: 12px; }
+    .timeline-stage { position: relative; display: grid; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .anchor-connectors { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 3; }
+    .crosslink-timelines { position: relative; z-index: 2; display: grid; gap: 8px; }
+    .timeline-row { position: relative; min-height: 58px; padding: 5px 7px; border: 1px solid var(--line); border-radius: 8px; background: #09121b; }
+    .timeline-label { position: relative; z-index: 4; color: var(--muted); font-size: 10px; }
+    .timeline-track { position: absolute; left: 62px; right: 9px; top: 26px; height: 20px; border-radius: 5px; background: linear-gradient(90deg, #182838, #284057); }
+    .anchor-marker { position: absolute; top: 2px; width: 16px; height: 16px; padding: 0; min-height: 0; border: 2px solid #071018; border-radius: 3px; background: var(--accent-2); transform: translateX(-50%) rotate(45deg); z-index: 5; }
+    .anchor-marker.selected { background: var(--accent); box-shadow: 0 0 0 2px #fff; }
+    .viewer-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-bottom: 12px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+    .viewer-toolbar label { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; }
+    .viewport-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; min-width: 0; }
+    .viewport-stack { display: grid; align-content: start; gap: 5px; min-width: 0; }
+    .viewport-card { position: relative; min-width: 0; min-height: 240px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #000; }
+    .viewport-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .viewport-card canvas { display: block; width: 100%; height: 100%; min-height: 240px; touch-action: none; cursor: crosshair; }
+    .viewport-hud { position: absolute; inset: 7px 9px auto 9px; display: flex; justify-content: space-between; pointer-events: none; color: #d9f5f1; font-size: 11px; text-shadow: 0 1px 3px #000; }
+    .viewport-filename { min-width: 0; overflow: hidden; padding: 0 4px; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .mpr-layout { display: grid; gap: 12px; min-width: 0; }
+    .mpr-region { min-width: 0; padding: 9px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .mpr-region h2 { margin: 0 0 8px; font-size: 13px; }
+    .primary-mpr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .secondary-mpr-regions { display: grid; align-content: start; gap: 10px; min-width: 0; }
+    .secondary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+    .secondary-grid .viewport-card { min-height: 170px; }
+    .secondary-grid .viewport-card canvas { min-height: 170px; }
+    .oblique-controls { display: flex; flex-wrap: wrap; gap: 7px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+    .oblique-controls label { display: grid; gap: 3px; color: var(--muted); font-size: 11px; }
+    .oblique-controls input { width: 92px; padding: 4px 6px; }
+    .geometry-warning { display: none; padding: 8px 10px; border: 1px solid var(--accent-2); border-radius: 9px; color: #ffd698; background: #2a2114; font-size: 12px; }
+    .geometry-warning.visible { display: block; }
+    @media (min-width: 1400px) {
+      .mpr-layout { grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); align-items: start; }
+    }
+    @media (max-width: 900px) {
+      .body { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+      .mpr-layout { grid-template-columns: 1fr; }
+      .primary-mpr-grid, .secondary-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <h1>影像序列 Crosslink 與 MPR</h1>
+      <span class="privacy">全程本機處理，不上傳影像</span>
+    </header>
+    <div class="body">
+      <aside class="sidebar">
+        <section class="section">
+          <h2>1. 載入與分組</h2>
+          <label class="file-button">選取或拖入 PNG / JPG
+            <input id="image-file-input" type="file" multiple accept=".png,.jpg,.jpeg,image/png,image/jpeg">
+          </label>
+          <label class="field">Sequence 數量
+            <select id="sequence-count">
+              <option value="2" selected>2 組</option>
+              <option value="3">3 組</option>
+            </select>
+          </label>
+          <div id="import-status" class="status" role="status">尚未載入影像</div>
+        </section>
+        <section class="section">
+          <h2>2. Sequence 編排</h2>
+          <div id="organizer">
+            <div id="boundary-controls"><div class="status">載入後顯示可拖曳分界。</div></div>
+            <div id="sequence-lanes"><div class="status">縮圖會依自然檔名排序。</div></div>
+            <button id="build-volumes" class="primary-action" type="button" disabled>建立本機 Volumes</button>
+            <div id="volume-status" class="status" role="status"></div>
+          </div>
+        </section>
+      </aside>
+      <main class="main">
+        <nav class="mode-tabs" aria-label="工作模式">
+          <button id="crosslink-tab" type="button" aria-selected="true">Crosslink</button>
+          <button id="mpr-tab" type="button" aria-selected="false">MPR</button>
+        </nav>
+        <div id="viewer-toolbar" class="viewer-toolbar">
+          <label><input id="sync-navigation" type="checkbox" checked>同步縮放／平移</label>
+          <label><input id="sync-intensity" type="checkbox" checked>同步 Intensity</label>
+          <button id="fit-view" type="button">Fit</button>
+          <button id="reset-view" type="button">Reset</button>
+          <button id="invert-view" type="button">Invert</button>
+          <span class="status">滾輪：切片；Ctrl/Meta＋滾輪：縮放；Shift＋拖曳：平移；右鍵拖曳：Intensity</span>
+        </div>
+        <section id="crosslink-workspace" class="workspace">
+          <div id="axial-viewports" class="empty-panel">載入至少兩組影像後，可滾動 axial 並建立跨序列錨點。</div>
+          <div id="anchor-toolbar" class="anchor-toolbar">
+            <label>配對目標
+              <select id="anchor-target"><option value="2">Sequence 2</option></select>
+            </label>
+            <button id="add-anchor" type="button">新增目前切片錨點</button>
+            <button id="update-anchor" type="button" disabled>更新所選錨點</button>
+            <button id="delete-anchor" type="button" disabled>刪除所選錨點</button>
+            <span id="anchor-message" class="anchor-message">目前切片尚未配對。</span>
+          </div>
+          <div class="timeline-stage">
+            <svg id="anchor-connectors" class="anchor-connectors" aria-hidden="true"></svg>
+            <div id="crosslink-timelines" class="crosslink-timelines"></div>
+          </div>
+        </section>
+        <section id="mpr-workspace" class="workspace" hidden>
+          <div id="geometry-warning" class="geometry-warning">來源比例未知；重組影像僅供定位，不作距離判讀。</div>
+          <div class="oblique-controls">
+            <label>Azimuth°<input id="oblique-azimuth" type="number" min="-180" max="180" step="1" value="0"></label>
+            <label>Tilt°<input id="oblique-tilt" type="number" min="-90" max="90" step="1" value="0"></label>
+            <label>Roll°<input id="oblique-roll" type="number" min="-180" max="180" step="1" value="0"></label>
+            <button id="oblique-reset" type="button">Oblique Reset</button>
+          </div>
+          <div id="mpr-layout" class="mpr-layout">
+            <section class="mpr-region">
+              <h2>Sequence 1 · 主要 2×2 MPR</h2>
+              <div id="primary-mpr-grid" class="primary-mpr-grid"><div class="empty-panel">建立 volume 後顯示 AX、COR、SAG 與 Oblique。</div></div>
+            </section>
+            <aside id="secondary-mpr-regions" class="secondary-mpr-regions"></aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script id="image-stack-mpr-core">
+  (function (root) {
+    "use strict";
+
+    const MEMORY_CONFIRM_BYTES = 512 * 1024 * 1024;
+
+    function naturalCompare(a, b) {
+      const left = String(a).toLocaleLowerCase().match(/\d+|\D+/g) || [];
+      const right = String(b).toLocaleLowerCase().match(/\d+|\D+/g) || [];
+      const count = Math.max(left.length, right.length);
+      for (let index = 0; index < count; index += 1) {
+        if (left[index] === undefined) return -1;
+        if (right[index] === undefined) return 1;
+        const leftNumber = /^\d+$/.test(left[index]);
+        const rightNumber = /^\d+$/.test(right[index]);
+        if (leftNumber && rightNumber) {
+          const difference = Number(left[index]) - Number(right[index]);
+          if (difference) return difference;
+          continue;
+        }
+        if (left[index] < right[index]) return -1;
+        if (left[index] > right[index]) return 1;
+      }
+      return 0;
+    }
+
+    function validateSequenceCount(sequenceCount) {
+      const count = Number(sequenceCount);
+      if (count !== 2 && count !== 3) throw new RangeError("sequenceCount must be 2 or 3");
+      return count;
+    }
+
+    function normalizeBoundaries(length, sequenceCount, boundaries) {
+      const count = validateSequenceCount(sequenceCount);
+      if (!Array.isArray(boundaries) || boundaries.length !== count - 1) {
+        throw new RangeError("boundary count does not match sequence count");
+      }
+      const normalized = boundaries.map(Number);
+      normalized.forEach(function (boundary, index) {
+        if (!Number.isInteger(boundary) || boundary < 0 || boundary > length) {
+          throw new RangeError("boundary is outside the item range");
+        }
+        if (index && boundary < normalized[index - 1]) {
+          throw new RangeError("boundaries must be ordered");
+        }
+      });
+      return normalized;
+    }
+
+    function assignByBoundaries(items, sequenceCount, boundaries) {
+      const normalized = normalizeBoundaries(items.length, sequenceCount, boundaries);
+      return items.map(function (item, index) {
+        let sequenceId = 1;
+        while (sequenceId <= normalized.length && index >= normalized[sequenceId - 1]) {
+          sequenceId += 1;
+        }
+        return Object.assign({}, item, {
+          included: item.included !== false,
+          sequenceId,
+          sortIndex: Number.isFinite(item.sortIndex) ? item.sortIndex : index
+        });
+      });
+    }
+
+    function reassignItem(items, itemId, sequenceId, sequenceCount) {
+      const count = validateSequenceCount(sequenceCount);
+      const target = Number(sequenceId);
+      if (!Number.isInteger(target) || target < 1 || target > count) {
+        throw new RangeError("target sequence is not active");
+      }
+      return items.map(function (item) {
+        return item.id === itemId ? Object.assign({}, item, { sequenceId: target }) : Object.assign({}, item);
+      });
+    }
+
+    function setItemIncluded(items, itemId, included) {
+      return items.map(function (item) {
+        return item.id === itemId ? Object.assign({}, item, { included: Boolean(included) }) : Object.assign({}, item);
+      });
+    }
+
+    function positiveNumber(value, fallback) {
+      const number = Number(value);
+      return Number.isFinite(number) && number > 0 ? number : fallback;
+    }
+
+    function normalizeGeometry(input) {
+      const source = input || {};
+      const pixelSpacingX = positiveNumber(source.pixelSpacingX, 1);
+      const pixelSpacingY = positiveNumber(source.pixelSpacingY, 1);
+      const sliceSpacing = positiveNumber(source.sliceSpacing, 5);
+      const spacingWasValid = Number(source.pixelSpacingX) > 0
+        && Number(source.pixelSpacingY) > 0
+        && Number(source.sliceSpacing) > 0;
+      const rotations = [0, 90, 180, 270];
+      return {
+        orientation: "axial",
+        pixelSpacingX,
+        pixelSpacingY,
+        sliceSpacing,
+        order: source.order === "reverse" ? "reverse" : "forward",
+        rotation: rotations.includes(Number(source.rotation)) ? Number(source.rotation) : 0,
+        flipX: source.flipX === true,
+        flipY: source.flipY === true,
+        unknownScale: source.unknownScale === true || !spacingWasValid
+      };
+    }
+
+    function canonicalDimensions(sourceWidth, sourceHeight, depth, geometry) {
+      const rotation = normalizeGeometry(geometry).rotation;
+      return rotation === 90 || rotation === 270
+        ? { width: sourceHeight, height: sourceWidth, depth }
+        : { width: sourceWidth, height: sourceHeight, depth };
+    }
+
+    function canonicalToSource(x, y, z, sourceWidth, sourceHeight, depth, geometry) {
+      const normalized = normalizeGeometry(geometry);
+      const dimensions = canonicalDimensions(sourceWidth, sourceHeight, depth, normalized);
+      const canonicalX = normalized.flipX ? dimensions.width - 1 - x : x;
+      const canonicalY = normalized.flipY ? dimensions.height - 1 - y : y;
+      let sourceX;
+      let sourceY;
+      if (normalized.rotation === 90) {
+        sourceX = canonicalY;
+        sourceY = sourceHeight - 1 - canonicalX;
+      } else if (normalized.rotation === 180) {
+        sourceX = sourceWidth - 1 - canonicalX;
+        sourceY = sourceHeight - 1 - canonicalY;
+      } else if (normalized.rotation === 270) {
+        sourceX = sourceWidth - 1 - canonicalY;
+        sourceY = canonicalX;
+      } else {
+        sourceX = canonicalX;
+        sourceY = canonicalY;
+      }
+      return {
+        x: sourceX,
+        y: sourceY,
+        z: normalized.order === "reverse" ? depth - 1 - z : z
+      };
+    }
+
+    function canonicalSliceNames(items, geometry) {
+      if (!items.length) return [];
+      return items.map(function (_, canonicalZ) {
+        const sourceZ = canonicalToSource(
+          0,
+          0,
+          canonicalZ,
+          items[0].width,
+          items[0].height,
+          items.length,
+          geometry
+        ).z;
+        return items[sourceZ].name;
+      });
+    }
+
+    function sliceNameAtPosition(sliceNames, position) {
+      if (!sliceNames.length) return "";
+      const index = Math.max(
+        0,
+        Math.min(sliceNames.length - 1, Math.round(Number(position) || 0))
+      );
+      return sliceNames[index];
+    }
+
+    function validateDecodedSequence(entries, geometry) {
+      const errors = [];
+      const decoded = entries.filter(function (entry) {
+        if (entry.ok === false) {
+          errors.push(`${entry.name}: 無法解碼`);
+          return false;
+        }
+        return true;
+      });
+      if (decoded.length < 2) errors.push("每個 sequence 至少 2 張有效影像");
+      let dimensions = null;
+      decoded.forEach(function (entry) {
+        const current = canonicalDimensions(entry.width, entry.height, decoded.length, geometry);
+        if (!dimensions) {
+          dimensions = current;
+        } else if (current.width !== dimensions.width || current.height !== dimensions.height) {
+          errors.push(`${entry.name}: canonical 尺寸不一致`);
+        }
+      });
+      return {
+        valid: errors.length === 0,
+        errors,
+        width: dimensions ? dimensions.width : 0,
+        height: dimensions ? dimensions.height : 0,
+        depth: decoded.length
+      };
+    }
+
+    function estimateVolumeBytes(sequences) {
+      return sequences.reduce(function (total, sequence) {
+        return total + Number(sequence.width) * Number(sequence.height) * Number(sequence.depth);
+      }, 0);
+    }
+
+    function requiresMemoryConfirmation(bytes) {
+      return Number(bytes) >= MEMORY_CONFIRM_BYTES;
+    }
+
+    function allocateVolume(specification, allocator) {
+      const size = Number(specification.width) * Number(specification.height) * Number(specification.depth);
+      const create = typeof allocator === "function" ? allocator : function (length) { return new Uint8Array(length); };
+      try {
+        return {
+          ok: true,
+          sequenceId: specification.sequenceId,
+          data: create(size),
+          bytes: size
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          sequenceId: specification.sequenceId,
+          error: error instanceof Error ? error.message : String(error),
+          bytes: size
+        };
+      }
+    }
+    function createCrosslinkMaps(sequenceCount) {
+      const count = validateSequenceCount(sequenceCount);
+      const maps = {};
+      for (let sequenceId = 2; sequenceId <= count; sequenceId += 1) maps[sequenceId] = [];
+      return maps;
+    }
+
+    function cloneAnchors(anchors) {
+      return anchors.map(function (anchor) {
+        return {
+          referenceIndex: Number(anchor.referenceIndex),
+          targetIndex: Number(anchor.targetIndex)
+        };
+      });
+    }
+
+    function validateAnchor(candidate, anchors) {
+      const referenceIndex = Number(candidate.referenceIndex);
+      const targetIndex = Number(candidate.targetIndex);
+      if (!Number.isFinite(referenceIndex) || !Number.isFinite(targetIndex)) {
+        return { valid: false, reason: "anchor index 必須是數字" };
+      }
+      if (anchors.some(function (anchor) { return Number(anchor.referenceIndex) === referenceIndex; })) {
+        return { valid: false, reason: "duplicate reference index" };
+      }
+      if (anchors.some(function (anchor) { return Number(anchor.targetIndex) === targetIndex; })) {
+        return { valid: false, reason: "duplicate target index" };
+      }
+      const combined = cloneAnchors(anchors).concat([{ referenceIndex, targetIndex }]).sort(function (left, right) {
+        return left.referenceIndex - right.referenceIndex;
+      });
+      for (let index = 1; index < combined.length; index += 1) {
+        if (combined[index].targetIndex <= combined[index - 1].targetIndex) {
+          return { valid: false, reason: "reference 與 target 必須維持嚴格單調" };
+        }
+      }
+      return { valid: true, reason: "" };
+    }
+
+    function upsertAnchor(anchors, candidate, editIndex) {
+      const original = cloneAnchors(anchors);
+      const base = cloneAnchors(anchors);
+      if (Number.isInteger(editIndex) && editIndex >= 0 && editIndex < base.length) base.splice(editIndex, 1);
+      const validation = validateAnchor(candidate, base);
+      if (!validation.valid) return { valid: false, reason: validation.reason, anchors: original };
+      base.push({
+        referenceIndex: Number(candidate.referenceIndex),
+        targetIndex: Number(candidate.targetIndex)
+      });
+      base.sort(function (left, right) { return left.referenceIndex - right.referenceIndex; });
+      return { valid: true, reason: "", anchors: base };
+    }
+
+    function deleteAnchor(anchors, index) {
+      return cloneAnchors(anchors).filter(function (_, anchorIndex) { return anchorIndex !== Number(index); });
+    }
+
+    function clampPosition(position, depth) {
+      return Math.max(0, Math.min(Math.max(0, Number(depth) - 1), Number(position)));
+    }
+
+    function mapPiecewise(position, anchors, sourceKey, targetKey, targetDepth) {
+      if (!anchors.length) return null;
+      const ordered = cloneAnchors(anchors).sort(function (left, right) {
+        return left[sourceKey] - right[sourceKey];
+      });
+      let mapped;
+      if (ordered.length === 1) {
+        mapped = Number(position) + ordered[0][targetKey] - ordered[0][sourceKey];
+      } else {
+        let left = ordered[0];
+        let right = ordered[1];
+        if (Number(position) >= ordered[ordered.length - 1][sourceKey]) {
+          left = ordered[ordered.length - 2];
+          right = ordered[ordered.length - 1];
+        } else if (Number(position) > ordered[0][sourceKey]) {
+          for (let index = 1; index < ordered.length; index += 1) {
+            if (Number(position) <= ordered[index][sourceKey]) {
+              left = ordered[index - 1];
+              right = ordered[index];
+              break;
+            }
+          }
+        }
+        const sourceSpan = right[sourceKey] - left[sourceKey];
+        const targetSpan = right[targetKey] - left[targetKey];
+        mapped = left[targetKey] + (Number(position) - left[sourceKey]) * targetSpan / sourceSpan;
+      }
+      return clampPosition(mapped, targetDepth);
+    }
+
+    function mapReferenceToTarget(position, anchors, targetDepth) {
+      return mapPiecewise(position, anchors, "referenceIndex", "targetIndex", targetDepth);
+    }
+
+    function mapTargetToReference(position, anchors, referenceDepth) {
+      return mapPiecewise(position, anchors, "targetIndex", "referenceIndex", referenceDepth);
+    }
+
+    function synchronizePositions(sourceId, position, maps, depths, currentPositions) {
+      const source = Number(sourceId);
+      const result = Object.assign({}, currentPositions);
+      result[source] = clampPosition(position, depths[source]);
+      let referencePosition = result[source];
+      if (source !== 1) {
+        referencePosition = mapTargetToReference(result[source], maps[source] || [], depths[1]);
+        if (referencePosition === null) return result;
+        result[1] = referencePosition;
+      }
+      Object.keys(depths).map(Number).filter(function (sequenceId) {
+        return sequenceId > 1;
+      }).forEach(function (sequenceId) {
+        const mapped = mapReferenceToTarget(referencePosition, maps[sequenceId] || [], depths[sequenceId]);
+        if (mapped !== null) result[sequenceId] = mapped;
+      });
+      return result;
+    }
+    function sampleTrilinear(volume, x, y, z) {
+      const px = Number(x);
+      const py = Number(y);
+      const pz = Number(z);
+      if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)
+          || px < 0 || py < 0 || pz < 0
+          || px > volume.width - 1 || py > volume.height - 1 || pz > volume.depth - 1) return 0;
+      const x0 = Math.floor(px);
+      const y0 = Math.floor(py);
+      const z0 = Math.floor(pz);
+      const x1 = Math.min(volume.width - 1, x0 + 1);
+      const y1 = Math.min(volume.height - 1, y0 + 1);
+      const z1 = Math.min(volume.depth - 1, z0 + 1);
+      const tx = px - x0;
+      const ty = py - y0;
+      const tz = pz - z0;
+      const value = function (vx, vy, vz) {
+        return Number(volume.data[vz * volume.width * volume.height + vy * volume.width + vx]);
+      };
+      const c00 = value(x0, y0, z0) * (1 - tx) + value(x1, y0, z0) * tx;
+      const c10 = value(x0, y1, z0) * (1 - tx) + value(x1, y1, z0) * tx;
+      const c01 = value(x0, y0, z1) * (1 - tx) + value(x1, y0, z1) * tx;
+      const c11 = value(x0, y1, z1) * (1 - tx) + value(x1, y1, z1) * tx;
+      const c0 = c00 * (1 - ty) + c10 * ty;
+      const c1 = c01 * (1 - ty) + c11 * ty;
+      return c0 * (1 - tz) + c1 * tz;
+    }
+
+    function copyPoint(point) {
+      return { x: Number(point.x), y: Number(point.y), z: Number(point.z) };
+    }
+
+    function makeOrthogonalPlane(kind, volume, center) {
+      const planeKind = String(kind).toUpperCase();
+      const definitions = {
+        AX: {
+          u: { x: 1, y: 0, z: 0 },
+          v: { x: 0, y: 1, z: 0 },
+          normal: { x: 0, y: 0, z: 1 },
+          labels: { left: "R", right: "L", top: "A", bottom: "P" }
+        },
+        COR: {
+          u: { x: 1, y: 0, z: 0 },
+          v: { x: 0, y: 0, z: 1 },
+          normal: { x: 0, y: 1, z: 0 },
+          labels: { left: "R", right: "L", top: "S", bottom: "I" }
+        },
+        SAG: {
+          u: { x: 0, y: 1, z: 0 },
+          v: { x: 0, y: 0, z: 1 },
+          normal: { x: 1, y: 0, z: 0 },
+          labels: { left: "A", right: "P", top: "S", bottom: "I" }
+        }
+      };
+      if (!definitions[planeKind]) throw new RangeError("plane kind must be AX, COR, or SAG");
+      return Object.assign({
+        kind: planeKind,
+        center: copyPoint(center),
+        mmPerPixelX: Math.min(volume.pixelSpacingX || 1, volume.pixelSpacingY || 1),
+        mmPerPixelY: Math.min(volume.pixelSpacingX || 1, volume.pixelSpacingY || 1)
+      }, definitions[planeKind]);
+    }
+
+    function makeObliquePlane(volume, center, angles) {
+      const source = angles || {};
+      const azimuth = Number(source.azimuth || 0) * Math.PI / 180;
+      const tilt = Number(source.tilt || 0) * Math.PI / 180;
+      const roll = Number(source.roll || 0) * Math.PI / 180;
+      const ca = Math.cos(azimuth);
+      const sa = Math.sin(azimuth);
+      const ct = Math.cos(tilt);
+      const st = Math.sin(tilt);
+      const cr = Math.cos(roll);
+      const sr = Math.sin(roll);
+      const u0 = { x: ca * ct, y: sa * ct, z: -st };
+      const v0 = { x: -sa, y: ca, z: 0 };
+      const normal = { x: ca * st, y: sa * st, z: ct };
+      const u = {
+        x: u0.x * cr + v0.x * sr,
+        y: u0.y * cr + v0.y * sr,
+        z: u0.z * cr + v0.z * sr
+      };
+      const v = {
+        x: -u0.x * sr + v0.x * cr,
+        y: -u0.y * sr + v0.y * cr,
+        z: -u0.z * sr + v0.z * cr
+      };
+      return {
+        kind: "OBLIQUE",
+        center: copyPoint(center),
+        u,
+        v,
+        normal,
+        angles: {
+          azimuth: Number(source.azimuth || 0),
+          tilt: Number(source.tilt || 0),
+          roll: Number(source.roll || 0)
+        },
+        labels: { left: "−u", right: "+u", top: "−v", bottom: "+v" },
+        mmPerPixelX: Math.min(volume.pixelSpacingX || 1, volume.pixelSpacingY || 1),
+        mmPerPixelY: Math.min(volume.pixelSpacingX || 1, volume.pixelSpacingY || 1)
+      };
+    }
+
+    function reslicePlane(volume, plane, outputWidth, outputHeight) {
+      const width = Math.max(1, Math.floor(Number(outputWidth)));
+      const height = Math.max(1, Math.floor(Number(outputHeight)));
+      const result = new Uint8ClampedArray(width * height * 4);
+      const spacingX = positiveNumber(volume.pixelSpacingX, 1);
+      const spacingY = positiveNumber(volume.pixelSpacingY, 1);
+      const spacingZ = positiveNumber(volume.sliceSpacing, 5);
+      const mmPerPixelX = positiveNumber(plane.mmPerPixelX, 1);
+      const mmPerPixelY = positiveNumber(plane.mmPerPixelY, 1);
+      const intensity = plane.intensity || {};
+      const intensityWidth = positiveNumber(intensity.width, 255);
+      const intensityCenter = Number.isFinite(Number(intensity.center)) ? Number(intensity.center) : 127.5;
+      const low = intensityCenter - intensityWidth / 2;
+      for (let outputY = 0; outputY < height; outputY += 1) {
+        const millimetresY = (outputY - (height - 1) / 2) * mmPerPixelY;
+        for (let outputX = 0; outputX < width; outputX += 1) {
+          const millimetresX = (outputX - (width - 1) / 2) * mmPerPixelX;
+          const x = plane.center.x + (plane.u.x * millimetresX + plane.v.x * millimetresY) / spacingX;
+          const y = plane.center.y + (plane.u.y * millimetresX + plane.v.y * millimetresY) / spacingY;
+          const z = plane.center.z + (plane.u.z * millimetresX + plane.v.z * millimetresY) / spacingZ;
+          const sampled = sampleTrilinear(volume, x, y, z);
+          let displayed = 255 * (sampled - low) / intensityWidth;
+          displayed = Math.max(0, Math.min(255, displayed));
+          if (intensity.invert === true) displayed = 255 - displayed;
+          const offset = (outputY * width + outputX) * 4;
+          result[offset] = displayed;
+          result[offset + 1] = displayed;
+          result[offset + 2] = displayed;
+          result[offset + 3] = 255;
+        }
+      }
+      return result;
+    }
+    function fitRenderSize(width, height, maximumDimension) {
+      const safeWidth = Math.max(1, Number(width));
+      const safeHeight = Math.max(1, Number(height));
+      const scale = Math.min(1, Number(maximumDimension) / Math.max(safeWidth, safeHeight));
+      return {
+        width: Math.max(1, Math.round(safeWidth * scale)),
+        height: Math.max(1, Math.round(safeHeight * scale))
+      };
+    }
+
+    function progressiveRenderPlan(cssWidth, cssHeight, devicePixelRatio, generation) {
+      const ratio = positiveNumber(devicePixelRatio, 1);
+      const deviceWidth = Math.max(1, Number(cssWidth) * ratio);
+      const deviceHeight = Math.max(1, Number(cssHeight) * ratio);
+      return {
+        preview: fitRenderSize(deviceWidth, deviceHeight, 256),
+        full: fitRenderSize(deviceWidth, deviceHeight, 1024),
+        delayMs: 120,
+        generation: Number(generation)
+      };
+    }
+
+    function isRenderGenerationCurrent(resultGeneration, currentGeneration) {
+      return Number(resultGeneration) === Number(currentGeneration);
+    }
+
+    root.ImageStackMprCore = Object.freeze({
+      naturalCompare,
+      assignByBoundaries,
+      reassignItem,
+      setItemIncluded,
+      canonicalDimensions,
+      canonicalToSource,
+      canonicalSliceNames,
+      sliceNameAtPosition,
+      normalizeGeometry,
+      estimateVolumeBytes,
+      requiresMemoryConfirmation,
+      allocateVolume,
+      validateDecodedSequence,
+      createCrosslinkMaps,
+      validateAnchor,
+      upsertAnchor,
+      deleteAnchor,
+      mapReferenceToTarget,
+      mapTargetToReference,
+      synchronizePositions,
+      sampleTrilinear,
+      makeOrthogonalPlane,
+      makeObliquePlane,
+      reslicePlane,
+      progressiveRenderPlan,
+      isRenderGenerationCurrent
+    });
+  }(globalThis));
+  </script>
+
+  <script>
+  (function () {
+    "use strict";
+    const Core = globalThis.ImageStackMprCore;
+    const input = document.getElementById("image-file-input");
+    const status = document.getElementById("import-status");
+    const sequenceCountControl = document.getElementById("sequence-count");
+    const boundaryControls = document.getElementById("boundary-controls");
+    const sequenceLanes = document.getElementById("sequence-lanes");
+    const buildVolumesButton = document.getElementById("build-volumes");
+    const volumeStatus = document.getElementById("volume-status");
+    const crosslinkTab = document.getElementById("crosslink-tab");
+    const mprTab = document.getElementById("mpr-tab");
+    const crosslinkWorkspace = document.getElementById("crosslink-workspace");
+    const mprWorkspace = document.getElementById("mpr-workspace");
+    const axialViewports = document.getElementById("axial-viewports");
+    const anchorTarget = document.getElementById("anchor-target");
+    const addAnchorButton = document.getElementById("add-anchor");
+    const updateAnchorButton = document.getElementById("update-anchor");
+    const deleteAnchorButton = document.getElementById("delete-anchor");
+    const anchorMessage = document.getElementById("anchor-message");
+    const anchorConnectors = document.getElementById("anchor-connectors");
+    const crosslinkTimelines = document.getElementById("crosslink-timelines");
+    const syncNavigationControl = document.getElementById("sync-navigation");
+    const syncIntensityControl = document.getElementById("sync-intensity");
+    const fitViewButton = document.getElementById("fit-view");
+    const resetViewButton = document.getElementById("reset-view");
+    const invertViewButton = document.getElementById("invert-view");
+    const geometryWarning = document.getElementById("geometry-warning");
+    const primaryMprGrid = document.getElementById("primary-mpr-grid");
+    const secondaryMprRegions = document.getElementById("secondary-mpr-regions");
+    const obliqueAzimuth = document.getElementById("oblique-azimuth");
+    const obliqueTilt = document.getElementById("oblique-tilt");
+    const obliqueRoll = document.getElementById("oblique-roll");
+    const obliqueReset = document.getElementById("oblique-reset");
+    const dropTarget = document.querySelector(".file-button");
+    const state = {
+      items: [],
+      boundaries: [],
+      geometry: new Map(),
+      volumes: new Map(),
+      crosslinks: Core.createCrosslinkMaps(2),
+      positions: { 1: 0, 2: 0 },
+      crosshairs: new Map(),
+      viewportStates: new Map(),
+      viewports: new Map(),
+      selectedViewport: "",
+      renderMeta: new Map(),
+      obliqueAngles: { azimuth: 0, tilt: 0, roll: 0 },
+      selectedAnchor: null,
+      nextItemId: 1
+    };
+
+    function sequenceCount() {
+      return Number(sequenceCountControl.value);
+    }
+
+    function activeSequenceIds() {
+      return Array.from({ length: sequenceCount() }, function (_, index) { return index + 1; });
+    }
+
+    function defaultBoundaries(itemCount) {
+      return Array.from({ length: sequenceCount() - 1 }, function (_, index) {
+        return Math.round(itemCount * (index + 1) / sequenceCount());
+      });
+    }
+
+    function geometryFor(sequenceId) {
+      if (!state.geometry.has(sequenceId)) {
+        state.geometry.set(sequenceId, Core.normalizeGeometry({}));
+      }
+      return state.geometry.get(sequenceId);
+    }
+
+    function setStatus(message, isError) {
+      volumeStatus.textContent = message;
+      volumeStatus.style.color = isError ? "var(--danger)" : "var(--muted)";
+    }
+
+    function isSupportedImage(file) {
+      return /\.(png|jpe?g)$/i.test(file.name)
+        && (!file.type || file.type === "image/png" || file.type === "image/jpeg");
+    }
+
+    function loadRenderable(file) {
+      if (typeof createImageBitmap === "function") {
+        return createImageBitmap(file).then(function (bitmap) {
+          return {
+            source: bitmap,
+            width: bitmap.width,
+            height: bitmap.height,
+            release: function () { bitmap.close(); }
+          };
+        });
+      }
+      return new Promise(function (resolve, reject) {
+        const objectUrl = URL.createObjectURL(file);
+        const image = new Image();
+        image.onload = function () {
+          resolve({
+            source: image,
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+            release: function () { URL.revokeObjectURL(objectUrl); }
+          });
+        };
+        image.onerror = function () {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error("影像解碼失敗"));
+        };
+        image.src = objectUrl;
+      });
+    }
+
+    async function createThumbnail(item) {
+      let renderable;
+      try {
+        renderable = await loadRenderable(item.file);
+        const longest = Math.max(renderable.width, renderable.height);
+        const scale = Math.min(1, 96 / Math.max(1, longest));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(renderable.width * scale));
+        canvas.height = Math.max(1, Math.round(renderable.height * scale));
+        const context = canvas.getContext("2d", { alpha: false });
+        context.drawImage(renderable.source, 0, 0, canvas.width, canvas.height);
+        return Object.assign({}, item, {
+          thumbnailUrl: canvas.toDataURL("image/jpeg", 0.72),
+          width: renderable.width,
+          height: renderable.height,
+          decodeError: ""
+        });
+      } catch (error) {
+        return Object.assign({}, item, {
+          thumbnailUrl: "",
+          width: 0,
+          height: 0,
+          decodeError: error instanceof Error ? error.message : String(error)
+        });
+      } finally {
+        if (renderable) renderable.release();
+      }
+    }
+
+    async function handleFiles(fileList) {
+      const accepted = Array.from(fileList).filter(isSupportedImage).map(function (file, originalIndex) {
+        return {
+          id: `image-${state.nextItemId + originalIndex}`,
+          name: file.name,
+          file,
+          originalIndex,
+          included: true
+        };
+      });
+      state.nextItemId += accepted.length;
+      accepted.sort(function (left, right) {
+        return Core.naturalCompare(left.name, right.name) || left.originalIndex - right.originalIndex;
+      });
+      status.textContent = accepted.length ? `正在建立 ${accepted.length} 張本機縮圖` : "未找到 PNG 或 JPG";
+      const decoded = [];
+      for (const item of accepted) {
+        decoded.push(await createThumbnail(item));
+        status.textContent = `縮圖 ${decoded.length} / ${accepted.length}`;
+      }
+      state.boundaries = defaultBoundaries(decoded.length);
+      state.items = Core.assignByBoundaries(decoded, sequenceCount(), state.boundaries);
+      state.volumes.clear();
+      status.textContent = accepted.length ? `已載入 ${accepted.length} 張影像，尚未建立 volume` : "尚未載入影像";
+      buildVolumesButton.disabled = accepted.length === 0;
+      renderOrganizer();
+    }
+
+    function applyBoundaries() {
+      state.items = Core.assignByBoundaries(state.items, sequenceCount(), state.boundaries);
+      state.volumes.clear();
+      renderOrganizer();
+    }
+
+    function renderBoundaryControls() {
+      boundaryControls.replaceChildren();
+      if (!state.items.length) {
+        const empty = document.createElement("div");
+        empty.className = "status";
+        empty.textContent = "載入後顯示可拖曳分界。";
+        boundaryControls.appendChild(empty);
+        return;
+      }
+      state.boundaries.forEach(function (boundary, boundaryIndex) {
+        const row = document.createElement("label");
+        row.className = "boundary-row";
+        const title = document.createElement("span");
+        title.textContent = `分界 ${boundaryIndex + 1}`;
+        const range = document.createElement("input");
+        range.type = "range";
+        range.min = "0";
+        range.max = String(state.items.length);
+        range.step = "1";
+        range.value = String(boundary);
+        const value = document.createElement("output");
+        value.textContent = String(boundary);
+        range.addEventListener("input", function () {
+          const next = Number(range.value);
+          const lower = boundaryIndex ? state.boundaries[boundaryIndex - 1] : 0;
+          const upper = boundaryIndex + 1 < state.boundaries.length
+            ? state.boundaries[boundaryIndex + 1]
+            : state.items.length;
+          state.boundaries[boundaryIndex] = Math.max(lower, Math.min(upper, next));
+          value.textContent = String(state.boundaries[boundaryIndex]);
+          applyBoundaries();
+        });
+        row.append(title, range, value);
+        boundaryControls.appendChild(row);
+      });
+    }
+
+    function makeGeometryControl(labelText, control) {
+      const label = document.createElement("label");
+      label.textContent = labelText;
+      label.appendChild(control);
+      return label;
+    }
+
+    function updateGeometryFromLane(lane, sequenceId) {
+      const previous = geometryFor(sequenceId);
+      const value = function (name) { return lane.querySelector(`[data-geometry="${name}"]`); };
+      state.geometry.set(sequenceId, Core.normalizeGeometry({
+        pixelSpacingX: value("pixelSpacingX").value,
+        pixelSpacingY: value("pixelSpacingY").value,
+        sliceSpacing: value("sliceSpacing").value,
+        order: value("order").value,
+        rotation: value("rotation").value,
+        flipX: value("flipX").checked,
+        flipY: value("flipY").checked,
+        unknownScale: previous.unknownScale && value("pixelSpacingX").value === "1" && value("pixelSpacingY").value === "1"
+      }));
+      state.volumes.delete(sequenceId);
+    }
+
+    function buildGeometryGrid(sequenceId, lane) {
+      const geometry = geometryFor(sequenceId);
+      const grid = document.createElement("div");
+      grid.className = "geometry-grid";
+      const order = document.createElement("select");
+      order.dataset.geometry = "order";
+      [["forward", "正向"], ["reverse", "反向"]].forEach(function (entry) {
+        const option = document.createElement("option");
+        option.value = entry[0];
+        option.textContent = entry[1];
+        option.selected = geometry.order === entry[0];
+        order.appendChild(option);
+      });
+      const rotation = document.createElement("select");
+      rotation.dataset.geometry = "rotation";
+      [0, 90, 180, 270].forEach(function (angle) {
+        const option = document.createElement("option");
+        option.value = String(angle);
+        option.textContent = `${angle}°`;
+        option.selected = geometry.rotation === angle;
+        rotation.appendChild(option);
+      });
+      const spacingInput = function (name, value) {
+        const control = document.createElement("input");
+        control.type = "number";
+        control.min = "0.01";
+        control.step = "0.01";
+        control.value = String(value);
+        control.dataset.geometry = name;
+        return control;
+      };
+      const flipInput = function (name, checked) {
+        const control = document.createElement("input");
+        control.type = "checkbox";
+        control.checked = checked;
+        control.dataset.geometry = name;
+        return control;
+      };
+      const flipX = makeGeometryControl("左右翻轉", flipInput("flipX", geometry.flipX));
+      const flipY = makeGeometryControl("上下翻轉", flipInput("flipY", geometry.flipY));
+      flipX.className = "check-row";
+      flipY.className = "check-row";
+      grid.append(
+        makeGeometryControl("切片順序", order),
+        makeGeometryControl("旋轉", rotation),
+        makeGeometryControl("X mm/px", spacingInput("pixelSpacingX", geometry.pixelSpacingX)),
+        makeGeometryControl("Y mm/px", spacingInput("pixelSpacingY", geometry.pixelSpacingY)),
+        makeGeometryControl("切片間距 mm", spacingInput("sliceSpacing", geometry.sliceSpacing)),
+        flipX,
+        flipY
+      );
+      grid.addEventListener("change", function () { updateGeometryFromLane(lane, sequenceId); });
+      return grid;
+    }
+
+    function renderLane(sequenceId) {
+      const lane = document.createElement("section");
+      lane.className = "sequence-lane";
+      lane.dataset.sequenceId = String(sequenceId);
+      const items = state.items.filter(function (item) { return item.sequenceId === sequenceId; });
+      const title = document.createElement("div");
+      title.className = "lane-title";
+      title.innerHTML = `<strong>Sequence ${sequenceId}</strong><span>${items.filter(function (item) { return item.included; }).length} / ${items.length} 張</span>`;
+      const strip = document.createElement("div");
+      strip.className = "thumbnail-strip";
+      items.forEach(function (item) {
+        const card = document.createElement("article");
+        card.className = `thumbnail-card${item.included ? "" : " excluded"}${item.decodeError ? " failed" : ""}`;
+        card.draggable = true;
+        card.dataset.itemId = item.id;
+        card.title = item.decodeError ? `${item.name}: ${item.decodeError}` : item.name;
+        card.addEventListener("dragstart", function (event) {
+          event.dataTransfer.setData("text/plain", item.id);
+        });
+        if (item.thumbnailUrl) {
+          const image = document.createElement("img");
+          image.src = item.thumbnailUrl;
+          image.alt = item.name;
+          card.appendChild(image);
+        }
+        const name = document.createElement("div");
+        name.className = "thumbnail-name";
+        name.textContent = item.name;
+        const actions = document.createElement("div");
+        actions.className = "thumbnail-actions";
+        const included = document.createElement("input");
+        included.type = "checkbox";
+        included.checked = item.included;
+        included.title = "納入 volume";
+        included.addEventListener("change", function () {
+          state.items = Core.setItemIncluded(state.items, item.id, included.checked);
+          state.volumes.clear();
+          renderOrganizer();
+        });
+        const target = document.createElement("select");
+        activeSequenceIds().forEach(function (id) {
+          const option = document.createElement("option");
+          option.value = String(id);
+          option.textContent = `S${id}`;
+          option.selected = id === item.sequenceId;
+          target.appendChild(option);
+        });
+        target.addEventListener("change", function () {
+          state.items = Core.reassignItem(state.items, item.id, Number(target.value), sequenceCount());
+          state.volumes.clear();
+          renderOrganizer();
+        });
+        actions.append(included, target);
+        card.append(name, actions);
+        strip.appendChild(card);
+      });
+      lane.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        lane.classList.add("drag-target");
+      });
+      lane.addEventListener("dragleave", function () { lane.classList.remove("drag-target"); });
+      lane.addEventListener("drop", function (event) {
+        event.preventDefault();
+        lane.classList.remove("drag-target");
+        const itemId = event.dataTransfer.getData("text/plain");
+        state.items = Core.reassignItem(state.items, itemId, sequenceId, sequenceCount());
+        state.volumes.clear();
+        renderOrganizer();
+      });
+      lane.append(title, strip);
+      lane.appendChild(buildGeometryGrid(sequenceId, lane));
+      return lane;
+    }
+
+    function renderOrganizer() {
+      renderBoundaryControls();
+      sequenceLanes.replaceChildren();
+      activeSequenceIds().forEach(function (sequenceId) {
+        sequenceLanes.appendChild(renderLane(sequenceId));
+      });
+    }
+
+    async function decodeLuminance(file) {
+      let renderable;
+      try {
+        renderable = await loadRenderable(file);
+        const canvas = document.createElement("canvas");
+        canvas.width = renderable.width;
+        canvas.height = renderable.height;
+        const context = canvas.getContext("2d", { alpha: false, willReadFrequently: true });
+        context.drawImage(renderable.source, 0, 0);
+        const rgba = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        const luminance = new Uint8Array(canvas.width * canvas.height);
+        for (let index = 0; index < luminance.length; index += 1) {
+          const offset = index * 4;
+          luminance[index] = (77 * rgba[offset] + 150 * rgba[offset + 1] + 29 * rgba[offset + 2]) >> 8;
+        }
+        return { width: canvas.width, height: canvas.height, data: luminance };
+      } finally {
+        if (renderable) renderable.release();
+      }
+    }
+
+    function includedItems(sequenceId) {
+      return state.items.filter(function (item) {
+        return item.sequenceId === sequenceId && item.included && !item.decodeError;
+      }).sort(function (left, right) { return left.sortIndex - right.sortIndex; });
+    }
+
+    async function constructVolume(sequenceId, geometry, validation) {
+      const items = includedItems(sequenceId);
+      const sliceNames = Core.canonicalSliceNames(items, geometry);
+      const allocation = Core.allocateVolume({
+        sequenceId,
+        width: validation.width,
+        height: validation.height,
+        depth: validation.depth
+      });
+      if (!allocation.ok) throw new Error(`Sequence ${sequenceId}: ${allocation.error}`);
+      for (let canonicalZ = 0; canonicalZ < validation.depth; canonicalZ += 1) {
+        const sourceZ = Core.canonicalToSource(
+          0, 0, canonicalZ, items[0].width, items[0].height, validation.depth, geometry
+        ).z;
+        const decoded = await decodeLuminance(items[sourceZ].file);
+        if (decoded.width !== items[0].width || decoded.height !== items[0].height) {
+          throw new Error(`${items[sourceZ].name}: 解碼後尺寸已變更`);
+        }
+        for (let canonicalY = 0; canonicalY < validation.height; canonicalY += 1) {
+          for (let canonicalX = 0; canonicalX < validation.width; canonicalX += 1) {
+            const source = Core.canonicalToSource(
+              canonicalX,
+              canonicalY,
+              canonicalZ,
+              decoded.width,
+              decoded.height,
+              validation.depth,
+              geometry
+            );
+            const targetOffset = canonicalZ * validation.width * validation.height
+              + canonicalY * validation.width + canonicalX;
+            allocation.data[targetOffset] = decoded.data[source.y * decoded.width + source.x];
+          }
+        }
+        setStatus(`Sequence ${sequenceId}: ${canonicalZ + 1} / ${validation.depth}`, false);
+      }
+      return {
+        id: sequenceId,
+        data: allocation.data,
+        width: validation.width,
+        height: validation.height,
+        depth: validation.depth,
+        pixelSpacingX: geometry.pixelSpacingX,
+        pixelSpacingY: geometry.pixelSpacingY,
+        sliceSpacing: geometry.sliceSpacing,
+        sliceNames,
+        geometry
+      };
+    }
+
+    async function buildVolumes() {
+      buildVolumesButton.disabled = true;
+      const plans = [];
+      try {
+        for (const sequenceId of activeSequenceIds()) {
+          const geometry = geometryFor(sequenceId);
+          const entries = state.items.filter(function (item) {
+            return item.sequenceId === sequenceId && item.included;
+          }).map(function (item) {
+            return {
+              name: item.name,
+              width: item.width,
+              height: item.height,
+              ok: !item.decodeError,
+              error: item.decodeError
+            };
+          });
+          const validation = Core.validateDecodedSequence(entries, geometry);
+          if (!validation.valid) throw new Error(`Sequence ${sequenceId}: ${validation.errors.join("；")}`);
+          plans.push({ sequenceId, geometry, validation });
+        }
+        const bytes = Core.estimateVolumeBytes(plans.map(function (plan) { return plan.validation; }));
+        if (Core.requiresMemoryConfirmation(bytes)) {
+          const mebibytes = (bytes / (1024 * 1024)).toFixed(1);
+          if (!confirm(`預估需要 ${mebibytes} MiB 灰階記憶體。仍要建立嗎？`)) {
+            setStatus("已取消大型 volume 配置；編排仍保留。", false);
+            return;
+          }
+        }
+        const nextVolumes = new Map();
+        for (const plan of plans) {
+          nextVolumes.set(
+            plan.sequenceId,
+            await constructVolume(plan.sequenceId, plan.geometry, plan.validation)
+          );
+        }
+        state.volumes = nextVolumes;
+        setStatus(`已建立 ${state.volumes.size} 組本機 volumes`, false);
+        renderWorkspaceShells();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), true);
+      } finally {
+        buildVolumesButton.disabled = state.items.length === 0;
+      }
+    }
+
+    function depthMap() {
+      const depths = {};
+      state.volumes.forEach(function (volume, sequenceId) { depths[sequenceId] = volume.depth; });
+      return depths;
+    }
+
+    function renderAnchorTargetOptions() {
+      const previous = Number(anchorTarget.value) || 2;
+      anchorTarget.replaceChildren();
+      activeSequenceIds().filter(function (sequenceId) { return sequenceId > 1; }).forEach(function (sequenceId) {
+        const option = document.createElement("option");
+        option.value = String(sequenceId);
+        option.textContent = `Sequence ${sequenceId}`;
+        option.selected = sequenceId === previous;
+        anchorTarget.appendChild(option);
+      });
+    }
+
+    function markerPercent(position, depth) {
+      return depth > 1 ? 100 * Number(position) / (depth - 1) : 0;
+    }
+
+    function selectAnchor(targetId, anchorIndex) {
+      state.selectedAnchor = { targetId: Number(targetId), index: Number(anchorIndex) };
+      anchorTarget.value = String(targetId);
+      renderTimelines();
+    }
+
+    function createAnchorMarker(sequenceId, targetId, anchorIndex, position, depth) {
+      const marker = document.createElement("button");
+      marker.type = "button";
+      marker.className = "anchor-marker";
+      if (state.selectedAnchor
+          && state.selectedAnchor.targetId === targetId
+          && state.selectedAnchor.index === anchorIndex) marker.classList.add("selected");
+      marker.style.left = `${markerPercent(position, depth)}%`;
+      marker.dataset.sequenceId = String(sequenceId);
+      marker.dataset.targetId = String(targetId);
+      marker.dataset.anchorIndex = String(anchorIndex);
+      marker.title = `S1 ${state.crosslinks[targetId][anchorIndex].referenceIndex} ↔ S${targetId} ${state.crosslinks[targetId][anchorIndex].targetIndex}`;
+      marker.addEventListener("click", function () { selectAnchor(targetId, anchorIndex); });
+      return marker;
+    }
+
+    function drawAnchorConnectors() {
+      const stage = anchorConnectors.parentElement.getBoundingClientRect();
+      const lines = [];
+      Object.keys(state.crosslinks).map(Number).forEach(function (targetId) {
+        state.crosslinks[targetId].forEach(function (_, anchorIndex) {
+          const reference = crosslinkTimelines.querySelector(`[data-sequence-id="1"][data-target-id="${targetId}"][data-anchor-index="${anchorIndex}"]`);
+          const target = crosslinkTimelines.querySelector(`[data-sequence-id="${targetId}"][data-target-id="${targetId}"][data-anchor-index="${anchorIndex}"]`);
+          if (!reference || !target) return;
+          const first = reference.getBoundingClientRect();
+          const second = target.getBoundingClientRect();
+          const x1 = first.left + first.width / 2 - stage.left;
+          const y1 = first.top + first.height / 2 - stage.top;
+          const x2 = second.left + second.width / 2 - stage.left;
+          const y2 = second.top + second.height / 2 - stage.top;
+          lines.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#f0ae4b" stroke-width="1.5" opacity="0.8"/>`);
+        });
+      });
+      anchorConnectors.innerHTML = lines.join("");
+    }
+
+    function renderTimelines() {
+      crosslinkTimelines.replaceChildren();
+      const depths = depthMap();
+      activeSequenceIds().forEach(function (sequenceId) {
+        const row = document.createElement("div");
+        row.className = "timeline-row";
+        const label = document.createElement("span");
+        label.className = "timeline-label";
+        const position = state.positions[sequenceId] || 0;
+        label.textContent = `Sequence ${sequenceId} · ${Math.round(position) + 1}`;
+        const track = document.createElement("div");
+        track.className = "timeline-track";
+        if (sequenceId === 1) {
+          Object.keys(state.crosslinks).map(Number).forEach(function (targetId) {
+            state.crosslinks[targetId].forEach(function (anchor, anchorIndex) {
+              track.appendChild(createAnchorMarker(1, targetId, anchorIndex, anchor.referenceIndex, depths[1] || 1));
+            });
+          });
+        } else {
+          (state.crosslinks[sequenceId] || []).forEach(function (anchor, anchorIndex) {
+            track.appendChild(createAnchorMarker(sequenceId, sequenceId, anchorIndex, anchor.targetIndex, depths[sequenceId] || 1));
+          });
+        }
+        row.append(label, track);
+        crosslinkTimelines.appendChild(row);
+      });
+      updateAnchorButtons();
+      requestAnimationFrame(drawAnchorConnectors);
+    }
+
+    function updateAnchorButtons() {
+      const selected = state.selectedAnchor !== null;
+      updateAnchorButton.disabled = !selected;
+      deleteAnchorButton.disabled = !selected;
+      if (!selected) {
+        anchorMessage.textContent = "目前切片尚未配對。";
+        return;
+      }
+      const selectedAnchor = state.crosslinks[state.selectedAnchor.targetId][state.selectedAnchor.index];
+      anchorMessage.textContent = `所選：S1 ${selectedAnchor.referenceIndex + 1} ↔ S${state.selectedAnchor.targetId} ${selectedAnchor.targetIndex + 1}`;
+    }
+
+    function currentAnchorCandidate(targetId) {
+      return {
+        referenceIndex: Number(state.positions[1] || 0),
+        targetIndex: Number(state.positions[targetId] || 0)
+      };
+    }
+
+    function saveAnchor(editExisting) {
+      const targetId = Number(anchorTarget.value);
+      const editIndex = editExisting && state.selectedAnchor ? state.selectedAnchor.index : undefined;
+      const result = Core.upsertAnchor(
+        state.crosslinks[targetId] || [],
+        currentAnchorCandidate(targetId),
+        editIndex
+      );
+      if (!result.valid) {
+        anchorMessage.textContent = result.reason;
+        anchorMessage.style.color = "var(--danger)";
+        return;
+      }
+      state.crosslinks[targetId] = result.anchors;
+      const candidate = currentAnchorCandidate(targetId);
+      state.selectedAnchor = {
+        targetId,
+        index: result.anchors.findIndex(function (anchor) {
+          return anchor.referenceIndex === candidate.referenceIndex && anchor.targetIndex === candidate.targetIndex;
+        })
+      };
+      anchorMessage.style.color = "var(--muted)";
+      renderTimelines();
+    }
+
+    function removeSelectedAnchor() {
+      if (!state.selectedAnchor) return;
+      const targetId = state.selectedAnchor.targetId;
+      state.crosslinks[targetId] = Core.deleteAnchor(state.crosslinks[targetId], state.selectedAnchor.index);
+      state.selectedAnchor = null;
+      renderTimelines();
+    }
+
+    function resetCrosslinkState() {
+      state.crosslinks = Core.createCrosslinkMaps(sequenceCount());
+      state.positions = {};
+      activeSequenceIds().forEach(function (sequenceId) { state.positions[sequenceId] = 0; });
+      state.selectedAnchor = null;
+      renderAnchorTargetOptions();
+    }
+
+    function viewportState(key) {
+      if (!state.viewportStates.has(key)) {
+        state.viewportStates.set(key, {
+          zoom: 1,
+          panX: 0,
+          panY: 0,
+          intensityWidth: 255,
+          intensityCenter: 127.5,
+          invert: false
+        });
+      }
+      return state.viewportStates.get(key);
+    }
+
+    function crosshairFor(sequenceId) {
+      const volume = state.volumes.get(sequenceId);
+      if (!volume) return { x: 0, y: 0, z: 0 };
+      if (!state.crosshairs.has(sequenceId)) {
+        state.crosshairs.set(sequenceId, {
+          x: (volume.width - 1) / 2,
+          y: (volume.height - 1) / 2,
+          z: Number(state.positions[sequenceId] || 0)
+        });
+      }
+      const crosshair = state.crosshairs.get(sequenceId);
+      crosshair.z = Number(state.positions[sequenceId] || 0);
+      return crosshair;
+    }
+
+    function selectViewport(key) {
+      state.selectedViewport = key;
+      state.viewports.forEach(function (viewport) {
+        viewport.card.classList.toggle("selected", viewport.key === key);
+      });
+    }
+
+    function physicalPlaneSize(volume, kind) {
+      if (kind === "COR") {
+        return { width: volume.width * volume.pixelSpacingX, height: volume.depth * volume.sliceSpacing };
+      }
+      if (kind === "SAG") {
+        return { width: volume.height * volume.pixelSpacingY, height: volume.depth * volume.sliceSpacing };
+      }
+      if (kind === "OBLIQUE") {
+        const diagonal = Math.hypot(
+          volume.width * volume.pixelSpacingX,
+          volume.height * volume.pixelSpacingY,
+          volume.depth * volume.sliceSpacing
+        );
+        return { width: diagonal, height: diagonal };
+      }
+      return { width: volume.width * volume.pixelSpacingX, height: volume.height * volume.pixelSpacingY };
+    }
+
+    function planeForViewport(viewport, outputWidth, outputHeight) {
+      const volume = state.volumes.get(viewport.sequenceId);
+      const viewState = viewportState(viewport.key);
+      const crosshair = crosshairFor(viewport.sequenceId);
+      const center = { x: crosshair.x, y: crosshair.y, z: crosshair.z };
+      if (viewport.crosslinkAxial) center.z = Math.round(center.z);
+      let plane = viewport.kind === "OBLIQUE"
+        ? Core.makeObliquePlane(volume, center, state.obliqueAngles)
+        : Core.makeOrthogonalPlane(viewport.kind, volume, center);
+      const size = physicalPlaneSize(volume, viewport.kind);
+      const millimetresPerPixel = Math.max(
+        size.width / Math.max(1, outputWidth),
+        size.height / Math.max(1, outputHeight)
+      ) / viewState.zoom;
+      plane.mmPerPixelX = millimetresPerPixel;
+      plane.mmPerPixelY = millimetresPerPixel;
+      plane.center = {
+        x: plane.center.x + (plane.u.x * viewState.panX + plane.v.x * viewState.panY) / volume.pixelSpacingX,
+        y: plane.center.y + (plane.u.y * viewState.panX + plane.v.y * viewState.panY) / volume.pixelSpacingY,
+        z: plane.center.z + (plane.u.z * viewState.panX + plane.v.z * viewState.panY) / volume.sliceSpacing
+      };
+      plane.intensity = {
+        width: viewState.intensityWidth,
+        center: viewState.intensityCenter,
+        invert: viewState.invert
+      };
+      return plane;
+    }
+
+    function renderViewportNow(viewport, size, generation) {
+      const meta = state.renderMeta.get(viewport.key);
+      if (!meta || !Core.isRenderGenerationCurrent(generation, meta.generation)) return;
+      const volume = state.volumes.get(viewport.sequenceId);
+      if (!volume) return;
+      const plane = planeForViewport(viewport, size.width, size.height);
+      const pixels = Core.reslicePlane(volume, plane, size.width, size.height);
+      if (!Core.isRenderGenerationCurrent(generation, state.renderMeta.get(viewport.key).generation)) return;
+      const canvas = viewport.canvas;
+      canvas.width = size.width;
+      canvas.height = size.height;
+      const context = canvas.getContext("2d", { alpha: false });
+      context.putImageData(new ImageData(pixels, size.width, size.height), 0, 0);
+      context.save();
+      context.strokeStyle = "rgba(69, 199, 184, .75)";
+      context.lineWidth = Math.max(1, size.width / 500);
+      context.beginPath();
+      context.moveTo(size.width / 2, size.height * 0.42);
+      context.lineTo(size.width / 2, size.height * 0.58);
+      context.moveTo(size.width * 0.42, size.height / 2);
+      context.lineTo(size.width * 0.58, size.height / 2);
+      context.stroke();
+      context.fillStyle = "#e9faf7";
+      context.font = `${Math.max(10, Math.round(size.width / 34))}px system-ui`;
+      context.fillText(plane.labels.left, 6, size.height / 2);
+      context.fillText(plane.labels.right, size.width - 18, size.height / 2);
+      context.fillText(plane.labels.top, size.width / 2, 14);
+      context.fillText(plane.labels.bottom, size.width / 2, size.height - 6);
+      context.restore();
+      const viewState = viewportState(viewport.key);
+      viewport.hud.lastElementChild.textContent = `${viewport.kind} · slice ${Math.round(state.positions[viewport.sequenceId]) + 1}/${volume.depth} · Z ${viewState.zoom.toFixed(2)}×`;
+      updateViewportFilename(viewport);
+    }
+
+    function updateViewportFilename(viewport) {
+      if (!viewport.filename) return;
+      const volume = state.volumes.get(viewport.sequenceId);
+      const name = volume
+        ? Core.sliceNameAtPosition(volume.sliceNames || [], state.positions[viewport.sequenceId])
+        : "";
+      viewport.filename.textContent = name ? `檔案：${name}` : "檔案：—";
+      viewport.filename.title = name;
+    }
+
+    function scheduleViewportRender(viewport, interactive) {
+      const previous = state.renderMeta.get(viewport.key) || { generation: 0, timer: 0 };
+      if (previous.timer) clearTimeout(previous.timer);
+      const generation = previous.generation + 1;
+      const rect = viewport.canvas.getBoundingClientRect();
+      const plan = Core.progressiveRenderPlan(
+        rect.width || 320,
+        rect.height || 240,
+        globalThis.devicePixelRatio || 1,
+        generation
+      );
+      const meta = { generation, timer: 0 };
+      state.renderMeta.set(viewport.key, meta);
+      renderViewportNow(viewport, interactive ? plan.preview : plan.full, generation);
+      if (interactive) {
+        meta.timer = setTimeout(function () {
+          if (Core.isRenderGenerationCurrent(generation, state.renderMeta.get(viewport.key).generation)) {
+            renderViewportNow(viewport, plan.full, generation);
+          }
+        }, plan.delayMs);
+      }
+    }
+
+    function renderAllViewports(interactive) {
+      state.viewports.forEach(function (viewport) { scheduleViewportRender(viewport, interactive); });
+      renderTimelines();
+    }
+
+    function copyNavigation(sourceState) {
+      if (!syncNavigationControl.checked) return;
+      state.viewportStates.forEach(function (targetState) {
+        targetState.zoom = sourceState.zoom;
+        targetState.panX = sourceState.panX;
+        targetState.panY = sourceState.panY;
+      });
+    }
+
+    function copyIntensity(sourceState) {
+      if (!syncIntensityControl.checked) return;
+      state.viewportStates.forEach(function (targetState) {
+        targetState.intensityWidth = sourceState.intensityWidth;
+        targetState.intensityCenter = sourceState.intensityCenter;
+        targetState.invert = sourceState.invert;
+      });
+    }
+
+    function updateSynchronizedPosition(sequenceId, position) {
+      state.positions = Core.synchronizePositions(
+        sequenceId,
+        position,
+        state.crosslinks,
+        depthMap(),
+        state.positions
+      );
+      Object.keys(state.positions).map(Number).forEach(function (id) {
+        if (state.crosshairs.has(id)) state.crosshairs.get(id).z = state.positions[id];
+      });
+      renderAllViewports(true);
+    }
+
+    function updateObliqueInputs() {
+      obliqueAzimuth.value = String(Math.round(state.obliqueAngles.azimuth * 10) / 10);
+      obliqueTilt.value = String(Math.round(state.obliqueAngles.tilt * 10) / 10);
+      obliqueRoll.value = String(Math.round(state.obliqueAngles.roll * 10) / 10);
+    }
+
+    function bindViewportInteractions(viewport) {
+      const canvas = viewport.canvas;
+      let drag = null;
+      canvas.addEventListener("wheel", function (event) {
+        event.preventDefault();
+        selectViewport(viewport.key);
+        const viewState = viewportState(viewport.key);
+        if (event.ctrlKey || event.metaKey) {
+          viewState.zoom = Math.max(0.25, Math.min(12, viewState.zoom * (event.deltaY > 0 ? 0.9 : 1.1)));
+          copyNavigation(viewState);
+          renderAllViewports(true);
+        } else {
+          updateSynchronizedPosition(
+            viewport.sequenceId,
+            Number(state.positions[viewport.sequenceId]) + (event.deltaY > 0 ? 1 : -1)
+          );
+        }
+      }, { passive: false });
+      canvas.addEventListener("contextmenu", function (event) { event.preventDefault(); });
+      canvas.addEventListener("pointerdown", function (event) {
+        event.preventDefault();
+        selectViewport(viewport.key);
+        let mode = "crosshair";
+        if (event.button === 2) mode = "intensity";
+        else if (viewport.kind === "OBLIQUE" && event.altKey) mode = "oblique";
+        else if (event.button === 1 || event.shiftKey) mode = "pan";
+        drag = { mode, x: event.clientX, y: event.clientY, shift: event.shiftKey };
+        canvas.setPointerCapture(event.pointerId);
+      });
+      canvas.addEventListener("pointermove", function (event) {
+        if (!drag) return;
+        const dx = event.clientX - drag.x;
+        const dy = event.clientY - drag.y;
+        drag.x = event.clientX;
+        drag.y = event.clientY;
+        const viewState = viewportState(viewport.key);
+        if (drag.mode === "intensity") {
+          viewState.intensityWidth = Math.max(1, Math.min(510, viewState.intensityWidth + dx * 1.5));
+          viewState.intensityCenter = Math.max(-127.5, Math.min(382.5, viewState.intensityCenter - dy));
+          copyIntensity(viewState);
+        } else if (drag.mode === "pan") {
+          viewState.panX -= dx / viewState.zoom;
+          viewState.panY -= dy / viewState.zoom;
+          copyNavigation(viewState);
+        } else if (drag.mode === "oblique") {
+          if (drag.shift) state.obliqueAngles.roll += dx * 0.5;
+          else {
+            state.obliqueAngles.azimuth += dx * 0.5;
+            state.obliqueAngles.tilt = Math.max(-90, Math.min(90, state.obliqueAngles.tilt + dy * 0.5));
+          }
+          updateObliqueInputs();
+        } else {
+          const volume = state.volumes.get(viewport.sequenceId);
+          const bounds = canvas.getBoundingClientRect();
+          const horizontal = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+          const vertical = Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height));
+          const crosshair = crosshairFor(viewport.sequenceId);
+          if (viewport.kind === "AX" || viewport.kind === "OBLIQUE") {
+            crosshair.x = horizontal * (volume.width - 1);
+            crosshair.y = vertical * (volume.height - 1);
+          } else if (viewport.kind === "COR") {
+            crosshair.x = horizontal * (volume.width - 1);
+            updateSynchronizedPosition(viewport.sequenceId, vertical * (volume.depth - 1));
+            return;
+          } else if (viewport.kind === "SAG") {
+            crosshair.y = horizontal * (volume.height - 1);
+            updateSynchronizedPosition(viewport.sequenceId, vertical * (volume.depth - 1));
+            return;
+          }
+        }
+        renderAllViewports(true);
+      });
+      const finishDrag = function (event) {
+        if (!drag) return;
+        drag = null;
+        if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+        renderAllViewports(false);
+      };
+      canvas.addEventListener("pointerup", finishDrag);
+      canvas.addEventListener("pointercancel", finishDrag);
+    }
+
+    function createViewport(sequenceId, kind, key, crosslinkAxial) {
+      const card = document.createElement("article");
+      card.className = "viewport-card";
+      card.dataset.viewportKey = key;
+      const canvas = document.createElement("canvas");
+      canvas.setAttribute("aria-label", `Sequence ${sequenceId} ${kind} viewport`);
+      const hud = document.createElement("div");
+      hud.className = "viewport-hud";
+      const sequenceLabel = document.createElement("span");
+      sequenceLabel.textContent = `Sequence ${sequenceId}`;
+      const detail = document.createElement("span");
+      hud.append(sequenceLabel, detail);
+      card.append(canvas, hud);
+      let root = card;
+      let filename = null;
+      if (crosslinkAxial) {
+        root = document.createElement("div");
+        root.className = "viewport-stack";
+        filename = document.createElement("div");
+        filename.className = "viewport-filename";
+        root.append(card, filename);
+      }
+      const viewport = {
+        key,
+        sequenceId,
+        kind,
+        crosslinkAxial: Boolean(crosslinkAxial),
+        root,
+        card,
+        canvas,
+        hud,
+        filename
+      };
+      state.viewports.set(key, viewport);
+      viewportState(key);
+      bindViewportInteractions(viewport);
+      card.addEventListener("pointerdown", function () { selectViewport(key); });
+      return root;
+    }
+
+    function buildViewportWorkspace() {
+      state.renderMeta.forEach(function (meta) { if (meta.timer) clearTimeout(meta.timer); });
+      state.renderMeta.clear();
+      state.viewports.clear();
+      axialViewports.className = "viewport-grid";
+      axialViewports.replaceChildren();
+      activeSequenceIds().forEach(function (sequenceId) {
+        axialViewports.appendChild(createViewport(sequenceId, "AX", `cross-${sequenceId}-ax`, true));
+      });
+      primaryMprGrid.replaceChildren();
+      ["AX", "COR", "SAG", "OBLIQUE"].forEach(function (kind) {
+        primaryMprGrid.appendChild(createViewport(1, kind, `mpr-1-${kind.toLowerCase()}`, false));
+      });
+      secondaryMprRegions.replaceChildren();
+      activeSequenceIds().filter(function (sequenceId) { return sequenceId > 1; }).forEach(function (sequenceId) {
+        const region = document.createElement("section");
+        region.className = "mpr-region";
+        const heading = document.createElement("h2");
+        heading.textContent = `Sequence ${sequenceId} · 同步比較`;
+        const grid = document.createElement("div");
+        grid.className = "secondary-grid";
+        ["AX", "COR", "SAG", "OBLIQUE"].forEach(function (kind) {
+          grid.appendChild(createViewport(sequenceId, kind, `mpr-${sequenceId}-${kind.toLowerCase()}`, false));
+        });
+        region.append(heading, grid);
+        secondaryMprRegions.appendChild(region);
+      });
+      const firstKey = state.viewports.keys().next().value;
+      if (firstKey) selectViewport(firstKey);
+      geometryWarning.classList.toggle("visible", Array.from(state.volumes.values()).some(function (volume) {
+        return volume.geometry.unknownScale;
+      }));
+    }
+
+    function tryCreateRenderWorker() {
+      try {
+        const source = "self.onmessage=function(event){self.postMessage(event.data);};";
+        const objectUrl = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+        const worker = new Worker(objectUrl);
+        worker.terminate();
+        URL.revokeObjectURL(objectUrl);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function renderWorkspaceShells() {
+      if (!state.volumes.size) return;
+      state.volumes.forEach(function (volume, sequenceId) {
+        if (!Number.isFinite(state.positions[sequenceId])) state.positions[sequenceId] = (volume.depth - 1) / 2;
+      });
+      buildViewportWorkspace();
+      tryCreateRenderWorker();
+      renderAnchorTargetOptions();
+      renderTimelines();
+      requestAnimationFrame(function () { renderAllViewports(false); });
+    }
+
+    function setMode(mode) {
+      const showMpr = mode === "mpr";
+      crosslinkTab.setAttribute("aria-selected", String(!showMpr));
+      mprTab.setAttribute("aria-selected", String(showMpr));
+      crosslinkWorkspace.hidden = showMpr;
+      mprWorkspace.hidden = !showMpr;
+      requestAnimationFrame(function () { renderAllViewports(false); });
+    }
+
+    function selectedViewportState() {
+      return state.selectedViewport ? viewportState(state.selectedViewport) : null;
+    }
+
+    function fitSelectedViewport() {
+      const viewState = selectedViewportState();
+      if (!viewState) return;
+      viewState.zoom = 1;
+      viewState.panX = 0;
+      viewState.panY = 0;
+      copyNavigation(viewState);
+      renderAllViewports(false);
+    }
+
+    function resetSelectedViewport() {
+      const viewState = selectedViewportState();
+      if (!viewState) return;
+      viewState.zoom = 1;
+      viewState.panX = 0;
+      viewState.panY = 0;
+      viewState.intensityWidth = 255;
+      viewState.intensityCenter = 127.5;
+      viewState.invert = false;
+      copyNavigation(viewState);
+      copyIntensity(viewState);
+      renderAllViewports(false);
+    }
+
+    function updateObliqueFromControls() {
+      state.obliqueAngles = {
+        azimuth: Number(obliqueAzimuth.value) || 0,
+        tilt: Math.max(-90, Math.min(90, Number(obliqueTilt.value) || 0)),
+        roll: Number(obliqueRoll.value) || 0
+      };
+      renderAllViewports(true);
+    }
+
+    crosslinkTab.addEventListener("click", function () { setMode("crosslink"); });
+    mprTab.addEventListener("click", function () { setMode("mpr"); });
+    fitViewButton.addEventListener("click", fitSelectedViewport);
+    resetViewButton.addEventListener("click", resetSelectedViewport);
+    invertViewButton.addEventListener("click", function () {
+      const viewState = selectedViewportState();
+      if (!viewState) return;
+      viewState.invert = !viewState.invert;
+      copyIntensity(viewState);
+      renderAllViewports(false);
+    });
+    [obliqueAzimuth, obliqueTilt, obliqueRoll].forEach(function (control) {
+      control.addEventListener("input", updateObliqueFromControls);
+    });
+    obliqueReset.addEventListener("click", function () {
+      state.obliqueAngles = { azimuth: 0, tilt: 0, roll: 0 };
+      updateObliqueInputs();
+      renderAllViewports(false);
+    });
+    addAnchorButton.addEventListener("click", function () { saveAnchor(false); });
+    updateAnchorButton.addEventListener("click", function () { saveAnchor(true); });
+    deleteAnchorButton.addEventListener("click", removeSelectedAnchor);
+    anchorTarget.addEventListener("change", function () {
+      state.selectedAnchor = null;
+      updateAnchorButtons();
+    });
+    input.addEventListener("change", function () { handleFiles(input.files); });
+    sequenceCountControl.addEventListener("change", function () {
+      state.boundaries = defaultBoundaries(state.items.length);
+      state.items = Core.assignByBoundaries(state.items, sequenceCount(), state.boundaries);
+      activeSequenceIds().forEach(geometryFor);
+      state.volumes.clear();
+      resetCrosslinkState();
+      renderOrganizer();
+    });
+    buildVolumesButton.addEventListener("click", buildVolumes);
+    dropTarget.addEventListener("dragover", function (event) { event.preventDefault(); });
+    dropTarget.addEventListener("drop", function (event) {
+      event.preventDefault();
+      if (event.dataTransfer && event.dataTransfer.files) handleFiles(event.dataTransfer.files);
+    });
+    globalThis.addEventListener("resize", function () { renderAllViewports(true); });
+    activeSequenceIds().forEach(geometryFor);
+    resetCrosslinkState();
+    renderOrganizer();
+  }());
+  </script>
+</body>
+</html>
