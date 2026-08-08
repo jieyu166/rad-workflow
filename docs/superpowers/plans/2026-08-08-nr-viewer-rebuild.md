@@ -4106,13 +4106,20 @@ PROBE_END = "__NR_PROBE_RESULT_END__"
 
 
 def extract_probe_result(dumped_dom: str) -> dict:
+    element = re.search(
+        r'''<pre\b(?=[^>]*\bid\s*=\s*(?:"probe-result"|'probe-result'))[^>]*>(.*?)</pre\s*>''',
+        dumped_dom,
+        re.IGNORECASE | re.DOTALL,
+    )
+    if element is None:
+        raise AssertionError("probe result element missing from dumped DOM")
     match = re.search(
         re.escape(PROBE_START) + r"(.*?)" + re.escape(PROBE_END),
-        dumped_dom,
+        element.group(1),
         re.DOTALL,
     )
     if match is None:
-        raise AssertionError("probe result sentinel missing from dumped DOM")
+        raise AssertionError("probe result sentinel missing from probe element")
     return json.loads(html_lib.unescape(match.group(1)))
 
 
@@ -4143,9 +4150,11 @@ class LectureViewerE2ETests(unittest.TestCase):
         ], check=True, capture_output=True, text=True, encoding="utf-8")
         return extract_probe_result(completed.stdout)
 
-    def test_probe_extraction_tolerates_hidden_attribute_serialization(self):
+    def test_probe_extraction_scopes_to_hidden_pre_despite_script_sentinel_collision_and_attribute_order(self):
         dumped = (
-            '<pre class="diagnostic" id="probe-result" hidden="">'
+            '<script>const start="' + PROBE_START + '";const end="' + PROBE_END
+            + '";const source=start+JSON.stringify(value)+end;</script>'
+            + '<pre hidden="" class="diagnostic" data-extra="x" id="probe-result">'
             + PROBE_START + '{&quot;ok&quot;:true,&quot;count&quot;:4}' + PROBE_END
             + '</pre>'
         )
@@ -4198,7 +4207,7 @@ class LectureViewerE2ETests(unittest.TestCase):
         self.assertTrue(state["jsonPayloadParsed"])
 ```
 
-The probe dispatch is a fixed three-value allowlist（`layout`, `interactions`, `media`）and never evaluates query text。The code above writes only computed fixture state between fixed text sentinels `__NR_PROBE_RESULT_START__` / `__NR_PROBE_RESULT_END__` inside hidden `#probe-result`; Python extracts by sentinel regex and HTML-unescapes the payload, so Chromium may serialize `hidden=""` or reorder attributes without breaking extraction。Without one of those exact probe values it performs no probe action。`media` must finish through the asynchronous Promise before `--virtual-time-budget=8000` expires；a `probeError` object is an explicit test failure, never a skip。
+The probe dispatch is a fixed three-value allowlist（`layout`, `interactions`, `media`）and never evaluates query text。The code above writes only computed fixture state between fixed text sentinels `__NR_PROBE_RESULT_START__` / `__NR_PROBE_RESULT_END__` inside hidden `#probe-result`; Python first scopes extraction to the `<pre>` whose `id` is `probe-result` with an attribute-order-tolerant regex, then finds sentinels only inside that element body and HTML-unescapes the payload；the collision regression test includes identical sentinel literals in a preceding `<script>` plus reordered `hidden=""` attributes, proving script source cannot be mistaken for runtime JSON。Without one of those exact probe values it performs no probe action。`media` must finish through the asynchronous Promise before `--virtual-time-budget=8000` expires；a `probeError` object is an explicit test failure, never a skip。
 
 - [ ] **Step 2: Run and verify RED**
 
