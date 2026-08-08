@@ -53,8 +53,21 @@ def parse_name(stem: str) -> tuple[str, str, str]:
     return "", "", stem
 
 
+def load_titles(folder: Path) -> dict:
+    """選用的 `_titles.json`：檔名不含講者與題目時，用它補上卡片標題。
+    格式 {"<stem>": {"no": "01", "speaker": "某某醫師", "topic": "題目"}}。"""
+    p = folder / "_titles.json"
+    if not p.exists():
+        return {}
+    try:
+        return load(p)
+    except json.JSONDecodeError:
+        return {}
+
+
 def collect(folder: Path) -> list[dict]:
     out = []
+    titles = load_titles(folder)
     for j in sorted(folder.glob("*.json")):
         if j.name.startswith("_") or j.name.endswith((".frames.json", ".frames_ocr.json")):
             continue
@@ -69,6 +82,10 @@ def collect(folder: Path) -> list[dict]:
         if not segs:
             continue
         no, speaker, topic = parse_name(j.stem)
+        ov = titles.get(j.stem) or {}
+        no = ov.get("no", no)
+        speaker = ov.get("speaker", speaker)
+        topic = ov.get("topic", topic)
         frames = [f for s in segs for f in (s.get("frames") or [])]
         out.append({
             "no": no, "speaker": speaker, "topic": topic, "stem": j.stem,
