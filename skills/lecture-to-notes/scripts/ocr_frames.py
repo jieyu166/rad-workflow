@@ -23,6 +23,7 @@
 from __future__ import annotations
 import argparse
 import json
+import re
 import sys
 import time
 from datetime import datetime
@@ -31,6 +32,26 @@ from urllib.parse import unquote
 
 IMG_EXT = (".png", ".jpg", ".jpeg", ".webp")
 ENGINE = "rapidocr-onnxruntime"
+
+
+# 線上會議錄影的畫面上永遠有一層工具列，OCR 會把它當成投影片內容讀進來。
+# 實測一批 Zoom 錄影：6880 行 OCR 裡 543 行（7.9%）是這種雜訊，而且 OCR 每次
+# 拼錯的方式都不同（螢幕→蜜幕/童幕/瑩幕/策幕/蟹幕），所以用模糊樣式而不是字串清單。
+# 這些字會讓跨場搜尋每一張投影片都命中，等於把搜尋廢掉。
+UI_NOISE = [
+    re.compile(r"正在[觀翻檢][看著].{0,4}[幕募]"),      # 您正在觀看○○的螢幕
+    re.compile(r"檢[視祝現].{0,2}[選避逛]項"),           # 檢視選項
+    re.compile(r"^\W{0,2}(REC|EC)\W{0,2}$", re.I),      # 錄影指示燈
+    re.compile(r"分享音訊.{0,6}靜音"),                    # 注意：當分享音訊時您將自被靜音
+    re.compile(r"^(靜音|取消靜音|停止視訊|參加者|聊天|分享畫面|結束會議)$"),
+]
+
+
+def strip_ui(text: str) -> str:
+    """去掉會議軟體工具列的文字。整行比對，不動投影片本身的內容。"""
+    keep = [ln for ln in text.split(chr(10))
+            if ln.strip() and not any(rx.search(ln.strip()) for rx in UI_NOISE)]
+    return chr(10).join(keep)
 
 
 def load_engine():
@@ -107,6 +128,8 @@ def main():
     ap.add_argument("--no-merge", action="store_true", help="只建 OCR 快取，不寫回分段 JSON")
     ap.add_argument("--cache", help="快取檔路徑（預設 <stem>.frames_ocr.json）")
     ap.add_argument("--no-s2t", action="store_true", help="不把 OCR 文字轉繁體")
+    ap.add_argument("--keep-ui", action="store_true",
+                    help="保留會議軟體工具列文字（預設濾掉：檢視選項／正在觀看○○的螢幕／REC）")
     args = ap.parse_args()
 
     target = Path(args.target)
@@ -158,6 +181,8 @@ def main():
             text = ocr_one(engine, p, args.min_conf)
             if s2t:
                 text = s2t(text)
+            if not args.keep_ui:
+                text = strip_ui(text)
             cache[fr] = {"fingerprint": fingerprint(p), "chars": len(text), "text": text}
             elapsed = time.time() - t0
             eta = elapsed / i * (len(todo) - i)
