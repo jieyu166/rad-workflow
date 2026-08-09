@@ -19,10 +19,10 @@ Every rewrite, render, audit, and publication input SHALL preserve the source se
 - **THEN** the system rejects the lecture and identifies segment 3 as the changed range
 
 ### Requirement: Focused Traditional Chinese content
-Each segment SHALL have a title as its sixth reviewed content unit; a `summary_zh` containing 250–600 Han characters in one or two paragraphs; exactly four non-empty distinct `takeaways_zh`; and a list-valued `editorial_notes_zh`. A title without trusted claim evidence SHALL be a non-case topical label identifying one diagnosis, anatomy, or reading task without asserting a patient-specific diagnosis, history, or imaging finding. A title that asserts any patient-specific or case-specific fact SHALL have trusted citations and a human source-support attestation under the same claim-level contract as speaker clauses. Content SHALL use Traditional Chinese Taiwan terminology and SHALL NOT contain Simplified Chinese-only characters, unfinished markers, template prompts, empty titles, generic chapter labels, or excessive verbatim transcript copying.
+Each segment SHALL have a title as its sixth reviewed content unit; a `summary_zh` containing 250–600 Han characters in one or two paragraphs; exactly four non-empty distinct `takeaways_zh`; and a list-valued `editorial_notes_zh`. Every rewrite candidate SHALL carry review metadata string `title_kind` equal to exactly `topical` or `case_claim` for that title. A `topical` title SHALL identify a diagnosis, anatomy, or reading task without asserting case-specific pathology, follow-up status, history, imaging findings, or diagnosis; it SHALL have no title citation or claim attestation and SHALL require digest-bound reviewer confirmation `topical_title_confirmed=true`. A `case_claim` title SHALL have one or more trusted citations and a human source-support attestation under the same claim-level contract as speaker clauses. Content SHALL use Traditional Chinese Taiwan terminology and SHALL NOT contain Simplified Chinese-only characters, unfinished markers, template prompts, empty titles, generic chapter labels, or excessive verbatim transcript copying.
 
 #### Scenario: Valid focused chapter content passes
-- **WHEN** a segment has a focused medical title, a 250–600 character structured summary, four distinct takeaways, and valid editorial notes
+- **WHEN** a segment has a focused medical title with valid reviewed `title_kind`, a 250–600 character structured summary, four distinct takeaways, and valid editorial notes
 - **THEN** content validation returns no error findings
 
 #### Scenario: Invalid count and unfinished content fail
@@ -30,7 +30,7 @@ Each segment SHALL have a title as its sixth reviewed content unit; a `summary_z
 - **THEN** validation returns blocking findings for every violated rule
 
 ### Requirement: Speaker content and editorial knowledge remain separated
-`summary_zh` and `takeaways_zh` SHALL contain only source-confirmed speaker content reorganized or paraphrased for clarity. For evidence coverage, each segment's complete `summary_zh` SHALL be one speaker claim clause and each of its exactly four indexed `takeaways_zh` SHALL be one speaker claim clause. The `title` SHALL be the sixth reviewed content unit and SHALL either remain a non-case topical label or satisfy the trusted citation and attestation rules for a case-specific factual claim. General background, modern classification, extra differential diagnosis, or teaching guidance not explicitly stated by the speaker SHALL appear only in separately labeled `editorial_notes_zh`. Editorial notes SHALL NOT be speaker claim clauses, citations, or support for case claims, but SHALL remain part of the full rewritten-candidate digest. The system SHALL NOT invent patient history, imaging findings, diagnoses, or other case-specific facts.
+`summary_zh` and `takeaways_zh` SHALL contain only source-confirmed speaker content reorganized or paraphrased for clarity. For evidence coverage, each segment's complete `summary_zh` SHALL be one speaker claim clause and each of its exactly four indexed `takeaways_zh` SHALL be one speaker claim clause. The `title` SHALL be the sixth reviewed content unit and SHALL carry human-reviewed `title_kind="topical"` with `topical_title_confirmed=true` and no title evidence, or `title_kind="case_claim"` with trusted citations and a claim attestation. General background, modern classification, extra differential diagnosis, or teaching guidance not explicitly stated by the speaker SHALL appear only in separately labeled `editorial_notes_zh`. Editorial notes SHALL NOT be speaker claim clauses, citations, or support for case claims, but SHALL remain part of the full rewritten-candidate digest. The system SHALL NOT invent patient history, imaging findings, diagnoses, or other case-specific facts.
 
 #### Scenario: Editorial note remains separate
 - **WHEN** a segment contains a source-supported summary and four source-supported takeaways plus an editorial note with modern teaching guidance
@@ -38,36 +38,64 @@ Each segment SHALL have a title as its sixth reviewed content unit; a `summary_z
 
 #### Scenario: Review confirms source boundaries without text equality
 - **WHEN** a rewrite paraphrases source-supported speaker content and keeps additional knowledge only in `editorial_notes_zh`
-- **THEN** source-boundary validation evaluates all five speaker claim attestations plus the title's topical-label or case-claim status and does not require exact or fuzzy equality between a supported claim and source text
+- **THEN** source-boundary validation evaluates all five speaker claim attestations plus the title's explicit human-reviewed `topical` or `case_claim` classification and required confirmation/evidence and does not require exact or fuzzy equality between a supported claim and source text
 
 ### Requirement: Claim-level trusted evidence and human support attestation
-Every segment SHALL provide complete evidence coverage for its five speaker claim clauses: the whole `summary_zh` and each of the exactly four indexed `takeaways_zh`, including clauses copied unchanged from legacy `existing_content`. The `title` SHALL be a sixth reviewed content unit: if it contains a patient-specific or case-specific factual assertion, it SHALL cite trusted evidence and carry a claim attestation; otherwise it SHALL be validated as a non-case topical label. Every evidence-requiring claim SHALL cite one or more trusted transcript paragraphs or externally trusted canonical frame sources. A transcript citation SHALL resolve by stable paragraph identity and SHA-256 to a trusted transcript source represented by the approved evidence packet. A frame citation SHALL resolve by stable frame identity, asset/source hashes, and allowed citation type to an independently trusted external canonical frame manifest. A hash stored only inside the evidence packet SHALL prove packet integrity only and SHALL NOT establish source authenticity.
+Every segment SHALL provide complete evidence coverage for its five speaker claim clauses: the whole `summary_zh` and each of the exactly four indexed `takeaways_zh`, including clauses copied unchanged from legacy `existing_content`. The `title` SHALL be a sixth reviewed content unit, and its rewrite candidate SHALL carry explicit string `title_kind` equal to exactly `topical` or `case_claim`. `topical` SHALL have an empty title citation set, no title claim attestation, and digest-bound `topical_title_confirmed=true`; `case_claim` SHALL cite trusted evidence and carry a claim attestation with `support_confirmed=true`. Semantic classification SHALL be performed by the named human reviewer. Mechanical red flags SHALL be allowed to force pathology, follow-up-status, history, imaging-finding, diagnosis, or other evident case assertions to `case_claim`, but the absence of a red flag MUST NOT prove that a title is `topical`. Every evidence-requiring claim SHALL cite one or more trusted transcript paragraphs or externally trusted canonical frame sources. A transcript citation SHALL resolve by stable paragraph identity and SHA-256 to a trusted transcript source represented by the approved evidence packet. A frame citation SHALL resolve by stable frame identity, asset/source hashes, and allowed citation type to an independently trusted external canonical frame manifest. A hash stored only inside the evidence packet SHALL prove packet integrity only and SHALL NOT establish source authenticity.
 
-The system SHALL use a non-circular two-digest review contract. It SHALL compute `approved_candidate_sha256` from a deterministic canonical serialization of the immutable rewritten candidate containing chapter identity, exact start/end times, `title`, `summary_zh`, exactly four `takeaways_zh` in index order, the complete `editorial_notes_zh` list, and the complete citation map. Citation entries SHALL be canonicalized as an order-insensitive set sorted by content-unit identity, citation identity, type, and source hash; reordering identical entries SHALL preserve `approved_candidate_sha256`, while adding, removing, or changing an identity, type, or hash SHALL change it.
+The system SHALL use a non-circular two-digest review contract. It SHALL compute `approved_candidate_sha256` from a deterministic canonical serialization of the immutable rewritten candidate containing chapter identity, exact start/end times, `title`, `title_kind`, `summary_zh`, exactly four `takeaways_zh` in index order, the complete `editorial_notes_zh` list, and the complete citation map. Citation entries SHALL be canonicalized as an order-insensitive set sorted by content-unit identity, citation identity, type, and source hash; reordering identical entries SHALL preserve `approved_candidate_sha256`, while adding, removing, or changing an identity, type, or hash SHALL change it.
 
-The system SHALL compute `review_attestation_sha256` from a separate canonical review payload containing `approved_candidate_sha256`, `evidence_packet_sha256`, every per-claim attestation sorted by content-unit identity, the validator-recomputed normalized claim SHA-256, each attestation's order-insensitive canonical citation identity/hash set, explicit `support_confirmed=true`, a normalized non-empty `reviewer_id`, explicit `source_support_confirmed=true`, `case_facts_confirmed=true`, and `editorial_separation_confirmed=true`, and `review_schema="lecture-content-review"` with integer `review_version=1`. `reviewer_id` normalization SHALL remove leading and trailing Unicode whitespace and apply Unicode NFC without changing case. The review payload MUST NOT contain `review_attestation_sha256` itself. Approved run state SHALL store and verify both `approved_candidate_sha256` and `review_attestation_sha256`; neither digest alone SHALL authorize application.
+The system SHALL compute `review_attestation_sha256` from a separate canonical review payload containing `approved_candidate_sha256`, `evidence_packet_sha256`, every per-claim attestation sorted by content-unit identity, the validator-recomputed normalized claim SHA-256, each attestation's order-insensitive canonical citation identity/hash set, explicit `support_confirmed=true`, a normalized non-empty `reviewer_id`, explicit `source_support_confirmed=true`, `case_facts_confirmed=true`, and `editorial_separation_confirmed=true`, required boolean `topical_title_confirmed` that SHALL be `true` exactly when `title_kind="topical"`, and `review_schema="lecture-content-review"` with integer `review_version=1`. `reviewer_id` normalization SHALL remove leading and trailing Unicode whitespace and apply Unicode NFC without changing case. The review payload MUST NOT contain `review_attestation_sha256` itself. Approved run state SHALL store and verify both `approved_candidate_sha256` and `review_attestation_sha256`; neither digest alone SHALL authorize application.
 
-The mechanical validator SHALL recompute both digests and verify content-unit and claim coverage, citation existence and allowed types, trusted external source resolution, hashes, reviewer identity, confirmations, schema/version, and all bindings. It MUST NOT treat exact matching, fuzzy matching, or unchanged legacy text as proof of semantic equivalence or source support. A missing citation, missing attestation, untrusted source, unsupported citation type, incomplete clause set, either missing or mismatched approved-run digest, or another binding mismatch SHALL fail closed. A packet and review SHALL NOT be replayed after any candidate field, citation membership/type/hash, reviewer identity, confirmation, attestation, or review schema/version change. Findings SHALL identify only segment identity, content-unit identity, field, and error code and SHALL NOT echo sensitive claim or source text.
+The mechanical validator SHALL recompute both digests and verify content-unit and claim coverage, citation existence and allowed types, trusted external source resolution, hashes, reviewer identity, confirmations, schema/version, and all bindings. It MUST NOT treat exact matching, fuzzy matching, unchanged legacy text, or the absence of mechanical title red flags as proof of semantic equivalence, source support, or `topical` classification. A missing/non-string/out-of-enum `title_kind`, invalid topical confirmation/evidence combination, case-claim evidence gap, title-classification tamper or replay, missing citation, missing attestation, untrusted source, unsupported citation type, incomplete clause set, either missing or mismatched approved-run digest, or another binding mismatch SHALL fail closed. A packet and review SHALL NOT be replayed after any candidate field, citation membership/type/hash, reviewer identity, confirmation, attestation, or review schema/version change. Findings SHALL identify only segment identity, content-unit identity, field, and error code and SHALL NOT echo sensitive claim or source text.
 
 #### Scenario: Supported paraphrase with bound transcript attestation passes
 - **WHEN** a paraphrased `summary_zh` cites trusted transcript paragraph `p-0042`, the citation paragraph hash resolves in the approved packet, and approved run state matches both the recomputed `approved_candidate_sha256` and `review_attestation_sha256` for the named reviewer's support record
 - **THEN** claim-level validation accepts the summary without requiring clause equality to paragraph `p-0042`
 
-#### Scenario: Non-case topical title passes without claim evidence
-- **WHEN** the reviewed title is `後顱窩腫瘤影像判讀策略` and contains no patient-specific or case-specific factual assertion
-- **THEN** title validation accepts it as the sixth reviewed content unit without requiring a title citation or claim attestation
+#### Scenario: Generic topical title with reviewed classification passes
+- **WHEN** the reviewed title is `後顱窩腫瘤影像判讀策略`, `title_kind="topical"`, the title citation set is empty, no title claim attestation exists, and the named reviewer sets digest-bound `topical_title_confirmed=true`
+- **THEN** title validation accepts the sixth reviewed content unit without source evidence
+
+#### Scenario: Topical title contract mismatch fails
+- **WHEN** `title_kind="topical"` has missing or false `topical_title_confirmed`, a non-empty title citation set, or a title claim attestation
+- **THEN** title validation rejects the candidate because topical classification requires explicit human confirmation and no source-evidence binding
 
 #### Scenario: Supported case-specific title passes
-- **WHEN** a case-specific title has a trusted transcript or externally manifested frame citation and approved run state binds matching `approved_candidate_sha256` and `review_attestation_sha256` values for the normalized title claim, canonical citation set, packet digest, confirmations, and named reviewer
+- **WHEN** a case-specific title has `title_kind="case_claim"`, a trusted transcript or externally manifested frame citation, `support_confirmed=true`, and approved run state binds matching `approved_candidate_sha256` and `review_attestation_sha256` values for the normalized title claim, canonical citation set, packet digest, confirmations, and named reviewer
 - **THEN** title validation accepts the case-specific factual assertion
 
+#### Scenario: Implicit pathology follow-up and history titles require case evidence
+- **WHEN** a title semantically asserts pathology, follow-up status, or patient history without using an explicit patient/case prefix
+- **THEN** human review classifies it as `case_claim`, and validation requires trusted title citations plus a per-claim support attestation
+
+##### Example: Implicit case-title classifications
+
+| Title | Required classification and evidence |
+| --- | --- |
+| `左側小腦轉移瘤` | `case_claim` with trusted pathology support |
+| `術後追蹤無復發` | `case_claim` with trusted follow-up support |
+| `肺癌病史併新發腦病灶` | `case_claim` with trusted history and imaging support |
+
+#### Scenario: Red-flag absence does not establish topical classification
+- **WHEN** no configured mechanical title red flag matches but the named reviewer classifies the title as `case_claim`
+- **THEN** validation enforces trusted title citations and claim attestation and does not downgrade the title to `topical`
+
+#### Scenario: Missing or wrong-type title classification fails
+- **WHEN** `title_kind` is absent, null, numeric, boolean, or any string other than exact `topical` or `case_claim`
+- **THEN** title validation rejects the candidate before application without guessing a classification from title text
+
 #### Scenario: Unsupported case-specific title fails
-- **WHEN** the reviewed title is `本病例為左側小腦轉移瘤` but the title has no trusted citation and no human source-support attestation
+- **WHEN** the reviewed title is `本病例為左側小腦轉移瘤` with `title_kind="case_claim"` but has no trusted citation and no human source-support attestation
 - **THEN** title validation rejects the candidate as an unsupported case-specific factual assertion
 
+#### Scenario: Title classification tamper fails closed
+- **WHEN** an approved title, citation map, and review record are unchanged but `title_kind` is changed from `case_claim` to `topical` or from `topical` to `case_claim` while reusing both prior approved-run digests
+- **THEN** validation rejects the candidate for `approved_candidate_sha256` mismatch and does not infer the replacement classification mechanically
+
 #### Scenario: Title replay or tamper fails closed
-- **WHEN** an approved candidate title is changed after review from the topical label `後顱窩腫瘤影像判讀策略` to the case assertion `本病例為左側小腦轉移瘤` while reusing the prior packet and both prior approved-run digests
-- **THEN** validation rejects the candidate for candidate-digest mismatch and missing trusted title support without echoing the title text in findings
+- **WHEN** an approved candidate title is changed after review from `後顱窩腫瘤影像判讀策略` with `title_kind="topical"` to `本病例為左側小腦轉移瘤` while retaining `title_kind="topical"` and reusing the prior packet and both prior approved-run digests
+- **THEN** validation rejects the candidate for candidate-digest mismatch, forced `case_claim` red flag, and missing trusted title support without echoing the title text in findings
 
 #### Scenario: Exact unchanged legacy clause without citation fails
 - **WHEN** a takeaway is byte-for-byte identical to legacy `existing_content` but has no trusted citation or source-support attestation
@@ -114,6 +142,7 @@ The mechanical validator SHALL recompute both digests and verify content-unit an
 | Changed after approval | Expected result |
 | --- | --- |
 | `title` | FAIL: candidate-digest mismatch; case-specific title also requires its own trusted support |
+| `title_kind` | FAIL: candidate-digest mismatch plus revalidation of topical confirmation or case evidence |
 | `editorial_notes_zh` item | FAIL: candidate-digest mismatch even though editorial notes are not speaker claims |
 | `summary_zh` | FAIL: candidate-digest and normalized-claim binding mismatch |
 | any indexed `takeaways_zh` item | FAIL: candidate-digest and normalized-claim binding mismatch |
