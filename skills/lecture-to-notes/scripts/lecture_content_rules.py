@@ -29,6 +29,7 @@ _UNFINISHED_ZH = (
     "尚未完成",
     "核心重點一",
 )
+_TAIWAN_CONTEXT_TERMS = ("干擾",)
 
 
 def _normalize_text(value: str) -> str:
@@ -78,13 +79,16 @@ def _simplified_finding(text: str) -> Finding | None:
         )
 
     try:
-        for character in text:
-            if _han_count(character) and converter.convert(character) != character:
-                return Finding(
-                    "error",
-                    "simplified_chinese",
-                    "content contains Simplified Chinese-only characters",
-                )
+        normalized = _normalize_text(text)
+        protected = normalized
+        for index, term in enumerate(_TAIWAN_CONTEXT_TERMS):
+            protected = protected.replace(term, f"{index}")
+        if converter.convert(protected) != protected:
+            return Finding(
+                "error",
+                "simplified_chinese",
+                "content contains Simplified Chinese-only characters",
+            )
     except Exception:
         return Finding(
             "error",

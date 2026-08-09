@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import sys
 import unittest
 from pathlib import Path
@@ -13,6 +14,7 @@ sys.path.insert(0, str(SCRIPTS))
 from lecture_content_rules import validate_segment_content
 from rewrite_evidence import (
     build_evidence_packet,
+    canonical_packet_bytes,
     contains_sensitive_data,
     validate_review_record,
 )
@@ -119,10 +121,24 @@ class LectureContentRuleTests(unittest.TestCase):
                 self.assertIn("unfinished_marker", codes)
 
     def test_opencc_gate_rejects_simplified_text_and_preserves_taiwan_terms(self):
-        simplified = self.valid_segment(summary_zh="脑肿瘤影像显示强化与水肿，医生需要结合扩散、灌注与临床资料进行鉴别。" * 9)
-        self.assertIn("simplified_chinese", {item.code for item in validate_segment_content(simplified, "")})
-        traditional = self.valid_segment(summary_zh="臺灣常用的神經放射學術語與影像判讀內容，著重病灶位置與鑑別。" * 12)
-        self.assertNotIn("simplified_chinese", {item.code for item in validate_segment_content(traditional, "")})
+        simplified_controls = (
+            "脑肿瘤影像显示强化与水肿，医生需要结合扩散、灌注与临床资料进行鉴别。" * 9,
+            "该患者检查显示脑部肿块并伴随明显水肿，需要结合临床资料判断。" * 10,
+        )
+        for summary in simplified_controls:
+            with self.subTest(summary=summary[:12]):
+                segment = self.valid_segment(summary_zh=summary)
+                self.assertIn("simplified_chinese", {item.code for item in validate_segment_content(segment, "")})
+
+        traditional_controls = (
+            "臺灣常用的神經放射學術語與影像判讀內容，著重病灶位置與鑑別。" * 12,
+            "金屬干擾偽影會影響影像品質，判讀時需整合不同序列與臨床資訊。" * 12,
+            "病灶距離中線約一公里的說法僅為語境測試，內容仍使用繁體中文。" * 12,
+        )
+        for summary in traditional_controls:
+            with self.subTest(summary=summary[:12]):
+                segment = self.valid_segment(summary_zh=summary)
+                self.assertNotIn("simplified_chinese", {item.code for item in validate_segment_content(segment, "")})
 
     def test_opencc_missing_or_conversion_failure_fails_closed_as_structured_finding(self):
         with patch("lecture_content_rules._load_opencc_converter", side_effect=ImportError("missing")):
@@ -536,11 +552,42 @@ class LectureContentRuleTests(unittest.TestCase):
         codes = {item.code for item in validate_review_record(tampered, self.valid_segment(), review)}
         self.assertIn("packet_hash_invalid", codes)
 
+    def test_recomputed_hash_cannot_authenticate_invented_paragraph_evidence(self):
+        claim = "最終診斷為惡性腫瘤。"
+        packet = self.packet()
+        tampered = copy.deepcopy(packet)
+        tampered["paragraph_evidence"] = [{
+            "source": "transcript",
+            "paragraph_index": 999,
+            "text": claim,
+        }]
+        tampered["source_citations"] = ["transcript:p999"]
+        without_hash = {key: value for key, value in tampered.items() if key != "packet_sha256"}
+        tampered["packet_sha256"] = hashlib.sha256(canonical_packet_bytes(without_hash)).hexdigest()
+        review = self.valid_review(tampered)
+        review["case_claim_citations"] = [{
+            "path": "summary_zh",
+            "claim": claim,
+            "citations": ["transcript:p999"],
+        }]
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        findings = validate_review_record(tampered, rewritten, review)
+        self.assertIn("packet_evidence_mismatch", {item.code for item in findings})
+        self.assertIn("unsupported_case_claim", {item.code for item in findings})
+        self.assertTrue(all(claim not in item.message for item in findings))
+
+    def test_derived_packet_evidence_validates_against_source_fields(self):
+        packet = self.packet()
+        findings = validate_review_record(packet, self.valid_segment(), self.valid_review(packet))
+        self.assertNotIn("packet_evidence_mismatch", {item.code for item in findings})
+
     def test_review_record_rejects_wrong_hash_empty_or_nonstring_reviewer_and_missing_confirmations(self):
         packet = self.packet()
         cases = (
             ({**self.valid_review(packet), "packet_sha256": "0" * 64}, "review_packet_mismatch"),
             ({**self.valid_review(packet), "reviewer": ""}, "reviewer_missing"),
+            ({**self.valid_review(packet), "reviewer": "​⁠"}, "reviewer_missing"),
+            ({**self.valid_review(packet), "reviewer": "　​ "}, "reviewer_missing"),
             ({**self.valid_review(packet), "reviewer": True}, "reviewer_missing"),
             ({**self.valid_review(packet), "source_faithful": 1}, "source_faithful_missing"),
             ({**self.valid_review(packet), "case_details_verified": False}, "case_detail_check_missing"),

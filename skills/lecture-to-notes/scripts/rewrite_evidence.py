@@ -315,15 +315,10 @@ def _speaker_case_claims(rewritten: Mapping[str, Any]) -> list[tuple[str, str, l
 
 def _citation_evidence(packet: Mapping[str, Any]) -> dict[str, str]:
     evidence: dict[str, str] = {}
-    paragraphs = packet.get("paragraph_evidence")
-    if isinstance(paragraphs, list):
-        for item in paragraphs:
-            if not isinstance(item, Mapping):
-                continue
-            index = item.get("paragraph_index")
-            text = item.get("text")
-            if isinstance(index, int) and not isinstance(index, bool) and isinstance(text, str):
-                evidence[f"transcript:p{index}"] = text
+    transcript = packet.get("transcript_text")
+    if isinstance(transcript, str):
+        for index, text in enumerate(_paragraphs(_normalize_text(transcript)), start=1):
+            evidence[f"transcript:p{index}"] = text
     frames = packet.get("frame_evidence")
     if isinstance(frames, list):
         for item in frames:
@@ -338,16 +333,63 @@ def _citation_evidence(packet: Mapping[str, Any]) -> dict[str, str]:
     if isinstance(existing, Mapping):
         title = existing.get("title")
         summary = existing.get("summary_zh")
-        if isinstance(title, str):
+        if isinstance(title, str) and title:
             evidence["existing:title"] = title
-        if isinstance(summary, str):
+        if isinstance(summary, str) and summary:
             evidence["existing:summary_zh"] = summary
         takeaways = existing.get("takeaways_zh")
         if isinstance(takeaways, list):
             for index, item in enumerate(takeaways, start=1):
-                if isinstance(item, str):
+                if isinstance(item, str) and item:
                     evidence[f"existing:takeaways_zh:{index}"] = item
     return evidence
+
+
+def _packet_evidence_is_derived(packet: Mapping[str, Any]) -> bool:
+    transcript = packet.get("transcript_text")
+    if not isinstance(transcript, str):
+        return False
+    expected_paragraphs = [
+        {"source": "transcript", "paragraph_index": index, "text": text}
+        for index, text in enumerate(_paragraphs(_normalize_text(transcript)), start=1)
+    ]
+    if packet.get("paragraph_evidence") != expected_paragraphs:
+        return False
+
+    start = packet.get("start_sec")
+    end = packet.get("end_sec")
+    if (
+        isinstance(start, bool)
+        or isinstance(end, bool)
+        or not isinstance(start, (int, float))
+        or not isinstance(end, (int, float))
+        or not math.isfinite(float(start))
+        or not math.isfinite(float(end))
+    ):
+        return False
+    frames = packet.get("frame_evidence")
+    if not isinstance(frames, list):
+        return False
+    for frame in frames:
+        if not isinstance(frame, Mapping) or frame.get("source") != "frame_ocr":
+            return False
+        time = frame.get("time")
+        if (
+            isinstance(time, bool)
+            or not isinstance(time, (int, float))
+            or not math.isfinite(float(time))
+            or float(time) < float(start)
+            or float(time) > float(end)
+            or not isinstance(frame.get("ocr"), str)
+        ):
+            return False
+        try:
+            _require_relative_path(frame.get("path"))
+        except (TypeError, ValueError):
+            return False
+
+    citations = packet.get("source_citations")
+    return isinstance(citations, list) and citations == list(_citation_evidence(packet))
 
 
 def _is_negated(text: str) -> bool:
@@ -473,14 +515,20 @@ def validate_review_record(
         calculated_hash = None
     if not isinstance(stored_hash, str) or calculated_hash is None or stored_hash != calculated_hash:
         findings.append(_finding("packet_hash_invalid", "evidence packet hash is invalid"))
+    if not _packet_evidence_is_derived(packet):
+        findings.append(_finding(
+            "packet_evidence_mismatch",
+            "evidence packet records do not match their source fields",
+        ))
     if review.get("packet_sha256") != stored_hash:
         findings.append(_finding("review_packet_mismatch", "review does not match the evidence packet"))
 
     reviewer = review.get("reviewer")
+    normalized_reviewer = _normalize_text(reviewer).strip() if isinstance(reviewer, str) else ""
     if (
         not isinstance(reviewer, str)
-        or not reviewer.strip()
-        or len(reviewer) > _MAX_REVIEWER_CHARS
+        or not normalized_reviewer
+        or len(normalized_reviewer) > _MAX_REVIEWER_CHARS
     ):
         findings.append(_finding("reviewer_missing", "a non-empty reviewer identity is required"))
     if review.get("source_faithful") is not True:
