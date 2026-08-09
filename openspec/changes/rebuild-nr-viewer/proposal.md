@@ -5,7 +5,7 @@
 ## What Changes
 
 - 建立以正式 JSON 為單一內容來源的章節 schema、legacy normalization、時間不變性與 UTF-8 原子寫入契約。
-- 建立內容與來源規則：聚焦標題、250–600 個中文字整理稿、正好 4 項核心重點、獨立編輯補充、繁體中文、未完成標記與敏感資料 fail-stop。
+- 建立內容與來源規則：聚焦標題、250–600 個中文字整理稿、正好 4 項核心重點、獨立編輯補充、繁體中文、未完成標記與敏感資料 fail-stop；每章 `summary_zh` 與四項 `takeaways_zh`（包含未改寫 legacy 內容）皆須由可信逐字稿段落或外部可信 canonical frame manifest 引用，並具備逐 claim 人工來源支持 attestation。
 - 將 extract 候選影格限制於 staging，策展每章正式 1–4 張影格；第一講既有 72 張影格須完整複製、雜湊驗證並納入候選池。
 - 重建詳細型 viewer、PBF、`.v4.md` 與課程首頁，使搜尋 schema、章節時間、標題及內容由 canonical JSON 同源產生；保留播放器、章節導覽、深連結、同步逐字稿與跳播。
 - 建立結構化 audit、cp950 相容進度、fixture/TDD、瀏覽器 E2E、三講抽樣與 11 講全課驗證 gate；任何必要門檻失敗即停止該講發布。
@@ -23,7 +23,7 @@
 
 ### New Capabilities
 
-- `lecture-content-contract`: Canonical 章節資料模型、內容品質、來源分離、時間不變性、敏感資料與人工 review 契約。
+- `lecture-content-contract`: Canonical 章節資料模型、內容品質、逐 claim 可信引用與人工來源支持 attestation、來源分離、時間不變性、敏感資料與人工 review 契約。
 - `lecture-frame-curation`: Staging-only 候選影格、legacy 影格移轉、OCR 與每章正式 1–4 圖策展契約。
 - `lecture-derived-viewer`: JSON 同源 viewer、PBF、`.v4.md`、課程首頁、typed search、深連結、逐字稿與 responsive 影格互動契約。
 - `lecture-rebuild-verification`: Preflight、分階段重建、cp950 進度、fail-stop audit、TDD、fixture、E2E、三講與 11 講驗證契約。
