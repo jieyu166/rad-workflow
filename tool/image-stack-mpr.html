@@ -36,7 +36,7 @@
     .field select, .field input { width: 100%; min-height: 34px; padding: 5px 8px; }
     .file-button { display: grid; place-items: center; min-height: 72px; padding: 12px; border: 1px dashed var(--accent); border-radius: 10px; color: var(--accent); text-align: center; cursor: pointer; }
     .file-button input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-    .main { min-width: 0; overflow: visible; padding: 14px; }
+    .main { min-width: 0; overflow: visible; padding: 14px clamp(32px, 3vw, 48px); }
     .mode-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
     .mode-tabs button[aria-selected="true"] { color: #04110f; background: var(--accent); border-color: var(--accent); }
     .workspace { display: grid; gap: 12px; }
@@ -82,7 +82,16 @@
     .viewport-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
     .viewport-card canvas { display: block; width: 100%; height: 100%; min-height: 240px; touch-action: none; cursor: crosshair; }
     .viewport-hud { position: absolute; inset: 7px 9px auto 9px; display: flex; justify-content: space-between; pointer-events: none; color: #d9f5f1; font-size: 11px; text-shadow: 0 1px 3px #000; }
-    .viewport-filename { min-width: 0; overflow: hidden; padding: 0 4px; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .viewport-filename { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 0 4px; color: var(--muted); font-size: 11px; }
+    .filename-text { flex: 1 1 auto; min-width: 0; overflow: hidden; padding: 2px 4px; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--muted); font-size: 11px; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+    .filename-text:hover { border-color: var(--accent); color: var(--text); }
+    .filename-copy { flex: 0 0 auto; min-height: 0; padding: 2px 7px; font-size: 10px; cursor: pointer; }
+    .thumbnail-name { overflow: hidden; padding: 1px 3px; border: 1px solid transparent; border-radius: 5px; background: none; color: var(--text); font-size: 10px; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+    .thumbnail-name:hover { border-color: var(--accent); color: var(--accent); }
+    .copy-ids { padding: 5px 11px; color: #04110f; font-weight: 700; background: var(--accent-2); border-color: var(--accent-2); cursor: pointer; }
+    .copy-ids:disabled { color: var(--muted); background: var(--panel-2); border-color: var(--line); cursor: default; font-weight: 400; }
+    .copy-toast { position: fixed; left: 50%; bottom: 24px; z-index: 60; padding: 9px 16px; border-radius: 9px; background: var(--accent); color: #04110f; font-size: 13px; font-weight: 700; opacity: 0; pointer-events: none; transform: translateX(-50%); transition: opacity .14s ease; }
+    .copy-toast.show { opacity: 1; }
     .mpr-layout { display: grid; gap: 12px; min-width: 0; }
     .mpr-region { min-width: 0; padding: 9px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
     .mpr-region h2 { margin: 0 0 8px; font-size: 13px; }
@@ -108,7 +117,7 @@
     @media (orientation: portrait) {
       #axial-viewports.viewport-grid { grid-template-columns: minmax(0, 1fr); }
       #axial-viewports .viewport-card,
-      #axial-viewports .viewport-card canvas { min-height: clamp(280px, 54vw, 620px); }
+      #axial-viewports .viewport-card canvas { height: 30vh; min-height: 0; }
     }
   </style>
 </head>
@@ -154,6 +163,7 @@
           <button id="fit-view" type="button">Fit</button>
           <button id="reset-view" type="button">Reset</button>
           <button id="invert-view" type="button">Invert</button>
+          <button id="copy-slice-ids" type="button" class="copy-ids">複製阻塞位置編號</button>
           <span class="status">滾輪：切片；Ctrl/Meta＋滾輪：縮放；游標置於影像後按 +/-：縮放；Shift＋拖曳：平移；右鍵拖曳：Intensity</span>
         </div>
         <section id="crosslink-workspace" class="workspace">
@@ -332,6 +342,13 @@
         y: sourceY,
         z: normalized.order === "reverse" ? depth - 1 - z : z
       };
+    }
+
+    // 去掉副檔名，取得可直接填進「阻塞位置JPG編號」的編號，例如 0053.jpg -> 0053
+    function fileStem(name) {
+      const text = String(name || "");
+      const dot = text.lastIndexOf(".");
+      return dot > 0 ? text.slice(0, dot) : text;
     }
 
     function canonicalSliceNames(items, geometry) {
@@ -732,6 +749,7 @@
       canonicalToSource,
       canonicalSliceNames,
       sliceNameAtPosition,
+      fileStem,
       normalizeGeometry,
       estimateVolumeBytes,
       requiresMemoryConfirmation,
@@ -1073,9 +1091,16 @@
           image.alt = item.name;
           card.appendChild(image);
         }
-        const name = document.createElement("div");
+        const name = document.createElement("button");
+        name.type = "button";
         name.className = "thumbnail-name";
         name.textContent = item.name;
+        name.title = `點一下複製編號 ${Core.fileStem(item.name)}`;
+        name.draggable = false;  // 否則會蓋掉卡片本身的拖曳排序
+        name.addEventListener("click", function (event) {
+          event.stopPropagation();
+          copyToClipboard(Core.fileStem(item.name));
+        });
         const actions = document.createElement("div");
         actions.className = "thumbnail-actions";
         const included = document.createElement("input");
@@ -1552,8 +1577,86 @@
       const name = volume
         ? Core.sliceNameAtPosition(volume.sliceNames || [], state.positions[viewport.sequenceId])
         : "";
-      viewport.filename.textContent = name ? `檔案：${name}` : "檔案：—";
-      viewport.filename.title = name;
+      viewport.currentName = name || "";
+      viewport.filenameText.textContent = name ? `檔案：${name}` : "檔案：—";
+      viewport.filenameText.title = name ? `點一下複製完整檔名 ${name}` : "";
+      viewport.filenameCopy.disabled = !name;
+      viewport.filenameCopy.textContent = name ? `複製 ${Core.fileStem(name)}` : "複製編號";
+      updateCopySliceIds();
+    }
+
+    // 「阻塞位置JPG編號」要的是各 sequence 當前切片的編號，用逗號串起來。
+    const copySliceIdsButton = document.getElementById("copy-slice-ids");
+
+    function currentSliceIds() {
+      const ids = [];
+      activeSequenceIds().forEach(function (sequenceId) {
+        const viewport = state.viewports.get(`cross-${sequenceId}-ax`);
+        if (viewport && viewport.currentName) ids.push(Core.fileStem(viewport.currentName));
+      });
+      return ids;
+    }
+
+    function updateCopySliceIds() {
+      if (!copySliceIdsButton) return;
+      const joined = currentSliceIds().join(",");
+      copySliceIdsButton.disabled = !joined;
+      // 按鈕上直接顯示會複製什麼，按之前就看得到，不必先按了才知道對不對
+      copySliceIdsButton.textContent = joined ? `複製 ${joined}` : "複製阻塞位置編號";
+      copySliceIdsButton.title = joined
+        ? `複製「阻塞位置JPG編號」：${joined}`
+        : "載入影像並建立 volume 後可用";
+    }
+
+    if (copySliceIdsButton) {
+      copySliceIdsButton.addEventListener("click", function () {
+        copyToClipboard(currentSliceIds().join(","));
+      });
+      // 沒有 volume 時 updateViewportFilename 不會跑，所以初始狀態要自己設一次
+      updateCopySliceIds();
+    }
+
+    // 「阻塞位置JPG編號」欄要的是編號而不是檔名，所以預設複製去掉副檔名的部分。
+    let copyToast = null;
+    let copyToastTimer = 0;
+
+    function showCopyToast(message) {
+      if (!copyToast) {
+        copyToast = document.createElement("div");
+        copyToast.className = "copy-toast";
+        document.body.appendChild(copyToast);
+      }
+      copyToast.textContent = message;
+      copyToast.classList.add("show");
+      if (copyToastTimer) clearTimeout(copyToastTimer);
+      copyToastTimer = setTimeout(function () { copyToast.classList.remove("show"); }, 1400);
+    }
+
+    function copyToClipboard(text) {
+      if (!text) return;
+      // execCommand 的後備路徑是必要的：這頁也會用 file:// 直接開，
+      // 那種情況下 navigator.clipboard 不一定可用。
+      const fallback = function () {
+        const holder = document.createElement("textarea");
+        holder.value = text;
+        holder.setAttribute("readonly", "");
+        holder.style.position = "fixed";
+        holder.style.opacity = "0";
+        document.body.appendChild(holder);
+        holder.select();
+        let ok = false;
+        try { ok = document.execCommand("copy"); } catch (error) { ok = false; }
+        document.body.removeChild(holder);
+        showCopyToast(ok ? `已複製 ${text}` : "複製失敗，請手動選取");
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          function () { showCopyToast(`已複製 ${text}`); },
+          fallback
+        );
+      } else {
+        fallback();
+      }
     }
 
     function scheduleViewportRender(viewport, interactive) {
@@ -1683,8 +1786,8 @@
           viewState.intensityCenter = Math.max(-127.5, Math.min(382.5, viewState.intensityCenter - dy));
           copyIntensity(viewState);
         } else if (drag.mode === "pan") {
-          viewState.panX -= dx / viewState.zoom;
-          viewState.panY -= dy / viewState.zoom;
+          viewState.panX += dx / viewState.zoom;
+          viewState.panY += dy / viewState.zoom;
           copyNavigation(viewState);
         } else if (drag.mode === "oblique") {
           if (drag.shift) state.obliqueAngles.roll += dx * 0.5;
@@ -1739,11 +1842,23 @@
       card.append(canvas, hud);
       let root = card;
       let filename = null;
+      let filenameText = null;
+      let filenameCopy = null;
       if (crosslinkAxial) {
         root = document.createElement("div");
         root.className = "viewport-stack";
         filename = document.createElement("div");
         filename.className = "viewport-filename";
+        filenameText = document.createElement("button");
+        filenameText.type = "button";
+        filenameText.className = "filename-text";
+        filenameText.textContent = "檔案：—";
+        filenameCopy = document.createElement("button");
+        filenameCopy.type = "button";
+        filenameCopy.className = "filename-copy";
+        filenameCopy.textContent = "複製編號";
+        filenameCopy.title = "複製 JPG 編號（不含副檔名），用於填「阻塞位置JPG編號」";
+        filename.append(filenameText, filenameCopy);
         root.append(card, filename);
       }
       const viewport = {
@@ -1755,8 +1870,22 @@
         card,
         canvas,
         hud,
-        filename
+        filename,
+        filenameText,
+        filenameCopy,
+        currentName: ""
       };
+      if (filenameCopy) {
+        // 編號給表格用；完整檔名點檔名本身。兩者都不要冒泡去選取 viewport。
+        filenameCopy.addEventListener("click", function (event) {
+          event.stopPropagation();
+          copyToClipboard(Core.fileStem(viewport.currentName));
+        });
+        filenameText.addEventListener("click", function (event) {
+          event.stopPropagation();
+          copyToClipboard(viewport.currentName);
+        });
+      }
       state.viewports.set(key, viewport);
       viewportState(key);
       bindViewportInteractions(viewport);
