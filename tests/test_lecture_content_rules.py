@@ -410,6 +410,28 @@ class LectureContentRuleTests(unittest.TestCase):
         codes = {item.code for item in validate_review_record(packet, rewritten, review)}
         self.assertIn("unsupported_case_claim", codes)
 
+    def test_same_polarity_categorical_mismatch_fails_closed(self):
+        cases = (
+            ("病灶位於左額葉深部白質。", "病灶位於右額葉深部白質。"),
+            ("最終診斷為惡性腫瘤。", "最終診斷為良性腫瘤。"),
+            ("病理證實為肺癌轉移。", "病理證實為乳癌轉移。"),
+        )
+        for claim, evidence_text in cases:
+            with self.subTest(claim=claim, evidence=evidence_text):
+                packet = build_evidence_packet(
+                    "lecture-01", 2, 10.0, 20.0, evidence_text, [], self.valid_segment()
+                )
+                review = self.valid_review(packet)
+                review["case_claim_citations"] = [{
+                    "path": "summary_zh",
+                    "claim": claim,
+                    "citations": ["transcript:p1"],
+                }]
+                rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+                findings = validate_review_record(packet, rewritten, review)
+                self.assertIn("unsupported_case_claim", {item.code for item in findings})
+                self.assertTrue(all(claim not in item.message for item in findings))
+
     def test_supported_multiclause_claim_requires_support_for_each_clause(self):
         claim = "可見左額葉腫塊伴顯著水腫。"
         packet = build_evidence_packet(

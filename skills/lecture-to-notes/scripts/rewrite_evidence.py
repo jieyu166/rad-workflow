@@ -282,9 +282,6 @@ _ASSERTION_PREFIX = re.compile(
     r"(?:可見|呈現|顯示|發現|見到|另見|未見|不見|未顯示|未發現|"
     r"合併|伴有|伴隨|伴|有|無|沒有|並無)"
 )
-_GENERIC_BIGRAMS = frozenset(
-    "病人 患者 個案 本例 此例 該例 病例 影像 顯示 可見 呈現 發現 合併 伴隨 診斷 病史 檢查 掃描".split()
-)
 
 
 def _atomic_clauses(text: str) -> list[str]:
@@ -353,14 +350,6 @@ def _citation_evidence(packet: Mapping[str, Any]) -> dict[str, str]:
     return evidence
 
 
-def _han_bigrams(text: str) -> set[str]:
-    normalized = _normalize_text(text)
-    bigrams: set[str] = set()
-    for run in re.findall(r"[㐀-鿿]{2,}", normalized):
-        bigrams.update(run[index:index + 2] for index in range(len(run) - 1))
-    return bigrams - _GENERIC_BIGRAMS
-
-
 def _is_negated(text: str) -> bool:
     return bool(_NEGATION.search(text))
 
@@ -377,14 +366,7 @@ def _assertion_content(text: str) -> str:
 def _semantic_match(left: str, right: str) -> bool:
     left_content = _assertion_content(left)
     right_content = _assertion_content(right)
-    if not left_content or not right_content:
-        return False
-    if left_content in right_content or right_content in left_content:
-        return True
-    left_bigrams = _han_bigrams(left_content)
-    right_bigrams = _han_bigrams(right_content)
-    required = min(2, len(left_bigrams))
-    return required > 0 and len(left_bigrams & right_bigrams) >= required
+    return bool(left_content) and left_content == right_content
 
 
 def _claim_has_support(claim_clause: str, citations: Sequence[Any], evidence: Mapping[str, str]) -> bool:
