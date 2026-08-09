@@ -14,7 +14,7 @@
 |---|---|---|
 | C | 拍攝年（西元） | StudyDate (0008,0020) 前四碼 |
 | D | 年齡 | PatientAge (0010,1010)；缺則由 PatientBirthDate 與 StudyDate 推算 |
-| E | 性別 | PatientSex (0010,0040)，填 **M / F** |
+| E | 性別 | PatientSex (0010,0040)，填 **`1.男` / `2.女`**（完整字串） |
 | F | 種族 | **不填** |
 | G | 就醫來源 | **不填** |
 | H | 解析度 | 常數 **`512*512`**（匯出 JPG 尺寸，非 DICOM） |
@@ -29,7 +29,7 @@
 2024  62  M  亞洲人  急診  150*150  Siemens  SOMATOM Definition Edge
 ```
 
-**性別填 M/F**，不是該檔「工作表1」圖例寫的 1/2 —— 實填資料比圖例可信。
+**性別填完整字串 `1.男` / `2.女`**——依最終目標檔 `腹部電腦斷層腸阻塞偵測及判讀輔助軟體_紀錄資料之確認.xlsx` 裡 Case 002 那筆已填好的實例，儲存格內容就是 `1.男`，不是數字 `1`，也不是範例檔用的 `M`。
 
 **解析度是匯出 JPG 的尺寸，不是 CT 矩陣。** 實測本機 250 個 Case 資料夾、抽樣 500 張 JPG，全部是 512×512，所以本批填 `512*512`（範例用 `*` 不是 `x`）。刻意不從 DICOM `Rows`/`Columns` 取：兩者這次都是 512，但若某案矩陣是 768，DICOM 會給 768 而匯出的 JPG 仍是 512，那就填錯了。解析器仍會比對矩陣，不符時示警。
 
@@ -45,7 +45,7 @@
 
 **執行方式：跑 `ahk-scripts/簡碼 jai.ahk`，不要單獨執行 `hgh_capture.ahk`。**
 
-單獨跑會出現 `Call to nonexistent function`，而且不是加一個 `#include` 就能解決——相依是連鎖的：本檔需要 `test.ahk` 的 `ActivateHISLight()`/`OpenPACSImage()`/`GetDICOMData()`，而 `test.ahk` 又需要 `簡碼 jai.ahk` 的 `CopyCXRtoHISWithParam()`、`Xray.ahk` 的 `OutputFinish()`、以及 `LOGI`/`PWD`/`vExamLoc`/`varWhere` 等全域。硬拉進來等於載入整包，還會和你日常那份搶熱鍵。
+單獨跑會出現 `Call to nonexistent function`，而且不是加一個 `#include` 就能解決——相依是連鎖的：本檔需要 `test.ahk` 的 `ActivateHISLight()`/`GetDICOMData()`，而 `test.ahk` 又需要 `簡碼 jai.ahk` 的 `CopyCXRtoHISWithParam()`、`Xray.ahk` 的 `OutputFinish()`、以及 `LOGI`/`PWD`/`vExamLoc`/`varWhere` 等全域。硬拉進來等於載入整包，還會和你日常那份搶熱鍵。
 
 按 **`Win+Shift+G`** 開啟置頂小視窗（載入時不會自己跳出來，不干擾日常作業）。**點選**申請單號那一格，視窗會即時顯示抓到的單號、來源與是否已擷取過，確認無誤再按按鈕。
 
@@ -69,16 +69,12 @@
 按鈕2 **不會自己開 PACS**（那個連結目前不通）。請自行在 INFINITT 叫出影像後再按。複製到剪貼簿的是 Tab 分隔的一整列，直接貼在該列的 **C 欄**即可填滿 C 到 J：
 
 ```
-2024	65	M			512*512	SIEMENS	SOMATOM Definition AS+
+2024	65	1.男			512*512	SIEMENS	SOMATOM Definition AS+
 ```
 
 中間兩個連續 Tab 就是留空的種族與就醫來源，貼上去不會覆蓋你手填的內容。
 
 按鈕2 仍會比對試算表選取的單號與影像檔頭的單號，不符會跳出確認——這是取代「自動開圖」後僅存的防呆，專門擋「試算表停在 Case 005，但 INFINITT 上顯示的是別案」。
-
-單號是讀 Excel 的 `ActiveCell`，不是讀滑鼠位置——按鈕一按滑鼠就離開儲存格了，選取狀態才不受焦點轉移影響。讀不到 Excel 時退回剪貼簿。
-
-按鈕2 會**比對抓到的單號與要求的單號**，不符就中止且不寫入——這道防線是為了擋「影像還沒切換就抓到上一案」，這種錯會靜默污染資料，比漏掉一筆難查得多。已擷取過的會先問要不要重抓。
 
 ### 家裡端（Python）
 
@@ -100,10 +96,9 @@ python fill_mapping.py --xlsx "<對照表路徑>" --dry-run
 
 ## 第一次在醫院電腦要做的校正
 
-`hgh_capture.ahk` 最上面兩個設定：
+`hgh_capture.ahk` 只剩一個設定要校正：
 
-1. `HGH_QueryBtn()` — chk060 查詢按鈕控件名，用按鈕3 查出來後填入；留空則改送 `{Enter}`
-2. `HGH_PacsWait()` — INFINITT 載入等待秒數，網路慢就調大
+- `HGH_QueryBtn()` — chk060 查詢按鈕控件名，用按鈕3 查出來後填入；留空則改送 `{Enter}`
 
 路徑不必設定：`HGH_Dir()` 由 `A_LineFile` 推導本檔自身位置。家用機是 `C:\Users\jai16\OneDrive\...`、醫院機是 `D:\jai166\Onedrive\...`，硬編必錯一邊。
 
@@ -125,4 +120,4 @@ python parse_dicom_header.py --inspect
 python -m unittest discover -s tests -v
 ```
 
-解析器有 10 個測試（合成資料）。AHK 端無法在開發機測試——需要 INFINITT 桌面版與院內網路。
+解析器有 12 個測試（合成資料）。AHK 端無法在開發機測試——需要 INFINITT 桌面版與院內網路。

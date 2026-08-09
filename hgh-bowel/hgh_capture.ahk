@@ -291,9 +291,11 @@ HGH_BuildRow(header) {
         }
     }
 
-    ; 性別填 M/F —— 依高醫範例檔 11 筆實填資料，不是「工作表1」圖例的 1/2
-    sex := SubStr(Trim(HGH_Tag(header, "0010,0040")), 1, 1)
-    StringUpper, sex, sex
+    ; 性別填「1.男」/「2.女」完整字串——依最終目標檔（紀錄資料之確認.xlsx）
+    ; Case 002 那筆已填好的實例，儲存格內容就是「1.男」，不是數字 1。
+    sexRaw := SubStr(Trim(HGH_Tag(header, "0010,0040")), 1, 1)
+    StringUpper, sexRaw, sexRaw
+    sex := (sexRaw = "M") ? "1.男" : (sexRaw = "F") ? "2.女" : ""
 
     maker := Trim(HGH_Tag(header, "0008,0070"))
     model := Trim(HGH_Tag(header, "0008,1090"))

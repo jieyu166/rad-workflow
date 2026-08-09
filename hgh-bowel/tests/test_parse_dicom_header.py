@@ -33,7 +33,7 @@ class TestInfinittLayout(unittest.TestCase):
     def test_all_six_columns(self):
         self.assertEqual(self.row["拍攝年"], "2024")
         self.assertEqual(self.row["年齡"], "65")       # 065Y -> 65
-        self.assertEqual(self.row["性別"], "M")        # M/F per the KMU example sheet
+        self.assertEqual(self.row["性別"], "1.男")     # full string, per the filled Case 002 row
         self.assertEqual(self.row["解析度"], "512*512")  # export size, constant
         self.assertEqual(self.row["CT廠牌"], "SIEMENS")
         self.assertEqual(self.row["CT型號"], "SOMATOM Definition AS+")
@@ -56,7 +56,7 @@ class TestOtherLayouts(unittest.TestCase):
         )
         row, problems = to_row(parse_header(text)[0])
         self.assertEqual(problems, [])
-        self.assertEqual(row["性別"], "F")
+        self.assertEqual(row["性別"], "2.女")
         self.assertEqual(row["年齡"], "42")
         self.assertEqual(row["CT廠牌"], "GE MEDICAL SYSTEMS")
 

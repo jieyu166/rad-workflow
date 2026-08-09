@@ -170,8 +170,9 @@ EXPORT_RESOLUTION = "512*512"
 def to_row(fields):
     """Convert canonical DICOM fields to the sheet's columns.
 
-    性別 is M/F, following the 11 rows actually filled in the KMU example
-    workbook - not the 1/2 codes shown in its '工作表1' legend.
+    性別 is the full string '1.男'/'2.女', matching the Case 002 row already
+    filled in the real target workbook (紀錄資料之確認.xlsx) - the cell there
+    holds '1.男', not the bare digit.
     Returns (row_dict, problems)."""
     problems = []
 
@@ -201,7 +202,7 @@ def to_row(fields):
             problems.append("年齡無法判定（PatientAge 與 PatientBirthDate 皆缺）")
 
     sex_raw = (fields.get("PatientSex") or "").strip().upper()
-    sex = sex_raw[:1] if sex_raw[:1] in ("M", "F") else ""
+    sex = {"M": "1.男", "F": "2.女"}.get(sex_raw[:1], "")
     if not sex:
         problems.append("性別無法判定（原值 %r）" % sex_raw)
 

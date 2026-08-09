@@ -111,7 +111,7 @@ def main():
                 continue
             if not args.dry_run:
                 # 拍攝年/年齡 stay numeric so the KMU side can aggregate them.
-                # 性別 is M/F, 解析度 is 512*512 - both text.
+                # 性別 is '1.男', 解析度 is '512*512' - both text.
                 cell.value = int(value) if key in ("拍攝年", "年齡") and value.isdigit() else value
             written += 1
             touched = True
