@@ -85,6 +85,11 @@ class LectureContentRuleTests(unittest.TestCase):
                 codes = {item.code for item in validate_segment_content(self.valid_segment(summary_zh=summary), "")}
                 self.assertTrue(expected.issubset(codes))
 
+    def test_unicode_whitespace_only_lines_count_as_paragraph_boundaries(self):
+        summary = ("甲" * 100) + "\n　\n" + ("乙" * 100) + "\r\n \r\n" + ("丙" * 100)
+        codes = {item.code for item in validate_segment_content(self.valid_segment(summary_zh=summary), "")}
+        self.assertIn("summary_paragraphs", codes)
+
     def test_takeaways_must_be_exactly_four_nonempty_distinct_concise_strings(self):
         cases = (
             (["甲", "乙", "丙"], "takeaway_count"),
@@ -106,7 +111,7 @@ class LectureContentRuleTests(unittest.TestCase):
                 self.assertIn("editorial_type", codes)
 
     def test_rejects_unfinished_and_template_markers_even_with_separators(self):
-        markers = ("TODO", "T B D", "FIXME", "PLACEHOLDER", "請補充", "待確認", "此處填入", "內容待補", "尚未完成")
+        markers = ("TODO", "T B D", "FIXME", "PLACEHOLDER", "請補充", "待確認", "待​確認", "請⁠補充", "此處填入", "內容待補", "尚未完成")
         for marker in markers:
             with self.subTest(marker=marker):
                 segment = self.valid_segment(editorial_notes_zh=[marker])
@@ -157,6 +162,17 @@ class LectureContentRuleTests(unittest.TestCase):
         text = "ＭＲＮ​：ＡＢ－１２３４５６；姓 名：陳 小 華；電 話：０９１２ ３４５ ６７８；Ｅ－ｍａｉｌ：a . b + x ＠ e x a m p l e ． t w"
         kinds = set(contains_sensitive_data(text))
         self.assertTrue({"medical_record_number", "patient_name", "phone", "email"}.issubset(kinds))
+
+    def test_sensitive_scanner_canonicalizes_unicode_dashes_and_name_punctuation(self):
+        text = "病歷號 AB‑12345678；姓名 王・小明；生日 1980‑01‑02；電話 0912‑345‑678；病人識別碼 PT‑998877"
+        self.assertEqual(
+            contains_sensitive_data(text),
+            ["medical_record_number", "patient_name", "birth_date", "phone", "identifier"],
+        )
+
+    def test_sensitive_scanner_does_not_flag_unlabelled_teaching_metadata(self):
+        text = "王小明教授於 1980-01-02 發表文章，圖號 PT-998877，肺癌病史為一般教學主題。"
+        self.assertEqual(contains_sensitive_data(text), [])
 
     def test_sensitive_scanner_rejects_non_string_and_oversized_input_without_echoing_content(self):
         with self.assertRaisesRegex(TypeError, "text must be a string"):
@@ -232,6 +248,55 @@ class LectureContentRuleTests(unittest.TestCase):
         packet = self.packet()
         findings = validate_review_record(packet, self.valid_segment(), self.valid_review(packet))
         self.assertEqual(findings, [])
+
+    def test_review_boole_cannot_approve_unsupported_case_claims(self):
+        packet = self.packet()
+        claim = "病人有肺癌病史，影像顯示腦轉移並合併出血。"
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        findings = validate_review_record(packet, rewritten, self.valid_review(packet))
+        unsupported = [item for item in findings if item.code == "unsupported_case_claim"]
+        self.assertEqual([item.path for item in unsupported], ["summary_zh"])
+        self.assertTrue(all("肺癌" not in item.message and "出血" not in item.message for item in unsupported))
+
+    def test_case_claim_requires_valid_packet_citation_with_supporting_evidence_span(self):
+        claim = "病人有肺癌病史，影像顯示腦轉移並合併出血。"
+        packet = build_evidence_packet(
+            "lecture-01", 2, 10.0, 20.0, "此段只討論正常腦部解剖與掃描參數。", [], self.valid_segment()
+        )
+        review = self.valid_review(packet)
+        review["case_claim_citations"] = [{
+            "path": "summary_zh",
+            "claim": claim,
+            "citations": ["transcript:p1"],
+        }]
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        self.assertIn(
+            "unsupported_case_claim",
+            {item.code for item in validate_review_record(packet, rewritten, review)},
+        )
+
+        supported_packet = build_evidence_packet(
+            "lecture-01", 2, 10.0, 20.0, claim, [], self.valid_segment()
+        )
+        supported_review = self.valid_review(supported_packet)
+        supported_review["case_claim_citations"] = [{
+            "path": "summary_zh",
+            "claim": claim,
+            "citations": ["transcript:p1"],
+        }]
+        supported_codes = {
+            item.code
+            for item in validate_review_record(supported_packet, rewritten, supported_review)
+        }
+        self.assertNotIn("unsupported_case_claim", supported_codes)
+
+    def test_general_medical_editorial_is_not_treated_as_a_case_claim(self):
+        packet = self.packet()
+        rewritten = self.valid_segment(editorial_notes_zh=[
+            "編輯補充：肺癌可能轉移至腦部並造成出血，此為一般醫學背景，不代表本病例診斷。"
+        ])
+        codes = {item.code for item in validate_review_record(packet, rewritten, self.valid_review(packet))}
+        self.assertNotIn("unsupported_case_claim", codes)
 
     def test_review_record_recomputes_packet_hash_and_rejects_tampering(self):
         packet = self.packet()

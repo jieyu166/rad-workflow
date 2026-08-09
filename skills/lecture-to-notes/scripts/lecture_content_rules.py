@@ -32,7 +32,12 @@ _UNFINISHED_ZH = (
 
 
 def _normalize_text(value: str) -> str:
-    return unicodedata.normalize("NFC", value).replace("\r\n", "\n").replace("\r", "\n")
+    normalized = unicodedata.normalize("NFC", value).replace("\r\n", "\n").replace("\r", "\n")
+    return "".join(
+        character
+        for character in normalized
+        if unicodedata.category(character) != "Cf"
+    )
 
 
 def _han_count(text: str) -> int:
@@ -134,7 +139,7 @@ def validate_segment_content(
                 "summary_length",
                 "summary_zh must contain 250 to 600 Han characters",
             )
-        paragraphs = [part for part in re.split(r"\n[ \t]*\n", summary) if part.strip()]
+        paragraphs = [part for part in re.split(r"\n[^\S\n]*\n", summary) if part.strip()]
         if not 1 <= len(paragraphs) <= 2:
             _append(
                 findings,

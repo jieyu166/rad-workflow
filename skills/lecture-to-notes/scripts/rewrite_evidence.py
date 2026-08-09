@@ -55,12 +55,30 @@ def _normalize_text(value: str) -> str:
     return "".join(character for character in normalized if unicodedata.category(character) != "Cf")
 
 
+def _security_view(text: str) -> str:
+    normalized = _normalize_text(text)
+    result: list[str] = []
+    for character in normalized:
+        category = unicodedata.category(character)
+        if category == "Pd":
+            result.append("-")
+        elif character in {"/", "\\"}:
+            result.append("-")
+        elif character in {"@", ".", "+", "-"}:
+            result.append(character)
+        elif category.startswith("P"):
+            result.append(" ")
+        else:
+            result.append(character)
+    return "".join(result)
+
+
 def contains_sensitive_data(text: str) -> list[str]:
     if not isinstance(text, str):
         raise TypeError("text must be a string")
     if len(text) > _MAX_SCAN_CHARS:
         raise ValueError("text exceeds maximum length")
-    normalized = _normalize_text(text)
+    normalized = _security_view(text)
     compact = re.sub(r"\s+", "", normalized)
     return [
         name
@@ -195,6 +213,15 @@ def build_evidence_packet(
     source_citations.extend(
         f"frame:{item['path']}@{item['time']:.6f}" for item in frame_evidence
     )
+    if existing_content["title"]:
+        source_citations.append("existing:title")
+    if existing_content["summary_zh"]:
+        source_citations.append("existing:summary_zh")
+    source_citations.extend(
+        f"existing:takeaways_zh:{index}"
+        for index, item in enumerate(existing_content["takeaways_zh"], start=1)
+        if item
+    )
     sensitive_payload = "\n".join([
         normalized_transcript,
         *(item["ocr"] for item in frame_evidence),
@@ -236,6 +263,127 @@ def _packet_sensitive_text(packet: Mapping[str, Any]) -> str:
     if isinstance(existing, Mapping):
         pieces.append(json.dumps(existing, ensure_ascii=False, sort_keys=True, default=str))
     return "\n".join(pieces)
+
+
+_CASE_SUBJECT = re.compile(
+    r"(?:病人|患者|個案|本例|此例|該例|本病例|該病例).{0,24}"
+    r"(?:有|曾|為|罹患|診斷|顯示|可見|呈現|合併|伴隨|發現|病史)"
+)
+_CASE_IMAGING = re.compile(r"(?:影像|檢查|掃描).{0,8}(?:顯示|可見|呈現|發現)")
+_CASE_DETAIL = re.compile(r"(?:病史|診斷為|證實為|轉移|出血)")
+_GENERIC_BIGRAMS = frozenset(
+    "病人 患者 個案 本例 此例 該例 病例 影像 顯示 可見 呈現 發現 合併 伴隨 診斷 病史 檢查 掃描".split()
+)
+
+
+def _speaker_case_claims(rewritten: Mapping[str, Any]) -> list[tuple[str, str]]:
+    claims: list[tuple[str, str]] = []
+    fields: list[tuple[str, Any]] = [("summary_zh", rewritten.get("summary_zh"))]
+    takeaways = rewritten.get("takeaways_zh")
+    if isinstance(takeaways, list):
+        fields.extend((f"takeaways_zh[{index}]", item) for index, item in enumerate(takeaways))
+    for path, value in fields:
+        if not isinstance(value, str):
+            continue
+        for sentence in re.split(r"(?<=[。！？!?；;])", _normalize_text(value)):
+            claim = sentence.strip()
+            if not claim:
+                continue
+            if _CASE_SUBJECT.search(claim) or _CASE_IMAGING.search(claim) or _CASE_DETAIL.search(claim):
+                claims.append((path, claim))
+    return claims
+
+
+def _citation_evidence(packet: Mapping[str, Any]) -> dict[str, str]:
+    evidence: dict[str, str] = {}
+    paragraphs = packet.get("paragraph_evidence")
+    if isinstance(paragraphs, list):
+        for item in paragraphs:
+            if not isinstance(item, Mapping):
+                continue
+            index = item.get("paragraph_index")
+            text = item.get("text")
+            if isinstance(index, int) and not isinstance(index, bool) and isinstance(text, str):
+                evidence[f"transcript:p{index}"] = text
+    frames = packet.get("frame_evidence")
+    if isinstance(frames, list):
+        for item in frames:
+            if not isinstance(item, Mapping):
+                continue
+            path = item.get("path")
+            time = item.get("time")
+            ocr = item.get("ocr")
+            if isinstance(path, str) and isinstance(time, (int, float)) and not isinstance(time, bool) and isinstance(ocr, str):
+                evidence[f"frame:{path}@{float(time):.6f}"] = ocr
+    existing = packet.get("existing_content")
+    if isinstance(existing, Mapping):
+        title = existing.get("title")
+        summary = existing.get("summary_zh")
+        if isinstance(title, str):
+            evidence["existing:title"] = title
+        if isinstance(summary, str):
+            evidence["existing:summary_zh"] = summary
+        takeaways = existing.get("takeaways_zh")
+        if isinstance(takeaways, list):
+            for index, item in enumerate(takeaways, start=1):
+                if isinstance(item, str):
+                    evidence[f"existing:takeaways_zh:{index}"] = item
+    return evidence
+
+
+def _han_bigrams(text: str) -> set[str]:
+    normalized = _normalize_text(text)
+    bigrams: set[str] = set()
+    for run in re.findall(r"[㐀-鿿]{2,}", normalized):
+        bigrams.update(run[index:index + 2] for index in range(len(run) - 1))
+    return bigrams - _GENERIC_BIGRAMS
+
+
+def _claim_has_support(claim: str, citations: Sequence[Any], evidence: Mapping[str, str]) -> bool:
+    claim_bigrams = _han_bigrams(claim)
+    if not claim_bigrams:
+        return False
+    for citation in citations:
+        if not isinstance(citation, str) or citation not in evidence:
+            continue
+        if len(claim_bigrams & _han_bigrams(evidence[citation])) >= 2:
+            return True
+    return False
+
+
+def _validate_case_claims(
+    packet: Mapping[str, Any],
+    rewritten: Mapping[str, Any],
+    review: Mapping[str, Any],
+) -> list[Finding]:
+    findings: list[Finding] = []
+    records = review.get("case_claim_citations")
+    records = records if isinstance(records, list) else []
+    evidence = _citation_evidence(packet)
+    for path, claim in _speaker_case_claims(rewritten):
+        supported = False
+        for record in records:
+            if not isinstance(record, Mapping):
+                continue
+            record_claim = record.get("claim")
+            if (
+                record.get("path") != path
+                or not isinstance(record_claim, str)
+                or _normalize_text(record_claim).strip() != claim
+            ):
+                continue
+            citations = record.get("citations")
+            if isinstance(citations, list) and _claim_has_support(claim, citations, evidence):
+                supported = True
+                break
+        if not supported:
+            findings.append(Finding(
+                "error",
+                "unsupported_case_claim",
+                "case-specific speaker claim lacks packet-bound evidence support",
+                path=path,
+            ))
+    return findings
 
 
 def validate_review_record(
@@ -287,6 +435,7 @@ def validate_review_record(
         findings.append(_finding("sensitive_evidence", "evidence packet contains sensitive-data patterns"))
 
     if isinstance(rewritten, Mapping):
+        findings.extend(_validate_case_claims(packet, rewritten, review))
         transcript = packet.get("transcript_text", "")
         if not isinstance(transcript, str):
             transcript = ""
