@@ -159,10 +159,19 @@ def _digits(value):
     return re.sub(r"\D", "", value or "")
 
 
-def to_row(fields):
-    """Convert canonical DICOM fields to the sheet's six columns.
+# The exported JPGs delivered to KMU are all this size - measured over 500 images
+# sampled across all 250 local case folders. Deliberately NOT taken from DICOM
+# Rows/Columns: both happen to be 512 here, but if a study had a 768 matrix the
+# DICOM would say 768 while the exported JPG is still 512, which would be wrong.
+# The example workbook writes this with '*', not 'x' (it has 150*150).
+EXPORT_RESOLUTION = "512*512"
 
-    Coding follows the KMU example workbook ('工作表1'): 性別 1=男 2=女.
+
+def to_row(fields):
+    """Convert canonical DICOM fields to the sheet's columns.
+
+    性別 is M/F, following the 11 rows actually filled in the KMU example
+    workbook - not the 1/2 codes shown in its '工作表1' legend.
     Returns (row_dict, problems)."""
     problems = []
 
@@ -192,14 +201,18 @@ def to_row(fields):
             problems.append("年齡無法判定（PatientAge 與 PatientBirthDate 皆缺）")
 
     sex_raw = (fields.get("PatientSex") or "").strip().upper()
-    sex = {"M": "1", "F": "2"}.get(sex_raw[:1], "")
+    sex = sex_raw[:1] if sex_raw[:1] in ("M", "F") else ""
     if not sex:
         problems.append("性別無法判定（原值 %r）" % sex_raw)
 
+    # Constant, not derived from the header - see EXPORT_RESOLUTION.
+    resolution = EXPORT_RESOLUTION
+
+    # The DICOM matrix is only a cross-check: it should agree with the export.
     rows_v, cols_v = _digits(fields.get("Rows")), _digits(fields.get("Columns"))
-    resolution = "%sx%s" % (rows_v, cols_v) if rows_v and cols_v else ""
-    if not resolution:
-        problems.append("解析度缺漏（Rows/Columns 未取得）")
+    if rows_v and cols_v and "%s*%s" % (rows_v, cols_v) != EXPORT_RESOLUTION:
+        problems.append("DICOM 矩陣 %sx%s 與匯出尺寸 %s 不符，請確認這案的圖"
+                        % (rows_v, cols_v, EXPORT_RESOLUTION))
 
     maker = (fields.get("Manufacturer") or "").strip()
     model = (fields.get("ManufacturerModelName") or "").strip()

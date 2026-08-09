@@ -1,8 +1,7 @@
 ﻿; ============================================================================
 ; 高醫腸阻塞資料擷取（一次性專案，收工後可整包移除）
 ;
-; 依賴 test.ahk 的：ActivateHISLight()、OpenPACSImage()、GetDICOMData()、
-;                   GetDICOMLineData()、CallDICOMWin
+; 依賴 test.ahk 的：ActivateHISLight()、GetDICOMData()、CallDICOMWin
 ; 由「簡碼 jai.ahk」在 test.ahk 之後 #include。
 ;
 ; 用法：按 Win+Shift+G 開啟置頂小視窗（載入時不會自己跳出來）。
@@ -10,7 +9,8 @@
 ;       網頁版沒有 COM，請改按 Ctrl+C），視窗會即時顯示抓到的單號與來源，
 ;       確認無誤再按按鈕。
 ;         按鈕1 / Win+Shift+H：該單號 -> HIS(chk060) 開啟檢查
-;         按鈕2 / Win+Shift+J：該單號 -> PACS 開影像 -> 抓 DICOM 檔頭 -> 存原始檔
+;         按鈕2 / Win+Shift+J：讀「目前 INFINITT 顯示中」的影像檔頭，組成一整列
+;                              （拍攝年/年齡/性別/空/空/解析度/廠牌/型號）複製到剪貼簿
 ;         按鈕3 / Win+Shift+F1：除錯，列出 chk060 控件
 ;       視窗關掉後再按 Win+Shift+G 叫回來。
 ;
@@ -41,9 +41,13 @@ HGH_QueryBtn() {
     return ""
 }
 
-; INFINITT 載入影像的等待秒數，網路慢就調大
-HGH_PacsWait() {
-    return 6
+; 匯出圖片解析度。「解析度」欄指的是交付給高醫的 JPG 尺寸，不是 CT 矩陣——
+; 實測本機 250 個 Case 資料夾、抽樣 500 張 JPG，全部是 512x512。
+; 刻意不從 DICOM 的 Rows/Columns 取：兩者這次都是 512，但若某案矩陣是 768，
+; DICOM 會給 768 而匯出的 JPG 仍是 512，那就填錯了。
+; 範例檔用 * 不是 x（150*150）。
+HGH_ExportResolution() {
+    return "512*512"
 }
 
 HGH_Total() {
@@ -64,7 +68,7 @@ HGH_BuildGUI() {
     Gui, HGH:Add, Text, x12 y10 w300 vHGH_StatusText, 單號：(點選單號那格，或 Ctrl+C)
     Gui, HGH:Add, Text, x12 y34 w300 vHGH_ProgressText, 進度：--
     Gui, HGH:Add, Button, x12 y62 w300 h38 gHGH_Btn1, 1. 用此單號開 HIS 檢查
-    Gui, HGH:Add, Button, x12 y104 w300 h38 gHGH_Btn2, 2. 開 PACS 並擷取 DICOM 檔頭
+    Gui, HGH:Add, Button, x12 y104 w300 h38 gHGH_Btn2, 2. 讀目前影像 DICOM，複製整列
     Gui, HGH:Font, s9
     Gui, HGH:Add, Button, x12 y146 w300 h28 gHGH_Btn3, 3. 除錯：列出 chk060 控件
     Gui, HGH:Show, w324 h186, 高醫腸阻塞擷取
@@ -121,50 +125,40 @@ return
 ; ============================================================================
 ; 功能二：申請單號 -> PACS 開影像 -> 抓 DICOM 檔頭 -> 存成原始檔
 ; ============================================================================
+; 不再自己開 PACS（那個連結目前不通）。請自行在 INFINITT 叫出該檢查的影像，
+; 再按這顆按鈕，它讀「目前顯示中」的影像檔頭。
 HGH_Btn2:
 <#+j::
-    examNo := HGH_GetExamNo(true)
-    if (examNo = "")
+    header := GetDICOMData()
+    if (Trim(header) = "") {
+        TrayTip, 高醫擷取, 抓不到 DICOM 檔頭`n影像有顯示嗎？滑鼠座標對嗎？, 5, 3
         return
+    }
 
-    if (HGH_IsCaptured(examNo)) {
-        MsgBox, 262148, 高醫擷取, %examNo% 已經擷取過了，要重抓嗎？
+    hdrAcc := RegExReplace(HGH_Tag(header, "0008,0050"), "\D")
+
+    ; 若試算表那邊有選到單號，比對一下——這是取代「自動開圖」後僅存的防呆，
+    ; 專門擋「試算表停在 Case 005，但 INFINITT 上顯示的是別案」。
+    sheetSource := ""
+    sheetAcc := HGH_GetExamNo(false, sheetSource)
+    if (sheetAcc != "" && hdrAcc != "" && sheetAcc != hdrAcc) {
+        MsgBox, 262196, 單號不符, 試算表選的是 %sheetAcc%（%sheetSource%）`n但影像檔頭是 %hdrAcc%`n`n仍要複製這筆嗎？
         IfMsgBox, No
             return
     }
 
-    TrayTip, PACS, 開啟 %examNo% 影像中..., 3, 1
-    if (!OpenPACSImage("arg", examNo))
-        return
+    row := HGH_BuildRow(header)
+    Clipboard := row
+    ClipWait, 2
 
-    ; 等 INFINITT 起來並把新檢查載進來
-    WinWait, INFINITT PACS, , 30
-    if ErrorLevel {
-        TrayTip, PACS, INFINITT 視窗未出現，已中止, 4, 3
-        return
-    }
-    Sleep, % HGH_PacsWait() * 1000
+    if (hdrAcc != "")
+        HGH_SaveHeader(hdrAcc, header)
 
-    ; 抓檔頭，並確認抓到的就是這一筆（避免影像還沒換就抓到上一案）
-    header := GetDICOMData()
-    got := RegExReplace(GetDICOMLineData("accession number", header), "\D")
+    ; 解析度欄填的是匯出 JPG 尺寸（512*512，實測得來），這裡把 DICOM 的矩陣
+    ; 一併顯示當交叉檢查——若矩陣不是 512，代表這案的 CT 與匯出尺寸不同，值得留意。
+    matrix := HGH_Matrix(header)
+    TrayTip, 已複製整列（可直接貼 C 欄）, %row%`n`nDICOM 矩陣 %matrix%（應為 512x512）, 10, 1
 
-    if (got != examNo) {
-        ; 再等一輪重抓，仍不符就中止，寧可漏也不要寫錯列
-        Sleep, % HGH_PacsWait() * 1000
-        header := GetDICOMData()
-        got := RegExReplace(GetDICOMLineData("accession number", header), "\D")
-    }
-    if (got = "") {
-        TrayTip, PACS, 抓不到 DICOM 檔頭，已中止, 4, 3
-        return
-    }
-    if (got != examNo) {
-        TrayTip, PACS, 單號不符！要 %examNo% 但抓到 %got%`n已中止，未寫入, 6, 3
-        return
-    }
-
-    HGH_SaveHeader(examNo, header)
     Gosub, HGH_UpdateStatus
 return
 
@@ -250,6 +244,64 @@ HGH_ReadExcelCell() {
     } catch e {
         return ""
     }
+}
+
+; 依 DICOM tag 取單一值。不能用 GetDICOMLineData("Manufacturer")——它用 InStr
+; 比對且不 break，"Manufacturer" 會同時命中 "Manufacturer Model Name"，
+; 最後一筆勝出，結果拿到型號而不是廠牌。用 tag 就沒有這個歧義。
+HGH_Tag(header, tag) {
+    lines := StrSplit(StrReplace(header, "`r", ""), "`n")
+    for i, line in lines {
+        if (!InStr(line, tag))
+            continue
+        ; 值可能在同一行的 |...|，也可能在下一行（INFINITT 版面）
+        if (RegExMatch(line, "\|([^|]*)\|", same))
+            return Trim(same1)
+        if (i < lines.Length() && RegExMatch(lines[i + 1], "\|([^|]*)\|", next))
+            return Trim(next1)
+        return ""
+    }
+    return ""
+}
+
+; DICOM 影像矩陣，只用來當交叉檢查顯示，不填進表格
+HGH_Matrix(header) {
+    rows := RegExReplace(HGH_Tag(header, "0028,0010"), "\D")
+    cols := RegExReplace(HGH_Tag(header, "0028,0011"), "\D")
+    return (rows != "" && cols != "") ? rows . "x" . cols : "(無)"
+}
+
+; 組出可直接貼進試算表 C 欄的一整列（Tab 分隔）：
+; 拍攝年 / 年齡 / 性別 / 種族(空) / 就醫來源(空) / 解析度 / CT廠牌 / CT型號
+HGH_BuildRow(header) {
+    studyDate := RegExReplace(HGH_Tag(header, "0008,0020"), "\D")
+    year := (StrLen(studyDate) >= 4) ? SubStr(studyDate, 1, 4) : ""
+
+    ; PatientAge 形如 065Y，去掉前導零；沒有就用出生日期跟檢查日期推算
+    age := ""
+    rawAge := HGH_Tag(header, "0010,1010")
+    if (RegExMatch(rawAge, "0*(\d{1,3})\s*[YyMmWwDd]?", a))
+        age := (InStr(rawAge, "Y") || !RegExMatch(rawAge, "[MmWwDd]")) ? a1 + 0 : 0
+    else {
+        birth := RegExReplace(HGH_Tag(header, "0010,0030"), "\D")
+        if (StrLen(birth) = 8 && StrLen(studyDate) = 8) {
+            age := SubStr(studyDate, 1, 4) - SubStr(birth, 1, 4)
+            if (SubStr(studyDate, 5, 4) < SubStr(birth, 5, 4))
+                age -= 1
+        }
+    }
+
+    ; 性別填 M/F —— 依高醫範例檔 11 筆實填資料，不是「工作表1」圖例的 1/2
+    sex := SubStr(Trim(HGH_Tag(header, "0010,0040")), 1, 1)
+    StringUpper, sex, sex
+
+    maker := Trim(HGH_Tag(header, "0008,0070"))
+    model := Trim(HGH_Tag(header, "0008,1090"))
+
+    ; 種族與就醫來源留空（手動填），所以中間是兩個連續 Tab
+    line := year . A_Tab . age . A_Tab . sex . A_Tab . A_Tab . A_Tab
+    line .= HGH_ExportResolution() . A_Tab . maker . A_Tab . model
+    return line
 }
 
 HGH_RawPath(examNo) {

@@ -33,8 +33,8 @@ class TestInfinittLayout(unittest.TestCase):
     def test_all_six_columns(self):
         self.assertEqual(self.row["拍攝年"], "2024")
         self.assertEqual(self.row["年齡"], "65")       # 065Y -> 65
-        self.assertEqual(self.row["性別"], "1")        # M -> 1 per the KMU example sheet
-        self.assertEqual(self.row["解析度"], "512x512")
+        self.assertEqual(self.row["性別"], "M")        # M/F per the KMU example sheet
+        self.assertEqual(self.row["解析度"], "512*512")  # export size, constant
         self.assertEqual(self.row["CT廠牌"], "SIEMENS")
         self.assertEqual(self.row["CT型號"], "SOMATOM Definition AS+")
 
@@ -56,7 +56,7 @@ class TestOtherLayouts(unittest.TestCase):
         )
         row, problems = to_row(parse_header(text)[0])
         self.assertEqual(problems, [])
-        self.assertEqual(row["性別"], "2")
+        self.assertEqual(row["性別"], "F")
         self.assertEqual(row["年齡"], "42")
         self.assertEqual(row["CT廠牌"], "GE MEDICAL SYSTEMS")
 
@@ -87,8 +87,19 @@ class TestProblemReporting(unittest.TestCase):
         row, problems = to_row(parse_header("StudyDate: 20240115\n")[0])
         self.assertEqual(row["拍攝年"], "2024")
         self.assertTrue(any("性別" in p for p in problems))
-        self.assertTrue(any("解析度" in p for p in problems))
         self.assertTrue(any("申請單號" in p for p in problems))
+
+    def test_resolution_is_the_export_size_not_the_dicom_matrix(self):
+        # The field means the size of the JPG delivered to KMU, which is constant.
+        row, problems = to_row(parse_header("Rows: 512\nColumns: 512\n")[0])
+        self.assertEqual(row["解析度"], "512*512")
+        self.assertFalse(any("矩陣" in p for p in problems))
+
+    def test_matrix_disagreeing_with_export_is_flagged(self):
+        # A 768 matrix still exports as a 512 JPG - worth a look, not a silent fill.
+        row, problems = to_row(parse_header("Rows: 768\nColumns: 768\n")[0])
+        self.assertEqual(row["解析度"], "512*512")
+        self.assertTrue(any("矩陣" in p for p in problems))
 
     def test_empty_input(self):
         row, problems = to_row(parse_header("")[0])
