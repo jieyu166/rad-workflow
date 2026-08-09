@@ -136,8 +136,9 @@
           </label>
           <label class="field">Sequence 數量
             <select id="sequence-count">
-              <option value="2" selected>2 組</option>
-              <option value="3">3 組</option>
+              <option value="2">2 組</option>
+              <option value="3" selected>3 組</option>
+              <option value="4">4 組</option>
             </select>
           </label>
           <div id="import-status" class="status" role="status">尚未載入影像</div>
@@ -230,7 +231,9 @@
 
     function validateSequenceCount(sequenceCount) {
       const count = Number(sequenceCount);
-      if (count !== 2 && count !== 3) throw new RangeError("sequenceCount must be 2 or 3");
+      if (count !== 2 && count !== 3 && count !== 4) {
+        throw new RangeError("sequenceCount must be 2, 3 or 4");
+      }
       return count;
     }
 
