@@ -21,7 +21,11 @@ _MAX_REVIEWER_CHARS = 128
 SENSITIVE_PATTERNS = (
     (
         "medical_record_number",
-        re.compile(r"(?:病\s*歷\s*(?:號|號碼)|m\s*r\s*n)\s*[:：#號碼-]*\s*[a-z0-9](?:[a-z0-9 -]{4,30}[a-z0-9])", re.IGNORECASE),
+        re.compile(
+            r"(?:病\s*歷\s*(?:號碼|號)|m\s*r\s*n)\s*[:#-]?\s*"
+            r"(?=[a-z0-9-]{0,16}\d)[a-z0-9](?:[a-z0-9-]{4,30}[a-z0-9])",
+            re.IGNORECASE,
+        ),
     ),
     (
         "patient_name",
@@ -83,7 +87,8 @@ def contains_sensitive_data(text: str) -> list[str]:
     return [
         name
         for name, pattern in SENSITIVE_PATTERNS
-        if pattern.search(normalized) or pattern.search(compact)
+        if pattern.search(normalized)
+        or (name != "medical_record_number" and pattern.search(compact))
     ]
 
 
@@ -271,9 +276,18 @@ _CASE_SUBJECT = re.compile(
 )
 _CASE_IMAGING = re.compile(r"(?:影像|檢查|掃描).{0,8}(?:顯示|可見|呈現|發現)")
 _CASE_DETAIL = re.compile(r"(?:病史|診斷為|證實為|轉移|出血)")
+_NEGATION = re.compile(r"(?:沒有|並無|無|未見|未顯示|未發現|未證實|未|否認|不見|排除)")
 _GENERIC_BIGRAMS = frozenset(
     "病人 患者 個案 本例 此例 該例 病例 影像 顯示 可見 呈現 發現 合併 伴隨 診斷 病史 檢查 掃描".split()
 )
+
+
+def _is_case_assertion(text: str) -> bool:
+    return bool(
+        _CASE_SUBJECT.search(text)
+        or _CASE_IMAGING.search(text)
+        or _CASE_DETAIL.search(text)
+    )
 
 
 def _speaker_case_claims(rewritten: Mapping[str, Any]) -> list[tuple[str, str]]:
@@ -289,7 +303,7 @@ def _speaker_case_claims(rewritten: Mapping[str, Any]) -> list[tuple[str, str]]:
             claim = sentence.strip()
             if not claim:
                 continue
-            if _CASE_SUBJECT.search(claim) or _CASE_IMAGING.search(claim) or _CASE_DETAIL.search(claim):
+            if _is_case_assertion(claim):
                 claims.append((path, claim))
     return claims
 
@@ -339,16 +353,39 @@ def _han_bigrams(text: str) -> set[str]:
     return bigrams - _GENERIC_BIGRAMS
 
 
+def _clauses(text: str) -> list[str]:
+    return [
+        part.strip()
+        for part in re.split(r"[，,；;。！？!?]+", _normalize_text(text))
+        if part.strip()
+    ]
+
+
+def _is_negated(text: str) -> bool:
+    return bool(_NEGATION.search(text))
+
+
 def _claim_has_support(claim: str, citations: Sequence[Any], evidence: Mapping[str, str]) -> bool:
-    claim_bigrams = _han_bigrams(claim)
-    if not claim_bigrams:
+    claim_clauses = [clause for clause in _clauses(claim) if _is_case_assertion(clause)]
+    if not claim_clauses:
         return False
+    evidence_clauses: list[str] = []
     for citation in citations:
-        if not isinstance(citation, str) or citation not in evidence:
-            continue
-        if len(claim_bigrams & _han_bigrams(evidence[citation])) >= 2:
-            return True
-    return False
+        if isinstance(citation, str) and citation in evidence:
+            evidence_clauses.extend(_clauses(evidence[citation]))
+    if not evidence_clauses:
+        return False
+    for claim_clause in claim_clauses:
+        claim_bigrams = _han_bigrams(claim_clause)
+        if not claim_bigrams:
+            return False
+        if not any(
+            _is_negated(claim_clause) == _is_negated(evidence_clause)
+            and len(claim_bigrams & _han_bigrams(evidence_clause)) >= 2
+            for evidence_clause in evidence_clauses
+        ):
+            return False
+    return True
 
 
 def _validate_case_claims(

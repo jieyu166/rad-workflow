@@ -171,8 +171,13 @@ class LectureContentRuleTests(unittest.TestCase):
         )
 
     def test_sensitive_scanner_does_not_flag_unlabelled_teaching_metadata(self):
-        text = "王小明教授於 1980-01-02 發表文章，圖號 PT-998877，肺癌病史為一般教學主題。"
-        self.assertEqual(contains_sensitive_data(text), [])
+        texts = (
+            "王小明教授於 1980-01-02 發表文章，圖號 PT-998877，肺癌病史為一般教學主題。",
+            "MRN protocol demonstrates peripheral nerve signal abnormality.",
+        )
+        for text in texts:
+            with self.subTest(text=text):
+                self.assertEqual(contains_sensitive_data(text), [])
 
     def test_sensitive_scanner_rejects_non_string_and_oversized_input_without_echoing_content(self):
         with self.assertRaisesRegex(TypeError, "text must be a string"):
@@ -289,6 +294,37 @@ class LectureContentRuleTests(unittest.TestCase):
             for item in validate_review_record(supported_packet, rewritten, supported_review)
         }
         self.assertNotIn("unsupported_case_claim", supported_codes)
+
+    def test_negated_evidence_cannot_support_positive_case_claim(self):
+        claim = "病人有肺癌病史，影像顯示腦轉移並合併出血。"
+        packet = build_evidence_packet(
+            "lecture-01",
+            2,
+            10.0,
+            20.0,
+            "病人沒有肺癌病史，影像未顯示腦轉移，也沒有出血。",
+            [],
+            self.valid_segment(),
+        )
+        review = self.valid_review(packet)
+        review["case_claim_citations"] = [{
+            "path": "summary_zh",
+            "claim": claim,
+            "citations": ["transcript:p1"],
+        }]
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        codes = {item.code for item in validate_review_record(packet, rewritten, review)}
+        self.assertIn("unsupported_case_claim", codes)
+
+    def test_implicit_case_assertion_without_subject_requires_evidence(self):
+        claim = "可見多發腦轉移並合併出血。"
+        packet = self.packet()
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        findings = validate_review_record(packet, rewritten, self.valid_review(packet))
+        self.assertEqual(
+            [item.path for item in findings if item.code == "unsupported_case_claim"],
+            ["summary_zh"],
+        )
 
     def test_general_medical_editorial_is_not_treated_as_a_case_claim(self):
         packet = self.packet()
