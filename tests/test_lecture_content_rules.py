@@ -326,6 +326,178 @@ class LectureContentRuleTests(unittest.TestCase):
             ["summary_zh"],
         )
 
+    def test_contradictory_clause_cannot_be_masked_by_supported_clause(self):
+        claim = "可見多發腦轉移並合併出血。"
+        packet = build_evidence_packet(
+            "lecture-01", 2, 10.0, 20.0, "可見多發腦轉移，但未見出血。", [], self.valid_segment()
+        )
+        review = self.valid_review(packet)
+        review["case_claim_citations"] = [{
+            "path": "summary_zh",
+            "claim": claim,
+            "citations": ["transcript:p1"],
+        }]
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        findings = validate_review_record(packet, rewritten, review)
+        self.assertIn("unsupported_case_claim", {item.code for item in findings})
+        self.assertTrue(all("出血" not in item.message for item in findings))
+
+    def test_uncited_case_assertions_fail_closed_without_diagnosis_vocabulary(self):
+        claims = (
+            "可見左額葉腫塊伴顯著水腫。",
+            "呈現左側顳葉病灶與周邊水腫。",
+            "右額葉有不規則增強腫塊。",
+        )
+        packet = self.packet()
+        for claim in claims:
+            with self.subTest(claim=claim):
+                rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+                codes = {
+                    item.code
+                    for item in validate_review_record(packet, rewritten, self.valid_review(packet))
+                }
+                self.assertIn("unsupported_case_claim", codes)
+
+    def test_non_editorial_diagnostic_and_location_assertions_require_citations(self):
+        claims = (
+            "最終診斷為惡性腫瘤。",
+            "病理證實為高級別腫瘤。",
+            "病灶位於左額葉深部白質。",
+        )
+        packet = self.packet()
+        for claim in claims:
+            with self.subTest(claim=claim):
+                rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+                codes = {
+                    item.code
+                    for item in validate_review_record(packet, rewritten, self.valid_review(packet))
+                }
+                self.assertIn("unsupported_case_claim", codes)
+
+    def test_diagnostic_and_location_assertions_accept_matching_clause_evidence(self):
+        claims = (
+            "最終診斷為惡性腫瘤。",
+            "病理證實為高級別腫瘤。",
+            "病灶位於左額葉深部白質。",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                packet = build_evidence_packet(
+                    "lecture-01", 2, 10.0, 20.0, claim, [], self.valid_segment()
+                )
+                review = self.valid_review(packet)
+                review["case_claim_citations"] = [{
+                    "path": "summary_zh",
+                    "claim": claim,
+                    "citations": ["transcript:p1"],
+                }]
+                rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+                codes = {item.code for item in validate_review_record(packet, rewritten, review)}
+                self.assertNotIn("unsupported_case_claim", codes)
+
+    def test_diagnostic_assertion_rejects_opposite_clause_evidence(self):
+        claim = "最終診斷為惡性腫瘤。"
+        packet = build_evidence_packet(
+            "lecture-01", 2, 10.0, 20.0, "最終診斷不是惡性腫瘤。", [], self.valid_segment()
+        )
+        review = self.valid_review(packet)
+        review["case_claim_citations"] = [{
+            "path": "summary_zh",
+            "claim": claim,
+            "citations": ["transcript:p1"],
+        }]
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        codes = {item.code for item in validate_review_record(packet, rewritten, review)}
+        self.assertIn("unsupported_case_claim", codes)
+
+    def test_supported_multiclause_claim_requires_support_for_each_clause(self):
+        claim = "可見左額葉腫塊伴顯著水腫。"
+        packet = build_evidence_packet(
+            "lecture-01", 2, 10.0, 20.0, "可見左額葉腫塊，伴有顯著水腫。", [], self.valid_segment()
+        )
+        review = self.valid_review(packet)
+        review["case_claim_citations"] = [
+            {
+                "path": "summary_zh",
+                "claim": "可見左額葉腫塊",
+                "citations": ["transcript:p1"],
+            },
+            {
+                "path": "summary_zh",
+                "claim": "顯著水腫",
+                "citations": ["transcript:p1"],
+            },
+        ]
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        codes = {item.code for item in validate_review_record(packet, rewritten, review)}
+        self.assertNotIn("unsupported_case_claim", codes)
+
+    def test_mixed_polarity_claim_is_bound_clause_by_clause(self):
+        claim = "可見左額葉腫塊但未見出血。"
+        packet = build_evidence_packet(
+            "lecture-01", 2, 10.0, 20.0, "可見左額葉腫塊，未見出血。", [], self.valid_segment()
+        )
+        review = self.valid_review(packet)
+        review["case_claim_citations"] = [
+            {
+                "path": "summary_zh",
+                "claim": "可見左額葉腫塊",
+                "citations": ["transcript:p1"],
+            },
+            {
+                "path": "summary_zh",
+                "claim": "未見出血",
+                "citations": ["transcript:p1"],
+            },
+        ]
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        codes = {item.code for item in validate_review_record(packet, rewritten, review)}
+        self.assertNotIn("unsupported_case_claim", codes)
+
+    def test_case_claim_citations_fail_closed_on_empty_wrong_and_type_confused_values(self):
+        claim = "可見左額葉腫塊。"
+        packet = build_evidence_packet(
+            "lecture-01", 2, 10.0, 20.0, claim, [], self.valid_segment()
+        )
+        bad_records = (
+            [],
+            [{"path": "summary_zh", "claim": claim, "citations": []}],
+            [{"path": "summary_zh", "claim": claim, "citations": ["transcript:p999"]}],
+            [{"path": "summary_zh", "claim": claim, "citations": "transcript:p1"}],
+            [{"path": "summary_zh", "claim": claim, "citations": True}],
+            [{"path": "summary_zh", "claim": claim, "citations": [True]}],
+            [{"path": True, "claim": claim, "citations": ["transcript:p1"]}],
+            [{"path": "summary_zh", "claim": True, "citations": ["transcript:p1"]}],
+            [{"path": ["summary_zh"], "claim": claim, "citations": ["transcript:p1"]}],
+            [True],
+            "not-a-list",
+            True,
+        )
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        for records in bad_records:
+            with self.subTest(records_type=type(records).__name__, records=repr(records)):
+                review = self.valid_review(packet)
+                review["case_claim_citations"] = records
+                codes = {item.code for item in validate_review_record(packet, rewritten, review)}
+                self.assertIn("unsupported_case_claim", codes)
+
+    def test_unicode_punctuation_splits_case_claims_without_cross_clause_masking(self):
+        claim = "可見多發腦轉移，合併出血；另見左額葉腫塊。"
+        packet = build_evidence_packet(
+            "lecture-01", 2, 10.0, 20.0, "可見多發腦轉移、未見出血；另見左額葉腫塊。", [], self.valid_segment()
+        )
+        review = self.valid_review(packet)
+        review["case_claim_citations"] = [{
+            "path": "summary_zh",
+            "claim": claim,
+            "citations": ["transcript:p1"],
+        }]
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        self.assertIn(
+            "unsupported_case_claim",
+            {item.code for item in validate_review_record(packet, rewritten, review)},
+        )
+
     def test_general_medical_editorial_is_not_treated_as_a_case_claim(self):
         packet = self.packet()
         rewritten = self.valid_segment(editorial_notes_zh=[

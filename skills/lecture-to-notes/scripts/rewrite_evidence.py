@@ -270,28 +270,37 @@ def _packet_sensitive_text(packet: Mapping[str, Any]) -> str:
     return "\n".join(pieces)
 
 
-_CASE_SUBJECT = re.compile(
-    r"(?:病人|患者|個案|本例|此例|該例|本病例|該病例).{0,24}"
-    r"(?:有|曾|為|罹患|診斷|顯示|可見|呈現|合併|伴隨|發現|病史)"
+_NEGATION = re.compile(r"(?:沒有|並無|並非|不是|不位於|無|未見|未顯示|未發現|未證實|未|否認|不見|排除)")
+_CLAUSE_BOUNDARY = re.compile(
+    r"[，,；;。！？!?：:\n]+|"
+    r"(?:並且|並|且)(?=(?:合併|伴有|伴隨|伴|可見|呈現|顯示|未見|不見))|"
+    r"(?:但|然而|惟)(?=(?:可見|呈現|顯示|未見|不見|有|無|沒有|並無))|"
+    r"(?:合併|伴有|伴隨|伴)(?=[㐀-鿿])"
 )
-_CASE_IMAGING = re.compile(r"(?:影像|檢查|掃描).{0,8}(?:顯示|可見|呈現|發現)")
-_CASE_DETAIL = re.compile(r"(?:病史|診斷為|證實為|轉移|出血)")
-_NEGATION = re.compile(r"(?:沒有|並無|無|未見|未顯示|未發現|未證實|未|否認|不見|排除)")
+_ASSERTION_PREFIX = re.compile(
+    r"^(?:另|另外|並|且|但|然而|惟)?"
+    r"(?:可見|呈現|顯示|發現|見到|另見|未見|不見|未顯示|未發現|"
+    r"合併|伴有|伴隨|伴|有|無|沒有|並無)"
+)
 _GENERIC_BIGRAMS = frozenset(
     "病人 患者 個案 本例 此例 該例 病例 影像 顯示 可見 呈現 發現 合併 伴隨 診斷 病史 檢查 掃描".split()
 )
 
 
-def _is_case_assertion(text: str) -> bool:
-    return bool(
-        _CASE_SUBJECT.search(text)
-        or _CASE_IMAGING.search(text)
-        or _CASE_DETAIL.search(text)
-    )
+def _atomic_clauses(text: str) -> list[str]:
+    return [
+        part.strip()
+        for part in _CLAUSE_BOUNDARY.split(_normalize_text(text))
+        if part.strip()
+    ]
 
 
-def _speaker_case_claims(rewritten: Mapping[str, Any]) -> list[tuple[str, str]]:
-    claims: list[tuple[str, str]] = []
+def _claim_key(text: str) -> str:
+    return re.sub(r"[\s，,、；;。！？!?：:]+", "", _normalize_text(text)).strip()
+
+
+def _speaker_case_claims(rewritten: Mapping[str, Any]) -> list[tuple[str, str, list[str]]]:
+    claims: list[tuple[str, str, list[str]]] = []
     fields: list[tuple[str, Any]] = [("summary_zh", rewritten.get("summary_zh"))]
     takeaways = rewritten.get("takeaways_zh")
     if isinstance(takeaways, list):
@@ -299,12 +308,11 @@ def _speaker_case_claims(rewritten: Mapping[str, Any]) -> list[tuple[str, str]]:
     for path, value in fields:
         if not isinstance(value, str):
             continue
-        for sentence in re.split(r"(?<=[。！？!?；;])", _normalize_text(value)):
+        for sentence in re.split(r"(?<=[。！？!?；;])|\n+", _normalize_text(value)):
             claim = sentence.strip()
-            if not claim:
-                continue
-            if _is_case_assertion(claim):
-                claims.append((path, claim))
+            clauses = _atomic_clauses(claim)
+            if clauses:
+                claims.append((path, claim, clauses))
     return claims
 
 
@@ -353,39 +361,71 @@ def _han_bigrams(text: str) -> set[str]:
     return bigrams - _GENERIC_BIGRAMS
 
 
-def _clauses(text: str) -> list[str]:
-    return [
-        part.strip()
-        for part in re.split(r"[，,；;。！？!?]+", _normalize_text(text))
-        if part.strip()
-    ]
-
-
 def _is_negated(text: str) -> bool:
     return bool(_NEGATION.search(text))
 
 
-def _claim_has_support(claim: str, citations: Sequence[Any], evidence: Mapping[str, str]) -> bool:
-    claim_clauses = [clause for clause in _clauses(claim) if _is_case_assertion(clause)]
-    if not claim_clauses:
+def _assertion_content(text: str) -> str:
+    normalized = _claim_key(text)
+    previous = None
+    while previous != normalized:
+        previous = normalized
+        normalized = _ASSERTION_PREFIX.sub("", normalized)
+    return normalized
+
+
+def _semantic_match(left: str, right: str) -> bool:
+    left_content = _assertion_content(left)
+    right_content = _assertion_content(right)
+    if not left_content or not right_content:
+        return False
+    if left_content in right_content or right_content in left_content:
+        return True
+    left_bigrams = _han_bigrams(left_content)
+    right_bigrams = _han_bigrams(right_content)
+    required = min(2, len(left_bigrams))
+    return required > 0 and len(left_bigrams & right_bigrams) >= required
+
+
+def _claim_has_support(claim_clause: str, citations: Sequence[Any], evidence: Mapping[str, str]) -> bool:
+    if isinstance(citations, (str, bytes)) or not isinstance(citations, Sequence):
         return False
     evidence_clauses: list[str] = []
     for citation in citations:
-        if isinstance(citation, str) and citation in evidence:
-            evidence_clauses.extend(_clauses(evidence[citation]))
-    if not evidence_clauses:
+        if not isinstance(citation, str) or citation not in evidence:
+            return False
+        evidence_clauses.extend(_atomic_clauses(evidence[citation]))
+    matches = [clause for clause in evidence_clauses if _semantic_match(claim_clause, clause)]
+    if not matches:
         return False
-    for claim_clause in claim_clauses:
-        claim_bigrams = _han_bigrams(claim_clause)
-        if not claim_bigrams:
-            return False
-        if not any(
-            _is_negated(claim_clause) == _is_negated(evidence_clause)
-            and len(claim_bigrams & _han_bigrams(evidence_clause)) >= 2
-            for evidence_clause in evidence_clauses
-        ):
-            return False
-    return True
+    claim_negated = _is_negated(claim_clause)
+    if any(_is_negated(clause) != claim_negated for clause in matches):
+        return False
+    return any(_is_negated(clause) == claim_negated for clause in matches)
+
+
+def _existing_citation_for_path(path: str) -> str | None:
+    if path == "summary_zh":
+        return "existing:summary_zh"
+    match = re.fullmatch(r"takeaways_zh\[(\d+)]", path)
+    if match:
+        return f"existing:takeaways_zh:{int(match.group(1)) + 1}"
+    return None
+
+
+def _is_unchanged_existing_clause(
+    path: str,
+    clause: str,
+    evidence: Mapping[str, str],
+) -> bool:
+    citation = _existing_citation_for_path(path)
+    if citation is None or citation not in evidence:
+        return False
+    clause_key = _claim_key(clause)
+    return clause_key in {
+        _claim_key(existing_clause)
+        for existing_clause in _atomic_clauses(evidence[citation])
+    }
 
 
 def _validate_case_claims(
@@ -397,27 +437,34 @@ def _validate_case_claims(
     records = review.get("case_claim_citations")
     records = records if isinstance(records, list) else []
     evidence = _citation_evidence(packet)
-    for path, claim in _speaker_case_claims(rewritten):
-        supported = False
-        for record in records:
-            if not isinstance(record, Mapping):
+    for path, claim, clauses in _speaker_case_claims(rewritten):
+        sentence_key = _claim_key(claim)
+        unsupported = False
+        for clause in clauses:
+            if _is_unchanged_existing_clause(path, clause, evidence):
                 continue
-            record_claim = record.get("claim")
-            if (
-                record.get("path") != path
-                or not isinstance(record_claim, str)
-                or _normalize_text(record_claim).strip() != claim
-            ):
-                continue
-            citations = record.get("citations")
-            if isinstance(citations, list) and _claim_has_support(claim, citations, evidence):
-                supported = True
+            clause_key = _claim_key(clause)
+            clause_supported = False
+            for record in records:
+                if not isinstance(record, Mapping) or record.get("path") != path:
+                    continue
+                record_claim = record.get("claim")
+                if not isinstance(record_claim, str) or _claim_key(record_claim) not in {
+                    sentence_key,
+                    clause_key,
+                }:
+                    continue
+                if _claim_has_support(clause, record.get("citations"), evidence):
+                    clause_supported = True
+                    break
+            if not clause_supported:
+                unsupported = True
                 break
-        if not supported:
+        if unsupported:
             findings.append(Finding(
                 "error",
                 "unsupported_case_claim",
-                "case-specific speaker claim lacks packet-bound evidence support",
+                "case-specific speaker clause lacks packet-bound evidence support",
                 path=path,
             ))
     return findings
