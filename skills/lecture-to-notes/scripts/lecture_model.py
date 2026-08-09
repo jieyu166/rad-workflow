@@ -18,13 +18,13 @@ class Finding:
     path: str | None = None
 
 
-def _frame_time(path: str) -> float:
+def _frame_time(path: str) -> float | None:
     stem = Path(path).stem
     marker = stem.rsplit("_", 1)[-1]
     try:
         return float(marker.replace("-", "."))
     except ValueError:
-        return 0.0
+        return None
 
 
 def segment_start(segment: Mapping[str, Any]) -> float:
@@ -91,11 +91,13 @@ def normalize_lecture(data: Mapping[str, Any]) -> dict[str, Any]:
             elif isinstance(frame, Mapping):
                 raw_path = frame.get("path", "")
                 normalized_path = raw_path.replace("\\", "/") if isinstance(raw_path, str) else raw_path
-                normalized_frames.append({
+                normalized_frame = {
                     "time": frame.get("time"),
-                    "ocr": frame.get("ocr", ""),
                     "path": normalized_path,
-                })
+                }
+                if "ocr" in frame:
+                    normalized_frame["ocr"] = frame["ocr"]
+                normalized_frames.append(normalized_frame)
             else:
                 normalized_frames.append(frame)
         segment["frames"] = normalized_frames
@@ -116,6 +118,16 @@ def _segment_label(segment: Any, fallback_index: int) -> Any:
     return fallback_index
 
 
+def _same_json_scalar(old_value: Any, new_value: Any) -> bool:
+    return type(old_value) is type(new_value) and old_value == new_value
+
+
+def _segment_time_value(segment: Mapping[str, Any], canonical: str, alias: str) -> Any:
+    if canonical in segment:
+        return segment[canonical]
+    return segment[alias]
+
+
 def assert_times_unchanged(before: Mapping[str, Any], after: Mapping[str, Any]) -> None:
     old_segments = before.get("segments", [])
     new_segments = after.get("segments", [])
@@ -126,19 +138,35 @@ def assert_times_unchanged(before: Mapping[str, Any], after: Mapping[str, Any]) 
 
     for position, (old_segment, new_segment) in enumerate(zip(old_segments, new_segments)):
         label = _segment_label(old_segment, position)
-        old_index = old_segment.get("index") if isinstance(old_segment, Mapping) else None
-        new_index = new_segment.get("index") if isinstance(new_segment, Mapping) else None
-        old_has_index = isinstance(old_segment, Mapping) and "index" in old_segment
-        new_has_index = isinstance(new_segment, Mapping) and "index" in new_segment
-        if old_has_index != new_has_index or old_index != new_index:
+        if not isinstance(old_segment, Mapping) or not isinstance(new_segment, Mapping):
+            raise ValueError(f"segment {label} must remain an object")
+
+        old_has_index = "index" in old_segment
+        new_has_index = "index" in new_segment
+        old_index = old_segment.get("index")
+        new_index = new_segment.get("index")
+        if (
+            old_has_index != new_has_index
+            or (old_has_index and not _same_json_scalar(old_index, new_index))
+        ):
             raise ValueError(f"segment {label} index changed: {old_index!r} != {new_index!r}")
+
         try:
-            old_range = (segment_start(old_segment), segment_end(old_segment))
-            new_range = (segment_start(new_segment), segment_end(new_segment))
-        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            old_start = _segment_time_value(old_segment, "start_sec", "start")
+            new_start = _segment_time_value(new_segment, "start_sec", "start")
+            old_end = _segment_time_value(old_segment, "end_sec", "end")
+            new_end = _segment_time_value(new_segment, "end_sec", "end")
+        except KeyError as exc:
             raise ValueError(f"segment {label} has invalid time data") from exc
-        if old_range != new_range:
-            raise ValueError(f"segment {label} time changed: {old_range} != {new_range}")
+
+        if not _same_json_scalar(old_start, new_start):
+            raise ValueError(
+                f"segment {label} time changed: start changed from {old_start!r} to {new_start!r}"
+            )
+        if not _same_json_scalar(old_end, new_end):
+            raise ValueError(
+                f"segment {label} time changed: end changed from {old_end!r} to {new_end!r}"
+            )
 
 
 def _safe_relative_frame_path(value: Any) -> PurePosixPath | None:
@@ -271,7 +299,15 @@ def validate_lecture_schema(
                     finding_path,
                 ))
 
-            if not isinstance(frame.get("ocr", ""), str):
+            if "ocr" not in frame:
+                findings.append(Finding(
+                    "error",
+                    "frame_ocr_missing",
+                    "frame ocr key is required",
+                    position,
+                    finding_path,
+                ))
+            elif not isinstance(frame["ocr"], str):
                 findings.append(Finding(
                     "error",
                     "frame_ocr_type",

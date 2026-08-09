@@ -44,8 +44,8 @@ class LectureModelTests(unittest.TestCase):
                 "title": "Focused title",
                 "summary_zh": "Organized content",
                 "bullets_zh": ["one", "two", "three", "four"],
-                "frames": ["frames/f001.jpg"],
-                "frame_ocr": [{"frame": "frames/f001.jpg", "text": "Slide text"}],
+                "frames": ["frames/f_10-0.jpg"],
+                "frame_ocr": [{"frame": "frames/f_10-0.jpg", "text": "Slide text"}],
             }],
         }
 
@@ -59,9 +59,9 @@ class LectureModelTests(unittest.TestCase):
         self.assertEqual(segment["takeaways_zh"], ["one", "two", "three", "four"])
         self.assertEqual(segment["editorial_notes_zh"], [])
         self.assertEqual(segment["frames"], [{
-            "time": 0.0,
+            "time": 10.0,
             "ocr": "Slide text",
-            "path": "frames/f001.jpg",
+            "path": "frames/f_10-0.jpg",
         }])
         self.assertNotIn("frame_ocr", segment)
         self.assertNotIn("bullets_zh", segment)
@@ -92,6 +92,31 @@ class LectureModelTests(unittest.TestCase):
             {"time": 12.5, "ocr": "Top OCR", "path": "frames/legacy_12-5.jpg"},
             {"time": "bad", "ocr": None, "path": "frames/bad.jpg"},
         ])
+
+    def test_legacy_frame_without_timestamp_remains_invalid_for_schema(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            frame = root / "frames" / "untimed.jpg"
+            frame.parent.mkdir()
+            frame.write_bytes(b"image")
+            normalized = normalize_lecture({"segments": [{
+                "index": 1,
+                "start_sec": 0.0,
+                "end_sec": 5.0,
+                "title": "Focused title",
+                "summary_zh": "Valid summary",
+                "takeaways_zh": ["one", "two", "three", "four"],
+                "editorial_notes_zh": [],
+                "frames": ["frames/untimed.jpg"],
+            }]})
+
+            findings = validate_lecture_schema(normalized, root)
+
+        self.assertIsNone(normalized["segments"][0]["frames"][0]["time"])
+        self.assertEqual(
+            [(item.code, item.path) for item in findings],
+            [("frame_time", "frames/untimed.jpg")],
+        )
 
     def test_schema_accepts_existing_safe_relative_frame(self):
         with tempfile.TemporaryDirectory() as td:
@@ -184,6 +209,24 @@ class LectureModelTests(unittest.TestCase):
             ["frames/f1.jpg"],
         )
 
+    def test_schema_requires_explicit_ocr_key_with_stable_code_and_path(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            frame = root / "frames" / "missing-ocr.jpg"
+            frame.parent.mkdir()
+            frame.write_bytes(b"image")
+            data = {"segments": [self.valid_segment(frames=[{
+                "time": 1.0,
+                "path": "frames/missing-ocr.jpg",
+            }])]}
+
+            findings = validate_lecture_schema(data, root)
+
+        self.assertEqual(
+            [(item.code, item.path) for item in findings],
+            [("frame_ocr_missing", "frames/missing-ocr.jpg")],
+        )
+
     def test_malformed_frame_objects_are_structured_and_validation_continues(self):
         frames = [None, "frames/not-canonical.jpg", 42]
         with tempfile.TemporaryDirectory() as td:
@@ -210,6 +253,21 @@ class LectureModelTests(unittest.TestCase):
             [item.segment_index for item in findings if item.code == "time_range"],
             [0, 1, 2],
         )
+
+    def test_assert_times_unchanged_rejects_scalar_type_changes(self):
+        before = {"segments": [{"index": 1, "start_sec": 1.0, "end_sec": 2.0}]}
+        cases = [
+            ("start string", {"index": 1, "start_sec": "1.0", "end_sec": 2.0}, "start changed"),
+            ("start boolean", {"index": 1, "start_sec": True, "end_sec": 2.0}, "start changed"),
+            ("start integer", {"index": 1, "start_sec": 1, "end_sec": 2.0}, "start changed"),
+            ("end string", {"index": 1, "start_sec": 1.0, "end_sec": "2.0"}, "end changed"),
+            ("end boolean", {"index": 1, "start_sec": 1.0, "end_sec": True}, "end changed"),
+            ("index boolean", {"index": True, "start_sec": 1.0, "end_sec": 2.0}, "index changed"),
+        ]
+        for name, changed_segment, message in cases:
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(ValueError, message):
+                    assert_times_unchanged(before, {"segments": [changed_segment]})
 
     def test_assert_times_unchanged_rejects_count_time_and_segment_index_changes(self):
         before = {"segments": [
