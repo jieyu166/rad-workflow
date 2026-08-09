@@ -51,9 +51,22 @@ class LectureContentRuleTests(unittest.TestCase):
             10.0,
             20.0,
             "第一段講者內容。\n\n第二段講者內容。",
-            [{"time": 12.0, "ocr": "影像文字", "path": "frames/f012.jpg"}],
+            [{
+                "time": 12.0,
+                "ocr": "影像文字",
+                "path": "frames/f012.jpg",
+                "asset_sha256": "1" * 64,
+            }],
             self.valid_segment(),
         )
+
+    def trusted_frame_sources(self):
+        return [{
+            "path": "frames/f012.jpg",
+            "time": 12.0,
+            "ocr": "影像文字",
+            "asset_sha256": "1" * 64,
+        }]
 
     def valid_review(self, packet):
         return {
@@ -63,6 +76,10 @@ class LectureContentRuleTests(unittest.TestCase):
             "case_details_verified": True,
             "editorial_separated": True,
         }
+
+    def rehash_packet(self, packet):
+        without_hash = {key: value for key, value in packet.items() if key != "packet_sha256"}
+        packet["packet_sha256"] = hashlib.sha256(canonical_packet_bytes(without_hash)).hexdigest()
 
     def test_valid_focused_traditional_chinese_segment_has_no_errors(self):
         findings = validate_segment_content(self.valid_segment(), "講者原始逐字稿")
@@ -580,6 +597,105 @@ class LectureContentRuleTests(unittest.TestCase):
         packet = self.packet()
         findings = validate_review_record(packet, self.valid_segment(), self.valid_review(packet))
         self.assertNotIn("packet_evidence_mismatch", {item.code for item in findings})
+
+    def test_coherent_frame_forgery_fails_against_external_trusted_sources(self):
+        packet = self.packet()
+        approved_packet_sha256 = packet["packet_sha256"]
+        tamper_cases = (
+            ("path", "frames/other.jpg"),
+            ("time", 13.0),
+            ("ocr", "偽造影像結論"),
+            ("asset_sha256", "2" * 64),
+        )
+        for field, value in tamper_cases:
+            with self.subTest(field=field):
+                tampered = copy.deepcopy(packet)
+                source = tampered["frame_sources"][0]
+                source[field] = value
+                source_payload = {
+                    key: source[key]
+                    for key in ("path", "time", "ocr", "asset_sha256")
+                }
+                source["source_sha256"] = hashlib.sha256(
+                    canonical_packet_bytes(source_payload)
+                ).hexdigest()
+                tampered["frame_evidence"][0] = {
+                    "source": "frame_ocr",
+                    **source,
+                }
+                tampered["source_citations"][2] = (
+                    f"frame:{source['path']}@{source['time']:.6f}"
+                )
+                self.rehash_packet(tampered)
+                claim = f"{source['ocr']}。"
+                review = self.valid_review(tampered)
+                review["case_claim_citations"] = [{
+                    "path": "summary_zh",
+                    "claim": claim,
+                    "citations": [tampered["source_citations"][2]],
+                }]
+                rewritten = self.valid_segment(
+                    summary_zh=self.valid_summary() + claim,
+                )
+                findings = validate_review_record(
+                    tampered,
+                    rewritten,
+                    review,
+                    trusted_frame_sources=self.trusted_frame_sources(),
+                    approved_packet_sha256=approved_packet_sha256,
+                )
+                codes = {item.code for item in findings}
+                self.assertIn("packet_evidence_mismatch", codes)
+                self.assertIn("approved_packet_mismatch", codes)
+                self.assertIn("unsupported_case_claim", codes)
+                self.assertTrue(all(claim not in item.message for item in findings))
+
+    def test_frame_evidence_is_exactly_derived_from_hashed_frame_sources(self):
+        packet = self.packet()
+        self.assertRegex(packet["frame_sources"][0]["source_sha256"], r"^[0-9a-f]{64}$")
+        tampered = copy.deepcopy(packet)
+        tampered["frame_sources"][0]["source_sha256"] = "0" * 64
+        self.rehash_packet(tampered)
+        findings = validate_review_record(
+            tampered,
+            self.valid_segment(),
+            self.valid_review(tampered),
+        )
+        self.assertIn("packet_evidence_mismatch", {item.code for item in findings})
+
+    def test_frame_citation_without_external_trust_fails_closed(self):
+        claim = "影像文字。"
+        packet = self.packet()
+        review = self.valid_review(packet)
+        review["case_claim_citations"] = [{
+            "path": "summary_zh",
+            "claim": claim,
+            "citations": [packet["source_citations"][2]],
+        }]
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        findings = validate_review_record(packet, rewritten, review)
+        self.assertIn("unsupported_case_claim", {item.code for item in findings})
+
+    def test_valid_frame_citation_passes_with_immutable_source_binding(self):
+        claim = "影像文字。"
+        packet = self.packet()
+        review = self.valid_review(packet)
+        review["case_claim_citations"] = [{
+            "path": "summary_zh",
+            "claim": claim,
+            "citations": [packet["source_citations"][2]],
+        }]
+        rewritten = self.valid_segment(summary_zh=self.valid_summary() + claim)
+        findings = validate_review_record(
+            packet,
+            rewritten,
+            review,
+            trusted_frame_sources=self.trusted_frame_sources(),
+            approved_packet_sha256=packet["packet_sha256"],
+        )
+        self.assertNotIn("packet_evidence_mismatch", {item.code for item in findings})
+        self.assertNotIn("approved_packet_mismatch", {item.code for item in findings})
+        self.assertNotIn("unsupported_case_claim", {item.code for item in findings})
 
     def test_review_record_rejects_wrong_hash_empty_or_nonstring_reviewer_and_missing_confirmations(self):
         packet = self.packet()

@@ -169,6 +169,51 @@ def _paragraphs(text: str) -> list[str]:
     return [part.strip() for part in re.split(r"\n[ \t]*\n", text) if part.strip()]
 
 
+def _asset_sha256(value: Any) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise TypeError("frame asset_sha256 must be a string")
+    if not re.fullmatch(r"[0-9a-f]{64}", value):
+        raise ValueError("frame asset_sha256 must be lowercase SHA-256")
+    return value
+
+
+def _frame_source_payload(
+    path: str,
+    time: float,
+    ocr: str,
+    asset_sha256: str | None,
+) -> dict[str, Any]:
+    return {
+        "path": path,
+        "time": time,
+        "ocr": ocr,
+        "asset_sha256": asset_sha256,
+    }
+
+
+def _frame_source_record(
+    path: str,
+    time: float,
+    ocr: str,
+    asset_sha256: str | None,
+) -> dict[str, Any]:
+    payload = _frame_source_payload(path, time, ocr, asset_sha256)
+    return {**payload, "source_sha256": _packet_digest(payload)}
+
+
+def _frame_evidence_record(source: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "source": "frame_ocr",
+        "time": source["time"],
+        "ocr": source["ocr"],
+        "path": source["path"],
+        "asset_sha256": source["asset_sha256"],
+        "source_sha256": source["source_sha256"],
+    }
+
+
 def build_evidence_packet(
     lecture_id: str,
     segment_index: int,
@@ -195,19 +240,25 @@ def build_evidence_packet(
     if not isinstance(existing_segment, Mapping):
         raise TypeError("existing_segment must be an object")
 
-    frame_evidence: list[dict[str, Any]] = []
+    frame_sources: list[dict[str, Any]] = []
     for frame in frames:
         if not isinstance(frame, Mapping):
             raise TypeError("every frame must be an object")
         frame_time = _require_number("frame time", frame.get("time"))
         if frame_time < normalized_start or frame_time > normalized_end:
             raise ValueError("frame time must be inside the segment range")
-        frame_evidence.append({
-            "source": "frame_ocr",
-            "time": frame_time,
-            "ocr": _require_text("frame ocr", frame.get("ocr", ""), _MAX_OCR_CHARS, allow_empty=True),
-            "path": _require_relative_path(frame.get("path")),
-        })
+        frame_sources.append(_frame_source_record(
+            _require_relative_path(frame.get("path")),
+            frame_time,
+            _require_text(
+                "frame ocr",
+                frame.get("ocr", ""),
+                _MAX_OCR_CHARS,
+                allow_empty=True,
+            ),
+            _asset_sha256(frame.get("asset_sha256")),
+        ))
+    frame_evidence = [_frame_evidence_record(source) for source in frame_sources]
 
     paragraph_evidence = [
         {"source": "transcript", "paragraph_index": index, "text": paragraph}
@@ -229,7 +280,7 @@ def build_evidence_packet(
     )
     sensitive_payload = "\n".join([
         normalized_transcript,
-        *(item["ocr"] for item in frame_evidence),
+        *(item["ocr"] for item in frame_sources),
         json.dumps(existing_content, ensure_ascii=False, sort_keys=True),
     ])
 
@@ -241,6 +292,7 @@ def build_evidence_packet(
         "end_sec": normalized_end,
         "transcript_text": normalized_transcript,
         "paragraph_evidence": paragraph_evidence,
+        "frame_sources": frame_sources,
         "frame_evidence": frame_evidence,
         "source_citations": source_citations,
         "existing_content": existing_content,
@@ -259,7 +311,7 @@ def _packet_sensitive_text(packet: Mapping[str, Any]) -> str:
     transcript = packet.get("transcript_text")
     if isinstance(transcript, str):
         pieces.append(transcript)
-    frames = packet.get("frame_evidence")
+    frames = packet.get("frame_sources")
     if isinstance(frames, list):
         for frame in frames:
             if isinstance(frame, Mapping) and isinstance(frame.get("ocr"), str):
@@ -313,22 +365,146 @@ def _speaker_case_claims(rewritten: Mapping[str, Any]) -> list[tuple[str, str, l
     return claims
 
 
+def _derived_frame_evidence(packet: Mapping[str, Any]) -> list[dict[str, Any]] | None:
+    start = packet.get("start_sec")
+    end = packet.get("end_sec")
+    if (
+        isinstance(start, bool)
+        or isinstance(end, bool)
+        or not isinstance(start, (int, float))
+        or not isinstance(end, (int, float))
+        or not math.isfinite(float(start))
+        or not math.isfinite(float(end))
+        or float(start) < 0
+        or float(end) <= float(start)
+    ):
+        return None
+    sources = packet.get("frame_sources")
+    if not isinstance(sources, list):
+        return None
+
+    derived: list[dict[str, Any]] = []
+    expected_keys = {
+        "path",
+        "time",
+        "ocr",
+        "asset_sha256",
+        "source_sha256",
+    }
+    for source in sources:
+        if not isinstance(source, Mapping) or set(source) != expected_keys:
+            return None
+        time = source.get("time")
+        ocr = source.get("ocr")
+        if (
+            isinstance(time, bool)
+            or not isinstance(time, (int, float))
+            or not math.isfinite(float(time))
+            or float(time) < float(start)
+            or float(time) > float(end)
+            or not isinstance(ocr, str)
+        ):
+            return None
+        try:
+            path = _require_relative_path(source.get("path"))
+            normalized_ocr = _require_text(
+                "frame ocr",
+                ocr,
+                _MAX_OCR_CHARS,
+                allow_empty=True,
+            )
+            asset_sha256 = _asset_sha256(source.get("asset_sha256"))
+        except (TypeError, ValueError):
+            return None
+        if path != source.get("path") or normalized_ocr != ocr:
+            return None
+        payload = _frame_source_payload(
+            path,
+            float(time),
+            normalized_ocr,
+            asset_sha256,
+        )
+        if source.get("source_sha256") != _packet_digest(payload):
+            return None
+        derived.append(_frame_evidence_record(source))
+    return derived
+
+
+def _trusted_frame_records(
+    trusted_frame_sources: Sequence[Mapping[str, Any]] | None,
+) -> list[dict[str, Any]] | None:
+    if (
+        trusted_frame_sources is None
+        or isinstance(trusted_frame_sources, (str, bytes))
+        or not isinstance(trusted_frame_sources, Sequence)
+    ):
+        return None
+    records: list[dict[str, Any]] = []
+    expected_keys = {"path", "time", "ocr", "asset_sha256"}
+    for source in trusted_frame_sources:
+        if not isinstance(source, Mapping) or set(source) != expected_keys:
+            return None
+        time = source.get("time")
+        ocr = source.get("ocr")
+        if (
+            isinstance(time, bool)
+            or not isinstance(time, (int, float))
+            or not math.isfinite(float(time))
+            or not isinstance(ocr, str)
+        ):
+            return None
+        try:
+            path = _require_relative_path(source.get("path"))
+            normalized_ocr = _require_text(
+                "frame ocr",
+                ocr,
+                _MAX_OCR_CHARS,
+                allow_empty=True,
+            )
+            asset_sha256 = _asset_sha256(source.get("asset_sha256"))
+        except (TypeError, ValueError):
+            return None
+        if (
+            path != source.get("path")
+            or normalized_ocr != ocr
+            or asset_sha256 is None
+        ):
+            return None
+        records.append(_frame_source_record(
+            path,
+            float(time),
+            normalized_ocr,
+            asset_sha256,
+        ))
+    return records
+
+
+def _trusted_frame_evidence(
+    packet: Mapping[str, Any],
+    trusted_frame_sources: Sequence[Mapping[str, Any]] | None,
+) -> list[dict[str, Any]] | None:
+    trusted_records = _trusted_frame_records(trusted_frame_sources)
+    if trusted_records is None or packet.get("frame_sources") != trusted_records:
+        return None
+    trusted_evidence = [_frame_evidence_record(source) for source in trusted_records]
+    if (
+        _derived_frame_evidence(packet) != trusted_evidence
+        or packet.get("frame_evidence") != trusted_evidence
+    ):
+        return None
+    return trusted_evidence
+
+
 def _citation_evidence(packet: Mapping[str, Any]) -> dict[str, str]:
     evidence: dict[str, str] = {}
     transcript = packet.get("transcript_text")
     if isinstance(transcript, str):
         for index, text in enumerate(_paragraphs(_normalize_text(transcript)), start=1):
             evidence[f"transcript:p{index}"] = text
-    frames = packet.get("frame_evidence")
-    if isinstance(frames, list):
+    frames = _derived_frame_evidence(packet)
+    if frames is not None:
         for item in frames:
-            if not isinstance(item, Mapping):
-                continue
-            path = item.get("path")
-            time = item.get("time")
-            ocr = item.get("ocr")
-            if isinstance(path, str) and isinstance(time, (int, float)) and not isinstance(time, bool) and isinstance(ocr, str):
-                evidence[f"frame:{path}@{float(time):.6f}"] = ocr
+            evidence[f"frame:{item['path']}@{item['time']:.6f}"] = item["ocr"]
     existing = packet.get("existing_content")
     if isinstance(existing, Mapping):
         title = existing.get("title")
@@ -345,7 +521,30 @@ def _citation_evidence(packet: Mapping[str, Any]) -> dict[str, str]:
     return evidence
 
 
-def _packet_evidence_is_derived(packet: Mapping[str, Any]) -> bool:
+def _case_citation_evidence(
+    packet: Mapping[str, Any],
+    trusted_frame_sources: Sequence[Mapping[str, Any]] | None,
+    approved_packet_sha256: str | None,
+) -> dict[str, str]:
+    evidence = {
+        citation: text
+        for citation, text in _citation_evidence(packet).items()
+        if not citation.startswith("frame:")
+    }
+    if approved_packet_sha256 != packet.get("packet_sha256"):
+        return evidence
+    trusted_evidence = _trusted_frame_evidence(packet, trusted_frame_sources)
+    if trusted_evidence is None:
+        return evidence
+    for item in trusted_evidence:
+        evidence[f"frame:{item['path']}@{item['time']:.6f}"] = item["ocr"]
+    return evidence
+
+
+def _packet_evidence_is_derived(
+    packet: Mapping[str, Any],
+    trusted_frame_sources: Sequence[Mapping[str, Any]] | None = None,
+) -> bool:
     transcript = packet.get("transcript_text")
     if not isinstance(transcript, str):
         return False
@@ -356,37 +555,14 @@ def _packet_evidence_is_derived(packet: Mapping[str, Any]) -> bool:
     if packet.get("paragraph_evidence") != expected_paragraphs:
         return False
 
-    start = packet.get("start_sec")
-    end = packet.get("end_sec")
+    expected_frames = _derived_frame_evidence(packet)
+    if expected_frames is None or packet.get("frame_evidence") != expected_frames:
+        return False
     if (
-        isinstance(start, bool)
-        or isinstance(end, bool)
-        or not isinstance(start, (int, float))
-        or not isinstance(end, (int, float))
-        or not math.isfinite(float(start))
-        or not math.isfinite(float(end))
+        trusted_frame_sources is not None
+        and _trusted_frame_evidence(packet, trusted_frame_sources) is None
     ):
         return False
-    frames = packet.get("frame_evidence")
-    if not isinstance(frames, list):
-        return False
-    for frame in frames:
-        if not isinstance(frame, Mapping) or frame.get("source") != "frame_ocr":
-            return False
-        time = frame.get("time")
-        if (
-            isinstance(time, bool)
-            or not isinstance(time, (int, float))
-            or not math.isfinite(float(time))
-            or float(time) < float(start)
-            or float(time) > float(end)
-            or not isinstance(frame.get("ocr"), str)
-        ):
-            return False
-        try:
-            _require_relative_path(frame.get("path"))
-        except (TypeError, ValueError):
-            return False
 
     citations = packet.get("source_citations")
     return isinstance(citations, list) and citations == list(_citation_evidence(packet))
@@ -456,11 +632,17 @@ def _validate_case_claims(
     packet: Mapping[str, Any],
     rewritten: Mapping[str, Any],
     review: Mapping[str, Any],
+    trusted_frame_sources: Sequence[Mapping[str, Any]] | None,
+    approved_packet_sha256: str | None,
 ) -> list[Finding]:
     findings: list[Finding] = []
     records = review.get("case_claim_citations")
     records = records if isinstance(records, list) else []
-    evidence = _citation_evidence(packet)
+    evidence = _case_citation_evidence(
+        packet,
+        trusted_frame_sources,
+        approved_packet_sha256,
+    )
     for path, claim, clauses in _speaker_case_claims(rewritten):
         sentence_key = _claim_key(claim)
         unsupported = False
@@ -498,6 +680,9 @@ def validate_review_record(
     packet: Mapping[str, Any],
     rewritten: Mapping[str, Any],
     review: Mapping[str, Any],
+    *,
+    trusted_frame_sources: Sequence[Mapping[str, Any]] | None = None,
+    approved_packet_sha256: str | None = None,
 ) -> list[Finding]:
     findings: list[Finding] = []
     if not isinstance(packet, Mapping):
@@ -515,13 +700,21 @@ def validate_review_record(
         calculated_hash = None
     if not isinstance(stored_hash, str) or calculated_hash is None or stored_hash != calculated_hash:
         findings.append(_finding("packet_hash_invalid", "evidence packet hash is invalid"))
-    if not _packet_evidence_is_derived(packet):
+    if not _packet_evidence_is_derived(packet, trusted_frame_sources):
         findings.append(_finding(
             "packet_evidence_mismatch",
             "evidence packet records do not match their source fields",
         ))
     if review.get("packet_sha256") != stored_hash:
         findings.append(_finding("review_packet_mismatch", "review does not match the evidence packet"))
+    if (
+        approved_packet_sha256 is not None
+        and approved_packet_sha256 != stored_hash
+    ):
+        findings.append(_finding(
+            "approved_packet_mismatch",
+            "evidence packet does not match the externally approved digest",
+        ))
 
     reviewer = review.get("reviewer")
     normalized_reviewer = _normalize_text(reviewer).strip() if isinstance(reviewer, str) else ""
@@ -549,7 +742,13 @@ def validate_review_record(
         findings.append(_finding("sensitive_evidence", "evidence packet contains sensitive-data patterns"))
 
     if isinstance(rewritten, Mapping):
-        findings.extend(_validate_case_claims(packet, rewritten, review))
+        findings.extend(_validate_case_claims(
+            packet,
+            rewritten,
+            review,
+            trusted_frame_sources,
+            approved_packet_sha256,
+        ))
         transcript = packet.get("transcript_text", "")
         if not isinstance(transcript, str):
             transcript = ""
