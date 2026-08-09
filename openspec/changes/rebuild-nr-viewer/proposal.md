@@ -5,7 +5,7 @@
 ## What Changes
 
 - 建立以正式 JSON 為單一內容來源的章節 schema、legacy normalization、時間不變性與 UTF-8 原子寫入契約。
-- 建立內容與來源規則：標題作為第六個受 review 內容單元，病例事實型標題須有可信引用與逐 claim attestation，否則只能是非病例主題標籤；每章 `summary_zh` 與四項 `takeaways_zh`（包含未改寫 legacy 內容）皆須由可信逐字稿段落或外部可信 canonical frame manifest 引用並具備逐 claim attestation。完整 rewritten candidate 的 deterministic digest 綁定標題、摘要、四項重點、編輯補充、章節 identity/times 與 citation map，另保留繁體中文、未完成標記與敏感資料 fail-stop。
+- 建立內容與來源規則：標題作為第六個受 review 內容單元，病例事實型標題須有可信引用與逐 claim attestation，否則只能是非病例主題標籤；每章 `summary_zh` 與四項 `takeaways_zh`（包含未改寫 legacy 內容）皆須由可信逐字稿段落或外部可信 canonical frame manifest 引用並具備逐 claim attestation。採非循環雙 digest：`approved_candidate_sha256` 綁定完整 rewritten candidate 與 order-insensitive canonical citation map，`review_attestation_sha256` 再綁定 candidate digest、canonical attestations、正規化 reviewer identity、確認欄位及 review schema/version；approved run state 必須同時綁定兩者，另保留繁體中文、未完成標記與敏感資料 fail-stop。
 - 將 extract 候選影格限制於 staging，策展每章正式 1–4 張影格；第一講既有 72 張影格須完整複製、雜湊驗證並納入候選池。
 - 重建詳細型 viewer、PBF、`.v4.md` 與課程首頁，使搜尋 schema、章節時間、標題及內容由 canonical JSON 同源產生；保留播放器、章節導覽、深連結、同步逐字稿與跳播。
 - 建立結構化 audit、cp950 相容進度、fixture/TDD、瀏覽器 E2E、三講抽樣與 11 講全課驗證 gate；任何必要門檻失敗即停止該講發布。
