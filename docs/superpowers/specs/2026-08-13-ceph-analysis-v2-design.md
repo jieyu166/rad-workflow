@@ -66,6 +66,8 @@ Each point can be repositioned, nudged with arrow keys, deleted, undone/redone, 
 
 Each optional group can be skipped. A partial group produces no measurement that requires its missing points.
 
+The dental group includes a compact “one tooth, two points, one axis” guide. U1 means a maxillary permanent central incisor (FDI 11 or 21), and L1 means a mandibular permanent central incisor (FDI 31 or 41). Because the lateral projection superimposes right and left incisors, the user selects a relatively labial trace whose incisal tip and root apex can both be followed clearly. Both endpoints must come from the same tooth; an unreliable pair is marked uncertain or the optional group is skipped. The interface uses FDI labels explicitly and does not write `#11/#21`, which could be mistaken for Universal numbering.
+
 ### Step 6 — Generate and edit the report
 
 - Generate an editable plain-text snapshot.
