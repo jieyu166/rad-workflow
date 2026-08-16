@@ -1410,6 +1410,59 @@
         "cases_per_hr": 20.7,
         "points_per_hr": 99.2
       }
+    },
+    {
+      "week_id": "2026-W33",
+      "date_range": "08/10 ~ 08/16",
+      "source": "csv_input/1150816_CL.csv, csv_input/1150812_YK.csv (csv mode)",
+      "tracking": {
+        "start": {
+          "xr": 110,
+          "ct": 15,
+          "us": 34,
+          "mammo": 15
+        },
+        "end": {
+          "xr": 47,
+          "ct": 10,
+          "us": 14,
+          "mammo": 4
+        },
+        "net_change": {
+          "xr": -63,
+          "ct": -5,
+          "us": -20,
+          "mammo": -11
+        },
+        "total_net": -99
+      },
+      "completed": {
+        "xr": 614,
+        "ct": 41,
+        "us": 93,
+        "mammo": 50,
+        "bmd": 12,
+        "ivp": 7
+      },
+      "added_estimated": {
+        "xr": ">=551",
+        "ct": ">=36",
+        "us": ">=73",
+        "mammo": ">=39"
+      },
+      "time": {
+        "report_hr": 31.7,
+        "clinical_hr": null,
+        "study_hr": 0
+      },
+      "totals": {
+        "grand_total": 798,
+        "points": 3146.3
+      },
+      "efficiency_daily_avg": {
+        "cases_per_hr": 25.8,
+        "points_per_hr": 99.3
+      }
     }
   ]
 }
