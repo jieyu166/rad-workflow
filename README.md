@@ -16,7 +16,7 @@
 | [LDCT 報告輔助工具](https://jieyu166.github.io/rad-workflow/tool/ldct-report.html) | LDCT 肺癌篩檢報告產生器 |
 | [探頭切面模擬器](https://jieyu166.github.io/rad-workflow/tool/us-probe-ct-plane.html) | 超音波探頭擺位 → 對應的 CT 重組切面（可載入 DICOM） |
 | [Rad Tracker](https://jieyu166.github.io/rad-workflow/tool/exam_clock_input.html) | 檢查時間記錄追蹤工具 |
-| [台鐵時刻表](https://jieyu166.github.io/rad-workflow/tool/timetable.html) | 西部幹線時刻表（美術館-善化） |
+| [台鐵時刻表](https://jieyu166.github.io/rad-workflow/tool/timetable.html) | 西部幹線平日時刻表（高雄–新營，含沙崙支線） |
 | [信用卡回饋查詢](https://claude.ai/public/artifacts/aa39410d-a1c4-4e5d-8259-df094c2238b8) | 信用卡回饋查詢 |
 
 
@@ -51,6 +51,41 @@
 | `kub.txt` | KUB 報告範本 |
 | `ankle.txt` | Ankle 報告範本 |
 | `健檢.txt` | 健檢報告範本 |
+
+## 台鐵時刻表更新
+
+`tool/timetable.html` 內嵌的時刻資料為靜態快照，台鐵改點後需重新抓取。
+`tool/update_timetable.py` 會從台鐵官網抓取下列七站的平日時刻表，以車次號跨站合併後，
+只改寫 HTML 中 `TRAIN DATA` 標記之間的區塊，版面與功能程式碼不受影響。
+
+追蹤車站（由南往北）：高雄、美術館、新左營、台南、大橋、善化、新營。
+凡停靠其中任一站的列車都會列入，包含經善化–大橋–台南往返的**沙崙支線**列車。
+
+```powershell
+cd tool
+python update_timetable.py                    # 抓下一個平日（週末自動順延至週一）
+python update_timetable.py --date 2026/09/07  # 指定日期
+python update_timetable.py --dry-run          # 只抓取並印出統計，不寫檔
+```
+
+執行後會印出每站筆數與總計，可直接核對：
+
+```
+Ride date: 2026/08/17 (一)
+  4120 新營   132 rows
+  ...
+Trains: 282 total, 142 northbound, 140 southbound, 73 via Shalun branch
+```
+
+更新後請確認頁面仍可正常開啟，再 commit 並 push（GitHub Pages 會自動發佈）。
+
+注意事項：
+
+- 頁首「資料日期」由腳本寫入的 `dataDate` 帶出，不需手動修改。
+- 標記區塊內的資料為自動產生，請勿手動編輯，否則下次重跑會被覆蓋。
+- 行駛方向以車次奇偶數判定（偶數北上），並與實際抓到的時刻交叉驗證；
+  若兩者不一致會印出 `NOTE:` 指出是哪幾班車。
+- 若台鐵改版導致某站解析不到任何班次，腳本會直接報錯中止，不會寫入空資料。
 
 ## 設定
 
