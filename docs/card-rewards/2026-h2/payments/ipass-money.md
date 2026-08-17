@@ -14,7 +14,7 @@ coverage_status: partial
 
 iPASS MONEY 必須分成三種工具：**連結銀行帳戶**用於儲值／餘額付款、**銀行自動儲值或交易差額儲值**用於補足餘額、以及**綁定信用卡付款**。三者不是同一筆刷卡交易，因此銀行帳戶任務、儲值金、票卡自動加值與原卡消費回饋不可互相代換 [來源 1]–[來源 4]。
 
-官方已公告擴大開放各銀行信用卡綁定付款；但這類通用公告**不能**確認本清單任一特定信用卡的綁定。原卡基本／加碼是否認列仍以各銀行 H2 條款為準。只有王道簽帳金融卡與 Unicard 在本清單具特定產品正面證據；Unicard 是銀行「百大行動支付」加碼，不是 iPASS 平台另給的點數 [來源 3][來源 5][來源 7]。
+官方已公告擴大開放各銀行信用卡綁定付款；但這類通用公告**不能**確認本清單任一特定信用卡的綁定。原卡基本／加碼是否認列仍以各銀行 H2 條款為準。王道簽帳金融卡、Visa LINE Bank 快點卡與 Unicard 在本清單具特定產品正面證據；快點卡是銀行「週週隨手Pay」活動，Unicard 是銀行「百大行動支付」加碼，兩者都不是 iPASS MONEY 平台另給的點數 [來源 3][來源 5]–[來源 7]。
 
 ## 一般回饋
 
@@ -38,7 +38,7 @@ iPASS MONEY 必須分成三種工具：**連結銀行帳戶**用於儲值／餘�
 | 中國信託 LINE Pay 信用卡 | not officially confirmed | 通用信用卡公告不能證實中國信託 LINE Pay 卡綁定 | not officially confirmed：LINE Pay 卡商店活動未確認 iPASS MONEY 為 LINE Pay 合格路徑 | not officially confirmed | not officially confirmed | [來源 17] |
 | 樂天國際銀行金融卡 | not officially confirmed | 未確認 iPASS MONEY 卡綁或帳戶連結；不以未列名推定不支援 | 樂天官方列 icash Pay 而非 iPASS MONEY；金融卡商店簽帳亦未證實 | not officially confirmed | not officially confirmed | [來源 18] |
 | 王道銀行一般簽帳金融卡 | supported | iPASS MONEY 綁定簽帳金融卡 | 1% 現金基本另依一般消費條款；2026-08-01 至 12-31 綁卡一般消費額外 5% 一卡通綠點 | 5% 一卡通綠點，每人每月 100 點、每月 1,000 名，非現金 | not officially confirmed：綠點活動與原卡 1% 的雙邊可疊加性未由兩方條款同時明定 | [來源 5] |
-| Visa LINE Bank 快點卡 | not officially confirmed | 官方 iframe 本次 read-back 未回傳正文 | not officially confirmed：活動條款正文未能重現，回饋率、門檻與名額均不確認 | not officially confirmed | not officially confirmed | [來源 6] |
+| Visa LINE Bank 快點卡 | supported | iPASS MONEY 綁定快點卡付款 | 2026-08-01 至 09-27，須切換快點吃 TGIF；每週五至日 10:00–24:00 單筆滿 NT$500，加碼 NT$17 或 LINE POINTS 17 點，每週前 600 名、每人每週 1 次；與快點卡一般消費 0.5% 合計最高 4%。09-28 至 12-31 無同類特殊加碼公告，僅不把一般消費 0.5% 誤作支付服務加碼 | not officially confirmed：此為 LINE Bank 卡片活動，未見 iPASS MONEY 平台對快點卡的獨立加碼 | not officially confirmed：未見 iPASS MONEY 平台獨立回饋與原卡活動的雙邊疊加證據 | [來源 6] |
 | 玉山 Pi 拍錢包信用卡 | not officially confirmed | 通用信用卡公告不能證實 Pi 卡綁定 | not officially confirmed：既有戶僅 Pi App 為明列路徑 | not officially confirmed | not officially confirmed | [來源 19] |
 | 玉山 Unicard | supported | iPASS MONEY 為百大指定「行動支付」 | 百大行動支付可依簡單／任意／UP選加 2%／2.5%／3.5%，另有方案條件 | not officially confirmed | not officially confirmed：銀行單一方案加碼不是平台活動疊加 | [來源 7] |
 | 玉山 U Bear 信用卡 | not officially confirmed | 通用信用卡公告不能證實 U Bear 綁定 | not officially confirmed：U Bear 僅明列 LINE Pay／全支付網路例示，未列 iPASS MONEY | not officially confirmed | not officially confirmed | [來源 20] |
@@ -47,7 +47,7 @@ iPASS MONEY 必須分成三種工具：**連結銀行帳戶**用於儲值／餘�
 ## 排除交易
 
 - 銀行帳戶連結、手動儲值、自動儲值、交易差額儲值與信用卡綁定付款分開；不得把「儲值」當作綁卡的一般消費或原卡回饋 [來源 1][來源 2][來源 4]。
-- iPASS MONEY 的通用卡綁服務不能證實個別產品；對簽帳金融卡只採王道的特定銀行條款，LINE Bank iframe 未能重現則維持未知 [來源 3][來源 5][來源 6]。
+- iPASS MONEY 的通用卡綁服務不能證實個別產品；對簽帳金融卡只採王道與 Visa LINE Bank 快點卡的特定銀行條款，並區分銀行活動與 iPASS MONEY 平台回饋 [來源 3][來源 5][來源 6]。
 - 首綁、新戶、優惠券、限量與未完成一卡通綠點同意程序的活動不屬可保證舊戶回饋 [來源 8][來源 9]。
 
 ## 來源證據
@@ -57,7 +57,7 @@ iPASS MONEY 必須分成三種工具：**連結銀行帳戶**用於儲值／餘�
 3. 一卡通，〈iPASS MONEY APP 擴大開放信用卡綁定付款〉，各銀行信用卡綁定服務。https://www.i-pass.com.tw/News/Detail/103889
 4. 一卡通，〈信用卡設定〉，信用卡綁定與設為預設付款方式的流程。https://www.i-pass.com.tw/Page/CreditCard
 5. 王道銀行，〈iPASS MONEY 綁王道卡消費，樂享 5% 回饋〉，2026-08-01 至 12-31 綠點、名額與上限。https://www.o-bank.com/zh-tw/retail/event/event-compaign?campaigncode=db-dc-2018040102&sourcecode=cama
-6. LINE Bank，〈快點買 YOLO、快點吃 TGIF〉官方 iframe；本次 read-back 未回傳正文，故不作快點卡相容性、回饋率、門檻或名額的正面證據。https://img.linebank.com.tw/cms/event/1187189_1223.html?updatetime=20260814180008
+6. LINE Bank，〈快點買 YOLO、快點吃 TGIF〉官方 iframe；2026-08-17 direct read-back HTTP 200、41,175 bytes。正文明列 2026-06-29 至 09-27 的快點吃 TGIF「週週隨手Pay」：iPASS MONEY 綁定快點卡付款，週五至日單筆滿 NT$500 回饋 NT$17 或 LINE POINTS 17 點、每週前 600 名；與一般消費 0.5% 合計最高 4%。https://img.linebank.com.tw/cms/event/1187189_1223.html?updatetime=20260814180008
 7. 玉山銀行，〈玉山 Unicard〉，iPASS MONEY 為百大行動支付與三方案加碼。https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/unicard
 8. 一卡通，〈首次連結玉山數位帳戶並開啟自動儲值享 50 元回饋〉，首次連結、7-9 月及 1,000 人限制。https://www.i-pass.com.tw/EN/Preferential/Detail/GMZTMOIRKWWYZ64APifC
 9. 一卡通，〈摩斯漢堡 iPASS MONEY 優惠〉，7-8 月券、指定卡與活動限制。https://www.i-pass.com.tw/Preferential/Detail/GMZTMMIYIYLJ764InoUT
@@ -76,7 +76,9 @@ iPASS MONEY 必須分成三種工具：**連結銀行帳戶**用於儲值／餘�
 
 ## 不確定事項
 
-- 未覆蓋期間：2026-08-01 至 2026-12-31（矩陣所列特定產品的 iPASS MONEY 綁定正面證據）[來源 3]。
+- 未覆蓋期間：2026-09-28 至 2026-12-31（Visa LINE Bank 快點卡「週週隨手Pay」同類特殊加碼的後續條款未公告；非指一般消費 0.5% 已被否定）[來源 6]。
+- 未覆蓋期間：2026-08-01 至 2026-12-31（iLEO、綠活、Richart、DAWHO、幣倍、DAWAY、CUBE、中信 LINE Pay、樂天、Pi、U Bear、Costco 的 iPASS MONEY 綁定正面證據）[來源 3]。
 - 未覆蓋期間：2026-08-01 至 2026-12-31（原卡／帳戶回饋與 iPASS MONEY 平台加碼的雙邊疊加證據）[來源 5][來源 7]。
-- **逐日缺口**：iLEO、綠活、Richart、DAWHO、幣倍、DAWAY、CUBE、中信 LINE Pay、樂天、LINE Bank、Pi、U Bear、Costco 於 2026-08-01 至 12-31 每日均缺少該特定產品 iPASS MONEY 綁定正面證據；不以通用信用卡頁補足 [來源 3]。
+- **逐日缺口**：Visa LINE Bank 快點卡在 2026-09-28 至 12-31（含 9/28–9/30）沒有同類特殊加碼的後續活動條款；這不把可確認至 12-31 的一般消費 0.5% 寫成 iPASS MONEY 平台加碼 [來源 6]。
+- **逐日缺口**：iLEO、綠活、Richart、DAWHO、幣倍、DAWAY、CUBE、中信 LINE Pay、樂天、Pi、U Bear、Costco 於 2026-08-01 至 12-31 每日均缺少該特定產品 iPASS MONEY 綁定正面證據；不以通用信用卡頁補足 [來源 3]。
 - **逐日缺口**：所有產品於 2026-08-01 至 12-31 每日均缺少「原卡／帳戶回饋與 iPASS MONEY 平台加碼可疊加」的雙邊正面證據；王道與 Unicard 的銀行內部活動不作平台疊加 [來源 5][來源 7]。
