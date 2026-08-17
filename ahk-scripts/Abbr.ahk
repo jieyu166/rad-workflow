@@ -103,9 +103,16 @@ return
 :O:if;::internal fixation
 :O:ss;::supraspinatus
 :O:is;::infraspinatus
-:O:gen;::
+:O:genu;::
 HotstringMenuV("A","MenuShortcut","Genu valgus","Genu varum")
 return
+:O:uv;::
+HotstringMenuV("A","MenuShortcut","Positive ulnar variance","Negative ulnar variance","Positive ulnar variance, prdisposing to ulnar impaction syndrome.")
+return
+:O:sts;::Soft tissue swelling.
+
+
+
 ;============================================================================================
 ; GI, GU
 ;============================================================================================
@@ -125,6 +132,10 @@ return
 :O:aml::
 HotstringMenuV("A","MenuShortcut","angiomyolipoma","adrenal myelolipoma")
 return
+:O:eso;::
+HotstringMenuV("A","MenuShortcut","Mild esophagitis.","esophageal wall thickening")
+return
+
 
 ;============================================================================================
 ; Neuro
@@ -158,7 +169,7 @@ return
 :O:clip;::Clips at _RUQ abdomen.
 
 :O:meta;::
-HotstringMenuV("A","MenuShortcut", "Bilateral lung metastases","Suspect lung metastases")
+HotstringMenuV("A","MenuShortcut", "Bilateral lung metastases","Suspect lung metastases","BRK")
 return
 
 :O:ate;::
@@ -174,39 +185,38 @@ return
 :O:ele;::Elevated _LtRt hemidiaphragm.
 
 
-:O:th;::
-HotstringMenuV("A","MenuShortcut","Bilateral thyroid nodules","Suspect bilateral thyroid nodules","Suggest thyroid US follow up.")
-return
-
-:O:eso;::
-HotstringMenuV("A","MenuShortcut","Mild esophagitis.","esophageal wall thickening")
-return
-
 :O:ca;::
 HotstringMenuV("A","MenuShortcut"
     ,"Calcified granulomas in both lungs"
     ,"calcified granuloma"
     ,"Calcified tendinitis in _"
     ,"calcified tendinitis"
-    ,"BRK", "calcification"
-    ,"calcifications"
+    ,"BRK", "calcification", "calcifications"
+    ,"dystrophic calcification","Dystrophic calcification in _."
+	,"parenchymal calcification"
+    ,"chondrocalcinosis/CPPD"
+	,"Valvular calcification"
+    ,"BRK"
     ,"Calcified LN(s) in _"
     ,"Calcified mediastinal LNs, suspect old inflammatory changes"
-    ,"BRK"
-	,"Valvular calcification"
-    ,"Dystrophic calcification in _."
-    ,"chondrocalcinosis/CPPD"
     ,"pleural calcifications"
     ,"Prostate calcifications"
     ,"Prostate calcifications, est. volume about _ cc."
     ,"BRK"
     ,"Pelvic phleboliths."
     ,"Calcified uterine fibroid(s)."
-    ,"Splenic calcification(s).")
+    ,"Splenic calcification(s)."
+	,"BRK","microcalcification")
 return
 
-:O:sts;::Soft tissue swelling.
-
-:O:fcc;::fibrocystic changes.
 :O:cpfe;::combined pulmonary fibrosis and emphysema(CPFE) 
 :O:ila;:: interstitial lung abnormality(ILA)
+
+
+;============================================================================================
+; Neck
+;============================================================================================
+
+:O:th;::
+HotstringMenuV("A","MenuShortcut","Bilateral thyroid nodules","Suspect bilateral thyroid nodules","Suggest thyroid US follow up.")
+return

@@ -77,6 +77,7 @@ HotstringMenuMulti("A","MenuShortcut"
 return
 
 :O:mic::microcalcification
+:O:fcc;::fibrocystic changes.
 
 ;=====================================================================
 ; 日期格式轉換功能

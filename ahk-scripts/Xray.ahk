@@ -159,7 +159,9 @@ return
 :O:cast;::Status post splint/cast fixation causing difficult evaluation of subtle lesions.
 
 :O:acc;::
-HotstringMenuV("A","MenuShortcut", "Accessory navicular", "An accessory spleen, _cm.(Srs/Img:_/_)","An accessory spleen.(Srs/Img:_/_)")
+HotstringMenuV("A","MenuShortcut", "Accessory navicular"
+  , "An accessory spleen, _cm.(Srs/Img:_/_)","An accessory spleen.(Srs/Img:_/_)"
+  , "Accessory spleens.(Srs/Img:_/_)")
 return
 
 
@@ -196,6 +198,23 @@ Skull AP and lateral views:
 - There is normal sella turcica.
 - The facial bone is unremarkable.
 - The sinuses are essentially clear.
+)
+
+
+:O:water2::
+(
+Mild enlarged bilateral inferior nasal turbinates
+Mild clouding of _ sinus_es, could be sinusitis, bony overlapping or others.
+
+The facial bone is unremarkable. 
+)
+
+:O:water1::
+(
+Mild enlarged bilateral _inferior nasal turbinates.
+
+The facial bone is unremarkable. 
+Bilateral paranasal sinuses are clear.
 )
 
 
@@ -296,7 +315,7 @@ HotstringMenuMulti("A","MenuShortcut"
     ,"Intimal calcification of aorta."
     ,"Tortuous aorta with intimal calcification."
     ,"Mild mediastinal widening."
-    ,"Obvious mediastinum widening."
+    ,"Mediastinum widening."
     ,"BRK"
     ,"Bilateral hilar fullness, could be vascular shadows or others."
     ,"Bilateral hilar fullness, could be vessels but lymphadenopathy or other lesions can not be excluded."
