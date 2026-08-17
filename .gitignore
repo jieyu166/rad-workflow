@@ -35,7 +35,11 @@ radtracker/malignancy_log.md
 
 # 大型產物 / 暫存目錄（勿進版控）
 /output/
+/outputs/
 /tmp/
+
+# 獨立的 git repo，不併入本 repo（直接 add 會變成沒有 URL 的 gitlink）
+/rib-fracture-cxr/
 
 # Generated analysis reports
 ahk-scripts/logs/*_report.html
