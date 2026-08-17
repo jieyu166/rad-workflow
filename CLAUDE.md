@@ -61,6 +61,9 @@ cd radtracker && python generate_report.py --csv YYYYMM.csv --yk YYYYMMYK.csv --
 # 技能庫同步 / drift 檢查
 python sync_skills.py
 python sync_skills.py --check
+
+# 台鐵時刻表重抓（改點後跑；原地更新 tool/timetable.html 的 TRAIN DATA 區塊）
+cd tool && python update_timetable.py
 ```
 
 Web 工具部署：push main 後由 GitHub Pages 自動發佈至 https://jieyu166.github.io/rad-workflow/
