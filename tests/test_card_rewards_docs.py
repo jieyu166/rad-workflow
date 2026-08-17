@@ -12,6 +12,7 @@ from scripts.validate_card_rewards_docs import (
     EXPECTED_PAYMENT_FILES,
     parse_frontmatter,
     validate_corpus,
+    validate_document,
 )
 
 
@@ -137,3 +138,81 @@ class CardRewardsDocsTests(unittest.TestCase):
             root = Path(tmp)
             self._write_document(root, body)
             self.assertIn("missing_official_url", self._issues_for_first_ileo(root))
+
+    def test_validate_document_accepts_absolute_path_and_corpus_root(self) -> None:
+        body = """## 結論摘要
+摘要
+## 一般回饋
+無
+## 特殊回饋
+無
+## 行動支付相容性
+無
+## 排除交易
+無
+## 來源證據
+官方規則：https://firstbank.com.tw/card
+## 不確定事項
+待人工確認活動有效期間。
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = self._write_document(root, body)
+            issues = validate_document(path.resolve(), root.resolve())
+            self.assertEqual([], issues)
+
+    def test_validate_corpus_only_reports_selected_missing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            issues = validate_corpus(Path(tmp), {"cards/first-ileo.md"})
+        self.assertEqual(
+            [("missing_file", "cards/first-ileo.md")],
+            [(issue.code, issue.path) for issue in issues],
+        )
+
+    def test_cli_only_existing_task_two_documents_passes(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "validate_card_rewards_docs.py"),
+                "--root",
+                "docs/card-rewards/2026-h2",
+                "--only",
+                " cards/first-ileo.md, cards/first-green.md ,cards/taishin-richart-gogo.md ",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_cli_rejects_unknown_only_path(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "validate_card_rewards_docs.py"),
+                "--root",
+                str(ROOT / "docs" / "card-rewards" / "2026-h2"),
+                "--only",
+                "cards/not-a-product.md",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(2, result.returncode)
+
+    def test_cli_rejects_unreadable_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            missing_root = Path(tmp) / "does-not-exist"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "validate_card_rewards_docs.py"),
+                    "--root",
+                    str(missing_root),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(2, result.returncode)

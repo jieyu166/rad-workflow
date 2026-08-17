@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import posixpath
 import re
 import sys
 from dataclasses import asdict, dataclass
@@ -187,16 +188,38 @@ def _validate_document(root: Path, relative: str) -> list[Issue]:
     return issues
 
 
-def validate_corpus(root: Path) -> list[Issue]:
+def validate_document(path: Path, root: Path) -> list[Issue]:
+    """Validate one document addressed by an absolute or root-relative path."""
+    root = Path(root).resolve()
+    document = Path(path)
+    if not document.is_absolute():
+        document = root / document
+    document = document.resolve()
+    try:
+        relative = document.relative_to(root).as_posix()
+    except ValueError:
+        return [_issue("unreadable", document.as_posix(), "document is outside corpus root")]
+    expected = EXPECTED_CARD_FILES | EXPECTED_PAYMENT_FILES
+    if relative not in expected:
+        return [_issue("unreadable", relative, "document is not an expected product or payment path")]
+    if not document.is_file():
+        return [_issue("missing_file", relative, "expected product document is missing")]
+    return _validate_document(root, relative)
+
+
+def validate_corpus(root: Path, only: set[str] | None = None) -> list[Issue]:
     """Return deterministic structural issues for the expected corpus."""
     root = Path(root)
     issues: list[Issue] = []
-    expected = EXPECTED_CARD_FILES | EXPECTED_PAYMENT_FILES
+    expected = (
+        EXPECTED_CARD_FILES | EXPECTED_PAYMENT_FILES
+        if only is None
+        else {relative.replace("\\", "/") for relative in only}
+    )
     for relative in sorted(expected):
-        if not (root / relative).is_file():
-            issues.append(_issue("missing_file", relative, "expected product document is missing"))
-        else:
-            issues.extend(_validate_document(root, relative))
+        issues.extend(validate_document(Path(relative), root))
+    if only is not None:
+        return issues
     comparison = root / "comparison.md"
     if not comparison.is_file():
         issues.append(_issue("comparison_missing_product", "comparison.md", "comparison.md is missing"))
@@ -224,8 +247,30 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path("docs/card-rewards/2026-h2"))
     parser.add_argument("--json-report", type=Path)
+    parser.add_argument("--only", help="comma-separated expected product/payment paths")
     args = parser.parse_args(argv)
-    issues = validate_corpus(args.root)
+    if not args.root.is_dir():
+        parser.error(f"--root must be an existing readable directory: {args.root}")
+    try:
+        next(args.root.iterdir(), None)
+    except OSError as exc:
+        parser.error(f"--root is not readable: {exc}")
+    only: set[str] | None = None
+    if args.only is not None:
+        raw_items = args.only.split(",")
+        if any(not item.strip() for item in raw_items):
+            parser.error("--only cannot contain empty paths")
+        expected = EXPECTED_CARD_FILES | EXPECTED_PAYMENT_FILES
+        only = set()
+        for item in raw_items:
+            normalized = item.strip().replace("\\", "/")
+            if any(part == ".." for part in normalized.split("/")):
+                parser.error(f"--only path escapes corpus root: {item}")
+            normalized = posixpath.normpath(normalized)
+            if normalized.startswith("/") or normalized not in expected:
+                parser.error(f"--only path is not an expected product/payment file: {item}")
+            only.add(normalized)
+    issues = validate_corpus(args.root, only)
     report = {"root": str(args.root), "issue_count": len(issues), "issues": [asdict(issue) for issue in issues]}
     if args.json_report:
         args.json_report.parent.mkdir(parents=True, exist_ok=True)
