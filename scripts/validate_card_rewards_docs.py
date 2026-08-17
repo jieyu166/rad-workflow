@@ -117,6 +117,15 @@ def _official_url(url: str) -> bool:
     )
 
 
+def _section_body(body: str, heading: str) -> str:
+    """Return one level-two section, excluding its heading."""
+    match = re.search(
+        rf"(?ms)^\s*{re.escape(heading)}\s*$\n?(.*?)(?=^##\s|\Z)",
+        body,
+    )
+    return match.group(1).strip() if match else ""
+
+
 def _issue(code: str, path: str, message: str, line: int | None = None) -> Issue:
     return Issue(code=code, path=path, message=message, line=line)
 
@@ -153,13 +162,28 @@ def _validate_document(root: Path, relative: str) -> list[Issue]:
     for heading in REQUIRED_HEADINGS:
         if not re.search(rf"(?m)^{re.escape(heading)}\s*$", body):
             issues.append(_issue("missing_heading", relative, heading))
-    urls = _URL.findall(body)
+    source_body = _section_body(body, "## 來源證據")
+    urls = _URL.findall(source_body)
     if not any(_official_url(url.rstrip(".,;")) for url in urls):
-        unavailable = metadata.get("coverage_status") == "unavailable" and re.search(
-            r"(?i)unavailable|無法取得|查無|尚無官方來源", body
+        uncertainty_body = _section_body(body, "## 不確定事項")
+        has_query_scope = bool(re.search(r"(?m)^\s*查詢範圍：\s*\S.+$", source_body))
+        has_concrete_uncertainty = bool(
+            uncertainty_body
+            and uncertainty_body.strip() not in {"無", "無。", "N/A", "待確認", "待確認。"}
+        )
+        unavailable = (
+            metadata.get("coverage_status") == "unavailable"
+            and has_query_scope
+            and has_concrete_uncertainty
         )
         if not unavailable:
-            issues.append(_issue("missing_official_url", relative, "at least one official source URL is required"))
+            issues.append(
+                _issue(
+                    "missing_official_url",
+                    relative,
+                    "an official URL is required in 來源證據; unavailable requires 查詢範圍 and concrete 不確定事項",
+                )
+            )
     return issues
 
 

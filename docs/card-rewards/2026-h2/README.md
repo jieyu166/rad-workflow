@@ -52,6 +52,8 @@
 
 每份文件使用相同 frontmatter：`product`、`issuer`、`product_type`、`customer_scope`、`target_from`、`target_to`、`verified_at`、`coverage_status`。官方來源找不到時，必須明確寫出查詢範圍與 `unavailable`，不得猜填數字。
 
+官方 URL 必須放在 `## 來源證據` 章節；`unavailable` 文件若沒有 URL，必須在該章節以 `查詢範圍：...` 記錄查證範圍，並在 `## 不確定事項` 提供具體說明，單獨寫「查無」不符合契約。
+
 `comparison.md` 將在 15 項產品與 3 項支付文件完成後建立，並回溯至各文件的官方證據。
 
 ## 限制
