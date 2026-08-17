@@ -38,7 +38,7 @@ iPASS MONEY 必須分成三種工具：**連結銀行帳戶**用於儲值／餘�
 | 中國信託 LINE Pay 信用卡 | not officially confirmed | 通用信用卡公告不能證實中國信託 LINE Pay 卡綁定 | not officially confirmed：LINE Pay 卡商店活動未確認 iPASS MONEY 為 LINE Pay 合格路徑 | not officially confirmed | not officially confirmed | [來源 17] |
 | 樂天國際銀行金融卡 | not officially confirmed | 未確認 iPASS MONEY 卡綁或帳戶連結；不以未列名推定不支援 | 樂天官方列 icash Pay 而非 iPASS MONEY；金融卡商店簽帳亦未證實 | not officially confirmed | not officially confirmed | [來源 18] |
 | 王道銀行一般簽帳金融卡 | supported | iPASS MONEY 綁定簽帳金融卡 | 1% 現金基本另依一般消費條款；2026-08-01 至 12-31 綁卡一般消費額外 5% 一卡通綠點 | 5% 一卡通綠點，每人每月 100 點、每月 1,000 名，非現金 | not officially confirmed：綠點活動與原卡 1% 的雙邊可疊加性未由兩方條款同時明定 | [來源 5] |
-| Visa LINE Bank 快點卡 | not officially confirmed | 官方 iframe 本次 read-back 未回傳正文 | not officially confirmed：8-9 月 4% 條款本次未能以官方 iframe 重現 | not officially confirmed | not officially confirmed | [來源 6] |
+| Visa LINE Bank 快點卡 | not officially confirmed | 官方 iframe 本次 read-back 未回傳正文 | not officially confirmed：活動條款正文未能重現，回饋率、門檻與名額均不確認 | not officially confirmed | not officially confirmed | [來源 6] |
 | 玉山 Pi 拍錢包信用卡 | not officially confirmed | 通用信用卡公告不能證實 Pi 卡綁定 | not officially confirmed：既有戶僅 Pi App 為明列路徑 | not officially confirmed | not officially confirmed | [來源 19] |
 | 玉山 Unicard | supported | iPASS MONEY 為百大指定「行動支付」 | 百大行動支付可依簡單／任意／UP選加 2%／2.5%／3.5%，另有方案條件 | not officially confirmed | not officially confirmed：銀行單一方案加碼不是平台活動疊加 | [來源 7] |
 | 玉山 U Bear 信用卡 | not officially confirmed | 通用信用卡公告不能證實 U Bear 綁定 | not officially confirmed：U Bear 僅明列 LINE Pay／全支付網路例示，未列 iPASS MONEY | not officially confirmed | not officially confirmed | [來源 20] |
@@ -57,7 +57,7 @@ iPASS MONEY 必須分成三種工具：**連結銀行帳戶**用於儲值／餘�
 3. 一卡通，〈iPASS MONEY APP 擴大開放信用卡綁定付款〉，各銀行信用卡綁定服務。https://www.i-pass.com.tw/News/Detail/103889
 4. 一卡通，〈信用卡設定〉，信用卡綁定與設為預設付款方式的流程。https://www.i-pass.com.tw/Page/CreditCard
 5. 王道銀行，〈iPASS MONEY 綁王道卡消費，樂享 5% 回饋〉，2026-08-01 至 12-31 綠點、名額與上限。https://www.o-bank.com/zh-tw/retail/event/event-compaign?campaigncode=db-dc-2018040102&sourcecode=cama
-6. LINE Bank，〈快點買 YOLO、快點吃 TGIF〉官方 iframe；本次 read-back 未回傳正文，故不作快點卡相容性或 4% 的正面證據。https://img.linebank.com.tw/cms/event/1187189_1223.html?updatetime=20260814180008
+6. LINE Bank，〈快點買 YOLO、快點吃 TGIF〉官方 iframe；本次 read-back 未回傳正文，故不作快點卡相容性、回饋率、門檻或名額的正面證據。https://img.linebank.com.tw/cms/event/1187189_1223.html?updatetime=20260814180008
 7. 玉山銀行，〈玉山 Unicard〉，iPASS MONEY 為百大行動支付與三方案加碼。https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/unicard
 8. 一卡通，〈首次連結玉山數位帳戶並開啟自動儲值享 50 元回饋〉，首次連結、7-9 月及 1,000 人限制。https://www.i-pass.com.tw/EN/Preferential/Detail/GMZTMOIRKWWYZ64APifC
 9. 一卡通，〈摩斯漢堡 iPASS MONEY 優惠〉，7-8 月券、指定卡與活動限制。https://www.i-pass.com.tw/Preferential/Detail/GMZTMMIYIYLJ764InoUT
