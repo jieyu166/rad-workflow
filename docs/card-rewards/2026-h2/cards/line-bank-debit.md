@@ -23,7 +23,7 @@ coverage_status: partial
 | 海外一般消費 | 2026-07-01 至 2026-12-31 | 0.5% 現金**或** LINE POINTS | 無上限；非一般消費不適用 | [來源 1] |
 | 日本、泰國一般消費 | 2026-07-01 至 2026-12-31 | 2.5% 現金**或** LINE POINTS | 已含海外基本 0.5%；須在交易前切換到快點吃 TGIF；無上限 | [來源 1] |
 
-國外交易服務費另列：LINE Bank 官方 FAQ／說明所載海外刷卡按刷卡金額收 **1.5%** 國外刷卡手續費；這是費用，不從名目 0.5%／2.5% 回饋直接相減為淨回饋 [來源 3]。
+國外交易服務費另列：LINE Bank 現行「簽帳金融卡海外手續費？」FAQ 明載海外刷卡按刷卡金額收 **1.5%** 國外刷卡手續費；這是費用，不從名目 0.5%／2.5% 回饋直接相減為淨回饋 [來源 3]。
 
 ## 特殊回饋
 
@@ -54,7 +54,7 @@ coverage_status: partial
 
 1. LINE Bank，〈LINE Bank 快點卡【快點買 YOLO、快點吃 TGIF】滿額回饋飆 4.3%！〉，2026-06-29 至 09-27 的 Q3 權益、基本國內外 0.5% 至 12-31、日本／泰國 2.5% 至 12-31、活動時段／門檻／名額、行動支付與排除規則；2026-08-17 逐頁 read-back。https://www.linebank.com.tw/notice/events/1187189
 2. LINE Bank，〈多元回饋功能全新上線，現金、點數回饋切換攻略〉，現金／LINE POINTS 選擇、設定成功後下一筆生效、預授權交易及現金匯入主帳戶規則；2026-08-17 read-back。https://corp.linebank.com.tw/blog/0a55a91f-6d75-46d3-aa6f-364bc205b314
-3. LINE Bank，〈值得收藏的下半年旅遊提案〉，簽帳金融卡海外刷卡交易酌收刷卡金額 1.5% 國外刷卡手續費；2026-08-17 read-back。https://corp.linebank.com.tw/zh-tw/news/797204cf-73c8-49e3-bc6d-4ca669541399
+3. LINE Bank，〈簽帳金融卡－常見問題〉中的〈簽帳金融卡海外手續費？〉，現行 FAQ 明載海外刷卡交易酌收刷卡金額 1.5% 國外刷卡手續費；2026-08-17 read-back。https://www.linebank.com.tw/faq/05 （FAQ 內容頁：https://img.linebank.com.tw/cms/faq/content/1186885_1225.html?updatetime=20260701141227）
 4. LINE Bank，〈盛夏購物節：快點卡指定 3C 品牌滿額回饋飆 1.5%〉，2026-07-16 至 09-27 的 LINE Pay／LINE Pay Money 綁卡路徑、基本回饋與回饋類型；2026-08-17 逐頁 read-back。https://www.linebank.com.tw/notice/events/1193873
 5. LINE Bank，〈Visa 攜手 LINE Bank 應援亞洲最具指標性的韓流盛宴！〉，新開戶、友感帳戶／新申辦產品與抽獎活動僅用以界定本文件排除範圍。https://www.linebank.com.tw/notice/events/1193891
 6. LINE Bank，〈友感帳戶刷卡功能全新上線〉，友感帳戶整合快點卡支付與同卡回饋的功能說明；2026-08-17 read-back。https://corp.linebank.com.tw/news/e391fa46-8f91-418f-836f-f07522a6ee25
