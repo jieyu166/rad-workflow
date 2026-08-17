@@ -12,23 +12,23 @@
 
 ## 文件清單
 
-最後一次逐 URL 官方來源稽核：**2026-08-17**。`[x]` 只用於目標期間完整覆蓋、文件通過驗證且定量主張已由可重開官方頁 read-back 的 `complete` 文件；`[ ]` 後附 `partial` 表示文件已建立，但仍有明列的期間／來源缺口，不得將已知月份外推。
+最後一次逐 URL 官方來源稽核：**2026-08-18**。`[x]` 只用於目標期間完整覆蓋、文件通過驗證且定量主張已由可重開官方頁 read-back 的 `complete` 文件；`[ ]` 後附 `partial` 表示文件已建立，但仍有明列的期間／來源／逐通路缺口，不得把已知權益外推到未重建情境。
 
 狀態合計（15 項產品＋3 項支付）：
 
-- `complete`：8
-- `partial`：10
+- `complete`：9
+- `partial`：9
 - `unavailable`：0
 
 ### 信用卡與金融卡
 
 - [x] 第一銀行 iLEO 卡 — `complete` — `cards/first-ileo.md`
-- [ ] 第一銀行 一卡通綠活卡 — `partial`：H2 5% 官方頁曾回傳互斥版本 — `cards/first-green.md`
+- [x] 第一銀行 一卡通綠活卡 — `complete` — `cards/first-green.md`
 - [x] 台新 Richart 卡（原 @GoGo 舊戶）— `complete` — `cards/taishin-richart-gogo.md`
 - [x] 永豐 DAWHO 現金回饋信用卡 — `complete` — `cards/sinopac-dawho.md`
 - [x] 永豐幣倍卡 — `complete` — `cards/sinopac-coin.md`
 - [x] 永豐 DAWAY 卡 — `complete` — `cards/sinopac-daway.md`
-- [ ] 國泰世華 CUBE 卡 — `partial`：通用 H2 權益正文未完整重現 — `cards/cathay-cube.md`
+- [ ] 國泰世華 CUBE 卡 — `partial`：固定回饋已完整重建；玩數位、樂饗購、趣旅行、集精選、全支付、慶生月於全目標期的全部商戶與逐通路細則尚未重建 — `cards/cathay-cube.md`
 - [ ] 中國信託 LINE Pay 信用卡 — `partial`：歐盟海外實體加碼條款衝突 — `cards/ctbc-line-pay.md`
 - [ ] 樂天國際銀行金融卡 — `partial`：商店簽帳功能未獲完整條款證實 — `cards/rakuten-bank-card.md`
 - [x] 王道銀行一般簽帳金融卡（排除 O! Range）— `complete` — `cards/obank-debit.md`

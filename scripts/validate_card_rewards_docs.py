@@ -7,6 +7,7 @@ import json
 import posixpath
 import re
 import sys
+from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
@@ -82,7 +83,11 @@ _PARTIAL_GAP = re.compile(
 )
 _PERCENTAGE = re.compile(r"(?<!\d)\d+(?:\.\d+)?\s*[%％]")
 _PRODUCT_ID_COMMENT = re.compile(
-    r"(?m)^\s*<!--\s*product-id:\s*([a-z0-9][a-z0-9-]*)\s*-->\s*$"
+    r"<!--\s*product-id:\s*([a-z0-9][a-z0-9-]*)\s*-->"
+)
+_FOOTNOTE_REF = re.compile(r"\[\^([A-Za-z0-9_-]+)\]")
+_FOOTNOTE_DEFINITION = re.compile(
+    r"(?m)^\[\^([A-Za-z0-9_-]+)\]:\s*\[[^\]\n]*\]\(([^)\n]+)\)\s*$"
 )
 
 
@@ -91,7 +96,6 @@ class Issue:
     code: str
     path: str
     message: str
-    line: int | None = None
 
 
 def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
@@ -135,8 +139,181 @@ def _section_body(body: str, heading: str) -> str:
     return match.group(1).strip() if match else ""
 
 
-def _issue(code: str, path: str, message: str, line: int | None = None) -> Issue:
-    return Issue(code=code, path=path, message=message, line=line)
+def _issue(code: str, path: str, message: str) -> Issue:
+    return Issue(code=code, path=path, message=message)
+
+
+def _split_markdown_row(line: str) -> list[str] | None:
+    stripped = line.strip()
+    if not stripped.startswith("|") or not stripped.endswith("|"):
+        return None
+    return [cell.strip() for cell in stripped[1:-1].split("|")]
+
+
+def _comparison_table_rows(text: str) -> list[list[str]]:
+    section = _section_body(text, "## 15 項產品總表")
+    lines = section.splitlines()
+    table_start = next(
+        (index for index, line in enumerate(lines) if _split_markdown_row(line) is not None),
+        None,
+    )
+    if table_start is None or table_start + 1 >= len(lines):
+        return []
+    rows: list[list[str]] = []
+    for line in lines[table_start + 2 :]:
+        cells = _split_markdown_row(line)
+        if cells is None:
+            if rows:
+                break
+            continue
+        rows.append(cells)
+    return rows
+
+
+def _payment_matrix_rows(body: str) -> list[list[str]]:
+    section = _section_body(body, "## 行動支付相容性")
+    lines = section.splitlines()
+    table_start = next(
+        (index for index, line in enumerate(lines) if _split_markdown_row(line) is not None),
+        None,
+    )
+    if table_start is None or table_start + 1 >= len(lines):
+        return []
+    rows: list[list[str]] = []
+    for line in lines[table_start + 2 :]:
+        cells = _split_markdown_row(line)
+        if cells is None:
+            if rows:
+                break
+            continue
+        rows.append(cells)
+    return rows
+
+
+def _validate_comparison(text: str) -> list[Issue]:
+    relative = "comparison.md"
+    issues: list[Issue] = []
+    rows = _comparison_table_rows(text)
+    if len(rows) != 15:
+        issues.append(
+            _issue(
+                "comparison_row_count",
+                relative,
+                f"15 項產品總表 must contain exactly 15 data rows; found {len(rows)}",
+            )
+        )
+
+    definitions: dict[str, list[str]] = defaultdict(list)
+    for footnote_id, target in _FOOTNOTE_DEFINITION.findall(text):
+        definitions[footnote_id].append(target)
+
+    bound_ids: list[str] = []
+    footnote_uses: Counter[str] = Counter()
+    for row_number, cells in enumerate(rows, start=1):
+        if len(cells) != 10:
+            issues.append(
+                _issue(
+                    "comparison_column_count",
+                    relative,
+                    f"data row {row_number} must contain exactly 10 columns; found {len(cells)}",
+                )
+            )
+        product_cell = cells[0] if cells else ""
+        row_ids = _PRODUCT_ID_COMMENT.findall(product_cell)
+        bound_ids.extend(row_ids)
+        if len(row_ids) != 1:
+            issues.append(
+                _issue(
+                    "comparison_row_product_id",
+                    relative,
+                    f"data row {row_number} product cell must contain exactly one product-id; found {len(row_ids)}",
+                )
+            )
+            continue
+        product_id = row_ids[0]
+        if product_id not in EXPECTED_CARD_IDS:
+            issues.append(
+                _issue(
+                    "comparison_unknown_product",
+                    relative,
+                    f"data row {row_number} contains unknown product-id {product_id}",
+                )
+            )
+            continue
+
+        footnote_refs = _FOOTNOTE_REF.findall(product_cell)
+        if len(footnote_refs) != 1:
+            issues.append(
+                _issue(
+                    "comparison_footnote_mismatch",
+                    relative,
+                    f"product-id {product_id} must have exactly one product footnote; found {len(footnote_refs)}",
+                )
+            )
+            continue
+        footnote_id = footnote_refs[0]
+        footnote_uses[footnote_id] += 1
+        expected_target = f"cards/{product_id}.md"
+        targets = definitions.get(footnote_id, [])
+        if targets != [expected_target]:
+            issues.append(
+                _issue(
+                    "comparison_footnote_mismatch",
+                    relative,
+                    f"product-id {product_id} footnote {footnote_id} must uniquely target {expected_target}",
+                )
+            )
+
+    for footnote_id, count in sorted(footnote_uses.items()):
+        if count != 1:
+            issues.append(
+                _issue(
+                    "comparison_footnote_mismatch",
+                    relative,
+                    f"product footnote {footnote_id} must be used by exactly one data row; found {count}",
+                )
+            )
+
+    bound_counts = Counter(bound_ids)
+    for product_id in sorted(EXPECTED_CARD_IDS):
+        count = bound_counts[product_id]
+        if count != 1:
+            issues.append(
+                _issue(
+                    "comparison_missing_product",
+                    relative,
+                    f"product-id {product_id} must appear in exactly one product cell; found {count}",
+                )
+            )
+        if count > 1:
+            issues.append(
+                _issue(
+                    "comparison_duplicate_product",
+                    relative,
+                    f"product-id {product_id} appears in {count} data rows",
+                )
+            )
+
+    all_counts = Counter(_PRODUCT_ID_COMMENT.findall(text))
+    for product_id in sorted(all_counts):
+        detached_count = all_counts[product_id] - bound_counts[product_id]
+        if detached_count > 0:
+            issues.append(
+                _issue(
+                    "comparison_detached_product",
+                    relative,
+                    f"product-id {product_id} appears {detached_count} time(s) outside a product cell",
+                )
+            )
+        if product_id not in EXPECTED_CARD_IDS and bound_counts[product_id] == 0:
+            issues.append(
+                _issue(
+                    "comparison_unknown_product",
+                    relative,
+                    f"unknown product-id {product_id}",
+                )
+            )
+    return issues
 
 
 def _validate_document(root: Path, relative: str) -> list[Issue]:
@@ -171,6 +348,17 @@ def _validate_document(root: Path, relative: str) -> list[Issue]:
     for heading in REQUIRED_HEADINGS:
         if not re.search(rf"(?m)^{re.escape(heading)}\s*$", body):
             issues.append(_issue("missing_heading", relative, heading))
+    if relative in EXPECTED_PAYMENT_FILES:
+        payment_rows = _payment_matrix_rows(body)
+        if len(payment_rows) != 15:
+            issues.append(
+                _issue(
+                    "payment_matrix_row_count",
+                    relative,
+                    "行動支付相容性 must contain exactly 15 product rows; "
+                    f"found {len(payment_rows)}",
+                )
+            )
     source_body = _section_body(body, "## 來源證據")
     coverage = metadata.get("coverage_status")
     if coverage == "partial" and not _PARTIAL_GAP.search(body):
@@ -253,17 +441,7 @@ def validate_corpus(root: Path, only: set[str] | None = None) -> list[Issue]:
             comparison_text = comparison.read_text(encoding="utf-8")
         except (OSError, UnicodeError) as exc:
             issues.append(_issue("unreadable", "comparison.md", str(exc)))
-    product_ids = _PRODUCT_ID_COMMENT.findall(comparison_text)
-    for product_id in sorted(EXPECTED_CARD_IDS):
-        count = product_ids.count(product_id)
-        if count != 1:
-            issues.append(
-                _issue(
-                    "comparison_missing_product",
-                    "comparison.md",
-                    f"product-id {product_id} must appear exactly once; found {count}",
-                )
-            )
+    issues.extend(_validate_comparison(comparison_text))
     return issues
 
 
@@ -300,8 +478,7 @@ def main(argv: list[str] | None = None) -> int:
         args.json_report.parent.mkdir(parents=True, exist_ok=True)
         args.json_report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     for issue in issues:
-        location = f":{issue.line}" if issue.line else ""
-        print(f"{issue.code}: {issue.path}{location}: {issue.message}")
+        print(f"{issue.code}: {issue.path}: {issue.message}")
     if not issues:
         print("card rewards corpus: OK")
     return 1 if issues else 0

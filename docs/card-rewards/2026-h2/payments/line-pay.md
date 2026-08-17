@@ -6,7 +6,7 @@ payment_service: line-pay
 customer_scope: existing
 target_from: 2026-08-01
 target_to: 2026-12-31
-verified_at: 2026-08-17
+verified_at: 2026-08-18
 coverage_status: partial
 ---
 
@@ -14,7 +14,7 @@ coverage_status: partial
 
 本文件的 LINE Pay 是「綁定信用卡付款」服務；它不是銀行帳戶扣款，也不是 iPASS MONEY／LINE Pay Money 餘額服務。平台官方可確認的是綁卡付款及 LINE POINTS；**卡能綁定不等於原卡或平台活動有回饋**。凡銀行 H2 條款未逐一認列者均保留 `not officially confirmed`，不列入最佳卡建議 [來源 1][來源 2]。
 
-中國信託 LINE Pay 卡須綁定臺灣 LINE Pay 才有 1% LINE POINTS；永豐 DAWAY 卡亦以 LINE Pay 綁定及請款辨識作為其點數資格。第一銀行 iLEO、台新 Richart、玉山 Unicard、U Bear、王道與 LINE Bank 快點卡則各有期間、方案、帳戶任務或名額限制；快點卡的 LINE Pay 特定銀行活動僅至 2026-09-27，詳矩陣 [來源 3]–[來源 10]。
+中國信託 LINE Pay 卡須綁定臺灣 LINE Pay 才有 1% LINE POINTS；永豐 DAWAY 卡亦以 LINE Pay 綁定及請款辨識作為其點數資格。第一銀行 iLEO、台新 Richart、國泰 CUBE、玉山 Unicard、U Bear、王道與 LINE Bank 快點卡則各有期間、方案、底層一般消費、帳戶任務或名額限制；DAWAY 的商戶／LINE Pay 活動及快點卡的銀行活動都只能在精確期間、cap 與總量內採用，詳矩陣 [來源 3]–[來源 10][來源 14][來源 18]。
 
 ## 一般回饋
 
@@ -29,12 +29,12 @@ LINE Pay 2026 年第三季官方新聞頁為週領券及品牌活動入口，並
 | 使用者產品 | 可綁／可連結 | 支付方式 | 原卡／帳戶回饋 | 支付服務加碼 | 可否疊加 | 官方證據 |
 |---|---|---|---|---|---|---|
 | 第一銀行 iLEO 卡 | supported | LINE Pay 綁定信用卡 | 2026-07-01 至 12-31，愛支付 2%；單筆滿 NT$1,000、第一銀行帳戶自扣及電子帳單後最高 3% 現金 | not officially confirmed：LINE Pay 平台無本清單舊戶固定加碼 | not officially confirmed：銀行內部 2%／3% 不是已證實的平台疊加 | [來源 4] |
-| 第一銀行 Living Green 綠活卡 | not officially confirmed | LINE Pay 綁卡能力未由本產品 H2 條款明示 | 五大綠活 5% 的 H2 條款本身有版本衝突，且該路徑排除 LINE Pay | not officially confirmed | unsupported：不得把未一致證實的 5% 與 LINE Pay 疊加 | [來源 11] |
+| 第一銀行 Living Green 綠活卡 | not officially confirmed | LINE Pay 綁卡能力未由本產品 H2 條款明示 | 已確認的 H2 五大綠活 5% 明確排除 LINE Pay；其他交易是否累積一般紅利仍依帳單與一般消費定義 | not officially confirmed | unsupported：不得把五大綠活 5% 與 LINE Pay 疊加 | [來源 11] |
 | 台新 Richart 卡（原 @GoGo） | supported | LINE Pay 綁定信用卡 | Pay 著刷 LEVEL 1 1.3%、LEVEL 2 2.3% 台新 Point；須切換方案，LEVEL 2 須台新帳戶自扣生效 | not officially confirmed | not officially confirmed：銀行內部方案回饋不是已證實的平台疊加 | [來源 5] |
 | 永豐 DAWHO 卡 | not officially confirmed | 未獲既有戶條款逐一確認 | 既有戶 LINE Pay 加碼未公告；不可將新戶 20% 外推 | not officially confirmed | not officially confirmed | [來源 12] |
 | 永豐幣倍卡 | not officially confirmed | 未獲既有戶條款逐一確認 | 既有戶精選通路 4% 未列 LINE Pay；Apple Pay／Google Pay 2% 是新申辦排除項 | not officially confirmed | not officially confirmed：新申辦排除不等於 LINE Pay 技術不支援 | [來源 13] |
-| 永豐 DAWAY 卡 | supported | LINE Pay 綁定信用卡，且帳單須為官方列示 LINE Pay 請款識別 | 國內 0.5%／國外 2.5% LINE POINTS；DAWAY GO 的 LINE Pay 一般消費另加 1.5%，每期 300 點 | not officially confirmed | not officially confirmed：DAWAY GO 是銀行內部 LINE Pay 加碼，非已證實平台活動疊加 | [來源 6] |
-| 國泰世華 CUBE 卡 | not officially confirmed | 未由本次 H2 通用條款確認 | 童樂匯與台塑家指定情境排除 LINE Pay；未知不推為基本 0% | not officially confirmed | unsupported：不得用 LINE Pay 取得該兩項指定加碼 | [來源 14] |
+| 永豐 DAWAY 卡 | supported | LINE Pay 綁定 DAWAY，且帳單須為官方列示請款識別；商戶活動另須指定店家／日、行銷同意及額度未滿 | **原卡／發卡行層**：國內 0.5%／國外 2.5%；GO 的 LINE Pay 一般消費另加 1.5%（每帳單週期共用 300 點）。韓國吃喝另有 DAWAY 7.5% 每月 150 點／總量 10 萬點；找體驗另有 DAWAY 8% 每月 300 點／平假日總量 2 萬／5 萬點 | supported（僅特定活動）：路易莎 5% 每月 50 點／總量 30 萬點；找體驗週末 LINE Pay 14% 每月 420 點／總量 70 萬點；韓國吃喝另含店家 5% 每月 100 點／總量 65 萬點及 Visa 10% 每月 200 點／總量 85 萬點。均發完即止 | supported（僅官方明示的活動總率）：路易莎至 12/31 為 0.5%＋1.5%＋5%＝最高 7%；找體驗週末至 9/30 為 0.5%＋1.5%＋14%＋8%＝最高 24%；韓國指定吃喝至 9/30 為 2.5%＋1.5%＋5%＋10%＋7.5%＝最高 26.5%。三者均有限量、非保證，不外推一般 LINE Pay 交易 | [來源 6][來源 18] |
+| 國泰世華 CUBE 卡 | supported | LINE Pay 綁定 CUBE；固定回饋官方計算表只正面證實兩筆 LINE Pay 範例 | 2026-08-03 至 12-31 切入固定回饋後，LINE Pay－屈臣氏 NT$200 屬一般消費 1.2%（2 點）；LINE Pay－7-ELEVEN NT$100 屬非一般消費 0%。結果取決於底層交易，不外推所有商戶；LINE Pay 也不屬海外實體 2.5% 指定錢包 | not officially confirmed：未見 LINE Pay 平台對 CUBE 的獨立固定加碼 | not officially confirmed：兩個計算範例只證明原卡待遇，沒有獨立平台 bonus 可疊加；童樂匯／台塑家指定情境仍依各自排除 | [來源 14] |
 | 中國信託 LINE Pay 信用卡 | supported | 綁定臺灣 LINE Pay | 2026-07-01 至 12-31 國內外一般消費 1% LINE POINTS、無上限；特定 Visa／JCB 商店活動另依卡組織、登錄與季上限 | not officially confirmed | not officially confirmed：原卡綁定資格不是已證實的 LINE Pay 平台加碼疊加 | [來源 3] |
 | 樂天國際銀行金融卡 | not officially confirmed | 現行約定只證實 ATM／網路 ATM，未證實商店簽帳卡功能；未以此推定拒絕 LINE Pay | 非消費回饋 | not officially confirmed | not officially confirmed | [來源 15] |
 | 王道銀行一般簽帳金融卡 | supported | LINE Pay 綁定簽帳金融卡 | 2026-07-01 至 09-30，單筆滿 NT$500、完成當月登錄且未額滿時，1% 基本＋4% 加碼；10-12 月僅 1% 基本可確認 | not officially confirmed | not officially confirmed：4% 是王道銀行活動，不是已證實平台再加碼 | [來源 7] |
@@ -57,18 +57,19 @@ LINE Pay 2026 年第三季官方新聞頁為週領券及品牌活動入口，並
 3. 中國信託銀行，〈LINE Pay 卡回饋計劃／優惠一覽〉，綁定資格、一般 1%、卡組織活動、登錄與排除。https://www.ctbcbank.com/content/dam/minisite/long/creditcard/LINEPay/notice.html
 4. 第一銀行，〈iLEO 卡指定支付最高享 13%〉，本文件僅採既有戶 LINE Pay 2%／3% 條款。https://card.firstbank.com.tw/sites/card/zh_TW/1565697445348
 5. 台新銀行，〈台新 Richart 卡 7+1 大刷〉，LINE Pay 的 Pay 著刷等級與排除。https://web.taishinbank.com.tw/TSB/personal/credit/intro/overview/future/ab46dfa7-5d88-11f1-b50f-0050568c09e3
-6. 永豐銀行，〈DAWAY 卡〉，LINE Pay 綁定、DAWAY GO、請款識別及上限。https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWAY.html
+6. 永豐銀行，〈DAWAY 卡〉，LINE Pay 綁定、DAWAY GO、請款識別、2026 H2 商戶／平台活動分解、每帳號 cap 與全體總量；2026-08-18 read-back。https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWAY.html
 7. 王道銀行，〈王道刷支付享最高 5% 現金回饋〉，7-9 月 LINE Pay、登錄、名額及上限。https://www.o-bank.com/retail/event/event-announce/pay1
 8. LINE Bank，〈快點買 YOLO、快點吃 TGIF〉官方 iframe；2026-08-17 direct read-back HTTP 200、41,175 bytes。正文明列 2026-06-29 至 09-27 的快點吃 TGIF「週週隨手Pay」：LINE Pay／LINE Pay Money 綁定快點卡或 iPASS MONEY 等行動支付，週五至日單筆滿 NT$500 回饋 NT$17 或 LINE POINTS 17 點、每週前 600 名；LINE Pay 不含綁定帳戶、電信費及保險專區。https://img.linebank.com.tw/cms/event/1187189_1223.html?updatetime=20260814180008
 9. 玉山銀行，〈玉山 Unicard〉，LINE Pay 為百大行動支付及三方案。https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/unicard
 10. 玉山銀行，〈玉山 U Bear 信用卡〉，LINE Pay 網路消費認列及僅公告至 2026-08-31。https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/u-bear?tabid=tab02
-11. 第一銀行，〈樂活通路最高 5% 回饋〉，H2 路徑的第三方支付排除及版本衝突。https://card.firstbank.com.tw/sites/Satellite?c=CreditCard&cid=1565705148928&d=Touch&pagename=FirstBankCard%2FCreditCard%2Fzh%2FCardActivityDetailView
+11. 第一銀行，〈樂活通路最高 5% 回饋〉，2026-08-18 direct read-back 已一致重現 H2 5%、全年登錄與 LINE Pay 等第三方支付排除。https://card.firstbank.com.tw/sites/Satellite?c=CreditCard&cid=1565705148928&d=Touch&pagename=FirstBankCard%2FCreditCard%2Fzh%2FCardActivityDetailView
 12. 永豐銀行，〈DAWHO 現金回饋信用卡〉，既有戶未列 LINE Pay 加碼及新戶排除。https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWHO.html
 13. 永豐銀行，〈幣倍卡 2026 下半年權益〉，新申辦 Apple Pay／Google Pay 與既有戶精選通路限制。https://bank.sinopac.com/sinopacBT/webevents/2003_dualcc/index.html?Branch=2026H2AD
-14. 國泰世華銀行，〈童樂匯〉及〈台塑家〉，LINE Pay／第三方支付排除。https://www.cathaybk.com.tw/cathaybk/promo/event/credit-card/discount/2026/familypillar/index.html
+14. 國泰世華銀行，〈CUBE 卡權益方案〉，2026-08-18 渲染 DOM 的固定回饋注意事項與計算表，正面列出 LINE Pay－屈臣氏 1.2%、LINE Pay－7-ELEVEN 0%，並說明底層一般消費與海外實體定義；童樂匯／台塑家另依各自排除。https://www.cathay-cube.com.tw/cathaybk/personal/product/credit-card/cards/cube-list#B001
 15. 樂天國際銀行，〈數位存款帳戶約定書〉，金融卡 ATM／網路 ATM 範圍。https://www.rakuten-bank.com.tw/cms-upload/file/5952bd07162742cfad351017e90ff698.pdf
 16. 玉山銀行，〈玉山 Pi 拍錢包信用卡〉，Pi App 為本卡明列支付路徑。https://www.esunbank.com/zh-tw/personal/credit-card/intro/co-branded-card/pi-card?key=0
 17. 台北富邦銀行，〈Costco 好多金回饋辦法〉，便利商店與全聯集團支付排除。https://www.fubon.com/banking/document/form/TW/%E5%A5%BD%E5%A4%9A%E9%87%91%E5%9B%9E%E9%A5%8B%E8%BE%A6%E6%B3%95.pdf
+18. LINE Pay，〈LINE Pay App「找體驗」指定日回饋〉，2026-07-01 至 09-30 的平日／週末平台率、DAWAY 加碼、每月 cap、全體總量與額滿公告；2026-08-18 read-back。https://web-tw-pay.line.me/cms/event/template1.3/d7636123-6581-46fd-b5b1-d955d119ac92
 
 ## 不確定事項
 

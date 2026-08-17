@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -17,6 +18,7 @@ from scripts.validate_card_rewards_docs import (
 
 
 ROOT = Path(__file__).parents[1]
+UTF8_SUBPROCESS_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
 
 class CardRewardsDocsTests(unittest.TestCase):
@@ -79,6 +81,51 @@ class CardRewardsDocsTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
+    @staticmethod
+    def _comparison_row(
+        product_id: str,
+        *,
+        footnote_id: str | None = None,
+        column_count: int = 10,
+    ) -> str:
+        footnote_id = footnote_id or product_id
+        cells = [
+            f"Fixture {product_id}[^{footnote_id}] "
+            f"<!-- product-id: {product_id} -->"
+        ] + ["fixture"] * 9
+        return "| " + " | ".join(cells[:column_count]) + " |"
+
+    def _valid_comparison(
+        self,
+        *,
+        rows: list[str] | None = None,
+        footnote_targets: dict[str, str] | None = None,
+        detached: list[str] | None = None,
+    ) -> str:
+        product_ids = [Path(relative).stem for relative in sorted(EXPECTED_CARD_FILES)]
+        rows = rows or [self._comparison_row(product_id) for product_id in product_ids]
+        footnote_targets = footnote_targets or {
+            product_id: f"cards/{product_id}.md" for product_id in product_ids
+        }
+        detached_text = "".join(
+            f"<!-- product-id: {product_id} -->\n" for product_id in (detached or [])
+        )
+        definitions = "".join(
+            f"[^{footnote_id}]: [Fixture evidence]({target})\n"
+            for footnote_id, target in footnote_targets.items()
+        )
+        return (
+            "# 比較表\n\n"
+            + detached_text
+            + "## 15 項產品總表\n\n"
+            + "| 產品 | 國內一般 | 國外一般 | 最佳特殊回饋 | 條件 | "
+            "上限／推導可刷額 | LINE Pay | iPASS MONEY | 全支付 | 覆蓋狀態 |\n"
+            + "|---|---|---|---|---|---|---|---|---|---|\n"
+            + "\n".join(rows)
+            + "\n\n"
+            + definitions
+        )
+
     def _issues_for_first_ileo(self, root: Path) -> set[str]:
         return {
             issue.code
@@ -118,9 +165,14 @@ class CardRewardsDocsTests(unittest.TestCase):
                 check=False,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                env=UTF8_SUBPROCESS_ENV,
             )
             self.assertEqual(result.returncode, 1)
-            self.assertGreater(json.loads(report.read_text(encoding="utf-8"))["issue_count"], 0)
+            payload = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual({"root", "issue_count", "issues"}, set(payload))
+            self.assertGreater(payload["issue_count"], 0)
+            self.assertEqual({"code", "path", "message"}, set(payload["issues"][0]))
 
     def test_unavailable_requires_query_scope_and_concrete_uncertainty(self) -> None:
         body = """## 結論摘要
@@ -271,22 +323,156 @@ class CardRewardsDocsTests(unittest.TestCase):
             sum(issue.code == "comparison_missing_product" for issue in issues),
         )
 
-    def test_comparison_requires_each_product_identifier_exactly_once(self) -> None:
+    def test_comparison_rejects_duplicate_product_row(self) -> None:
         product_ids = [Path(relative).stem for relative in sorted(EXPECTED_CARD_FILES)]
-        comparison = "# 比較表\n" + "".join(
-            f"<!-- product-id: {product_id} -->\n" for product_id in product_ids
-        )
-        comparison += "<!-- product-id: first-ileo -->\n"
+        rows = [self._comparison_row(product_id) for product_id in product_ids]
+        rows.append(self._comparison_row("first-ileo"))
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self._write_complete_corpus(root)
-            (root / "comparison.md").write_text(comparison, encoding="utf-8")
+            (root / "comparison.md").write_text(
+                self._valid_comparison(rows=rows), encoding="utf-8"
+            )
             issues = validate_corpus(root)
-        comparison_issues = [
-            issue for issue in issues if issue.code == "comparison_missing_product"
+        codes = {issue.code for issue in issues}
+        self.assertIn("comparison_duplicate_product", codes)
+        self.assertIn("comparison_row_count", codes)
+
+    def test_comparison_rejects_detached_identifier_when_row_is_deleted(self) -> None:
+        product_ids = [Path(relative).stem for relative in sorted(EXPECTED_CARD_FILES)]
+        rows = [
+            self._comparison_row(product_id)
+            for product_id in product_ids
+            if product_id != "first-ileo"
         ]
-        self.assertEqual(1, len(comparison_issues))
-        self.assertIn("first-ileo", comparison_issues[0].message)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_complete_corpus(root)
+            (root / "comparison.md").write_text(
+                self._valid_comparison(rows=rows, detached=["first-ileo"]),
+                encoding="utf-8",
+            )
+            issues = validate_corpus(root)
+        codes = {issue.code for issue in issues}
+        self.assertIn("comparison_missing_product", codes)
+        self.assertIn("comparison_detached_product", codes)
+        self.assertIn("comparison_row_count", codes)
+
+    def test_comparison_rejects_swapped_product_identifiers(self) -> None:
+        product_ids = [Path(relative).stem for relative in sorted(EXPECTED_CARD_FILES)]
+        rows = []
+        for product_id in product_ids:
+            row_id = {
+                "first-green": "first-ileo",
+                "first-ileo": "first-green",
+            }.get(product_id, product_id)
+            rows.append(self._comparison_row(row_id, footnote_id=product_id))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_complete_corpus(root)
+            (root / "comparison.md").write_text(
+                self._valid_comparison(rows=rows), encoding="utf-8"
+            )
+            codes = {issue.code for issue in validate_corpus(root)}
+        self.assertIn("comparison_footnote_mismatch", codes)
+
+    def test_comparison_rejects_extra_unknown_product_row(self) -> None:
+        product_ids = [Path(relative).stem for relative in sorted(EXPECTED_CARD_FILES)]
+        rows = [self._comparison_row(product_id) for product_id in product_ids]
+        rows.append(self._comparison_row("not-a-card"))
+        targets = {
+            product_id: f"cards/{product_id}.md" for product_id in product_ids
+        }
+        targets["not-a-card"] = "cards/not-a-card.md"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_complete_corpus(root)
+            (root / "comparison.md").write_text(
+                self._valid_comparison(rows=rows, footnote_targets=targets),
+                encoding="utf-8",
+            )
+            codes = {issue.code for issue in validate_corpus(root)}
+        self.assertIn("comparison_unknown_product", codes)
+        self.assertIn("comparison_row_count", codes)
+
+    def test_comparison_rejects_wrong_column_count(self) -> None:
+        product_ids = [Path(relative).stem for relative in sorted(EXPECTED_CARD_FILES)]
+        rows = [
+            self._comparison_row(
+                product_id,
+                column_count=9 if product_id == "first-ileo" else 10,
+            )
+            for product_id in product_ids
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_complete_corpus(root)
+            (root / "comparison.md").write_text(
+                self._valid_comparison(rows=rows), encoding="utf-8"
+            )
+            codes = {issue.code for issue in validate_corpus(root)}
+        self.assertIn("comparison_column_count", codes)
+
+    def test_comparison_rejects_footnote_target_mismatch(self) -> None:
+        targets = {
+            Path(relative).stem: f"cards/{Path(relative).stem}.md"
+            for relative in sorted(EXPECTED_CARD_FILES)
+        }
+        targets["first-ileo"] = "cards/first-green.md"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_complete_corpus(root)
+            (root / "comparison.md").write_text(
+                self._valid_comparison(footnote_targets=targets),
+                encoding="utf-8",
+            )
+            codes = {issue.code for issue in validate_corpus(root)}
+        self.assertIn("comparison_footnote_mismatch", codes)
+
+    def test_comparison_requires_one_identifier_in_each_row(self) -> None:
+        product_ids = [Path(relative).stem for relative in sorted(EXPECTED_CARD_FILES)]
+        rows = [self._comparison_row(product_id) for product_id in product_ids]
+        first_ileo_index = product_ids.index("first-ileo")
+        rows[first_ileo_index] = rows[first_ileo_index].replace(
+            "<!-- product-id: first-ileo -->", ""
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_complete_corpus(root)
+            (root / "comparison.md").write_text(
+                self._valid_comparison(rows=rows), encoding="utf-8"
+            )
+            codes = {issue.code for issue in validate_corpus(root)}
+        self.assertIn("comparison_row_product_id", codes)
+
+    def test_payment_matrix_requires_exactly_fifteen_product_rows(self) -> None:
+        rows = "\n".join(
+            f"| Product {index} | supported | path | reward | bonus | stacking | source |"
+            for index in range(1, 15)
+        )
+        body = self._valid_body().replace(
+            "## 行動支付相容性\n無",
+            "## 行動支付相容性\n\n"
+            "| 使用者產品 | 可綁／可連結 | 支付方式 | 原卡／帳戶回饋 | "
+            "支付服務加碼 | 可否疊加 | 官方證據 |\n"
+            "|---|---|---|---|---|---|---|\n"
+            + rows,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "payments" / "line-pay.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "---\n"
+                "product: LINE Pay\nissuer: LINE Pay\nproduct_type: payment\n"
+                "customer_scope: existing\ntarget_from: 2026-08-01\n"
+                "target_to: 2026-12-31\nverified_at: 2026-08-18\n"
+                "coverage_status: complete\n---\n"
+                + body,
+                encoding="utf-8",
+            )
+            codes = {issue.code for issue in validate_document(path, root)}
+        self.assertIn("payment_matrix_row_count", codes)
 
     def test_validate_document_rejects_path_outside_corpus_root(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -345,6 +531,8 @@ class CardRewardsDocsTests(unittest.TestCase):
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            env=UTF8_SUBPROCESS_ENV,
         )
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
@@ -361,6 +549,8 @@ class CardRewardsDocsTests(unittest.TestCase):
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            env=UTF8_SUBPROCESS_ENV,
         )
         self.assertEqual(2, result.returncode)
 
@@ -377,6 +567,8 @@ class CardRewardsDocsTests(unittest.TestCase):
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            env=UTF8_SUBPROCESS_ENV,
         )
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
@@ -393,6 +585,8 @@ class CardRewardsDocsTests(unittest.TestCase):
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            env=UTF8_SUBPROCESS_ENV,
         )
         self.assertEqual(2, result.returncode)
 
@@ -409,6 +603,8 @@ class CardRewardsDocsTests(unittest.TestCase):
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            env=UTF8_SUBPROCESS_ENV,
         )
         self.assertEqual(2, result.returncode)
 
@@ -425,6 +621,8 @@ class CardRewardsDocsTests(unittest.TestCase):
                 check=False,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                env=UTF8_SUBPROCESS_ENV,
             )
         self.assertEqual(2, result.returncode)
 
@@ -442,5 +640,7 @@ class CardRewardsDocsTests(unittest.TestCase):
                 check=False,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                env=UTF8_SUBPROCESS_ENV,
             )
         self.assertEqual(2, result.returncode)

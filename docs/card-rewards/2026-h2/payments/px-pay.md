@@ -6,7 +6,7 @@ payment_service: px-pay
 customer_scope: existing
 target_from: 2026-08-01
 target_to: 2026-12-31
-verified_at: 2026-08-17
+verified_at: 2026-08-18
 coverage_status: partial
 ---
 
@@ -14,7 +14,7 @@ coverage_status: partial
 
 本檔案研究的是**全支付**。PX Pay 是全聯 APP 的入口／介面之一，官方在部分規則以「PX Pay 首頁之全支付入口」描述查詢或操作；它不是可任意替換全支付名稱的另一個付款工具。涉及全聯、大全聯或「PX Pay」的排除，僅在原卡／平台規則明文指向該場域時套用 [來源 1][來源 2]。
 
-全支付可使用帳戶餘額、連結銀行帳戶或連結信用卡付款，但通用服務功能不能確認任一特定卡片的可綁性。王道簽帳金融卡在指定場域有至 2027-01-03 的全點活動；Unicard 的全支付是百大行動支付；U Bear 只覆蓋 8 月網路一般消費。樂天可確認的是全支付**連結帳戶**功能；「付款 5 次」任務已在 7-31 截止，非目標窗可執行的金融卡或全支付加碼 [來源 2]–[來源 6]。
+全支付可使用帳戶餘額、連結銀行帳戶或連結信用卡付款，但通用服務功能不能確認任一特定卡片的可綁性。王道簽帳金融卡在指定場域有至 2027-01-03 的全點活動；CUBE 官方另列可切換的「全支付」2% 權益方案；Unicard 的全支付是百大行動支付；U Bear 只覆蓋 8 月網路一般消費。樂天可確認的是全支付**連結帳戶**功能；「付款 5 次」任務已在 7-31 截止，非目標窗可執行的金融卡或全支付加碼 [來源 2]–[來源 6][來源 13]。
 
 ## 一般回饋
 
@@ -29,12 +29,12 @@ coverage_status: partial
 | 使用者產品 | 可綁／可連結 | 支付方式 | 原卡／帳戶回饋 | 支付服務加碼 | 可否疊加 | 官方證據 |
 |---|---|---|---|---|---|---|
 | 第一銀行 iLEO 卡 | not officially confirmed | 通用服務頁不能證實 iLEO 卡綁定 | not officially confirmed：iLEO 未列全支付為指定支付，基本 0.5% 仍須帳單分類 | not officially confirmed | not officially confirmed | [來源 7] |
-| 第一銀行 Living Green 綠活卡 | not officially confirmed | 通用服務頁不能證實綠活卡綁定 | H2 五大綠活 5% 路徑排除全支付，且期間正文衝突 | not officially confirmed | unsupported：只針對該 5% 指定路徑 | [來源 8] |
+| 第一銀行 Living Green 綠活卡 | not officially confirmed | 通用服務頁不能證實綠活卡綁定 | H2 五大綠活 5% 路徑明確排除全支付；其他交易仍依一般紅利與排除認列 | not officially confirmed | unsupported：只針對該 5% 指定路徑 | [來源 8] |
 | 台新 Richart 卡（原 @GoGo） | not officially confirmed | 通用服務頁不能證實 Richart 卡綁定 | 台新明列全支付不適用切換刷加碼；0.3% 基本未逐一確認 | not officially confirmed | unsupported：只針對切換刷加碼 | [來源 9] |
 | 永豐 DAWHO 卡 | not officially confirmed | 通用服務頁不能證實 DAWHO 卡綁定 | not officially confirmed：既有戶未列全支付加碼；新戶方案不採 | not officially confirmed | not officially confirmed | [來源 10] |
 | 永豐幣倍卡 | not officially confirmed | 通用服務頁不能證實幣倍卡綁定 | not officially confirmed：精選通路未列全支付 | not officially confirmed | not officially confirmed | [來源 11] |
-| 永豐 DAWAY 卡 | not officially confirmed | 通用服務頁不能證實 DAWAY 卡綁定 | not officially confirmed：未確認屬 LINE Pay 交易 1.5% 加碼；基礎仍依一般消費與 LINE Pay 綁定資格 | not officially confirmed | not officially confirmed | [來源 12] |
-| 國泰世華 CUBE 卡 | not officially confirmed | 通用服務頁不能證實 CUBE 卡綁定 | 童樂匯／台塑家健康生活及部分超商規則排除全支付；未知不可推零基本 | not officially confirmed | unsupported：只針對明列排除的指定情境 | [來源 13] |
+| 永豐 DAWAY 卡 | not officially confirmed | 通用服務頁不能證實 DAWAY 卡綁定 | not officially confirmed：全支付不屬已確認的 LINE Pay 交易 1.5% 與 LINE Pay 指定活動路徑；基礎 0.5%／2.5% 仍依一般消費與 LINE Pay 綁定資格 | not officially confirmed | not officially confirmed | [來源 12] |
+| 國泰世華 CUBE 卡 | supported | 官方明列可切換的「全支付」權益方案 | **2% 小樹點（信用卡）**為獨立 CUBE 權益方案；本輪未重建全部商戶與逐通路細則 | not officially confirmed：2% 是銀行方案，不是獨立平台加碼 | unsupported：舊戶一旦切入固定回饋即鎖定至 12-31，不能同日疊用全支付 2% 方案 | [來源 13] |
 | 中國信託 LINE Pay 信用卡 | not officially confirmed | 通用服務頁不能證實中國信託 LINE Pay 卡綁定 | not officially confirmed：非 LINE Pay 卡活動合格路徑；國外實體加碼也排除第三方支付 | not officially confirmed | not officially confirmed | [來源 14] |
 | 樂天國際銀行金融卡 | supported | **全支付連結樂天帳戶**付款，不是金融卡綁定 | 2026-08-01 後不可再執行付款 5 次任務；若 7 月已完成，8 月可能屬既得 1.5% 次月利率，依樂天結算為準，非消費回饋 | not officially confirmed | not officially confirmed：未證實金融卡／平台回饋可疊加 | [來源 4] |
 | 王道銀行一般簽帳金融卡 | supported | 全支付綁定簽帳金融卡，以付款碼／指定 QR Code | 2026-07-01 至 2027-01-03，指定場域最高 5% 全點；原卡 1% 現金另依一般消費 | 每週最高 30 全點、每週限量 5,000 全點、全期 135,000 全點 | not officially confirmed：全點活動與原卡 1% 的雙邊可疊加性未同時明定 | [來源 3] |
@@ -59,12 +59,12 @@ coverage_status: partial
 5. 玉山銀行，〈玉山 Unicard〉，全支付為百大行動支付及三方案。https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/unicard
 6. 玉山銀行，〈玉山 U Bear 信用卡〉，全支付網路認列與全聯／大全聯、繳費排除。https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/u-bear?tabid=tab02
 7. 第一銀行，〈iLEO 卡指定支付〉。https://card.firstbank.com.tw/sites/card/zh_TW/1565697445348
-8. 第一銀行，〈樂活通路最高 5%〉，全支付排除與版本衝突。https://card.firstbank.com.tw/sites/Satellite?c=CreditCard&cid=1565705148928&d=Touch&pagename=FirstBankCard%2FCreditCard%2Fzh%2FCardActivityDetailView
+8. 第一銀行，〈樂活通路最高 5%〉，2026 下半年五大綠活通路 5%、登錄期間及全支付排除；2026-08-18 read-back。https://card.firstbank.com.tw/sites/Satellite?c=CreditCard&cid=1565705148928&d=Touch&pagename=FirstBankCard%2FCreditCard%2Fzh%2FCardActivityDetailView
 9. 台新銀行，〈台新 Richart 卡〉，全支付為不適用切換刷加碼之支付工具。https://web.taishinbank.com.tw/TSB/personal/credit/intro/overview/future/ab46dfa7-5d88-11f1-b50f-0050568c09e3
 10. 永豐銀行，〈DAWHO 現金回饋信用卡〉。https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWHO.html
 11. 永豐銀行，〈幣倍卡 2026 下半年權益〉。https://bank.sinopac.com/sinopacBT/webevents/2003_dualcc/index.html?Branch=2026H2AD
 12. 永豐銀行，〈DAWAY 卡〉。https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWAY.html
-13. 國泰世華銀行，〈台塑家／CUBE〉。https://www.cathaybk.com.tw/cathaybk/promo/event/credit-card/product/F2C/index.html
+13. 國泰世華銀行，〈CUBE 卡權益方案〉，2026-08-18 展開新版渲染頁，確認獨立「全支付」2% 方案及切入固定回饋後鎖定、不可同日疊用其他方案。https://www.cathay-cube.com.tw/cathaybk/personal/product/credit-card/cards/cube-list#B001
 14. 中國信託銀行，〈LINE Pay 卡回饋計劃〉。https://www.ctbcbank.com/content/dam/minisite/long/creditcard/LINEPay/notice.html
 15. LINE Bank，〈快點買 YOLO、快點吃 TGIF〉。https://www.linebank.com.tw/notice/events/1187189
 16. 玉山銀行，〈玉山 Pi 拍錢包信用卡〉。https://www.esunbank.com/zh-tw/personal/credit-card/intro/co-branded-card/pi-card?key=0
@@ -75,5 +75,5 @@ coverage_status: partial
 - 未覆蓋期間：2026-08-01 至 2026-12-31（矩陣所列特定產品的全支付綁定正面證據）[來源 1]。
 - 未覆蓋期間：2026-08-01 至 2026-12-31（原卡／帳戶回饋與全支付平台加碼的雙邊疊加證據）[來源 3][來源 4]。
 - 未覆蓋期間：2026-09-01 至 2026-12-31（樂天帳戶付款 5 次任務不可在目標窗內新執行）[來源 4]。
-- **逐日缺口**：iLEO、綠活、Richart、DAWHO、幣倍、DAWAY、CUBE、中信 LINE Pay、LINE Bank、Pi、Costco 於 2026-08-01 至 12-31 每日均缺少該特定產品全支付綁定正面證據；不以全支付通用服務頁補足 [來源 1]。
+- **逐日缺口**：iLEO、綠活、Richart、DAWHO、幣倍、DAWAY、中信 LINE Pay、LINE Bank、Pi、Costco 於 2026-08-01 至 12-31 每日均缺少該特定產品全支付綁定正面證據；不以全支付通用服務頁補足 [來源 1]。CUBE 已有官方獨立全支付 2% 方案正面證據，但該方案全部商戶與逐通路細則仍未在本輪完整重建，且不可與固定回饋疊加 [來源 13]。
 - **逐日缺口**：所有產品於 2026-08-01 至 12-31 每日均缺少「原卡／帳戶回饋與全支付平台加碼可疊加」的雙邊正面證據。樂天最多只能記錄 8 月可能的既得利率，9-12 月無此付款任務可執行 [來源 3][來源 4]。
