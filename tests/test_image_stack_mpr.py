@@ -331,6 +331,25 @@ def run_crosslink_interaction_probe() -> dict[str, object]:
   }));
   const wheelUp = api.state.viewportStates.get('cross-2-ax').zoom;
 
+  const pannedState = api.state.viewportStates.get('cross-2-ax');
+  pannedState.panX = 0;
+  pannedState.panY = 0;
+  canvas.setPointerCapture = () => {};
+  canvas.hasPointerCapture = () => false;
+  canvas.dispatchEvent(new PointerEvent('pointerdown', {
+    pointerId: 1, button: 0, clientX: 100, clientY: 100,
+    shiftKey: true, bubbles: true, cancelable: true
+  }));
+  canvas.dispatchEvent(new PointerEvent('pointermove', {
+    pointerId: 1, buttons: 1, clientX: 140, clientY: 130,
+    shiftKey: true, bubbles: true, cancelable: true
+  }));
+  canvas.dispatchEvent(new PointerEvent('pointerup', {
+    pointerId: 1, button: 0, clientX: 140, clientY: 130,
+    shiftKey: true, bubbles: true, cancelable: true
+  }));
+  const shiftPan = {panX: pannedState.panX, panY: pannedState.panY};
+
   const result = {
     syncedPlus,
     unsyncedMinus,
@@ -338,7 +357,8 @@ def run_crosslink_interaction_probe() -> dict[str, object]:
     noHover,
     wheelStart,
     wheelDown,
-    wheelUp
+    wheelUp,
+    shiftPan
   };
   document.body.innerHTML = '<pre id="interaction-result">' +
     JSON.stringify(result) + '</pre>';
@@ -409,10 +429,18 @@ def measure_crosslink_orientation_layout() -> dict[str, object]:
   });
   const hostBox = host.getBoundingClientRect();
   const boxes = Array.from(host.children, child => child.getBoundingClientRect());
+  const cardBoxes = Array.from(
+    host.querySelectorAll('.viewport-card'), card => card.getBoundingClientRect()
+  );
+  const mainStyle = getComputedStyle(document.querySelector('.main'));
   const result = {
     portrait: matchMedia('(orientation: portrait)').matches,
     rows: new Set(boxes.map(box => Math.round(box.top))).size,
-    fullWidth: boxes.map(box => Math.abs(box.width - hostBox.width) <= 2)
+    fullWidth: boxes.map(box => Math.abs(box.width - hostBox.width) <= 2),
+    cardHeights: cardBoxes.map(box => box.height),
+    viewportHeight: innerHeight,
+    mainPaddingLeft: parseFloat(mainStyle.paddingLeft),
+    mainPaddingRight: parseFloat(mainStyle.paddingRight)
   };
   document.body.innerHTML = '<pre id="orientation-result">' +
     JSON.stringify(result) + '</pre>';
@@ -456,8 +484,14 @@ def measure_crosslink_orientation_layout() -> dict[str, object]:
         "portraitMedia": portrait["portrait"],
         "portraitRows": portrait["rows"],
         "portraitFullWidth": portrait["fullWidth"],
+        "portraitCardHeights": portrait["cardHeights"],
+        "portraitViewportHeight": portrait["viewportHeight"],
+        "portraitMainPaddingLeft": portrait["mainPaddingLeft"],
+        "portraitMainPaddingRight": portrait["mainPaddingRight"],
         "landscapeMedia": landscape["portrait"],
         "landscapeRows": landscape["rows"],
+        "landscapeMainPaddingLeft": landscape["mainPaddingLeft"],
+        "landscapeMainPaddingRight": landscape["mainPaddingRight"],
     }
 
 
@@ -1216,6 +1250,8 @@ class ImageStackMprTests(unittest.TestCase):
         self.assertEqual(result["noHover"], result["beforeNoHover"])
         self.assertGreater(result["wheelDown"], result["wheelStart"])
         self.assertLess(result["wheelUp"], result["wheelDown"])
+        self.assertGreater(result["shiftPan"]["panX"], 0)
+        self.assertGreater(result["shiftPan"]["panY"], 0)
 
     def test_responsive_comparison_workspace(self) -> None:
         source, parser = parse_page()
@@ -1233,6 +1269,13 @@ class ImageStackMprTests(unittest.TestCase):
         self.assertFalse(result["landscapeMedia"])
         self.assertEqual(result["portraitRows"], 3)
         self.assertTrue(all(result["portraitFullWidth"]))
+        expected_height = result["portraitViewportHeight"] * 0.30
+        for card_height in result["portraitCardHeights"]:
+            self.assertAlmostEqual(card_height, expected_height, delta=2)
+        self.assertGreaterEqual(result["portraitMainPaddingLeft"], 32)
+        self.assertGreaterEqual(result["portraitMainPaddingRight"], 32)
+        self.assertGreaterEqual(result["landscapeMainPaddingLeft"], 32)
+        self.assertGreaterEqual(result["landscapeMainPaddingRight"], 32)
         self.assertLess(result["landscapeRows"], 3)
 
     def test_unknown_geometry_warning_and_copy(self) -> None:
