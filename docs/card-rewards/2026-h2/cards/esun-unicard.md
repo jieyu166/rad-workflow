@@ -51,7 +51,7 @@ coverage_status: complete
 
 ## 來源證據
 
-1. 玉山銀行，〈玉山Unicard〉，活動期間 2026-07-01 至 2026-12-31；載明一般回饋、三方案、UP選任務／訂閱、月末切換規則、百大指定消費（含 LINE Pay、iPASS MONEY、全支付）與 e point 折抵。2026-08-17 逐頁重新開啟查讀。https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/unicard-b
+1. 玉山銀行，〈玉山Unicard〉，活動期間 2026-07-01 至 2026-12-31；載明一般回饋、三方案、UP選任務／訂閱、月末切換規則、百大指定消費（含 LINE Pay、iPASS MONEY、全支付）與 e point 折抵。2026-08-17 以現行 canonical URL 逐頁重新開啟查讀。https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/unicard
 2. 玉山銀行，〈持信用卡在國外消費會收取什麼費用？〉；載明 1.5% 國外交易服務費與 DCC 規則。2026-08-17 逐頁重新開啟查讀。https://www.esunbank.com/zh-tw/about/faq/content?q=credit_card%2F018
 
 ## 不確定事項
