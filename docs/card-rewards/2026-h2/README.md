@@ -12,31 +12,37 @@
 
 ## 文件清單
 
-研究文件建立後以 `[ ]` 表示尚未完成查證，以 `[x]` 表示已完成；本清單不預先宣稱任何回饋已獲證實。
+最後一次逐 URL 官方來源稽核：**2026-08-17**。`[x]` 只用於目標期間完整覆蓋、文件通過驗證且定量主張已由可重開官方頁 read-back 的 `complete` 文件；`[ ]` 後附 `partial` 表示文件已建立，但仍有明列的期間／來源缺口，不得將已知月份外推。
+
+狀態合計（15 項產品＋3 項支付）：
+
+- `complete`：8
+- `partial`：10
+- `unavailable`：0
 
 ### 信用卡與金融卡
 
-- [ ] 第一銀行 iLEO 卡 — `cards/first-ileo.md`
-- [ ] 第一銀行 一卡通綠活卡 — `cards/first-green.md`
-- [ ] 台新 Richart 卡（原 @GoGo 舊戶）— `cards/taishin-richart-gogo.md`
-- [ ] 永豐 DAWHO 現金回饋信用卡 — `cards/sinopac-dawho.md`
-- [ ] 永豐幣倍卡 — `cards/sinopac-coin.md`
-- [ ] 永豐 DAWAY 卡 — `cards/sinopac-daway.md`
-- [ ] 國泰世華 CUBE 卡 — `cards/cathay-cube.md`
-- [ ] 中國信託 LINE Pay 信用卡 — `cards/ctbc-line-pay.md`
-- [ ] 樂天國際銀行金融卡 — `cards/rakuten-bank-card.md`
-- [ ] 王道銀行一般簽帳金融卡（排除 O! Range）— `cards/obank-debit.md`
-- [ ] Visa LINE Bank 快點卡 — `cards/line-bank-debit.md`
-- [ ] 玉山 Pi 拍錢包信用卡 — `cards/esun-pi.md`
-- [ ] 玉山 Unicard — `cards/esun-unicard.md`
-- [ ] 玉山 U Bear 信用卡 — `cards/esun-ubear.md`
-- [ ] 台北富邦 Costco 聯名卡 — `cards/fubon-costco.md`
+- [x] 第一銀行 iLEO 卡 — `complete` — `cards/first-ileo.md`
+- [ ] 第一銀行 一卡通綠活卡 — `partial`：H2 5% 官方頁曾回傳互斥版本 — `cards/first-green.md`
+- [x] 台新 Richart 卡（原 @GoGo 舊戶）— `complete` — `cards/taishin-richart-gogo.md`
+- [x] 永豐 DAWHO 現金回饋信用卡 — `complete` — `cards/sinopac-dawho.md`
+- [x] 永豐幣倍卡 — `complete` — `cards/sinopac-coin.md`
+- [x] 永豐 DAWAY 卡 — `complete` — `cards/sinopac-daway.md`
+- [ ] 國泰世華 CUBE 卡 — `partial`：通用 H2 權益正文未完整重現 — `cards/cathay-cube.md`
+- [ ] 中國信託 LINE Pay 信用卡 — `partial`：歐盟海外實體加碼條款衝突 — `cards/ctbc-line-pay.md`
+- [ ] 樂天國際銀行金融卡 — `partial`：商店簽帳功能未獲完整條款證實 — `cards/rakuten-bank-card.md`
+- [x] 王道銀行一般簽帳金融卡（排除 O! Range）— `complete` — `cards/obank-debit.md`
+- [ ] Visa LINE Bank 快點卡 — `partial`：基本與日本／泰國回饋已覆蓋至 12-31，但 YOLO／TGIF 等特殊加碼只公告至 09-27 — `cards/line-bank-debit.md`
+- [ ] 玉山 Pi 拍錢包信用卡 — `partial`：核心權益只公告至 2026-08-31 — `cards/esun-pi.md`
+- [x] 玉山 Unicard — `complete` — `cards/esun-unicard.md`
+- [ ] 玉山 U Bear 信用卡 — `partial`：核心權益只公告至 2026-08-31 — `cards/esun-ubear.md`
+- [x] 台北富邦 Costco 聯名卡 — `complete` — `cards/fubon-costco.md`
 
 ### 常用行動支付
 
-- [ ] LINE Pay — `payments/line-pay.md`
-- [ ] iPASS MONEY — `payments/ipass-money.md`
-- [ ] 全支付 — `payments/px-pay.md`
+- [ ] LINE Pay — `partial`：多項產品缺特定綁卡／平台疊加正面證據 — `payments/line-pay.md`
+- [ ] iPASS MONEY — `partial`：多項產品缺特定綁卡／平台疊加正面證據 — `payments/ipass-money.md`
+- [ ] 全支付 — `partial`：多項產品缺特定綁卡／平台疊加正面證據 — `payments/px-pay.md`
 
 ## 固定章節
 
@@ -54,7 +60,9 @@
 
 官方 URL 必須放在 `## 來源證據` 章節；`unavailable` 文件若沒有 URL，必須在該章節以 `查詢範圍：...` 記錄查證範圍，並在 `## 不確定事項` 提供具體說明，單獨寫「查無」不符合契約。
 
-`comparison.md` 將在 15 項產品與 3 項支付文件完成後建立，並回溯至各文件的官方證據。
+`partial` 文件必須在正文使用 `未覆蓋期間：YYYY-MM-DD 至 YYYY-MM-DD` 明列至少一段缺口；`unavailable` 文件的 `## 結論摘要` 不得提出百分比推薦。
+
+跨產品結果見 [`comparison.md`](comparison.md)。每個產品以 stable `product-id` 恰好出現一次，並以腳註連回證據文件；比較表不會把 `partial`／`unavailable` 的未覆蓋期間當作確定推薦。
 
 ## 限制
 

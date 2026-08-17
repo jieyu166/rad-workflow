@@ -34,6 +34,7 @@ EXPECTED_PAYMENT_FILES = {
     "payments/ipass-money.md",
     "payments/px-pay.md",
 }
+EXPECTED_CARD_IDS = {Path(relative).stem for relative in EXPECTED_CARD_FILES}
 REQUIRED_METADATA = {
     "product",
     "issuer",
@@ -76,6 +77,13 @@ OFFICIAL_HOST_SUFFIXES = (
 
 _KEY_VALUE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(?:[ \t]*)(.*)$")
 _URL = re.compile(r"https?://[^\s<>\)\]]+")
+_PARTIAL_GAP = re.compile(
+    r"未覆蓋期間：\d{4}-\d{2}-\d{2} 至 \d{4}-\d{2}-\d{2}"
+)
+_PERCENTAGE = re.compile(r"(?<!\d)\d+(?:\.\d+)?\s*[%％]")
+_PRODUCT_ID_COMMENT = re.compile(
+    r"(?m)^\s*<!--\s*product-id:\s*([a-z0-9][a-z0-9-]*)\s*-->\s*$"
+)
 
 
 @dataclass(frozen=True)
@@ -164,6 +172,24 @@ def _validate_document(root: Path, relative: str) -> list[Issue]:
         if not re.search(rf"(?m)^{re.escape(heading)}\s*$", body):
             issues.append(_issue("missing_heading", relative, heading))
     source_body = _section_body(body, "## 來源證據")
+    coverage = metadata.get("coverage_status")
+    if coverage == "partial" and not _PARTIAL_GAP.search(body):
+        issues.append(
+            _issue(
+                "partial_without_gap",
+                relative,
+                "partial coverage requires 未覆蓋期間：YYYY-MM-DD 至 YYYY-MM-DD",
+            )
+        )
+    conclusion_body = _section_body(body, "## 結論摘要")
+    if coverage == "unavailable" and _PERCENTAGE.search(conclusion_body):
+        issues.append(
+            _issue(
+                "unavailable_numeric_claim",
+                relative,
+                "unavailable documents cannot recommend a percentage in 結論摘要",
+            )
+        )
     urls = _URL.findall(source_body)
     if not any(_official_url(url.rstrip(".,;")) for url in urls):
         uncertainty_body = _section_body(body, "## 不確定事項")
@@ -220,26 +246,24 @@ def validate_corpus(root: Path, only: set[str] | None = None) -> list[Issue]:
         issues.extend(validate_document(Path(relative), root))
     if only is not None:
         return issues
+    comparison_text = ""
     comparison = root / "comparison.md"
-    if not comparison.is_file():
-        issues.append(_issue("comparison_missing_product", "comparison.md", "comparison.md is missing"))
-    else:
+    if comparison.is_file():
         try:
             comparison_text = comparison.read_text(encoding="utf-8")
         except (OSError, UnicodeError) as exc:
             issues.append(_issue("unreadable", "comparison.md", str(exc)))
-        else:
-            for relative in sorted(expected):
-                document = root / relative
-                if not document.is_file():
-                    continue
-                try:
-                    metadata, _ = parse_frontmatter(document.read_text(encoding="utf-8"))
-                except (OSError, UnicodeError, ValueError):
-                    continue
-                product = metadata.get("product")
-                if product and product not in comparison_text:
-                    issues.append(_issue("comparison_missing_product", "comparison.md", f"missing {product} ({relative})"))
+    product_ids = _PRODUCT_ID_COMMENT.findall(comparison_text)
+    for product_id in sorted(EXPECTED_CARD_IDS):
+        count = product_ids.count(product_id)
+        if count != 1:
+            issues.append(
+                _issue(
+                    "comparison_missing_product",
+                    "comparison.md",
+                    f"product-id {product_id} must appear exactly once; found {count}",
+                )
+            )
     return issues
 
 
