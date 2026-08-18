@@ -4,12 +4,139 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2026 下半年信用卡回饋整理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy-950: #0a1f33;
+      --navy-800: #153a5b;
+      --navy-650: #285b82;
+      --warm-50: #fbfaf6;
+      --warm-100: #f4f0e7;
+      --ink: #17212b;
+      --muted: #5f6b76;
+      --line: #d9d5ca;
+      --ok: #2f6b52;
+      --warn: #9a6418;
+      --danger: #9b3a32;
+      --focus: #1677bd;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--warm-50); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; line-height: 1.55; }
+    button, input { font: inherit; }
+    button { min-height: 44px; cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .site-header { background: var(--navy-950); color: #fff; padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 5vw, 5rem); }
+    .site-header__inner, .layout { max-width: 1440px; margin: 0 auto; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: .4rem; font-size: clamp(1.7rem, 4vw, 2.8rem); }
+    .site-header p { color: #d8e5ee; margin-bottom: 0; }
+    .layout { padding: 1.25rem clamp(1rem, 4vw, 3rem) 3rem; }
+    .toolbar, .filters, .compare-tray, .card, .empty-state, .fatal-error { border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+    .toolbar { display: grid; gap: 1rem; padding: 1rem; margin-bottom: 1rem; }
+    .search-row { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+    #search { flex: 1 1 18rem; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; padding: .6rem .8rem; }
+    .result-count { color: var(--muted); margin: 0; }
+    .filters { display: grid; gap: 1rem; padding: 1rem; margin-bottom: 1rem; }
+    .filter-group { display: grid; gap: .45rem; }
+    .filter-group h2 { font-size: 1rem; margin-bottom: 0; }
+    .filter-buttons { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .facet-button, .secondary-button, .clear-button { border: 1px solid var(--navy-650); border-radius: 999px; background: #fff; color: var(--navy-800); padding: .45rem .8rem; }
+    .facet-button[aria-pressed="true"], .clear-button { background: var(--navy-800); color: #fff; }
+    .clear-button:disabled { cursor: not-allowed; opacity: .48; }
+    .card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .card { display: flex; flex-direction: column; gap: .85rem; padding: 1rem; min-width: 0; }
+    .card h2 { font-size: 1.2rem; margin-bottom: 0; }
+    .issuer, .card-type, .card-copy { color: var(--muted); margin-bottom: 0; }
+    .reward-list { display: grid; gap: .65rem; margin: 0; }
+    .reward-list div { padding-top: .6rem; border-top: 1px solid var(--warm-100); }
+    .reward-list dt { font-weight: 700; }
+    .reward-list dd { margin: .15rem 0 0; }
+    .badges { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .badge { border-radius: 999px; padding: .15rem .55rem; background: var(--warm-100); color: var(--ink); font-size: .86rem; }
+    .badge--complete { color: var(--ok); background: #e6f1ea; }
+    .badge--partial { color: var(--warn); background: #f8eddc; }
+    .badge--unavailable { color: var(--danger); background: #f7e6e3; }
+    .card-actions { display: flex; gap: .65rem; margin-top: auto; flex-wrap: wrap; }
+    .secondary-button[aria-pressed="true"] { background: var(--warm-100); border-color: var(--navy-800); }
+    .detail { border-top: 1px solid var(--line); padding-top: .85rem; }
+    .detail[hidden], .empty-state[hidden], .fatal-error[hidden], .compare-tray[hidden] { display: none; }
+    .empty-state, .fatal-error { padding: 1.25rem; text-align: center; }
+    .compare-tray { position: sticky; bottom: 1rem; margin-top: 1rem; padding: 1rem; box-shadow: 0 8px 24px rgb(10 31 51 / .14); }
+    .compare-tray h2 { font-size: 1rem; margin-bottom: .45rem; }
+    .compare-list { margin: 0; padding-left: 1.25rem; }
+    .fatal-error { border-color: var(--danger); color: var(--danger); }
+    .is-fatal .interactive { display: none; }
+    @media (max-width: 900px) { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 620px) { .card-grid { grid-template-columns: 1fr; } .layout { padding-inline: .75rem; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+  </style>
 </head>
 <body>
   <main id="app">
-    <h1>2026 下半年信用卡回饋整理</h1>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <h1>2026 下半年信用卡回饋整理</h1>
+        <p>以條件、上限與回饋幣別為準，不將不同貨幣直接比較。</p>
+      </div>
+    </header>
+    <div class="layout">
+      <section id="fatal-error" class="fatal-error" role="alert" hidden></section>
+      <div class="interactive">
+        <section class="toolbar" aria-label="產品搜尋">
+          <div class="search-row">
+            <label for="search">搜尋產品、銀行、商戶或支付方式</label>
+            <input id="search" type="search" autocomplete="off" placeholder="例如：@GoGo、路易莎、全支付">
+            <button id="clear-filters" class="clear-button" type="button">清除篩選</button>
+          </div>
+          <p id="result-count" class="result-count" aria-live="polite"></p>
+        </section>
+        <section class="filters" aria-label="篩選條件">
+          <div class="filter-group"><h2>適用情境與支付</h2><div id="facet-controls" class="filter-buttons"></div></div>
+          <div class="filter-group"><h2>研究期間覆蓋</h2><div id="coverage-controls" class="filter-buttons"></div></div>
+          <div class="filter-group"><h2>產品類型</h2><div id="type-controls" class="filter-buttons"></div></div>
+        </section>
+        <section id="card-grid" class="card-grid" aria-label="信用卡產品"></section>
+        <section id="empty-state" class="empty-state" hidden>
+          <h2>沒有產品符合目前條件</h2>
+          <p>可清除搜尋與篩選條件後重新查看全部產品。</p>
+          <button id="empty-clear" class="clear-button" type="button">清除篩選</button>
+        </section>
+        <aside id="compare-tray" class="compare-tray" aria-live="polite" hidden></aside>
+      </div>
+    </div>
     <noscript>此工具需要啟用 JavaScript 才能使用。</noscript>
   </main>
+  <script id="card-rewards-core">
+    function normalizeText(value) {
+      return String(value ?? "").normalize("NFKC").trim().toLocaleLowerCase("zh-TW");
+    }
+
+    function collectText(value, output = []) {
+      if (typeof value === "string") output.push(value);
+      else if (Array.isArray(value)) value.forEach(item => collectText(item, output));
+      else if (value && typeof value === "object") Object.values(value).forEach(item => collectText(item, output));
+      return output;
+    }
+
+    function cardMatchesQuery(card, query) {
+      const needle = normalizeText(query);
+      return !needle || normalizeText(collectText(card).join(" ")).includes(needle);
+    }
+
+    function cardMatchesFilters(card, filters) {
+      const inGroup = (selected, values) => !selected.size || values.some(value => selected.has(value));
+      return inGroup(filters.facets, card.facetIds)
+        && inGroup(filters.coverage, [card.coverageStatus])
+        && inGroup(filters.productTypes, [card.productType]);
+    }
+
+    function filterCards(cards, filters) {
+      return cards.filter(card => cardMatchesQuery(card, filters.query) && cardMatchesFilters(card, filters));
+    }
+
+    globalThis.CardRewardsCore = { normalizeText, collectText, cardMatchesQuery, cardMatchesFilters, filterCards };
+  </script>
 <!-- CARD_REWARDS_DATA_START -->
 <script id="card-rewards-data" type="application/json">
 {
@@ -4906,5 +5033,178 @@
 }
 </script>
 <!-- CARD_REWARDS_DATA_END -->
+  <script>
+    (() => {
+      "use strict";
+
+      const state = {
+        query: "",
+        facets: new Set(),
+        coverage: new Set(),
+        productTypes: new Set(),
+        selectedIds: [],
+        detailId: null
+      };
+      const facetLabels = {
+        "line-pay": "LINE Pay", "ipass-money": "iPASS MONEY", "px-pay": "PX Pay", "overseas": "海外消費",
+        "subscriptions": "數位訂閱", "transport": "交通與加油", "costco": "量販與 Costco"
+      };
+      const coverageLabels = { complete: "完整", partial: "部分", unavailable: "未提供" };
+      const typeLabels = { "credit-card": "信用卡", "debit-card": "簽帳金融卡" };
+      const app = document.getElementById("app");
+      const fatalError = document.getElementById("fatal-error");
+      const search = document.getElementById("search");
+      const resultCount = document.getElementById("result-count");
+      const clearFilters = document.getElementById("clear-filters");
+      const facetControls = document.getElementById("facet-controls");
+      const coverageControls = document.getElementById("coverage-controls");
+      const typeControls = document.getElementById("type-controls");
+      const cardGrid = document.getElementById("card-grid");
+      const emptyState = document.getElementById("empty-state");
+      const emptyClear = document.getElementById("empty-clear");
+      const compareTray = document.getElementById("compare-tray");
+      let cards = [];
+
+      const create = (tag, text, className) => {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text !== undefined && text !== null) element.textContent = text;
+        return element;
+      };
+
+      const clearChildren = element => element.replaceChildren();
+      const labelFor = (labels, value) => labels[value] || value;
+
+      function clearDiscovery() {
+        state.query = "";
+        state.facets.clear();
+        state.coverage.clear();
+        state.productTypes.clear();
+        state.detailId = null;
+        render();
+        search.focus();
+      }
+
+      function createFilterButtons(container, values, selected, labels, onChange) {
+        clearChildren(container);
+        values.forEach(value => {
+          const button = create("button", labelFor(labels, value), "facet-button");
+          button.type = "button";
+          button.setAttribute("aria-pressed", String(selected.has(value)));
+          button.addEventListener("click", () => {
+            if (selected.has(value)) selected.delete(value);
+            else selected.add(value);
+            onChange();
+          });
+          container.append(button);
+        });
+      }
+
+      function renderFilters() {
+        const unique = key => [...new Set(cards.flatMap(card => Array.isArray(card[key]) ? card[key] : [card[key]]))].filter(Boolean);
+        createFilterButtons(facetControls, unique("facetIds"), state.facets, facetLabels, render);
+        createFilterButtons(coverageControls, unique("coverageStatus"), state.coverage, coverageLabels, render);
+        createFilterButtons(typeControls, unique("productType"), state.productTypes, typeLabels, render);
+      }
+
+      function appendReward(list, label, value) {
+        const item = create("div");
+        item.append(create("dt", label));
+        item.append(create("dd", value || "未提供"));
+        list.append(item);
+      }
+
+      function renderCard(card) {
+        const article = create("article", undefined, "card");
+        article.append(create("p", card.issuer, "issuer"));
+        article.append(create("h2", card.product));
+        article.append(create("p", labelFor(typeLabels, card.productType), "card-type"));
+        const rewards = create("dl", undefined, "reward-list");
+        appendReward(rewards, "國內一般消費", card.comparison?.domestic);
+        appendReward(rewards, "海外消費", card.comparison?.overseas);
+        appendReward(rewards, "最佳特殊回饋", card.comparison?.bestSpecial);
+        appendReward(rewards, "上限／條件", [card.comparison?.capAndDerivedSpend, card.comparison?.conditions].filter(Boolean).join("；"));
+        article.append(rewards);
+        const badges = create("div", undefined, "badges");
+        badges.append(create("span", labelFor(coverageLabels, card.coverageStatus), `badge badge--${card.coverageStatus}`));
+        (card.badges || []).forEach(badge => badges.append(create("span", badge, "badge")));
+        article.append(badges);
+        const actions = create("div", undefined, "card-actions");
+        const detailButton = create("button", state.detailId === card.id ? "收合詳情" : "查看詳情", "secondary-button");
+        detailButton.type = "button";
+        detailButton.setAttribute("aria-expanded", String(state.detailId === card.id));
+        detailButton.addEventListener("click", () => { state.detailId = state.detailId === card.id ? null : card.id; render(); });
+        const compareButton = create("button", state.selectedIds.includes(card.id) ? "移出比較" : "加入比較", "secondary-button");
+        compareButton.type = "button";
+        compareButton.setAttribute("aria-pressed", String(state.selectedIds.includes(card.id)));
+        compareButton.addEventListener("click", () => {
+          state.selectedIds = state.selectedIds.includes(card.id)
+            ? state.selectedIds.filter(id => id !== card.id)
+            : [...state.selectedIds, card.id];
+          render();
+        });
+        actions.append(detailButton, compareButton);
+        article.append(actions);
+        const detail = create("section", undefined, "detail");
+        detail.hidden = state.detailId !== card.id;
+        detail.append(create("h3", "條件與說明"));
+        detail.append(create("p", card.comparison?.conditions || "未提供"));
+        article.append(detail);
+        return article;
+      }
+
+      function renderCompareTray() {
+        clearChildren(compareTray);
+        const selected = state.selectedIds.map(id => cards.find(card => card.id === id)).filter(Boolean);
+        compareTray.hidden = selected.length === 0;
+        if (!selected.length) return;
+        compareTray.append(create("h2", `比較清單（${selected.length}）`));
+        const list = create("ul", undefined, "compare-list");
+        selected.forEach(card => list.append(create("li", `${card.issuer} ${card.product}`)));
+        compareTray.append(list);
+      }
+
+      function render() {
+        search.value = state.query;
+        renderFilters();
+        const filtered = CardRewardsCore.filterCards(cards, state);
+        resultCount.textContent = `找到 ${filtered.length} 項產品（共 ${cards.length} 項）`;
+        clearChildren(cardGrid);
+        filtered.forEach(card => cardGrid.append(renderCard(card)));
+        emptyState.hidden = filtered.length !== 0;
+        const hasFilters = Boolean(state.query || state.facets.size || state.coverage.size || state.productTypes.size);
+        clearFilters.disabled = !hasFilters;
+        renderCompareTray();
+      }
+
+      function showFatal(error) {
+        app.classList.add("is-fatal");
+        fatalError.hidden = false;
+        clearChildren(fatalError);
+        fatalError.append(create("p", "資料無法載入；請重新產生 card-rewards.html。"));
+        fatalError.append(create("p", error instanceof Error ? error.message : String(error)));
+      }
+
+      function bootstrap() {
+        try {
+          const dataElement = document.getElementById("card-rewards-data");
+          if (!dataElement) throw new Error("找不到內嵌資料。");
+          const dataset = JSON.parse(dataElement.textContent);
+          if (dataset.schemaVersion !== "1") throw new Error("資料版本不支援。");
+          if (!Array.isArray(dataset.cards) || dataset.cards.length !== 15) throw new Error("信用卡資料筆數不正確。");
+          if (!Array.isArray(dataset.payments) || dataset.payments.length !== 3) throw new Error("行動支付資料筆數不正確。");
+          cards = dataset.cards;
+          search.addEventListener("input", () => { state.query = search.value; render(); });
+          clearFilters.addEventListener("click", clearDiscovery);
+          emptyClear.addEventListener("click", clearDiscovery);
+          render();
+        } catch (error) {
+          showFatal(error);
+        }
+      }
+
+      bootstrap();
+    })();
+  </script>
 </body>
 </html>

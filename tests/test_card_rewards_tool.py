@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from html.parser import HTMLParser
 from pathlib import Path
 from contextlib import redirect_stderr
 from unittest import mock
@@ -27,6 +28,127 @@ from scripts.build_card_rewards_tool import (
 
 ROOT = Path(__file__).parents[1]
 UTF8_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+
+
+class ToolPageParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.elements: dict[str, dict[str, str]] = {}
+        self.external_assets: list[str] = []
+        self.core_source = ""
+        self._script_id: str | None = None
+        self._script_parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = {name: value or "" for name, value in attrs}
+        if element_id := attributes.get("id"):
+            self.elements[element_id] = attributes
+        for name in ("src", "href"):
+            value = attributes.get(name, "")
+            if value and (value.startswith(("http://", "https://", "//")) or tag == "script" and name == "src"):
+                self.external_assets.append(value)
+        if tag == "script":
+            self._script_id = attributes.get("id")
+            self._script_parts = []
+
+    def handle_data(self, data: str) -> None:
+        if self._script_id == "card-rewards-core":
+            self._script_parts.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "script" and self._script_id == "card-rewards-core":
+            self.core_source = "".join(self._script_parts)
+        if tag == "script":
+            self._script_id = None
+            self._script_parts = []
+
+
+def parse_tool_page() -> ToolPageParser:
+    parser = ToolPageParser()
+    parser.feed((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"))
+    return parser
+
+
+def run_core(expression: str, filter_fixtures: dict[str, dict[str, object]] | None = None) -> object:
+    parser = parse_tool_page()
+    dataset = json.loads(read_embedded_dataset((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")))
+    payload = json.dumps(
+        {
+            "core": parser.core_source,
+            "cards": dataset["cards"],
+            "expression": expression,
+            "filterFixtures": filter_fixtures or {},
+        },
+        ensure_ascii=False,
+    )
+    runner = r'''
+const fs = require("fs");
+const vm = require("vm");
+const payload = JSON.parse(fs.readFileSync(0, "utf8"));
+if (!payload.core) throw new Error("missing card-rewards-core script");
+const asFilterState = (filters) => ({
+  ...filters,
+  facets: new Set(filters.facets || []),
+  coverage: new Set(filters.coverage || []),
+  productTypes: new Set(filters.productTypes || [])
+});
+const filterFixtures = Object.fromEntries(
+  Object.entries(payload.filterFixtures).map(([name, filters]) => [name, asFilterState(filters)])
+);
+const context = vm.createContext({ CARDS: payload.cards, FILTER_FIXTURES: filterFixtures, Set, String, Object, Array, JSON });
+vm.runInContext(payload.core, context, { filename: "card-rewards-core.js" });
+process.stdout.write(JSON.stringify(vm.runInContext(payload.expression, context, { filename: "card-rewards-expression.js" })));
+'''
+    result = subprocess.run(
+        ["node", "-e", runner],
+        input=payload,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=UTF8_ENV,
+        check=False,
+    )
+    if result.returncode:
+        raise AssertionError(result.stderr.strip())
+    return json.loads(result.stdout)
+
+
+class CardRewardsInterfaceTests(unittest.TestCase):
+    def test_page_has_required_discovery_controls(self) -> None:
+        parser = parse_tool_page()
+        for element_id in (
+            "app", "fatal-error", "search", "result-count", "clear-filters", "facet-controls",
+            "coverage-controls", "type-controls", "card-grid", "empty-state", "compare-tray",
+        ):
+            self.assertIn(element_id, parser.elements)
+        self.assertEqual("search", parser.elements["search"]["type"])
+
+    def test_page_has_no_runtime_asset_or_network_dependency(self) -> None:
+        parser = parse_tool_page()
+        self.assertEqual([], parser.external_assets)
+        source = (ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")
+        self.assertNotRegex(source, r"\bfetch\s*\(")
+        self.assertNotIn("XMLHttpRequest", source)
+
+    def test_core_search_matches_bank_alias_merchant_and_payment(self) -> None:
+        self.assertTrue(run_core("cardMatchesQuery(CARDS.find(c => c.id === 'taishin-richart-gogo'), '@gogo')"))
+        self.assertTrue(run_core("cardMatchesQuery(CARDS.find(c => c.id === 'sinopac-daway'), '路易莎')"))
+        self.assertTrue(run_core("cardMatchesQuery(CARDS.find(c => c.id === 'esun-unicard'), '全支付')"))
+        self.assertFalse(run_core("cardMatchesQuery(CARDS.find(c => c.id === 'esun-pi'), 'Costco')"))
+
+    def test_filter_groups_are_or_within_group_and_and_across_groups(self) -> None:
+        expression = """
+        filterCards(CARDS, {
+          query: '',
+          facets: new Set(['line-pay', 'ipass-money']),
+          coverage: new Set(['complete']),
+          productTypes: new Set()
+        }).map(card => card.id)
+        """
+        result = run_core(expression)
+        self.assertIn("esun-unicard", result)
+        self.assertNotIn("esun-pi", result)
 
 
 class CardRewardsDatasetTests(unittest.TestCase):
