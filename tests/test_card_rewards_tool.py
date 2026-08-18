@@ -36,8 +36,10 @@ class ToolPageParser(HTMLParser):
         self.elements: dict[str, dict[str, str]] = {}
         self.external_assets: list[str] = []
         self.core_source = ""
+        self.runtime_source = ""
         self._script_id: str | None = None
         self._script_parts: list[str] = []
+        self._is_runtime_script = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = {name: value or "" for name, value in attrs}
@@ -50,17 +52,24 @@ class ToolPageParser(HTMLParser):
         if tag == "script":
             self._script_id = attributes.get("id")
             self._script_parts = []
+            self._is_runtime_script = (
+                self._script_id != "card-rewards-core"
+                and attributes.get("type") != "application/json"
+            )
 
     def handle_data(self, data: str) -> None:
-        if self._script_id == "card-rewards-core":
+        if self._script_id == "card-rewards-core" or self._is_runtime_script:
             self._script_parts.append(data)
 
     def handle_endtag(self, tag: str) -> None:
         if tag == "script" and self._script_id == "card-rewards-core":
             self.core_source = "".join(self._script_parts)
+        if tag == "script" and self._is_runtime_script:
+            self.runtime_source = "".join(self._script_parts)
         if tag == "script":
             self._script_id = None
             self._script_parts = []
+            self._is_runtime_script = False
 
 
 def parse_tool_page() -> ToolPageParser:
@@ -114,6 +123,67 @@ process.stdout.write(JSON.stringify(vm.runInContext(payload.expression, context,
     return json.loads(result.stdout)
 
 
+def run_runtime(dataset: dict[str, object]) -> dict[str, object]:
+    parser = parse_tool_page()
+    payload = json.dumps(
+        {"core": parser.core_source, "runtime": parser.runtime_source, "dataset": dataset},
+        ensure_ascii=False,
+    )
+    runner = r'''
+const fs = require("fs");
+const vm = require("vm");
+const payload = JSON.parse(fs.readFileSync(0, "utf8"));
+class FakeElement {
+  constructor(id) {
+    this.id = id;
+    this.children = [];
+    this.textContent = "";
+    this.hidden = false;
+    this.value = "";
+    this.disabled = false;
+    this.mutations = 0;
+    this.classList = { values: new Set(), add: value => this.classList.values.add(value), contains: value => this.classList.values.has(value) };
+  }
+  append(...children) { this.children.push(...children); this.mutations += 1; }
+  replaceChildren(...children) { this.children = children; this.mutations += 1; }
+  setAttribute() {}
+  addEventListener() {}
+  focus() {}
+}
+const ids = ["app", "fatal-error", "search", "result-count", "clear-filters", "facet-controls", "coverage-controls", "type-controls", "card-grid", "empty-state", "empty-clear", "compare-tray", "card-rewards-data"];
+const elements = Object.fromEntries(ids.map(id => [id, new FakeElement(id)]));
+elements["fatal-error"].hidden = true;
+elements["card-rewards-data"].textContent = JSON.stringify(payload.dataset);
+const document = {
+  getElementById: id => elements[id] || null,
+  createElement: tag => new FakeElement(tag)
+};
+const context = vm.createContext({ document, Set, String, Object, Array, JSON });
+vm.runInContext(payload.core, context, { filename: "card-rewards-core.js" });
+vm.runInContext(payload.runtime, context, { filename: "card-rewards-runtime.js" });
+const fatalText = elements["fatal-error"].children.map(child => child.textContent).join(" ");
+process.stdout.write(JSON.stringify({
+  fatalText,
+  fatalHidden: elements["fatal-error"].hidden,
+  controlsHidden: elements.app.classList.contains("is-fatal"),
+  facetControlMutations: elements["facet-controls"].mutations
+}));
+'''
+    result = subprocess.run(
+        ["node", "-e", runner],
+        input=payload,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=UTF8_ENV,
+        check=False,
+    )
+    if result.returncode:
+        raise AssertionError(result.stderr.strip())
+    return json.loads(result.stdout)
+
+
 class CardRewardsInterfaceTests(unittest.TestCase):
     def test_page_has_required_discovery_controls(self) -> None:
         parser = parse_tool_page()
@@ -149,6 +219,17 @@ class CardRewardsInterfaceTests(unittest.TestCase):
         result = run_core(expression)
         self.assertIn("esun-unicard", result)
         self.assertNotIn("esun-pi", result)
+
+    def test_malformed_card_shape_shows_fatal_before_filter_controls_render(self) -> None:
+        dataset = json.loads(read_embedded_dataset((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")))
+        dataset["cards"][0].pop("facetIds")
+
+        result = run_runtime(dataset)
+
+        self.assertFalse(result["fatalHidden"])
+        self.assertTrue(result["controlsHidden"])
+        self.assertIn("資料無法載入", result["fatalText"])
+        self.assertEqual(0, result["facetControlMutations"])
 
 
 class CardRewardsDatasetTests(unittest.TestCase):

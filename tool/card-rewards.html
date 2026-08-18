@@ -5185,6 +5185,18 @@
         fatalError.append(create("p", error instanceof Error ? error.message : String(error)));
       }
 
+      function validateCard(card, index) {
+        if (!card || typeof card !== "object" || Array.isArray(card)) throw new Error(`第 ${index + 1} 張卡片資料格式不正確。`);
+        for (const field of ["id", "issuer", "product", "coverageStatus", "productType"]) {
+          if (typeof card[field] !== "string") throw new Error(`第 ${index + 1} 張卡片缺少 ${field}。`);
+        }
+        if (!Array.isArray(card.facetIds)) throw new Error(`第 ${index + 1} 張卡片的 facetIds 格式不正確。`);
+        if (!Array.isArray(card.badges)) throw new Error(`第 ${index + 1} 張卡片的 badges 格式不正確。`);
+        if (!card.comparison || typeof card.comparison !== "object" || Array.isArray(card.comparison)) {
+          throw new Error(`第 ${index + 1} 張卡片的 comparison 格式不正確。`);
+        }
+      }
+
       function bootstrap() {
         try {
           const dataElement = document.getElementById("card-rewards-data");
@@ -5193,6 +5205,7 @@
           if (dataset.schemaVersion !== "1") throw new Error("資料版本不支援。");
           if (!Array.isArray(dataset.cards) || dataset.cards.length !== 15) throw new Error("信用卡資料筆數不正確。");
           if (!Array.isArray(dataset.payments) || dataset.payments.length !== 3) throw new Error("行動支付資料筆數不正確。");
+          dataset.cards.forEach(validateCard);
           cards = dataset.cards;
           search.addEventListener("input", () => { state.query = search.value; render(); });
           clearFilters.addEventListener("click", clearDiscovery);
