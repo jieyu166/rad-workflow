@@ -12,6 +12,7 @@ import sys
 import tempfile
 import time
 import unittest
+from collections.abc import Callable
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 from html.parser import HTMLParser
@@ -42,6 +43,7 @@ class ToolPageParser(HTMLParser):
         super().__init__()
         self.elements: dict[str, dict[str, str]] = {}
         self.external_assets: list[str] = []
+        self.iframes: list[str] = []
         self.core_source = ""
         self.runtime_source = ""
         self._script_id: str | None = None
@@ -52,9 +54,12 @@ class ToolPageParser(HTMLParser):
         attributes = {"tag": tag, **{name: value or "" for name, value in attrs}}
         if element_id := attributes.get("id"):
             self.elements[element_id] = attributes
+        if tag == "iframe":
+            self.iframes.append(attributes.get("src", ""))
         for name in ("src", "href"):
             value = attributes.get(name, "")
-            if value and (value.startswith(("http://", "https://", "//")) or tag == "script" and name == "src"):
+            is_external = value.startswith(("http://", "https://", "//"))
+            if value and is_external and (name == "src" or tag == "link"):
                 self.external_assets.append(value)
         if tag == "script":
             self._script_id = attributes.get("id")
@@ -425,6 +430,153 @@ def run_headless_interaction_probe() -> dict[str, object]:
     if not isinstance(result, dict):
         raise AssertionError("headless probe did not return an object")
     return result
+
+
+def run_browser_probe(
+    probe: str,
+    *,
+    width: int,
+    height: int,
+    source_transform: Callable[[str], str] | None = None,
+) -> dict[str, object]:
+    expressions = {
+        "source-links": r'''
+(() => {
+  const detailButton = document.querySelector("[data-action='detail']");
+  if (!detailButton) throw new Error("detail button missing");
+  detailButton.click();
+  const links = [...document.querySelectorAll(".evidence-sources a[href]")];
+  return {
+    sourceCount: links.length,
+    allHttps: links.every(link => link.href.startsWith("https://")),
+    allNoopenerNoreferrer: links.every(link => {
+      const tokens = new Set(link.rel.split(/\s+/).filter(Boolean));
+      return tokens.has("noopener") && tokens.has("noreferrer");
+    })
+  };
+})()
+''',
+        "invalid-schema": r'''
+(() => {
+  const fatal = document.getElementById("fatal-error");
+  return {
+    fatalVisible: !fatal.hidden && getComputedStyle(fatal).display !== "none",
+    fatalText: fatal.textContent,
+    controlsHidden: document.getElementById("app").classList.contains("is-fatal")
+  };
+})()
+''',
+        "mobile": r'''
+(() => {
+  const detailButton = document.querySelector("[data-action='detail']");
+  if (!detailButton) throw new Error("detail button missing");
+  detailButton.click();
+  const dialog = document.getElementById("detail-dialog");
+  const close = document.getElementById("detail-close").getBoundingClientRect();
+  return {
+    viewportWidth: document.documentElement.clientWidth,
+    cardColumns: getComputedStyle(document.getElementById("card-grid")).gridTemplateColumns,
+    bodyOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    touchTargetHeight: detailButton.getBoundingClientRect().height,
+    detailOpen: dialog.open,
+    detailMode: getComputedStyle(dialog).getPropertyValue("--detail-mode").trim(),
+    closeVisible: close.top >= 0 && close.bottom <= window.innerHeight
+  };
+})()
+''',
+    }
+    if probe not in expressions:
+        raise ValueError(f"unknown browser probe: {probe}")
+    source = (ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")
+    if source_transform is not None:
+        source = source_transform(source)
+    with tempfile.TemporaryDirectory() as temp:
+        temporary_root = Path(temp)
+        page = temporary_root / "card-rewards.html"
+        page.write_text(source, encoding="utf-8")
+        profile = temporary_root / "browser-profile"
+        browser = subprocess.Popen(
+            [
+                find_headless_browser(), "--headless=new", "--disable-gpu", "--disable-extensions", "--no-first-run",
+                "--remote-debugging-port=0", "--remote-allow-origins=*", f"--window-size={width},{height}", f"--user-data-dir={profile}", "about:blank",
+            ],
+            cwd=ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=UTF8_ENV,
+        )
+        connection: DevToolsWebSocket | None = None
+        try:
+            port = wait_for_devtools_port(profile, browser)
+            targets = devtools_json(f"http://127.0.0.1:{port}/json/list")
+            target = next((item for item in targets if item.get("type") == "page"), None)
+            if target is None:
+                raise AssertionError("Chrome did not expose a page target for the browser probe")
+            connection = DevToolsWebSocket(str(target["webSocketDebuggerUrl"]))
+            connection.command("Page.enable")
+            connection.command(
+                "Emulation.setDeviceMetricsOverride",
+                {"width": width, "height": height, "deviceScaleFactor": 1, "mobile": width <= 720},
+            )
+            connection.command("Page.navigate", {"url": page.as_uri()})
+            connection.wait_for_event("Page.loadEventFired")
+            result = evaluate(connection, expressions[probe])
+        finally:
+            if connection is not None:
+                connection.close()
+            browser.terminate()
+            browser.wait(timeout=10)
+    if not isinstance(result, dict):
+        raise AssertionError("browser probe did not return an object")
+    return result
+
+
+class CardRewardsAcceptanceTests(unittest.TestCase):
+    def test_offline_page_has_no_automatic_network_surface(self) -> None:
+        parser = parse_tool_page()
+
+        self.assertEqual([], parser.external_assets)
+        self.assertEqual([], parser.iframes)
+        source = (ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")
+        for forbidden in ("fetch(", "XMLHttpRequest", "sendBeacon", "WebSocket", "localStorage"):
+            self.assertNotIn(forbidden, source)
+
+    def test_all_generated_official_links_are_https_and_safe(self) -> None:
+        result = run_browser_probe("source-links", width=1200, height=900)
+
+        self.assertGreater(result["sourceCount"], 0)
+        self.assertTrue(result["allHttps"])
+        self.assertTrue(result["allNoopenerNoreferrer"])
+
+    def test_corpus_text_is_not_executed_as_html(self) -> None:
+        source = (ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")
+
+        self.assertNotRegex(source, r"\.innerHTML\s*=.*(?:card|section|source|dataset)")
+
+    def test_invalid_schema_shows_visible_failure_without_network_fallback(self) -> None:
+        result = run_browser_probe(
+            "invalid-schema",
+            width=1200,
+            height=900,
+            source_transform=lambda source: source.replace(
+                '"schemaVersion": "1"', '"schemaVersion": "unsupported"', 1
+            ),
+        )
+
+        self.assertTrue(result["fatalVisible"])
+        self.assertIn("資料無法載入", result["fatalText"])
+        self.assertTrue(result["controlsHidden"])
+
+    def test_mobile_layout_uses_a_bottom_sheet_with_accessible_controls(self) -> None:
+        result = run_browser_probe("mobile", width=390, height=844)
+
+        self.assertEqual(390, result["viewportWidth"])
+        self.assertEqual(1, len(result["cardColumns"].split()))
+        self.assertTrue(result["bodyOverflow"])
+        self.assertGreaterEqual(result["touchTargetHeight"], 44)
+        self.assertTrue(result["detailOpen"])
+        self.assertEqual("bottom-sheet", result["detailMode"])
+        self.assertTrue(result["closeVisible"])
 
 
 class CardRewardsInterfaceTests(unittest.TestCase):
