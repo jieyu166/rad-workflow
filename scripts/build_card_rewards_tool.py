@@ -52,6 +52,17 @@ FOOTNOTE_DEFINITION_RE = re.compile(
     r"(?m)^\[\^([^\]]+)\]:\s*\[[^\]]+\]\((cards/([a-z0-9-]+)\.md)\)\s*$"
 )
 SOURCE_RE = re.compile(r"(?m)^(\d+)\.\s+(.+?)\s+(https://\S+)\s*$")
+CTBC_SPECIAL_HEADERS = (
+    "有效期間", "場景／通路", "總回饋", "組成", "舊戶條件", "回饋上限／推導可刷額", "登錄／名額",
+)
+CTBC_SPECIAL_SHORT_ROW = (
+    "2026-01-01 至 2026-12-31",
+    "Hotels.com 臺灣網站指定「LINE Pay卡」網頁，代碼 `CTBCLP16`",
+    "16% LINE POINTS",
+    "已含一般 1%；不與 Hotels.com Rewards™ 併用 [來源 6]",
+    "線上以 LINE Pay 卡付款、新臺幣，1-28 晚；2026 年預訂、2027-06-30 前完成入住，僅線上付款飯店，Pay at hotel 不適用；每筆 1,800 點 [來源 6]",
+    "詳細頁稱每月首 450 次預訂；但官方總表稱每月 400 組，兩頁衝突，不選一方為完整名額 [來源 3][來源 6]",
+)
 
 
 class BuildError(ValueError):
@@ -116,24 +127,11 @@ def _clean_text(text: str) -> str:
     return re.sub(r"[ \t]+", " ", text).strip()
 
 
-def _table_blocks(text: str, *, context: str) -> list[dict[str, object]]:
-    lines = text.splitlines()
-    blocks: list[dict[str, object]] = []
-    index = 0
-    while index < len(lines):
-        if _split_row(lines[index]) is None:
-            index += 1
-            continue
-        end = index
-        while end < len(lines) and _split_row(lines[end]) is not None:
-            end += 1
-        blocks.append(_safe_table_block(lines[index:end], context=context))
-        index = end
-    return blocks
-
-
-def _safe_table_block(lines: list[str], *, context: str) -> dict[str, object]:
-    """Use a marked safe fallback only for a source table with short rows."""
+def _safe_table_block(
+    lines: list[str], *, relative: str, section: str
+) -> dict[str, object]:
+    """Use a marked fallback only for the ruled CTBC source table and row."""
+    context = f"{relative}: {section}"
     try:
         headers, rows = parse_markdown_table("\n".join(lines), context=context)
     except BuildError:
@@ -147,7 +145,12 @@ def _safe_table_block(lines: list[str], *, context: str) -> dict[str, object]:
             or not _is_separator(separator)
             or not source_rows
             or any(row is None for row in source_rows)
-            or not any(len(row) != len(header) for row in source_rows if row is not None)
+            or relative != "cards/ctbc-line-pay.md"
+            or section != "特殊回饋"
+            or tuple(header) != CTBC_SPECIAL_HEADERS
+            or len([row for row in source_rows if row is not None and len(row) != len(header)]) != 1
+            or tuple(next(row for row in source_rows if row is not None and len(row) != len(header)))
+            != CTBC_SPECIAL_SHORT_ROW
         ):
             raise
         return {
@@ -167,7 +170,7 @@ def _safe_table_block(lines: list[str], *, context: str) -> dict[str, object]:
     }
 
 
-def _blocks(text: str, *, context: str) -> list[dict[str, object]]:
+def _blocks(text: str, *, relative: str, section: str) -> list[dict[str, object]]:
     """Represent Markdown using only safe paragraph, list, and table records."""
     lines = text.splitlines()
     blocks: list[dict[str, object]] = []
@@ -180,7 +183,7 @@ def _blocks(text: str, *, context: str) -> list[dict[str, object]]:
             end = index
             while end < len(lines) and _split_row(lines[end]) is not None:
                 end += 1
-            blocks.append(_safe_table_block(lines[index:end], context=context))
+            blocks.append(_safe_table_block(lines[index:end], relative=relative, section=section))
             index = end
             continue
         if re.match(r"^\s*(?:[-*+]\s+|\d+\.\s+)", lines[index]):
@@ -223,7 +226,7 @@ def parse_document(path: Path, *, corpus_root: Path) -> dict[str, object]:
     sections: dict[str, dict[str, object]] = {}
     for title, key in SECTION_KEYS.items():
         content = _section(body, title, relative=relative)
-        sections[key] = {"blocks": _blocks(content, context=f"{relative}: {title}")}
+        sections[key] = {"blocks": _blocks(content, relative=relative, section=title)}
     return {
         "metadata": metadata,
         "body": body,
@@ -372,7 +375,7 @@ def _scenarios(
         end = headings[index].start() if index < len(headings) else len(section)
         content = section[start:end].strip()
         entries: list[dict[str, object]] = []
-        for block in _blocks(content, context=f"comparison.md: scenario {match.group(1)}"):
+        for block in _blocks(content, relative="comparison.md", section=f"scenario {match.group(1)}"):
             if block["type"] == "list":
                 for item in block["items"]:
                     product_ids = [footnotes[footnote] for footnote in FOOTNOTE_USE_RE.findall(str(item)) if footnote in footnotes]

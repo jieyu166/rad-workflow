@@ -72,6 +72,18 @@ class CardRewardsDatasetTests(unittest.TestCase):
         self.assertTrue(fallback["sourceRowWidthMismatch"])
         self.assertEqual(
             [
+                "有效期間",
+                "場景／通路",
+                "總回饋",
+                "組成",
+                "舊戶條件",
+                "回饋上限／推導可刷額",
+                "登錄／名額",
+            ],
+            fallback["headers"],
+        )
+        self.assertEqual(
+            [
                 "2026-01-01 至 2026-12-31",
                 "Hotels.com 臺灣網站指定「LINE Pay卡」網頁，代碼 `CTBCLP16`",
                 "16% LINE POINTS",
@@ -81,6 +93,30 @@ class CardRewardsDatasetTests(unittest.TestCase):
             ],
             short_row["cells"],
         )
+
+    def test_non_ctbc_section_row_width_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "repo"
+            shutil.copytree(ROOT / "docs", fixture / "docs")
+            card = fixture / "docs/card-rewards/2026-h2/cards/first-ileo.md"
+            lines = card.read_text(encoding="utf-8").splitlines()
+            start = lines.index("## 特殊回饋")
+            end = lines.index("## 行動支付相容性")
+            data_rows_started = False
+            for index in range(start + 1, end):
+                cells = lines[index].strip()[1:-1].split("|") if lines[index].strip().startswith("|") else []
+                if cells and all(cell.strip(" -:") == "" for cell in cells):
+                    data_rows_started = True
+                    continue
+                if data_rows_started and len(cells) == 8:
+                    lines[index] = "|" + "|".join(cells[:-1]) + "|"
+                    break
+            else:
+                self.fail("fixture did not contain a special-reward data row")
+            card.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(BuildError, "cards/first-ileo.md: .*fixed row width"):
+                build_dataset(fixture)
 
     def test_unknown_payment_product_name_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
