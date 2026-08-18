@@ -366,7 +366,10 @@ def run_headless_interaction_probe() -> dict[str, object]:
     document.getElementById("detail-close").click();
     check(document.activeElement === detailButton, "詳情明確關閉後未回到原始開啟按鈕");
     if (detailButton) { detailButton.focus(); detailButton.click(); }
-    window.__cardRewardsEscapeProbe = { result, detailButton, detailDialog: document.getElementById("detail-dialog") };
+    const detailDialog = document.getElementById("detail-dialog");
+    result.escapeDialogWasOpen = Boolean(detailDialog.open && detailDialog.matches(":modal"));
+    check(result.escapeDialogWasOpen, "DevTools Escape 前詳情 dialog 未以原生 modal 開啟");
+    window.__cardRewardsEscapeProbe = { result, detailButton, detailDialog };
   } catch (error) {
     result.errors.push(String(error));
   }
@@ -469,6 +472,7 @@ class CardRewardsInterfaceTests(unittest.TestCase):
     def test_headless_interaction_probe(self) -> None:
         result = run_headless_interaction_probe()
         self.assertTrue(result["ok"], result["errors"])
+        self.assertTrue(result.get("escapeDialogWasOpen"), "probe did not prove the detail dialog was open before Escape")
         self.assertTrue(result.get("nativeEscape"), "probe did not prove native Escape dialog closure")
 
     def test_core_search_matches_bank_alias_merchant_and_payment(self) -> None:
