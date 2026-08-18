@@ -4,6 +4,7 @@ import io
 import base64
 import json
 import os
+import re
 import shutil
 import socket
 import struct
@@ -49,6 +50,22 @@ class ToolPageParser(HTMLParser):
         self._script_id: str | None = None
         self._script_parts: list[str] = []
         self._is_runtime_script = False
+        self._style_parts: list[str] = []
+        self._in_style = False
+
+    @staticmethod
+    def _is_external_url(value: str) -> bool:
+        return value.startswith(("http://", "https://", "//"))
+
+    def _record_external_asset(self, value: str) -> None:
+        if self._is_external_url(value):
+            self.external_assets.append(value)
+
+    def _record_css_assets(self, css: str) -> None:
+        for match in re.finditer(r"url\(\s*['\"]?((?:https?:)?//[^'\"\s)]+)", css, flags=re.IGNORECASE):
+            self._record_external_asset(match.group(1))
+        for match in re.finditer(r"@import\s+['\"]((?:https?:)?//[^'\"\s;]+)", css, flags=re.IGNORECASE):
+            self._record_external_asset(match.group(1))
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = {"tag": tag, **{name: value or "" for name, value in attrs}}
@@ -56,11 +73,21 @@ class ToolPageParser(HTMLParser):
             self.elements[element_id] = attributes
         if tag == "iframe":
             self.iframes.append(attributes.get("src", ""))
-        for name in ("src", "href"):
-            value = attributes.get(name, "")
-            is_external = value.startswith(("http://", "https://", "//"))
-            if value and is_external and (name == "src" or tag == "link"):
-                self.external_assets.append(value)
+        if tag == "style":
+            self._style_parts = []
+            self._in_style = True
+        self._record_css_assets(attributes.get("style", ""))
+        for name in ("src", "data", "poster"):
+            self._record_external_asset(attributes.get(name, ""))
+        if tag == "link":
+            self._record_external_asset(attributes.get("href", ""))
+        if tag in {"image", "use", "feimage", "animate", "set"}:
+            self._record_external_asset(attributes.get("href", ""))
+            self._record_external_asset(attributes.get("xlink:href", ""))
+        if tag == "meta" and attributes.get("http-equiv", "").lower() == "refresh":
+            refresh_url = re.search(r"(?:^|;)\s*url\s*=\s*['\"]?([^'\";\s]+)", attributes.get("content", ""), re.IGNORECASE)
+            if refresh_url:
+                self._record_external_asset(refresh_url.group(1))
         if tag == "script":
             self._script_id = attributes.get("id")
             self._script_parts = []
@@ -70,10 +97,16 @@ class ToolPageParser(HTMLParser):
             )
 
     def handle_data(self, data: str) -> None:
+        if self._in_style:
+            self._style_parts.append(data)
         if self._script_id == "card-rewards-core" or self._is_runtime_script:
             self._script_parts.append(data)
 
     def handle_endtag(self, tag: str) -> None:
+        if tag == "style":
+            self._record_css_assets("".join(self._style_parts))
+            self._style_parts = []
+            self._in_style = False
         if tag == "script" and self._script_id == "card-rewards-core":
             self.core_source = "".join(self._script_parts)
         if tag == "script" and self._is_runtime_script:
@@ -88,6 +121,60 @@ def parse_tool_page() -> ToolPageParser:
     parser = ToolPageParser()
     parser.feed((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"))
     return parser
+
+
+PERSISTENCE_API_PATTERNS = {
+    "localStorage": re.compile(r"\b(?:(?:window|globalThis)\s*\.\s*)?localStorage\b"),
+    "sessionStorage": re.compile(r"\b(?:(?:window|globalThis)\s*\.\s*)?sessionStorage\b"),
+    "indexedDB": re.compile(r"\b(?:(?:window|globalThis)\s*\.\s*)?indexedDB\b"),
+    "Cache API": re.compile(r"\b(?:(?:window|globalThis)\s*\.\s*)?caches\b|\bnew\s+Cache\s*\("),
+    "serviceWorker": re.compile(r"\bnavigator\s*\.\s*serviceWorker\b"),
+}
+
+
+def executable_javascript(source: str) -> str:
+    output: list[str] = []
+    index = 0
+    while index < len(source):
+        character = source[index]
+        next_character = source[index + 1] if index + 1 < len(source) else ""
+        if character == "/" and next_character == "/":
+            newline = source.find("\n", index)
+            if newline == -1:
+                break
+            output.append("\n")
+            index = newline + 1
+            continue
+        if character == "/" and next_character == "*":
+            closing = source.find("*/", index + 2)
+            comment = source[index:] if closing == -1 else source[index:closing + 2]
+            output.extend("\n" if value == "\n" else " " for value in comment)
+            index = len(source) if closing == -1 else closing + 2
+            continue
+        if character in {"'", '"', "`"}:
+            quote = character
+            output.append(" ")
+            index += 1
+            while index < len(source):
+                value = source[index]
+                output.append("\n" if value == "\n" else " ")
+                if value == "\\":
+                    index += 1
+                    if index < len(source):
+                        output.append("\n" if source[index] == "\n" else " ")
+                elif value == quote:
+                    index += 1
+                    break
+                index += 1
+            continue
+        output.append(character)
+        index += 1
+    return "".join(output)
+
+
+def runtime_persistence_uses(source: str) -> list[str]:
+    executable_source = executable_javascript(source)
+    return [name for name, pattern in PERSISTENCE_API_PATTERNS.items() if pattern.search(executable_source)]
 
 
 def run_core(expression: str, filter_fixtures: dict[str, dict[str, object]] | None = None) -> object:
@@ -303,13 +390,19 @@ class DevToolsWebSocket:
 def wait_for_devtools_port(profile: Path, browser: subprocess.Popen[str]) -> int:
     port_file = profile / "DevToolsActivePort"
     deadline = time.monotonic() + 10
-    while not port_file.is_file():
+    while True:
         if browser.poll() is not None:
             raise AssertionError("Chrome exited before publishing the DevTools port")
+        if port_file.is_file():
+            try:
+                port_lines = port_file.read_text(encoding="utf-8").splitlines()
+                if port_lines:
+                    return int(port_lines[0])
+            except (OSError, ValueError):
+                pass
         if time.monotonic() >= deadline:
             raise AssertionError("Chrome did not publish the DevTools port")
         time.sleep(0.01)
-    return int(port_file.read_text(encoding="utf-8").splitlines()[0])
 
 
 def devtools_json(url: str, *, method: str = "GET") -> dict[str, object]:
@@ -472,7 +565,9 @@ def run_browser_probe(
   if (!detailButton) throw new Error("detail button missing");
   detailButton.click();
   const dialog = document.getElementById("detail-dialog");
-  const close = document.getElementById("detail-close").getBoundingClientRect();
+  const closeElement = document.getElementById("detail-close");
+  const close = closeElement.getBoundingClientRect();
+  const closeStyle = getComputedStyle(closeElement);
   return {
     viewportWidth: document.documentElement.clientWidth,
     cardColumns: getComputedStyle(document.getElementById("card-grid")).gridTemplateColumns,
@@ -480,7 +575,8 @@ def run_browser_probe(
     touchTargetHeight: detailButton.getBoundingClientRect().height,
     detailOpen: dialog.open,
     detailMode: getComputedStyle(dialog).getPropertyValue("--detail-mode").trim(),
-    closeVisible: close.top >= 0 && close.bottom <= window.innerHeight
+    closeVisible: close.width > 0 && close.height > 0 && close.top >= 0 && close.bottom <= window.innerHeight
+      && closeStyle.display !== "none" && closeStyle.visibility !== "hidden" && Number.parseFloat(closeStyle.opacity) > 0
   };
 })()
 ''',
@@ -532,14 +628,65 @@ def run_browser_probe(
 
 
 class CardRewardsAcceptanceTests(unittest.TestCase):
+    def test_wait_for_devtools_port_retries_transient_port_file_lock(self) -> None:
+        browser = mock.Mock()
+        browser.poll.return_value = None
+        with (
+            mock.patch.object(Path, "is_file", return_value=True),
+            mock.patch.object(Path, "read_text", side_effect=[PermissionError("locked"), "9222\n"]),
+        ):
+            self.assertEqual(9222, wait_for_devtools_port(Path("profile"), browser))
+
     def test_offline_page_has_no_automatic_network_surface(self) -> None:
         parser = parse_tool_page()
 
         self.assertEqual([], parser.external_assets)
         self.assertEqual([], parser.iframes)
+        self.assertEqual([], runtime_persistence_uses(parser.runtime_source))
         source = (ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")
-        for forbidden in ("fetch(", "XMLHttpRequest", "sendBeacon", "WebSocket", "localStorage"):
+        for forbidden in ("fetch(", "XMLHttpRequest", "sendBeacon", "WebSocket"):
             self.assertNotIn(forbidden, source)
+
+    def test_network_surface_parser_detects_non_asset_automatic_loads(self) -> None:
+        parser = ToolPageParser()
+        parser.feed('''
+            <style>@import url("https://cdn.example/import.css"); .hero { background: url(//cdn.example/hero.png); }</style>
+            <meta http-equiv="refresh" content="0; url=https://redirect.example/next">
+            <object data="https://media.example/document.pdf"></object>
+            <video poster="https://media.example/poster.jpg"></video>
+            <div style="background-image: url(https://media.example/inline-style.png)"></div>
+            <svg><image href="https://media.example/image.svg"></image><use xlink:href="https://media.example/sprite.svg#icon"></use></svg>
+        ''')
+
+        self.assertCountEqual(
+            [
+                "https://cdn.example/import.css",
+                "//cdn.example/hero.png",
+                "https://redirect.example/next",
+                "https://media.example/document.pdf",
+                "https://media.example/poster.jpg",
+                "https://media.example/inline-style.png",
+                "https://media.example/image.svg",
+                "https://media.example/sprite.svg#icon",
+            ],
+            parser.external_assets,
+        )
+
+    def test_persistence_guard_rejects_api_use_but_not_plain_text(self) -> None:
+        self.assertEqual(
+            [],
+            runtime_persistence_uses('const description = "localStorage sessionStorage indexedDB caches navigator.serviceWorker";'),
+        )
+        self.assertCountEqual(
+            ["localStorage", "sessionStorage", "indexedDB", "Cache API", "serviceWorker"],
+            runtime_persistence_uses('''
+                window.localStorage.setItem("state", "saved");
+                sessionStorage.getItem("state");
+                indexedDB.open("rewards");
+                caches.open("rewards");
+                navigator.serviceWorker.register("worker.js");
+            '''),
+        )
 
     def test_all_generated_official_links_are_https_and_safe(self) -> None:
         result = run_browser_probe("source-links", width=1200, height=900)
@@ -577,6 +724,18 @@ class CardRewardsAcceptanceTests(unittest.TestCase):
         self.assertTrue(result["detailOpen"])
         self.assertEqual("bottom-sheet", result["detailMode"])
         self.assertTrue(result["closeVisible"])
+
+    def test_mobile_probe_rejects_a_hidden_close_control(self) -> None:
+        result = run_browser_probe(
+            "mobile",
+            width=390,
+            height=844,
+            source_transform=lambda source: source.replace(
+                "</style>", "#detail-close { display: none; }</style>", 1
+            ),
+        )
+
+        self.assertFalse(result["closeVisible"])
 
 
 class CardRewardsInterfaceTests(unittest.TestCase):
