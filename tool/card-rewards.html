@@ -59,15 +59,34 @@
     .badge--unavailable { color: var(--danger); background: #f7e6e3; }
     .card-actions { display: flex; gap: .65rem; margin-top: auto; flex-wrap: wrap; }
     .secondary-button[aria-pressed="true"] { background: var(--warm-100); border-color: var(--navy-800); }
-    .detail { border-top: 1px solid var(--line); padding-top: .85rem; }
     .detail[hidden], .empty-state[hidden], .fatal-error[hidden], .compare-tray[hidden] { display: none; }
     .empty-state, .fatal-error { padding: 1.25rem; text-align: center; }
     .compare-tray { position: sticky; bottom: 1rem; margin-top: 1rem; padding: 1rem; box-shadow: 0 8px 24px rgb(10 31 51 / .14); }
     .compare-tray h2 { font-size: 1rem; margin-bottom: .45rem; }
     .compare-list { margin: 0; padding-left: 1.25rem; }
+    .compare-list button { margin-left: .5rem; }
+    .compare-limit { color: var(--warn); margin: .65rem 0 0; }
+    .compare-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    .compare-table th, .compare-table td, .evidence-table th, .evidence-table td { border: 1px solid var(--line); padding: .65rem; text-align: left; vertical-align: top; }
+    .compare-table th { background: var(--warm-100); }
+    .dialog-content { overflow: auto; }
+    dialog { border: 0; padding: 0; color: var(--ink); background: #fff; box-shadow: 0 18px 54px rgb(10 31 51 / .3); }
+    dialog::backdrop { background: rgb(10 31 51 / .45); }
+    .comparison-dialog { width: min(1120px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); border-radius: var(--radius); }
+    .detail-dialog { width: min(620px, 48vw); height: 100vh; max-height: 100vh; margin: 0 0 0 auto; }
+    .dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--line); }
+    .dialog-header h2 { margin: 0; font-size: 1.2rem; }
+    .dialog-content { padding: 1.25rem; }
+    .comparison-dialog .dialog-content { overflow-x: auto; }
+    .evidence-section { margin-block: 1.4rem; }
+    .evidence-section h3 { margin-bottom: .6rem; }
+    .evidence-table { width: 100%; border-collapse: collapse; }
+    .evidence-sources { padding-left: 1.25rem; }
+    .evidence-sources a { overflow-wrap: anywhere; }
     .fatal-error { border-color: var(--danger); color: var(--danger); }
     .is-fatal .interactive { display: none; }
     @media (max-width: 900px) { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 720px) { .detail-dialog { width: calc(100vw - 1rem); height: min(92vh, 760px); max-height: 92vh; margin: auto 0 0; border-radius: var(--radius) var(--radius) 0 0; } }
     @media (max-width: 620px) { .card-grid { grid-template-columns: 1fr; } .layout { padding-inline: .75rem; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
   </style>
@@ -102,11 +121,25 @@
           <p>可清除搜尋與篩選條件後重新查看全部產品。</p>
           <button id="empty-clear" class="clear-button" type="button">清除篩選</button>
         </section>
-        <aside id="compare-tray" class="compare-tray" aria-live="polite" hidden></aside>
+        <aside id="compare-tray" class="compare-tray" hidden>
+          <h2>比較清單</h2>
+          <p id="compare-count" aria-live="polite"></p>
+          <ul id="compare-selected" class="compare-list"></ul>
+          <p id="compare-limit" class="compare-limit" hidden>最多比較 3 項產品</p>
+          <button id="compare-open" class="clear-button" type="button" disabled>開啟比較</button>
+        </aside>
       </div>
     </div>
     <noscript>此工具需要啟用 JavaScript 才能使用。</noscript>
   </main>
+  <dialog id="compare-dialog" class="comparison-dialog" aria-labelledby="compare-title">
+    <div class="dialog-header"><h2 id="compare-title">產品比較</h2><button id="compare-close" class="secondary-button" type="button">關閉</button></div>
+    <div id="comparison-content" class="dialog-content"></div>
+  </dialog>
+  <dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title">
+    <div class="dialog-header"><h2 id="detail-title">產品詳情</h2><button id="detail-close" class="secondary-button" type="button">關閉</button></div>
+    <div id="detail-content" class="dialog-content"></div>
+  </dialog>
   <script id="card-rewards-core">
     function normalizeText(value) {
       return String(value ?? "").normalize("NFKC").trim().toLocaleLowerCase("zh-TW");
@@ -135,7 +168,19 @@
       return cards.filter(card => cardMatchesQuery(card, filters.query) && cardMatchesFilters(card, filters));
     }
 
-    globalThis.CardRewardsCore = { normalizeText, collectText, cardMatchesQuery, cardMatchesFilters, filterCards };
+    function toggleSelection(selectedIds, productId, limit = 3) {
+      const ids = [...selectedIds];
+      const existing = ids.indexOf(productId);
+      if (existing >= 0) {
+        ids.splice(existing, 1);
+        return { ids, limitReached: false };
+      }
+      if (ids.length >= limit) return { ids, limitReached: true };
+      ids.push(productId);
+      return { ids, limitReached: false };
+    }
+
+    globalThis.CardRewardsCore = { normalizeText, collectText, cardMatchesQuery, cardMatchesFilters, filterCards, toggleSelection };
   </script>
 <!-- CARD_REWARDS_DATA_START -->
 <script id="card-rewards-data" type="application/json">
@@ -5066,6 +5111,14 @@
       };
       const coverageLabels = { complete: "完整", partial: "部分", unavailable: "未提供" };
       const typeLabels = { "credit-card": "信用卡", "debit-card": "簽帳金融卡" };
+      const DETAIL_SECTION_ORDER = [
+        ["summary", "結論摘要"],
+        ["generalRewards", "一般回饋"],
+        ["specialRewards", "特殊回饋"],
+        ["paymentCompatibility", "行動支付相容性"],
+        ["exclusions", "排除交易"],
+        ["uncertainties", "不確定事項"]
+      ];
       const app = document.getElementById("app");
       const fatalError = document.getElementById("fatal-error");
       const search = document.getElementById("search");
@@ -5078,7 +5131,21 @@
       const emptyState = document.getElementById("empty-state");
       const emptyClear = document.getElementById("empty-clear");
       const compareTray = document.getElementById("compare-tray");
+      const compareCount = document.getElementById("compare-count");
+      const compareSelected = document.getElementById("compare-selected");
+      const compareLimit = document.getElementById("compare-limit");
+      const compareOpen = document.getElementById("compare-open");
+      const compareDialog = document.getElementById("compare-dialog");
+      const compareClose = document.getElementById("compare-close");
+      const comparisonContent = document.getElementById("comparison-content");
+      const detailDialog = document.getElementById("detail-dialog");
+      const detailTitle = document.getElementById("detail-title");
+      const detailContent = document.getElementById("detail-content");
+      const detailClose = document.getElementById("detail-close");
       let cards = [];
+      let payments = [];
+      let compareOpener = null;
+      let detailOpener = null;
 
       const create = (tag, text, className) => {
         const element = document.createElement(tag);
@@ -5129,6 +5196,11 @@
         list.append(item);
       }
 
+      function removeFromComparison(productId) {
+        state.selectedIds = CardRewardsCore.toggleSelection(state.selectedIds, productId).ids;
+        render();
+      }
+
       function renderCard(card) {
         const article = create("article", undefined, "card");
         article.append(create("p", card.issuer, "issuer"));
@@ -5145,38 +5217,156 @@
         (card.badges || []).forEach(badge => badges.append(create("span", badge, "badge")));
         article.append(badges);
         const actions = create("div", undefined, "card-actions");
-        const detailButton = create("button", state.detailId === card.id ? "收合詳情" : "查看詳情", "secondary-button");
+        const detailButton = create("button", "查看詳情", "secondary-button");
         detailButton.type = "button";
-        detailButton.setAttribute("aria-expanded", String(state.detailId === card.id));
-        detailButton.addEventListener("click", () => { state.detailId = state.detailId === card.id ? null : card.id; render(); });
+        detailButton.setAttribute("aria-haspopup", "dialog");
+        detailButton.setAttribute("aria-controls", "detail-dialog");
+        detailButton.addEventListener("click", () => openDetail(card, detailButton));
         const compareButton = create("button", state.selectedIds.includes(card.id) ? "移出比較" : "加入比較", "secondary-button");
         compareButton.type = "button";
         compareButton.setAttribute("aria-pressed", String(state.selectedIds.includes(card.id)));
+        const selectionAtLimit = state.selectedIds.length >= 3 && !state.selectedIds.includes(card.id);
+        compareButton.disabled = selectionAtLimit;
+        if (selectionAtLimit) compareButton.setAttribute("aria-describedby", "compare-limit");
         compareButton.addEventListener("click", () => {
-          state.selectedIds = state.selectedIds.includes(card.id)
-            ? state.selectedIds.filter(id => id !== card.id)
-            : [...state.selectedIds, card.id];
+          state.selectedIds = CardRewardsCore.toggleSelection(state.selectedIds, card.id).ids;
           render();
         });
         actions.append(detailButton, compareButton);
         article.append(actions);
-        const detail = create("section", undefined, "detail");
-        detail.hidden = state.detailId !== card.id;
-        detail.append(create("h3", "條件與說明"));
-        detail.append(create("p", card.comparison?.conditions || "未提供"));
-        article.append(detail);
         return article;
       }
 
       function renderCompareTray() {
-        clearChildren(compareTray);
         const selected = state.selectedIds.map(id => cards.find(card => card.id === id)).filter(Boolean);
         compareTray.hidden = selected.length === 0;
-        if (!selected.length) return;
-        compareTray.append(create("h2", `比較清單（${selected.length}）`));
-        const list = create("ul", undefined, "compare-list");
-        selected.forEach(card => list.append(create("li", `${card.issuer} ${card.product}`)));
-        compareTray.append(list);
+        compareCount.textContent = `已選擇 ${selected.length} 項產品`;
+        compareLimit.hidden = selected.length < 3;
+        compareOpen.disabled = selected.length < 2;
+        clearChildren(compareSelected);
+        selected.forEach(card => {
+          const item = create("li", `${card.issuer} ${card.product}`);
+          const remove = create("button", "移除", "secondary-button");
+          remove.type = "button";
+          remove.setAttribute("aria-label", `從比較清單移除 ${card.product}`);
+          remove.addEventListener("click", () => removeFromComparison(card.id));
+          item.append(remove);
+          compareSelected.append(item);
+        });
+      }
+
+      function selectedCards() {
+        return state.selectedIds.map(id => cards.find(card => card.id === id)).filter(Boolean);
+      }
+
+      function paymentValue(paymentId, productId) {
+        const payment = payments.find(item => item.id === paymentId);
+        const row = payment && payment.rows.find(item => item.productId === productId);
+        if (!row) return "not officially confirmed";
+        return [row.supported, row.stacking].filter(Boolean).join("；");
+      }
+
+      function appendComparisonRow(table, label, selected, valueFor) {
+        const row = create("tr");
+        row.append(create("th", label));
+        selected.forEach(card => row.append(create("td", valueFor(card))));
+        table.append(row);
+      }
+
+      function openComparison(opener) {
+        const selected = selectedCards();
+        if (selected.length < 2) return;
+        compareOpener = opener;
+        clearChildren(comparisonContent);
+        const table = create("table", undefined, "compare-table");
+        const head = create("thead");
+        const headRow = create("tr");
+        headRow.append(create("th", "比較項目"));
+        selected.forEach(card => headRow.append(create("th", `${card.issuer} ${card.product}`)));
+        head.append(headRow);
+        const body = create("tbody");
+        appendComparisonRow(body, "產品", selected, card => `${card.issuer} ${card.product}`);
+        appendComparisonRow(body, "國內一般消費", selected, card => card.comparison.domestic);
+        appendComparisonRow(body, "海外消費", selected, card => card.comparison.overseas);
+        appendComparisonRow(body, "最佳特殊回饋", selected, card => card.comparison.bestSpecial);
+        appendComparisonRow(body, "條件", selected, card => card.comparison.conditions);
+        appendComparisonRow(body, "上限／推導可刷額", selected, card => card.comparison.capAndDerivedSpend);
+        appendComparisonRow(body, "LINE Pay", selected, card => paymentValue("line-pay", card.id));
+        appendComparisonRow(body, "iPASS MONEY", selected, card => paymentValue("ipass-money", card.id));
+        appendComparisonRow(body, "全支付", selected, card => paymentValue("px-pay", card.id));
+        appendComparisonRow(body, "研究期間覆蓋", selected, card => labelFor(coverageLabels, card.coverageStatus));
+        table.append(head, body);
+        comparisonContent.append(table);
+        compareDialog.showModal();
+      }
+
+      function appendEvidenceBlock(container, block) {
+        if (block.type === "paragraph") {
+          container.append(create("p", block.text));
+          return;
+        }
+        if (block.type === "list") {
+          const list = create("ul");
+          block.items.forEach(item => list.append(create("li", item)));
+          container.append(list);
+          return;
+        }
+        if (block.type === "table" || block.type === "table-fallback") {
+          const table = create("table", undefined, "evidence-table");
+          const head = create("thead");
+          const headRow = create("tr");
+          block.headers.forEach(header => headRow.append(create("th", header)));
+          head.append(headRow);
+          const body = create("tbody");
+          block.rows.forEach(row => {
+            const tableRow = create("tr");
+            const cells = Array.isArray(row) ? row : row.cells;
+            cells.forEach(cell => tableRow.append(create("td", cell)));
+            body.append(tableRow);
+          });
+          table.append(head, body);
+          container.append(table);
+        }
+      }
+
+      function openDetail(card, opener) {
+        detailOpener = opener;
+        state.detailId = card.id;
+        detailTitle.textContent = `${card.issuer} ${card.product}`;
+        clearChildren(detailContent);
+        const badges = create("div", undefined, "badges");
+        badges.append(create("span", labelFor(coverageLabels, card.coverageStatus), `badge badge--${card.coverageStatus}`));
+        card.badges.forEach(badge => badges.append(create("span", badge, "badge")));
+        detailContent.append(badges);
+        detailContent.append(create("p", `研究期間覆蓋：${labelFor(coverageLabels, card.coverageStatus)}期間`));
+        DETAIL_SECTION_ORDER.forEach(([key, label]) => {
+          const section = create("section", undefined, "evidence-section");
+          section.append(create("h3", label));
+          const blocks = card.sections?.[key]?.blocks || [];
+          blocks.forEach(block => appendEvidenceBlock(section, block));
+          detailContent.append(section);
+        });
+        const sources = create("section", undefined, "evidence-section");
+        sources.append(create("h3", "來源證據"));
+        const sourceList = create("ul", undefined, "evidence-sources");
+        card.sources.forEach(source => {
+          const item = create("li");
+          item.append(create("p", source.description));
+          const link = create("a", `官方來源 ${source.label}`);
+          link.href = source.url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          item.append(link);
+          sourceList.append(item);
+        });
+        sources.append(sourceList);
+        const evidenceLink = create("a", "檢視 Markdown 證據");
+        evidenceLink.href = `../docs/card-rewards/2026-h2/cards/${card.id}.md`;
+        evidenceLink.target = "_blank";
+        evidenceLink.rel = "noopener noreferrer";
+        sources.append(evidenceLink);
+        detailContent.append(sources);
+        detailDialog.showModal();
       }
 
       function render() {
@@ -5199,6 +5389,27 @@
         fatalError.append(create("p", "資料無法載入；請重新產生 card-rewards.html。"));
         fatalError.append(create("p", error instanceof Error ? error.message : String(error)));
       }
+
+      function closeOnBackdrop(dialog) {
+        dialog.addEventListener("click", event => {
+          if (event.target === dialog) dialog.close();
+        });
+      }
+
+      compareOpen.addEventListener("click", () => openComparison(compareOpen));
+      compareClose.addEventListener("click", () => compareDialog.close());
+      detailClose.addEventListener("click", () => detailDialog.close());
+      closeOnBackdrop(compareDialog);
+      closeOnBackdrop(detailDialog);
+      compareDialog.addEventListener("close", () => {
+        if (compareOpener) compareOpener.focus();
+        compareOpener = null;
+      });
+      detailDialog.addEventListener("close", () => {
+        state.detailId = null;
+        if (detailOpener) detailOpener.focus();
+        detailOpener = null;
+      });
 
       function validateCard(card, index) {
         if (!card || typeof card !== "object" || Array.isArray(card)) throw new Error(`第 ${index + 1} 張卡片資料格式不正確。`);
@@ -5226,6 +5437,7 @@
           if (!Array.isArray(dataset.payments) || dataset.payments.length !== 3) throw new Error("行動支付資料筆數不正確。");
           dataset.cards.forEach(validateCard);
           cards = dataset.cards;
+          payments = dataset.payments;
           search.addEventListener("input", () => { state.query = search.value; render(); });
           clearFilters.addEventListener("click", clearDiscovery);
           emptyClear.addEventListener("click", clearDiscovery);

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import io
+import html
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -43,7 +45,7 @@ class ToolPageParser(HTMLParser):
         self._is_runtime_script = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        attributes = {name: value or "" for name, value in attrs}
+        attributes = {"tag": tag, **{name: value or "" for name, value in attrs}}
         if element_id := attributes.get("id"):
             self.elements[element_id] = attributes
         for name in ("src", "href"):
@@ -151,7 +153,7 @@ class FakeElement {
   addEventListener() {}
   focus() {}
 }
-const ids = ["app", "fatal-error", "search", "result-count", "clear-filters", "facet-controls", "coverage-controls", "type-controls", "card-grid", "empty-state", "empty-clear", "compare-tray", "card-rewards-data"];
+const ids = ["app", "fatal-error", "search", "result-count", "clear-filters", "facet-controls", "coverage-controls", "type-controls", "card-grid", "empty-state", "empty-clear", "compare-tray", "compare-count", "compare-selected", "compare-limit", "compare-open", "compare-dialog", "compare-close", "comparison-content", "detail-dialog", "detail-title", "detail-content", "detail-close", "card-rewards-data"];
 const elements = Object.fromEntries(ids.map(id => [id, new FakeElement(id)]));
 elements["fatal-error"].hidden = true;
 elements["card-rewards-data"].textContent = JSON.stringify(payload.dataset);
@@ -185,6 +187,97 @@ process.stdout.write(JSON.stringify({
     return json.loads(result.stdout)
 
 
+def find_headless_browser() -> str:
+    candidates = (
+        Path(os.environ.get("PROGRAMFILES", r"C:\\Program Files")) / "Google/Chrome/Application/chrome.exe",
+        Path(os.environ.get("PROGRAMFILES(X86)", r"C:\\Program Files (x86)")) / "Microsoft/Edge/Application/msedge.exe",
+        Path(os.environ.get("PROGRAMFILES", r"C:\\Program Files")) / "Microsoft/Edge/Application/msedge.exe",
+    )
+    browser = next((candidate for candidate in candidates if candidate.is_file()), None)
+    if browser is None:
+        raise unittest.SkipTest("Chrome 或 Edge 不可用，無法執行 headless interaction probe")
+    return str(browser)
+
+
+def run_headless_interaction_probe() -> dict[str, object]:
+    probe = r'''
+<script>
+(() => {
+  const result = { ok: false, errors: [] };
+  const check = (condition, message) => { if (!condition) result.errors.push(message); };
+  try {
+    const search = document.getElementById("search");
+    search.value = "路易莎";
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+    const louisaCards = [...document.querySelectorAll("#card-grid .card")];
+    check(louisaCards.length === 1 && louisaCards[0].textContent.includes("DAWAY"), "路易莎搜尋結果不正確");
+
+    document.getElementById("clear-filters").click();
+    const addNext = () => [...document.querySelectorAll("#card-grid .secondary-button")]
+      .find(button => button.textContent === "加入比較");
+    for (let index = 0; index < 3; index += 1) {
+      const button = addNext();
+      check(Boolean(button), `第 ${index + 1} 張加入比較按鈕不存在`);
+      if (button) button.click();
+    }
+    const fourth = addNext();
+    check(document.getElementById("compare-count").textContent.includes("3"), "比較數量未維持 3");
+    check(Boolean(fourth) && fourth.disabled, "第四張加入比較按鈕未停用");
+    if (fourth) fourth.click();
+    check(document.getElementById("compare-count").textContent.includes("3"), "第四張卡改變了比較數量");
+
+    document.getElementById("compare-open").click();
+    const comparison = document.getElementById("comparison-content").textContent;
+    check(comparison.includes("國內一般消費") && comparison.includes("海外消費"), "比較表缺少國內或海外列");
+    document.getElementById("compare-close").click();
+
+    const cubeCard = [...document.querySelectorAll("#card-grid .card")]
+      .find(card => card.textContent.includes("CUBE"));
+    const detailButton = cubeCard && [...cubeCard.querySelectorAll("button")]
+      .find(button => button.textContent === "查看詳情");
+    check(Boolean(detailButton), "CUBE 詳情按鈕不存在");
+    if (detailButton) detailButton.click();
+    const detail = document.getElementById("detail-content");
+    check(detail.textContent.includes("部分期間") && detail.textContent.includes("不確定事項"), "CUBE 詳情缺少部分期間或不確定事項");
+    check(Boolean(detail.querySelector('a[href^="https://"]')), "CUBE 詳情缺少 HTTPS 官方來源");
+  } catch (error) {
+    result.errors.push(String(error));
+  }
+  result.ok = result.errors.length === 0;
+  const output = document.createElement("pre");
+  output.id = "e2e-result";
+  output.textContent = JSON.stringify(result);
+  document.body.append(output);
+})();
+</script>
+'''
+    with tempfile.TemporaryDirectory() as temp:
+        temporary_root = Path(temp)
+        page = temporary_root / "card-rewards.html"
+        source = (ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")
+        page.write_text(source.replace("</body>", f"{probe}</body>", 1), encoding="utf-8")
+        profile = temporary_root / "browser-profile"
+        result = subprocess.run(
+            [
+                find_headless_browser(), "--headless=new", "--disable-gpu", "--disable-extensions", "--no-first-run",
+                "--dump-dom", "--window-size=1200,900", f"--user-data-dir={profile}", page.as_uri(),
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env=UTF8_ENV,
+            check=False,
+            timeout=30,
+        )
+    if result.returncode:
+        raise AssertionError(result.stderr.strip())
+    match = re.search(r'<pre id="e2e-result">(.*?)</pre>', result.stdout, flags=re.DOTALL)
+    if match is None:
+        raise AssertionError("headless probe did not emit e2e-result")
+    return json.loads(html.unescape(match.group(1)))
+
+
 class CardRewardsInterfaceTests(unittest.TestCase):
     def test_page_has_required_discovery_controls(self) -> None:
         parser = parse_tool_page()
@@ -201,6 +294,35 @@ class CardRewardsInterfaceTests(unittest.TestCase):
         source = (ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")
         self.assertNotRegex(source, r"\bfetch\s*\(")
         self.assertNotIn("XMLHttpRequest", source)
+
+    def test_selection_stops_at_three_without_mutating_input(self) -> None:
+        expression = """
+        (() => {
+          const original = ['first-ileo', 'first-green', 'sinopac-dawho'];
+          const result = toggleSelection(original, 'sinopac-daway');
+          return { original, result };
+        })()
+        """
+        value = run_core(expression)
+        self.assertEqual(["first-ileo", "first-green", "sinopac-dawho"], value["original"])
+        self.assertEqual(value["original"], value["result"]["ids"])
+        self.assertTrue(value["result"]["limitReached"])
+
+    def test_selection_can_remove_and_readd_a_product(self) -> None:
+        value = run_core("toggleSelection(['first-ileo', 'first-green'], 'first-ileo')")
+        self.assertEqual(["first-green"], value["ids"])
+        self.assertFalse(value["limitReached"])
+
+    def test_compare_and_detail_use_native_dialogs_with_labels(self) -> None:
+        parser = parse_tool_page()
+        self.assertEqual("dialog", parser.elements["compare-dialog"]["tag"])
+        self.assertEqual("dialog", parser.elements["detail-dialog"]["tag"])
+        self.assertEqual("detail-title", parser.elements["detail-dialog"]["aria-labelledby"])
+        self.assertIn("aria-live", parser.elements["compare-count"])
+
+    def test_headless_interaction_probe(self) -> None:
+        result = run_headless_interaction_probe()
+        self.assertTrue(result["ok"], result["errors"])
 
     def test_core_search_matches_bank_alias_merchant_and_payment(self) -> None:
         self.assertTrue(run_core("cardMatchesQuery(CARDS.find(c => c.id === 'taishin-richart-gogo'), '@gogo')"))
