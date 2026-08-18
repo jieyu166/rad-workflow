@@ -7,14 +7,20 @@ import html
 import json
 import re
 import sys
+import tempfile
 from collections import Counter
 from pathlib import Path
 from typing import Any
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).parents[1]))
 
 from scripts.validate_card_rewards_docs import parse_frontmatter, validate_corpus
 
 
 CORPUS_RELATIVE = Path("docs/card-rewards/2026-h2")
+DATA_START = "<!-- CARD_REWARDS_DATA_START -->"
+DATA_END = "<!-- CARD_REWARDS_DATA_END -->"
 COMPARISON_HEADERS = [
     "產品", "國內一般", "國外一般", "最佳特殊回饋", "條件",
     "上限／推導可刷額", "LINE Pay", "iPASS MONEY", "全支付", "覆蓋狀態",
@@ -495,15 +501,85 @@ def serialize_dataset(dataset: dict[str, object]) -> str:
     ) + "\n"
 
 
+def _marker_bounds(html_text: str) -> tuple[int, int]:
+    if html_text.count(DATA_START) != 1 or html_text.count(DATA_END) != 1:
+        raise BuildError("HTML must contain exactly one data marker pair")
+    start = html_text.index(DATA_START) + len(DATA_START)
+    end = html_text.index(DATA_END)
+    if start >= end:
+        raise BuildError("HTML data markers are out of order")
+    return start, end
+
+
+def read_embedded_dataset(html_text: str) -> str:
+    start, end = _marker_bounds(html_text)
+    block = html_text[start:end].strip("\r\n")
+    match = re.fullmatch(
+        r'<script id="card-rewards-data" type="application/json">\n(.*)\n</script>',
+        block,
+        flags=re.DOTALL,
+    )
+    if match is None:
+        raise BuildError("marked block must contain exactly one card-rewards-data JSON script")
+    return match.group(1) + "\n"
+
+
+def replace_embedded_dataset(html_text: str, json_text: str) -> str:
+    start, end = _marker_bounds(html_text)
+    safe_json = json_text.replace("</", "<\\/")
+    block = (
+        "\n<script id=\"card-rewards-data\" type=\"application/json\">\n"
+        + safe_json.rstrip("\n")
+        + "\n</script>\n"
+    )
+    return html_text[:start] + block + html_text[end:]
+
+
+def build_output(repo_root: Path, output_path: Path, *, check: bool) -> bool:
+    expected = serialize_dataset(build_dataset(repo_root))
+    try:
+        template = output_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise BuildError(f"cannot read HTML template: {output_path}") from exc
+    if check:
+        if read_embedded_dataset(template) != expected:
+            raise BuildError("embedded dataset drift")
+        return True
+    updated = replace_embedded_dataset(template, expected)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            newline="\n",
+            dir=output_path.parent,
+            prefix=f".{output_path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary:
+            temporary.write(updated)
+            temporary_path = Path(temporary.name)
+        temporary_path.replace(output_path)
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
+    return True
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=Path("."))
+    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--repo-root", type=Path, default=Path(__file__).parents[1])
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
+    output_path = args.output or args.repo_root / "tool/card-rewards.html"
     try:
-        sys.stdout.write(serialize_dataset(build_dataset(args.root)))
+        build_output(args.repo_root, output_path, check=args.check)
     except BuildError as exc:
-        print(exc, file=sys.stderr)
+        print(f"card rewards build: {exc}", file=sys.stderr)
         return 1
+    if args.check:
+        print("card rewards tool: OK")
     return 0
 
 

@@ -1,15 +1,27 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.build_card_rewards_tool import BuildError, build_dataset, serialize_dataset
+from scripts.build_card_rewards_tool import (
+    DATA_END,
+    DATA_START,
+    BuildError,
+    build_dataset,
+    read_embedded_dataset,
+    replace_embedded_dataset,
+    serialize_dataset,
+)
 
 
 ROOT = Path(__file__).parents[1]
+UTF8_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
 
 class CardRewardsDatasetTests(unittest.TestCase):
@@ -141,3 +153,43 @@ class CardRewardsDatasetTests(unittest.TestCase):
 
             with self.assertRaisesRegex(BuildError, "排除交易"):
                 build_dataset(fixture)
+
+
+class CardRewardsBuildTests(unittest.TestCase):
+    def test_replace_embedded_dataset_changes_only_marked_block(self) -> None:
+        source = f"before\n{DATA_START}\nold\n{DATA_END}\nafter\n"
+        updated = replace_embedded_dataset(source, '{"schemaVersion": "1"}\n')
+
+        self.assertTrue(updated.startswith(f"before\n{DATA_START}\n"))
+        self.assertTrue(updated.endswith(f"{DATA_END}\nafter\n"))
+        self.assertEqual('{"schemaVersion": "1"}\n', read_embedded_dataset(updated))
+
+    def test_replace_rejects_missing_or_duplicate_markers(self) -> None:
+        with self.assertRaisesRegex(BuildError, "exactly one data marker pair"):
+            replace_embedded_dataset("<html></html>", "{}\n")
+        duplicate = f"{DATA_START}x{DATA_END}{DATA_START}y{DATA_END}"
+        with self.assertRaisesRegex(BuildError, "exactly one data marker pair"):
+            replace_embedded_dataset(duplicate, "{}\n")
+
+    def test_checked_in_html_matches_generated_dataset(self) -> None:
+        expected = serialize_dataset(build_dataset(ROOT))
+        actual = read_embedded_dataset((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"))
+        self.assertEqual(expected, actual)
+
+    def test_cli_check_detects_one_byte_of_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "card-rewards.html"
+            output.write_text((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"), encoding="utf-8")
+            output.write_text(output.read_text(encoding="utf-8").replace('"schemaVersion": "1"', '"schemaVersion": "9"', 1), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "scripts/build_card_rewards_tool.py"), "--check", "--output", str(output)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                env=UTF8_ENV,
+                check=False,
+            )
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("embedded dataset drift", result.stderr)
