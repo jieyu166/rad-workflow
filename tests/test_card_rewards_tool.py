@@ -14,7 +14,7 @@ import tempfile
 import time
 import unittest
 from collections.abc import Callable
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
 from urllib.request import Request, urlopen
 from html.parser import HTMLParser
 from pathlib import Path
@@ -249,7 +249,7 @@ class FakeElement {
   addEventListener() {}
   focus() {}
 }
-const ids = ["app", "fatal-error", "search", "result-count", "clear-filters", "facet-controls", "coverage-controls", "type-controls", "card-grid", "empty-state", "empty-clear", "compare-tray", "compare-count", "compare-selected", "compare-limit", "compare-open", "compare-dialog", "compare-close", "comparison-content", "detail-dialog", "detail-title", "detail-content", "detail-close", "card-rewards-data"];
+const ids = ["app", "header-status", "fatal-error", "search", "result-count", "clear-filters", "facet-controls", "coverage-controls", "type-controls", "card-grid", "empty-state", "empty-clear", "compare-tray", "compare-count", "compare-selected", "compare-limit", "compare-open", "compare-dialog", "compare-close", "comparison-content", "detail-dialog", "detail-title", "detail-content", "detail-close", "card-rewards-data"];
 const elements = Object.fromEntries(ids.map(id => [id, new FakeElement(id)]));
 elements["fatal-error"].hidden = true;
 elements["card-rewards-data"].textContent = JSON.stringify(payload.dataset);
@@ -458,8 +458,10 @@ def run_headless_interaction_probe() -> dict[str, object]:
     const detailButton = cubeCard && [...cubeCard.querySelectorAll("button")].find(button => button.textContent === "查看詳情");
     check(Boolean(detailButton), "CUBE 詳情按鈕不存在");
     if (detailButton) { detailButton.focus(); detailButton.click(); }
+    check(document.activeElement === document.getElementById("detail-title"), "詳情開啟後焦點未移至可聚焦標題");
     const detail = document.getElementById("detail-content");
     check(detail.textContent.includes("部分期間") && detail.textContent.includes("不確定事項"), "CUBE 詳情缺少部分期間或不確定事項");
+    check(!detail.textContent.includes("部分期間期間"), "CUBE 詳情重複顯示期間語意");
     check(Boolean(detail.querySelector('a[href^="https://"]')), "CUBE 詳情缺少 HTTPS 官方來源");
     document.getElementById("detail-close").click();
     check(document.activeElement === detailButton, "詳情明確關閉後未回到原始開啟按鈕");
@@ -533,17 +535,54 @@ def run_browser_probe(
     source_transform: Callable[[str], str] | None = None,
 ) -> dict[str, object]:
     expressions = {
+        "metadata-labels": r'''
+(() => ({
+  headerText: document.querySelector(".site-header").textContent,
+  facetLabels: [...document.querySelectorAll("#facet-controls button")].map(button => button.textContent),
+  typeLabels: [...document.querySelectorAll("#type-controls button")].map(button => button.textContent),
+  badgeLabels: [...document.querySelectorAll("#card-grid .badge")].map(badge => badge.textContent)
+}))()
+''',
+        "comparison-payment": r'''
+(() => {
+  for (const productId of ["obank-debit", "first-ileo"]) {
+    const card = document.querySelector(`[data-product-id="${productId}"]`);
+    const button = card && card.querySelector('[data-comparison-action="add"]');
+    if (!button) throw new Error(`comparison button missing for ${productId}`);
+    button.click();
+  }
+  document.getElementById("compare-open").click();
+  const rows = [...document.querySelectorAll("#comparison-content tbody tr")];
+  const linePayRow = rows.find(row => row.querySelector("th")?.textContent === "LINE Pay");
+  if (!linePayRow) throw new Error("LINE Pay comparison row missing");
+  return { cellText: linePayRow.querySelectorAll("td")[0].textContent };
+})()
+''',
         "source-links": r'''
 (() => {
-  const detailButton = document.querySelector("[data-action='detail']");
-  if (!detailButton) throw new Error("detail button missing");
-  detailButton.click();
-  const links = [...document.querySelectorAll(".evidence-sources a[href]")];
+  const records = [];
+  for (const card of [...document.querySelectorAll("#card-grid .card")]) {
+    const detailButton = card.querySelector("[data-action='detail']");
+    if (!detailButton) throw new Error("detail button missing");
+    detailButton.click();
+    for (const link of document.querySelectorAll(".evidence-sources a[href]")) {
+      const parsed = new URL(link.href);
+      records.push({
+        productId: card.getAttribute("data-product-id"),
+        href: link.href,
+        validHttps: parsed.protocol === "https:" && Boolean(parsed.hostname),
+        rel: link.rel
+      });
+    }
+    document.getElementById("detail-dialog").close();
+  }
   return {
-    sourceCount: links.length,
-    allHttps: links.every(link => link.href.startsWith("https://")),
-    allNoopenerNoreferrer: links.every(link => {
-      const tokens = new Set(link.rel.split(/\s+/).filter(Boolean));
+    sourceCount: records.length,
+    productIds: [...new Set(records.map(record => record.productId))],
+    hrefs: records.map(record => record.href),
+    allHttps: records.every(record => record.validHttps),
+    allNoopenerNoreferrer: records.every(record => {
+      const tokens = new Set(record.rel.split(/\s+/).filter(Boolean));
       return tokens.has("noopener") && tokens.has("noreferrer");
     })
   };
@@ -628,6 +667,29 @@ def run_browser_probe(
 
 
 class CardRewardsAcceptanceTests(unittest.TestCase):
+    def test_header_and_generated_controls_show_localized_scope_metadata(self) -> None:
+        result = run_browser_probe("metadata-labels", width=1200, height=900)
+
+        for text in (
+            "只適用既有持卡人／既有帳戶（舊戶）",
+            "2026-08-01 至 2026-12-31",
+            "查證基準日 2026-08-18",
+            "完整 9／部分 9",
+        ):
+            self.assertIn(text, result["headerText"])
+        self.assertTrue({"國內", "網購", "交通", "全支付"}.issubset(result["facetLabels"]))
+        self.assertTrue({"信用卡", "簽帳金融卡", "ATM／功能未確認"}.issubset(result["typeLabels"]))
+        internal_labels = {
+            "domestic", "online", "transit", "px-pay", "credit", "debit", "atm",
+            "registration", "limited", "non-guaranteed", "unconfirmed", "derived", "conflict",
+        }
+        self.assertTrue(internal_labels.isdisjoint(result["facetLabels"]))
+        self.assertTrue(internal_labels.isdisjoint(result["typeLabels"]))
+        self.assertTrue(internal_labels.isdisjoint(result["badgeLabels"]))
+        self.assertIn("需登錄", result["badgeLabels"])
+        self.assertIn("限量", result["badgeLabels"])
+        self.assertIn("非保證", result["badgeLabels"])
+
     def test_wait_for_devtools_port_retries_transient_port_file_lock(self) -> None:
         browser = mock.Mock()
         browser.poll.return_value = None
@@ -692,8 +754,14 @@ class CardRewardsAcceptanceTests(unittest.TestCase):
         result = run_browser_probe("source-links", width=1200, height=900)
 
         self.assertGreater(result["sourceCount"], 0)
+        self.assertEqual(15, len(result["productIds"]))
         self.assertTrue(result["allHttps"])
         self.assertTrue(result["allNoopenerNoreferrer"])
+        self.assertIn(
+            "https://www.cathay-cube.com.tw/cathaybk/personal/product/credit-card/cards/cube#level",
+            result["hrefs"],
+        )
+        self.assertIn("https://www.linebank.com.tw/faq/05", result["hrefs"])
 
     def test_corpus_text_is_not_executed_as_html(self) -> None:
         source = (ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")
@@ -739,6 +807,23 @@ class CardRewardsAcceptanceTests(unittest.TestCase):
 
 
 class CardRewardsInterfaceTests(unittest.TestCase):
+    def test_payment_comparison_preserves_summary_method_rewards_bonus_and_uncertainty(self) -> None:
+        result = run_browser_probe("comparison-payment", width=1200, height=900)
+
+        for text in (
+            "Q3 單筆滿 NT$500、登錄未額滿最高 5% 現金",
+            "LINE Pay 綁定簽帳金融卡",
+            "1% 基本＋4% 加碼",
+            "支付服務加碼：未獲官方確認",
+            "不是已證實平台再加碼",
+        ):
+            self.assertIn(text, result["cellText"])
+        self.assertNotIn("排名", result["cellText"])
+        self.assertNotIn("分數", result["cellText"])
+
+    def test_core_api_is_frozen(self) -> None:
+        self.assertTrue(run_core("Object.isFrozen(CardRewardsCore)"))
+
     def test_page_has_required_discovery_controls(self) -> None:
         parser = parse_tool_page()
         for element_id in (
@@ -838,8 +923,67 @@ class CardRewardsInterfaceTests(unittest.TestCase):
         self.assertIn("資料無法載入", result["fatalText"])
         self.assertEqual(0, result["facetControlMutations"])
 
+    def test_malformed_payment_provenance_shows_fatal_before_render(self) -> None:
+        dataset = json.loads(read_embedded_dataset((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")))
+        dataset["payments"][0].pop("evidencePath", None)
+
+        result = run_runtime(dataset)
+
+        self.assertFalse(result["fatalHidden"])
+        self.assertTrue(result["controlsHidden"])
+        self.assertIn("資料無法載入", result["fatalText"])
+        self.assertEqual(0, result["facetControlMutations"])
+
 
 class CardRewardsDatasetTests(unittest.TestCase):
+    def test_payment_records_preserve_phase_one_summary_sources_uncertainties_and_provenance(self) -> None:
+        dataset = build_dataset(ROOT)
+        expected_verified_at = {
+            "line-pay": "2026-08-18",
+            "ipass-money": "2026-08-17",
+            "px-pay": "2026-08-18",
+        }
+
+        for payment in dataset["payments"]:
+            self.assertEqual(f"payments/{payment['id']}.md", payment["evidencePath"])
+            self.assertEqual(expected_verified_at[payment["id"]], payment["verifiedAt"])
+            self.assertEqual("2026-08-01", payment["targetFrom"])
+            self.assertEqual("2026-12-31", payment["targetTo"])
+            self.assertEqual("existing", payment["customerScope"])
+            self.assertIsInstance(payment["summary"], dict)
+            self.assertTrue(payment["summary"]["blocks"])
+            self.assertIsInstance(payment["sources"], list)
+            self.assertTrue(payment["sources"])
+            self.assertIsInstance(payment["uncertainties"], dict)
+            self.assertTrue(payment["uncertainties"]["blocks"])
+            for source in payment["sources"]:
+                parsed = urlsplit(source["url"])
+                self.assertEqual("https", parsed.scheme)
+                self.assertTrue(parsed.hostname)
+
+    def test_all_dataset_source_urls_are_clean_absolute_https_urls(self) -> None:
+        dataset = build_dataset(ROOT)
+        sources = [
+            source
+            for record in [*dataset["cards"], *dataset["payments"]]
+            for source in record["sources"]
+        ]
+
+        self.assertGreater(len(sources), 15)
+        for source in sources:
+            url = source["url"]
+            parsed = urlsplit(url)
+            self.assertEqual("https", parsed.scheme, url)
+            self.assertTrue(parsed.hostname, url)
+            self.assertNotRegex(url, r"[\s\]\[（）。，；、]+$")
+        cube_urls = next(card for card in dataset["cards"] if card["id"] == "cathay-cube")["sources"]
+        line_bank_urls = next(card for card in dataset["cards"] if card["id"] == "line-bank-debit")["sources"]
+        self.assertIn(
+            "https://www.cathay-cube.com.tw/cathaybk/personal/product/credit-card/cards/cube#level",
+            [source["url"] for source in cube_urls],
+        )
+        self.assertIn("https://www.linebank.com.tw/faq/05", [source["url"] for source in line_bank_urls])
+
     def test_dataset_card_product_types_match_phase_one_frontmatter(self) -> None:
         cards = build_dataset(ROOT)["cards"]
         corpus_root = ROOT / "docs/card-rewards/2026-h2"
@@ -978,6 +1122,65 @@ class CardRewardsDatasetTests(unittest.TestCase):
 
             with self.assertRaisesRegex(BuildError, "排除交易"):
                 build_dataset(fixture)
+
+    def test_readme_audit_date_must_match_document_frontmatter(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "repo"
+            shutil.copytree(ROOT / "docs", fixture / "docs")
+            readme = fixture / "docs/card-rewards/2026-h2/README.md"
+            readme.write_text(
+                readme.read_text(encoding="utf-8").replace(
+                    "最後一次逐 URL 官方來源稽核：**2026-08-18**",
+                    "最後一次逐 URL 官方來源稽核：**2026-08-17**",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(BuildError, "README.md.*audit date"):
+                build_dataset(fixture)
+
+    def test_cli_check_rejects_readme_coverage_count_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "repo"
+            shutil.copytree(ROOT / "docs", fixture / "docs")
+            readme = fixture / "docs/card-rewards/2026-h2/README.md"
+            readme.write_text(
+                readme.read_text(encoding="utf-8").replace("- `complete`：9", "- `complete`：8", 1),
+                encoding="utf-8",
+            )
+            output = Path(tmp) / "card-rewards.html"
+            output.write_text((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"), encoding="utf-8")
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                exit_code = main(["--check", "--repo-root", str(fixture), "--output", str(output)])
+
+        self.assertEqual(1, exit_code)
+        self.assertIn("README.md", stderr.getvalue())
+        self.assertIn("coverage counts", stderr.getvalue())
+
+    def test_cli_check_rejects_comparison_coverage_frontmatter_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "repo"
+            shutil.copytree(ROOT / "docs", fixture / "docs")
+            comparison = fixture / "docs/card-rewards/2026-h2/comparison.md"
+            comparison.write_text(
+                comparison.read_text(encoding="utf-8").replace(
+                    "| `complete` |", "| `partial`：mutation |", 1
+                ),
+                encoding="utf-8",
+            )
+            output = Path(tmp) / "card-rewards.html"
+            output.write_text((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"), encoding="utf-8")
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                exit_code = main(["--check", "--repo-root", str(fixture), "--output", str(output)])
+
+        self.assertEqual(1, exit_code)
+        self.assertIn("comparison.md", stderr.getvalue())
+        self.assertIn("coverage", stderr.getvalue())
 
 
 class CardRewardsBuildTests(unittest.TestCase):

@@ -96,6 +96,7 @@
     <header class="site-header">
       <div class="site-header__inner">
         <h1>2026 下半年信用卡回饋整理</h1>
+        <p id="header-status"></p>
         <p>以條件、上限與回饋幣別為準，不將不同貨幣直接比較。</p>
       </div>
     </header>
@@ -137,7 +138,7 @@
     <div id="comparison-content" class="dialog-content"></div>
   </dialog>
   <dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title">
-    <div class="dialog-header"><h2 id="detail-title">產品詳情</h2><button id="detail-close" class="secondary-button" type="button">關閉</button></div>
+    <div class="dialog-header"><h2 id="detail-title" tabindex="-1">產品詳情</h2><button id="detail-close" class="secondary-button" type="button">關閉</button></div>
     <div id="detail-content" class="dialog-content"></div>
   </dialog>
   <script id="card-rewards-core">
@@ -180,7 +181,7 @@
       return { ids, limitReached: false };
     }
 
-    globalThis.CardRewardsCore = { normalizeText, collectText, cardMatchesQuery, cardMatchesFilters, filterCards, toggleSelection };
+    globalThis.CardRewardsCore = Object.freeze({ normalizeText, collectText, cardMatchesQuery, cardMatchesFilters, filterCards, toggleSelection });
   </script>
 <!-- CARD_REWARDS_DATA_START -->
 <script id="card-rewards-data" type="application/json">
@@ -2103,7 +2104,7 @@
         {
           "description": "國泰世華銀行，〈CUBE信用卡〉canonical 權益頁；2026-08-18 實際導向新版 `CUBE信用卡` 頁並讀取 `#level` 渲染 DOM，確認固定回饋入口、Level、一般條款、指定消費上限與小樹點價值。 https://www.cathaybk.com.tw/cathaybk/promo/event/credit-card/product/CUBE_rights/index.html （最終頁：",
           "label": "3",
-          "url": "https://www.cathay-cube.com.tw/cathaybk/personal/product/credit-card/cards/cube#level）"
+          "url": "https://www.cathay-cube.com.tw/cathaybk/personal/product/credit-card/cards/cube#level"
         },
         {
           "description": "國泰世華銀行，〈常見問題〉第 129 題，國外信用卡交易之國際組織 1%＋本行 0.5% 手續費；沿用 2026-08-17 已完成的逐題 read-back。",
@@ -3130,7 +3131,7 @@
         {
           "description": "LINE Bank，〈簽帳金融卡－常見問題〉中的〈簽帳金融卡海外手續費？〉，現行 FAQ 明載海外刷卡交易酌收刷卡金額 1.5% 國外刷卡手續費；2026-08-17 read-back。 https://img.linebank.com.tw/cms/faq/content/1186885_1225.html?updatetime=20260701141227 （FAQ 索引：",
           "label": "3",
-          "url": "https://www.linebank.com.tw/faq/05）"
+          "url": "https://www.linebank.com.tw/faq/05"
         },
         {
           "description": "LINE Bank，〈友感帳戶刷卡功能全新上線〉，友感帳戶整合快點卡支付與同卡回饋的功能說明；2026-08-17 read-back。",
@@ -4189,8 +4190,11 @@
   "payments": [
     {
       "coverageStatus": "partial",
+      "customerScope": "existing",
+      "evidencePath": "payments/line-pay.md",
       "id": "line-pay",
       "issuer": "連加網路商業股份有限公司",
+      "name": "LINE Pay",
       "product": "LINE Pay",
       "rows": [
         {
@@ -4343,12 +4347,136 @@
           "stacking": "unsupported（便利商店）；其他場景 not officially confirmed",
           "supported": "not officially confirmed"
         }
-      ]
+      ],
+      "sources": [
+        {
+          "description": "LINE Pay，〈LINE Pay Money 付款方式〉，用於區分 LINE Pay 綁卡與另一電子支付帳戶／連結銀行帳戶服務；LINE Pay Money 可連結合作銀行並綁定 Visa、Mastercard、JCB。2026-08-17 read-back。",
+          "label": "1",
+          "url": "https://pay.line.me/portal/tw-lpm/payment/?anchor=1"
+        },
+        {
+          "description": "LINE Pay，〈新聞〉，2026-07-13 第三季券與品牌活動入口；未提供本清單舊戶可保證的共同固定回饋率。2026-08-17 read-back。",
+          "label": "2",
+          "url": "https://pay.line.me/portal/tw/customer/press"
+        },
+        {
+          "description": "中國信託銀行，〈LINE Pay 卡回饋計劃／優惠一覽〉，綁定資格、一般 1%、卡組織活動、登錄與排除。",
+          "label": "3",
+          "url": "https://www.ctbcbank.com/content/dam/minisite/long/creditcard/LINEPay/notice.html"
+        },
+        {
+          "description": "第一銀行，〈iLEO 卡指定支付最高享 13%〉，本文件僅採既有戶 LINE Pay 2%／3% 條款。",
+          "label": "4",
+          "url": "https://card.firstbank.com.tw/sites/card/zh_TW/1565697445348"
+        },
+        {
+          "description": "台新銀行，〈台新 Richart 卡 7+1 大刷〉，LINE Pay 的 Pay 著刷等級與排除。",
+          "label": "5",
+          "url": "https://web.taishinbank.com.tw/TSB/personal/credit/intro/overview/future/ab46dfa7-5d88-11f1-b50f-0050568c09e3"
+        },
+        {
+          "description": "永豐銀行，〈DAWAY 卡〉，LINE Pay 綁定、DAWAY GO、請款識別、2026 H2 商戶／平台活動分解、每帳號 cap 與全體總量；2026-08-18 read-back。",
+          "label": "6",
+          "url": "https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWAY.html"
+        },
+        {
+          "description": "王道銀行，〈王道刷支付享最高 5% 現金回饋〉，7-9 月 LINE Pay、登錄、名額及上限。",
+          "label": "7",
+          "url": "https://www.o-bank.com/retail/event/event-announce/pay1"
+        },
+        {
+          "description": "LINE Bank，〈快點買 YOLO、快點吃 TGIF〉官方 iframe；2026-08-17 direct read-back HTTP 200、41,175 bytes。正文明列 2026-06-29 至 09-27 的快點吃 TGIF「週週隨手Pay」：LINE Pay／LINE Pay Money 綁定快點卡或 iPASS MONEY 等行動支付，週五至日單筆滿 NT$500 回饋 NT$17 或 LINE POINTS 17 點、每週前 600 名；LINE Pay 不含綁定帳戶、電信費及保險專區。",
+          "label": "8",
+          "url": "https://img.linebank.com.tw/cms/event/1187189_1223.html?updatetime=20260814180008"
+        },
+        {
+          "description": "玉山銀行，〈玉山 Unicard〉，LINE Pay 為百大行動支付及三方案。",
+          "label": "9",
+          "url": "https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/unicard"
+        },
+        {
+          "description": "玉山銀行，〈玉山 U Bear 信用卡〉，LINE Pay 網路消費認列及僅公告至 2026-08-31。",
+          "label": "10",
+          "url": "https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/u-bear?tabid=tab02"
+        },
+        {
+          "description": "第一銀行，〈樂活通路最高 5% 回饋〉，2026-08-18 direct read-back 已一致重現 H2 5%、全年登錄與 LINE Pay 等第三方支付排除。",
+          "label": "11",
+          "url": "https://card.firstbank.com.tw/sites/Satellite?c=CreditCard&cid=1565705148928&d=Touch&pagename=FirstBankCard%2FCreditCard%2Fzh%2FCardActivityDetailView"
+        },
+        {
+          "description": "永豐銀行，〈DAWHO 現金回饋信用卡〉，既有戶未列 LINE Pay 加碼及新戶排除。",
+          "label": "12",
+          "url": "https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWHO.html"
+        },
+        {
+          "description": "永豐銀行，〈幣倍卡 2026 下半年權益〉，新申辦 Apple Pay／Google Pay 與既有戶精選通路限制。",
+          "label": "13",
+          "url": "https://bank.sinopac.com/sinopacBT/webevents/2003_dualcc/index.html?Branch=2026H2AD"
+        },
+        {
+          "description": "國泰世華銀行，〈CUBE 卡權益方案〉，2026-08-18 渲染 DOM 的固定回饋注意事項與計算表，正面列出 LINE Pay－屈臣氏 1.2%、LINE Pay－7-ELEVEN 0%，並說明底層一般消費與海外實體定義；童樂匯／台塑家另依各自排除。",
+          "label": "14",
+          "url": "https://www.cathay-cube.com.tw/cathaybk/personal/product/credit-card/cards/cube-list#B001"
+        },
+        {
+          "description": "樂天國際銀行，〈數位存款帳戶約定書〉，金融卡 ATM／網路 ATM 範圍。",
+          "label": "15",
+          "url": "https://www.rakuten-bank.com.tw/cms-upload/file/5952bd07162742cfad351017e90ff698.pdf"
+        },
+        {
+          "description": "玉山銀行，〈玉山 Pi 拍錢包信用卡〉，Pi App 為本卡明列支付路徑。",
+          "label": "16",
+          "url": "https://www.esunbank.com/zh-tw/personal/credit-card/intro/co-branded-card/pi-card?key=0"
+        },
+        {
+          "description": "台北富邦銀行，〈Costco 好多金回饋辦法〉，便利商店與全聯集團支付排除。",
+          "label": "17",
+          "url": "https://www.fubon.com/banking/document/form/TW/%E5%A5%BD%E5%A4%9A%E9%87%91%E5%9B%9E%E9%A5%8B%E8%BE%A6%E6%B3%95.pdf"
+        },
+        {
+          "description": "LINE Pay，〈LINE Pay App「找體驗」指定日回饋〉，2026-07-01 至 09-30 的平日／週末平台率、DAWAY 加碼、每月 cap、全體總量與額滿公告；2026-08-18 read-back。",
+          "label": "18",
+          "url": "https://web-tw-pay.line.me/cms/event/template1.3/d7636123-6581-46fd-b5b1-d955d119ac92"
+        }
+      ],
+      "summary": {
+        "blocks": [
+          {
+            "text": "本文件的 LINE Pay 是「綁定信用卡付款」服務；它不是銀行帳戶扣款，也不是 iPASS MONEY／LINE Pay Money 餘額服務。平台官方可確認的是綁卡付款及 LINE POINTS；卡能綁定不等於原卡或平台活動有回饋。凡銀行 H2 條款未逐一認列者均保留 `not officially confirmed`，不列入最佳卡建議 [來源 1][來源 2]。",
+            "type": "paragraph"
+          },
+          {
+            "text": "中國信託 LINE Pay 卡須綁定臺灣 LINE Pay 才有 1% LINE POINTS；永豐 DAWAY 卡亦以 LINE Pay 綁定及請款辨識作為其點數資格。第一銀行 iLEO、台新 Richart、國泰 CUBE、玉山 Unicard、U Bear、王道與 LINE Bank 快點卡則各有期間、方案、底層一般消費、帳戶任務或名額限制；DAWAY 的商戶／LINE Pay 活動及快點卡的銀行活動都只能在精確期間、cap 與總量內採用，詳矩陣 [來源 3]–[來源 10][來源 14][來源 18]。",
+            "type": "paragraph"
+          }
+        ]
+      },
+      "targetFrom": "2026-08-01",
+      "targetTo": "2026-12-31",
+      "uncertainties": {
+        "blocks": [
+          {
+            "items": [
+              "LINE Pay 原服務與 LINE Pay Money／iPASS MONEY 的服務演進頁面並存；本矩陣只把銀行明列的 LINE Pay 綁卡 當作原卡活動路徑，未以帳戶連結或餘額付款代填。",
+              "未覆蓋期間：2026-09-28 至 2026-12-31（Visa LINE Bank 快點卡「週週隨手Pay」同類特殊加碼的後續條款未公告；非指一般消費 0.5% 已被否定）[來源 8]。",
+              "未覆蓋期間：2026-08-01 至 2026-12-31（除 Visa LINE Bank 快點卡外，矩陣中 `not officially confirmed` 產品的 LINE Pay 相容性或平台加碼疊加證據）[來源 1][來源 2]。",
+              "逐日缺口：Visa LINE Bank 快點卡在 2026-09-28 至 12-31（含 9/28–9/30）沒有同類特殊加碼的後續活動條款；這不把可確認至 12-31 的一般消費 0.5% 寫成 LINE Pay 平台加碼 [來源 8]。",
+              "逐日缺口：除 Visa LINE Bank 快點卡外，矩陣中標示 `not officially confirmed` 的產品於 2026-08-01 至 12-31 每日均缺少該產品的 LINE Pay 相容性或「平台加碼可疊加」正面官方證據；未知不推為零 [來源 1][來源 2]。"
+            ],
+            "type": "list"
+          }
+        ]
+      },
+      "verifiedAt": "2026-08-18"
     },
     {
       "coverageStatus": "partial",
+      "customerScope": "existing",
+      "evidencePath": "payments/ipass-money.md",
       "id": "ipass-money",
       "issuer": "一卡通票證股份有限公司",
+      "name": "iPASS MONEY",
       "product": "iPASS MONEY",
       "rows": [
         {
@@ -4501,12 +4629,152 @@
           "stacking": "not officially confirmed",
           "supported": "not officially confirmed"
         }
-      ]
+      ],
+      "sources": [
+        {
+          "description": "一卡通，〈銀行帳戶〉，連結合作銀行帳戶與儲值；列出合作銀行。",
+          "label": "1",
+          "url": "https://www.i-pass.com.tw/Page/iPMBankAccount"
+        },
+        {
+          "description": "一卡通，〈自動儲值〉，自動儲值與交易差額儲值均由連結銀行帳戶扣款。",
+          "label": "2",
+          "url": "https://web.i-pass.com.tw/Page/iPMBankAutoTopup"
+        },
+        {
+          "description": "一卡通，〈iPASS MONEY APP 擴大開放信用卡綁定付款〉，各銀行信用卡綁定服務。",
+          "label": "3",
+          "url": "https://www.i-pass.com.tw/News/Detail/103889"
+        },
+        {
+          "description": "一卡通，〈信用卡設定〉，信用卡綁定與設為預設付款方式的流程。",
+          "label": "4",
+          "url": "https://www.i-pass.com.tw/Page/CreditCard"
+        },
+        {
+          "description": "王道銀行，〈iPASS MONEY 綁王道卡消費，樂享 5% 回饋〉，2026-08-01 至 12-31 綠點、名額與上限。",
+          "label": "5",
+          "url": "https://www.o-bank.com/zh-tw/retail/event/event-compaign?campaigncode=db-dc-2018040102&sourcecode=cama"
+        },
+        {
+          "description": "LINE Bank，〈快點買 YOLO、快點吃 TGIF〉官方 iframe；2026-08-17 direct read-back HTTP 200、41,175 bytes。正文明列 2026-06-29 至 09-27 的快點吃 TGIF「週週隨手Pay」：iPASS MONEY 綁定快點卡付款，週五至日單筆滿 NT$500 回饋 NT$17 或 LINE POINTS 17 點、每週前 600 名；與一般消費 0.5% 合計最高 4%。",
+          "label": "6",
+          "url": "https://img.linebank.com.tw/cms/event/1187189_1223.html?updatetime=20260814180008"
+        },
+        {
+          "description": "玉山銀行，〈玉山 Unicard〉，iPASS MONEY 為百大行動支付與三方案加碼。",
+          "label": "7",
+          "url": "https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/unicard"
+        },
+        {
+          "description": "一卡通，〈首次連結玉山數位帳戶並開啟自動儲值享 50 元回饋〉，首次連結、7-9 月及 1,000 人限制。",
+          "label": "8",
+          "url": "https://www.i-pass.com.tw/EN/Preferential/Detail/GMZTMOIRKWWYZ64APifC"
+        },
+        {
+          "description": "一卡通，〈摩斯漢堡 iPASS MONEY 優惠〉，7-8 月券、指定卡與活動限制。",
+          "label": "9",
+          "url": "https://www.i-pass.com.tw/Preferential/Detail/GMZTMMIYIYLJ764InoUT"
+        },
+        {
+          "description": "第一銀行，〈iLEO 卡〉，既有戶指定支付名單。",
+          "label": "10",
+          "url": "https://card.firstbank.com.tw/sites/card/zh_TW/1565697445348"
+        },
+        {
+          "description": "第一銀行，〈新卡友一卡通自動加值 20%〉，首次申辦排除。",
+          "label": "11",
+          "url": "https://card.firstbank.com.tw/sites/Satellite?c=CreditCard&cid=1565703317144&d=Touch&pagename=FirstBankCard%2FCreditCard%2Fzh%2FCardActivityDetailView"
+        },
+        {
+          "description": "台新銀行，〈台新 Richart 卡〉，切換刷指定支付與排除。",
+          "label": "12",
+          "url": "https://web.taishinbank.com.tw/TSB/personal/credit/intro/overview/future/ab46dfa7-5d88-11f1-b50f-0050568c09e3"
+        },
+        {
+          "description": "永豐銀行，〈DAWHO 現金回饋信用卡〉。",
+          "label": "13",
+          "url": "https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWHO.html"
+        },
+        {
+          "description": "永豐銀行，〈幣倍卡 2026 下半年權益〉。",
+          "label": "14",
+          "url": "https://bank.sinopac.com/sinopacBT/webevents/2003_dualcc/index.html?Branch=2026H2AD"
+        },
+        {
+          "description": "永豐銀行，〈DAWAY 卡〉。",
+          "label": "15",
+          "url": "https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWAY.html"
+        },
+        {
+          "description": "國泰世華銀行，〈台塑家／CUBE〉。",
+          "label": "16",
+          "url": "https://www.cathaybk.com.tw/cathaybk/promo/event/credit-card/product/F2C/index.html"
+        },
+        {
+          "description": "中國信託銀行，〈LINE Pay 卡回饋計劃〉。",
+          "label": "17",
+          "url": "https://www.ctbcbank.com/content/dam/minisite/long/creditcard/LINEPay/notice.html"
+        },
+        {
+          "description": "樂天國際銀行，〈行動支付〉，列 icash Pay 而非 iPASS MONEY。",
+          "label": "18",
+          "url": "https://www.rakuten-bank.com.tw/portal/product/pay"
+        },
+        {
+          "description": "玉山銀行，〈玉山 Pi 拍錢包信用卡〉。",
+          "label": "19",
+          "url": "https://www.esunbank.com/zh-tw/personal/credit-card/intro/co-branded-card/pi-card?key=0"
+        },
+        {
+          "description": "玉山銀行，〈玉山 U Bear 信用卡〉。",
+          "label": "20",
+          "url": "https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/u-bear?tabid=tab02"
+        },
+        {
+          "description": "台北富邦銀行，〈Costco 好多金回饋辦法〉。",
+          "label": "21",
+          "url": "https://www.fubon.com/banking/document/form/TW/%E5%A5%BD%E5%A4%9A%E9%87%91%E5%9B%9E%E9%A5%8B%E8%BE%A6%E6%B3%95.pdf"
+        }
+      ],
+      "summary": {
+        "blocks": [
+          {
+            "text": "iPASS MONEY 必須分成三種工具：連結銀行帳戶用於儲值／餘額付款、銀行自動儲值或交易差額儲值用於補足餘額、以及綁定信用卡付款。三者不是同一筆刷卡交易，因此銀行帳戶任務、儲值金、票卡自動加值與原卡消費回饋不可互相代換 [來源 1]–[來源 4]。",
+            "type": "paragraph"
+          },
+          {
+            "text": "官方已公告擴大開放各銀行信用卡綁定付款；但這類通用公告不能確認本清單任一特定信用卡的綁定。原卡基本／加碼是否認列仍以各銀行 H2 條款為準。王道簽帳金融卡、Visa LINE Bank 快點卡與 Unicard 在本清單具特定產品正面證據；快點卡是銀行「週週隨手Pay」活動，Unicard 是銀行「百大行動支付」加碼，兩者都不是 iPASS MONEY 平台另給的點數 [來源 3][來源 5]–[來源 7]。",
+            "type": "paragraph"
+          }
+        ]
+      },
+      "targetFrom": "2026-08-01",
+      "targetTo": "2026-12-31",
+      "uncertainties": {
+        "blocks": [
+          {
+            "items": [
+              "未覆蓋期間：2026-09-28 至 2026-12-31（Visa LINE Bank 快點卡「週週隨手Pay」同類特殊加碼的後續條款未公告；非指一般消費 0.5% 已被否定）[來源 6]。",
+              "未覆蓋期間：2026-08-01 至 2026-12-31（iLEO、綠活、Richart、DAWHO、幣倍、DAWAY、CUBE、中信 LINE Pay、樂天、Pi、U Bear、Costco 的 iPASS MONEY 綁定正面證據）[來源 3]。",
+              "未覆蓋期間：2026-08-01 至 2026-12-31（原卡／帳戶回饋與 iPASS MONEY 平台加碼的雙邊疊加證據）[來源 5][來源 7]。",
+              "逐日缺口：Visa LINE Bank 快點卡在 2026-09-28 至 12-31（含 9/28–9/30）沒有同類特殊加碼的後續活動條款；這不把可確認至 12-31 的一般消費 0.5% 寫成 iPASS MONEY 平台加碼 [來源 6]。",
+              "逐日缺口：iLEO、綠活、Richart、DAWHO、幣倍、DAWAY、CUBE、中信 LINE Pay、樂天、Pi、U Bear、Costco 於 2026-08-01 至 12-31 每日均缺少該特定產品 iPASS MONEY 綁定正面證據；不以通用信用卡頁補足 [來源 3]。",
+              "逐日缺口：所有產品於 2026-08-01 至 12-31 每日均缺少「原卡／帳戶回饋與 iPASS MONEY 平台加碼可疊加」的雙邊正面證據；王道與 Unicard 的銀行內部活動不作平台疊加 [來源 5][來源 7]。"
+            ],
+            "type": "list"
+          }
+        ]
+      },
+      "verifiedAt": "2026-08-17"
     },
     {
       "coverageStatus": "partial",
+      "customerScope": "existing",
+      "evidencePath": "payments/px-pay.md",
       "id": "px-pay",
       "issuer": "全支付電子支付股份有限公司",
+      "name": "全支付",
       "product": "全支付",
       "rows": [
         {
@@ -4659,7 +4927,123 @@
           "stacking": "unsupported（全聯／大全聯）；其他店外 not officially confirmed",
           "supported": "not officially confirmed"
         }
-      ]
+      ],
+      "sources": [
+        {
+          "description": "全支付，〈全支付一週年活動〉，用於確認全支付可分帳戶、連結銀行帳戶與連結信用卡付款，及「PX Pay 首頁之全支付入口」的官方用語；活動本身已結束，不作 H2 回饋率證據。",
+          "label": "1",
+          "url": "https://prod-s3.pxpayplus.com/MKT_Event/pxplus_marketing_page/event.html?EventId=56"
+        },
+        {
+          "description": "全支付，〈收益進帳全支付〉，明示全支付帳戶餘額、連結銀行帳戶、連結信用卡三種消費方式及活動可與原有回饋併行的條件性表述；活動至 2025-12-31，僅作付款工具區分。",
+          "label": "2",
+          "url": "https://prod-s3.pxpayplus.com/pxplus_jpmam_mktpage/index.html"
+        },
+        {
+          "description": "王道銀行，〈全支付綁定王道銀行簽帳金融卡〉，至 2027-01-03 的指定場域、全點、每週／全期上限及排除。",
+          "label": "3",
+          "url": "https://www.o-bank.com/zh-tw/retail/event/event-announce/debit_20270103_1"
+        },
+        {
+          "description": "樂天國際銀行，〈優惠活儲活動辦法〉，付款任務期間 2026-05-01 至 07-31；全客戶優惠利率僅至 08-31，並明列全支付連結帳戶付款次數。",
+          "label": "4",
+          "url": "https://www.rakuten-bank.com.tw/portal/product/twd-time-deposit"
+        },
+        {
+          "description": "玉山銀行，〈玉山 Unicard〉，全支付為百大行動支付及三方案。",
+          "label": "5",
+          "url": "https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/unicard"
+        },
+        {
+          "description": "玉山銀行，〈玉山 U Bear 信用卡〉，全支付網路認列與全聯／大全聯、繳費排除。",
+          "label": "6",
+          "url": "https://www.esunbank.com/zh-tw/personal/credit-card/intro/bank-card/u-bear?tabid=tab02"
+        },
+        {
+          "description": "第一銀行，〈iLEO 卡指定支付〉。",
+          "label": "7",
+          "url": "https://card.firstbank.com.tw/sites/card/zh_TW/1565697445348"
+        },
+        {
+          "description": "第一銀行，〈樂活通路最高 5%〉，2026 下半年五大綠活通路 5%、登錄期間及全支付排除；2026-08-18 read-back。",
+          "label": "8",
+          "url": "https://card.firstbank.com.tw/sites/Satellite?c=CreditCard&cid=1565705148928&d=Touch&pagename=FirstBankCard%2FCreditCard%2Fzh%2FCardActivityDetailView"
+        },
+        {
+          "description": "台新銀行，〈台新 Richart 卡〉，全支付為不適用切換刷加碼之支付工具。",
+          "label": "9",
+          "url": "https://web.taishinbank.com.tw/TSB/personal/credit/intro/overview/future/ab46dfa7-5d88-11f1-b50f-0050568c09e3"
+        },
+        {
+          "description": "永豐銀行，〈DAWHO 現金回饋信用卡〉。",
+          "label": "10",
+          "url": "https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWHO.html"
+        },
+        {
+          "description": "永豐銀行，〈幣倍卡 2026 下半年權益〉。",
+          "label": "11",
+          "url": "https://bank.sinopac.com/sinopacBT/webevents/2003_dualcc/index.html?Branch=2026H2AD"
+        },
+        {
+          "description": "永豐銀行，〈DAWAY 卡〉。",
+          "label": "12",
+          "url": "https://bank.sinopac.com/sinopacBT/personal/credit-card/introduction/bankcard/DAWAY.html"
+        },
+        {
+          "description": "國泰世華銀行，〈CUBE 卡權益方案〉，2026-08-18 展開新版渲染頁，確認獨立「全支付」2% 方案及切入固定回饋後鎖定、不可同日疊用其他方案。",
+          "label": "13",
+          "url": "https://www.cathay-cube.com.tw/cathaybk/personal/product/credit-card/cards/cube-list#B001"
+        },
+        {
+          "description": "中國信託銀行，〈LINE Pay 卡回饋計劃〉。",
+          "label": "14",
+          "url": "https://www.ctbcbank.com/content/dam/minisite/long/creditcard/LINEPay/notice.html"
+        },
+        {
+          "description": "LINE Bank，〈快點買 YOLO、快點吃 TGIF〉。",
+          "label": "15",
+          "url": "https://www.linebank.com.tw/notice/events/1187189"
+        },
+        {
+          "description": "玉山銀行，〈玉山 Pi 拍錢包信用卡〉。",
+          "label": "16",
+          "url": "https://www.esunbank.com/zh-tw/personal/credit-card/intro/co-branded-card/pi-card?key=0"
+        },
+        {
+          "description": "台北富邦銀行，〈Costco 好多金回饋辦法〉，全聯集團、PX Pay／全支付等支付方式排除。",
+          "label": "17",
+          "url": "https://www.fubon.com/banking/document/form/TW/%E5%A5%BD%E5%A4%9A%E9%87%91%E5%9B%9E%E9%A5%8B%E8%BE%A6%E6%B3%95.pdf"
+        }
+      ],
+      "summary": {
+        "blocks": [
+          {
+            "text": "本檔案研究的是全支付。PX Pay 是全聯 APP 的入口／介面之一，官方在部分規則以「PX Pay 首頁之全支付入口」描述查詢或操作；它不是可任意替換全支付名稱的另一個付款工具。涉及全聯、大全聯或「PX Pay」的排除，僅在原卡／平台規則明文指向該場域時套用 [來源 1][來源 2]。",
+            "type": "paragraph"
+          },
+          {
+            "text": "全支付可使用帳戶餘額、連結銀行帳戶或連結信用卡付款，但通用服務功能不能確認任一特定卡片的可綁性。王道簽帳金融卡在指定場域有至 2027-01-03 的全點活動；CUBE 官方另列可切換的「全支付」2% 權益方案；Unicard 的全支付是百大行動支付；U Bear 只覆蓋 8 月網路一般消費。樂天可確認的是全支付連結帳戶功能；「付款 5 次」任務已在 7-31 截止，非目標窗可執行的金融卡或全支付加碼 [來源 2]–[來源 6][來源 13]。",
+            "type": "paragraph"
+          }
+        ]
+      },
+      "targetFrom": "2026-08-01",
+      "targetTo": "2026-12-31",
+      "uncertainties": {
+        "blocks": [
+          {
+            "items": [
+              "未覆蓋期間：2026-08-01 至 2026-12-31（矩陣所列特定產品的全支付綁定正面證據）[來源 1]。",
+              "未覆蓋期間：2026-08-01 至 2026-12-31（原卡／帳戶回饋與全支付平台加碼的雙邊疊加證據）[來源 3][來源 4]。",
+              "未覆蓋期間：2026-09-01 至 2026-12-31（樂天帳戶付款 5 次任務不可在目標窗內新執行）[來源 4]。",
+              "逐日缺口：iLEO、綠活、Richart、DAWHO、幣倍、DAWAY、中信 LINE Pay、LINE Bank、Pi、Costco 於 2026-08-01 至 12-31 每日均缺少該特定產品全支付綁定正面證據；不以全支付通用服務頁補足 [來源 1]。CUBE 已有官方獨立全支付 2% 方案正面證據，但該方案全部商戶與逐通路細則仍未在本輪完整重建，且不可與固定回饋疊加 [來源 13]。",
+              "逐日缺口：所有產品於 2026-08-01 至 12-31 每日均缺少「原卡／帳戶回饋與全支付平台加碼可疊加」的雙邊正面證據。樂天最多只能記錄 8 月可能的既得利率，9-12 月無此付款任務可執行 [來源 3][來源 4]。"
+            ],
+            "type": "list"
+          }
+        ]
+      },
+      "verifiedAt": "2026-08-18"
     }
   ],
   "scenarios": [
@@ -5106,11 +5490,16 @@
         detailId: null
       };
       const facetLabels = {
-        "line-pay": "LINE Pay", "ipass-money": "iPASS MONEY", "px-pay": "PX Pay", "overseas": "海外消費",
-        "subscriptions": "數位訂閱", "transport": "交通與加油", "costco": "量販與 Costco"
+        "domestic": "國內", "online": "網購", "overseas": "國外", "subscriptions": "數位訂閱",
+        "transit": "交通", "costco": "量販與 Costco", "line-pay": "LINE Pay",
+        "ipass-money": "iPASS MONEY", "px-pay": "全支付"
       };
-      const coverageLabels = { complete: "完整", partial: "部分", unavailable: "未提供" };
-      const typeLabels = { "credit-card": "信用卡", "debit-card": "簽帳金融卡" };
+      const coverageLabels = { complete: "完整", partial: "部分期間", unavailable: "無資料" };
+      const typeLabels = { credit: "信用卡", debit: "簽帳金融卡", atm: "ATM／功能未確認" };
+      const badgeLabels = {
+        partial: "部分期間", registration: "需登錄", limited: "限量", derived: "推導值",
+        "non-guaranteed": "非保證", conflict: "來源衝突", unconfirmed: "未確認"
+      };
       const DETAIL_SECTION_ORDER = [
         ["summary", "結論摘要"],
         ["generalRewards", "一般回饋"],
@@ -5120,6 +5509,7 @@
         ["uncertainties", "不確定事項"]
       ];
       const app = document.getElementById("app");
+      const headerStatus = document.getElementById("header-status");
       const fatalError = document.getElementById("fatal-error");
       const search = document.getElementById("search");
       const resultCount = document.getElementById("result-count");
@@ -5220,7 +5610,7 @@
         article.append(rewards);
         const badges = create("div", undefined, "badges");
         badges.append(create("span", labelFor(coverageLabels, card.coverageStatus), `badge badge--${card.coverageStatus}`));
-        (card.badges || []).forEach(badge => badges.append(create("span", badge, "badge")));
+        (card.badges || []).forEach(badge => badges.append(create("span", labelFor(badgeLabels, badge), "badge")));
         article.append(badges);
         const actions = create("div", undefined, "card-actions");
         const detailButton = create("button", "查看詳情", "secondary-button");
@@ -5269,11 +5659,27 @@
         return state.selectedIds.map(id => cards.find(card => card.id === id)).filter(Boolean);
       }
 
-      function paymentValue(paymentId, productId) {
+      function localizedEvidenceText(value) {
+        return String(value || "")
+          .replace(/not officially confirmed/g, "未獲官方確認")
+          .replace(/unsupported/g, "不支援")
+          .replace(/supported/g, "已確認支援");
+      }
+
+      function paymentValue(paymentId, card) {
         const payment = payments.find(item => item.id === paymentId);
-        const row = payment && payment.rows.find(item => item.productId === productId);
-        if (!row) return "not officially confirmed";
-        return [row.supported, row.stacking].filter(Boolean).join("；");
+        const row = payment && payment.rows.find(item => item.productId === card.id);
+        if (!row) return "未獲官方確認";
+        const comparisonKey = { "line-pay": "linePay", "ipass-money": "ipassMoney", "px-pay": "pxPay" }[paymentId];
+        return [
+          ["原比較摘要", card.comparison[comparisonKey]],
+          ["相容性", row.supported],
+          ["支付方式", row.method],
+          ["原卡／帳戶回饋", row.cardRewards],
+          ["支付服務加碼", row.serviceBonus],
+          ["疊加／情境", row.stacking],
+          ["證據定位", row.sourceEvidence]
+        ].filter(([, value]) => value).map(([label, value]) => `${label}：${localizedEvidenceText(value)}`).join("；");
       }
 
       function appendComparisonRow(table, label, selected, valueFor) {
@@ -5301,9 +5707,9 @@
         appendComparisonRow(body, "最佳特殊回饋", selected, card => card.comparison.bestSpecial);
         appendComparisonRow(body, "條件", selected, card => card.comparison.conditions);
         appendComparisonRow(body, "上限／推導可刷額", selected, card => card.comparison.capAndDerivedSpend);
-        appendComparisonRow(body, "LINE Pay", selected, card => paymentValue("line-pay", card.id));
-        appendComparisonRow(body, "iPASS MONEY", selected, card => paymentValue("ipass-money", card.id));
-        appendComparisonRow(body, "全支付", selected, card => paymentValue("px-pay", card.id));
+        appendComparisonRow(body, "LINE Pay", selected, card => paymentValue("line-pay", card));
+        appendComparisonRow(body, "iPASS MONEY", selected, card => paymentValue("ipass-money", card));
+        appendComparisonRow(body, "全支付", selected, card => paymentValue("px-pay", card));
         appendComparisonRow(body, "研究期間覆蓋", selected, card => labelFor(coverageLabels, card.coverageStatus));
         table.append(head, body);
         comparisonContent.append(table);
@@ -5346,9 +5752,9 @@
         clearChildren(detailContent);
         const badges = create("div", undefined, "badges");
         badges.append(create("span", labelFor(coverageLabels, card.coverageStatus), `badge badge--${card.coverageStatus}`));
-        card.badges.forEach(badge => badges.append(create("span", badge, "badge")));
+        card.badges.forEach(badge => badges.append(create("span", labelFor(badgeLabels, badge), "badge")));
         detailContent.append(badges);
-        detailContent.append(create("p", `研究期間覆蓋：${labelFor(coverageLabels, card.coverageStatus)}期間`));
+        detailContent.append(create("p", `研究期間覆蓋：${labelFor(coverageLabels, card.coverageStatus)}`));
         DETAIL_SECTION_ORDER.forEach(([key, label]) => {
           const section = create("section", undefined, "evidence-section");
           section.append(create("h3", label));
@@ -5377,6 +5783,7 @@
         sources.append(evidenceLink);
         detailContent.append(sources);
         detailDialog.showModal();
+        detailTitle.focus();
       }
 
       function restoreSelectionFocus(focusToken) {
@@ -5446,6 +5853,44 @@
         }
       }
 
+      function validateEvidenceSection(section, context) {
+        if (!section || typeof section !== "object" || Array.isArray(section) || !Array.isArray(section.blocks)) {
+          throw new Error(`${context}格式不正確。`);
+        }
+      }
+
+      function validatePayment(payment, index) {
+        if (!payment || typeof payment !== "object" || Array.isArray(payment)) throw new Error(`第 ${index + 1} 項支付資料格式不正確。`);
+        for (const field of ["id", "name", "product", "issuer", "coverageStatus", "customerScope", "targetFrom", "targetTo", "verifiedAt", "evidencePath"]) {
+          if (typeof payment[field] !== "string" || !payment[field]) throw new Error(`第 ${index + 1} 項支付資料缺少 ${field}。`);
+        }
+        validateEvidenceSection(payment.summary, `第 ${index + 1} 項支付資料的 summary `);
+        validateEvidenceSection(payment.uncertainties, `第 ${index + 1} 項支付資料的 uncertainties `);
+        if (!Array.isArray(payment.sources) || !payment.sources.length) throw new Error(`第 ${index + 1} 項支付資料的 sources 格式不正確。`);
+        payment.sources.forEach((source, sourceIndex) => {
+          for (const field of ["label", "description", "url"]) {
+            if (!source || typeof source[field] !== "string") throw new Error(`第 ${index + 1} 項支付資料第 ${sourceIndex + 1} 個來源缺少 ${field}。`);
+          }
+        });
+        if (!Array.isArray(payment.rows) || payment.rows.length !== 15) throw new Error(`第 ${index + 1} 項支付資料列數不正確。`);
+        payment.rows.forEach((row, rowIndex) => {
+          for (const field of ["productId", "product", "supported", "method", "cardRewards", "serviceBonus", "stacking", "sourceEvidence"]) {
+            if (!row || typeof row[field] !== "string") throw new Error(`第 ${index + 1} 項支付資料第 ${rowIndex + 1} 列缺少 ${field}。`);
+          }
+        });
+      }
+
+      function validateDatasetMetadata(dataset) {
+        for (const field of ["auditDate", "targetFrom", "targetTo"]) {
+          if (typeof dataset[field] !== "string") throw new Error(`資料缺少 ${field}。`);
+        }
+        const counts = dataset.coverageCounts;
+        if (!counts || typeof counts !== "object" || Array.isArray(counts)) throw new Error("覆蓋計數格式不正確。");
+        for (const field of ["complete", "partial", "unavailable"]) {
+          if (!Number.isInteger(counts[field]) || counts[field] < 0) throw new Error(`覆蓋計數缺少 ${field}。`);
+        }
+      }
+
       function bootstrap() {
         try {
           const dataElement = document.getElementById("card-rewards-data");
@@ -5454,9 +5899,12 @@
           if (dataset.schemaVersion !== "1") throw new Error("資料版本不支援。");
           if (!Array.isArray(dataset.cards) || dataset.cards.length !== 15) throw new Error("信用卡資料筆數不正確。");
           if (!Array.isArray(dataset.payments) || dataset.payments.length !== 3) throw new Error("行動支付資料筆數不正確。");
+          validateDatasetMetadata(dataset);
           dataset.cards.forEach(validateCard);
+          dataset.payments.forEach(validatePayment);
           cards = dataset.cards;
           payments = dataset.payments;
+          headerStatus.textContent = `只適用既有持卡人／既有帳戶（舊戶）｜研究期間 ${dataset.targetFrom} 至 ${dataset.targetTo}｜查證基準日 ${dataset.auditDate}｜覆蓋：完整 ${dataset.coverageCounts.complete}／部分 ${dataset.coverageCounts.partial}`;
           search.addEventListener("input", () => { state.query = search.value; render(); });
           clearFilters.addEventListener("click", clearDiscovery);
           emptyClear.addEventListener("click", clearDiscovery);

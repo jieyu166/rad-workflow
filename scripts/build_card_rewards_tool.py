@@ -11,6 +11,7 @@ import tempfile
 from collections import Counter
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).parents[1]))
@@ -58,6 +59,11 @@ FOOTNOTE_DEFINITION_RE = re.compile(
     r"(?m)^\[\^([^\]]+)\]:\s*\[[^\]]+\]\((cards/([a-z0-9-]+)\.md)\)\s*$"
 )
 SOURCE_RE = re.compile(r"(?m)^(\d+)\.\s+(.+?)\s+(https://\S+)\s*$")
+README_AUDIT_RE = re.compile(r"最後一次逐 URL 官方來源稽核：\*\*(\d{4}-\d{2}-\d{2})\*\*")
+README_TARGET_RE = re.compile(r"期間固定為 \*\*(\d{4}-\d{2}-\d{2}) 至 (\d{4}-\d{2}-\d{2})\*\*")
+README_COVERAGE_RE = re.compile(r"(?m)^- `(complete|partial|unavailable)`：(\d+)\s*$")
+COMPARISON_COVERAGE_RE = re.compile(r"^`(complete|partial|unavailable)`(?:\s*[：:].*)?$")
+SOURCE_TRAILING_PUNCTUATION = "，。；：！？、）］】》〉」』"
 CTBC_SPECIAL_HEADERS = (
     "有效期間", "場景／通路", "總回饋", "組成", "舊戶條件", "回饋上限／推導可刷額", "登錄／名額",
 )
@@ -213,9 +219,25 @@ def _blocks(text: str, *, relative: str, section: str) -> list[dict[str, object]
 def _sources(section: str, *, relative: str) -> list[dict[str, str]]:
     sources: list[dict[str, str]] = []
     normalized = re.sub(r"(?<!\s)(https://)", r" \1", section)
-    for label, description, url in SOURCE_RE.findall(normalized):
-        if not url.startswith("https://"):
-            raise BuildError(f"{relative}: source {label} must use an HTTPS URL")
+    for label, description, raw_url in SOURCE_RE.findall(normalized):
+        url = raw_url.rstrip(SOURCE_TRAILING_PUNCTUATION + ".,;:>")
+        while url.endswith(")") and url.count(")") > url.count("("):
+            url = url[:-1]
+        while url.endswith("]") and url.count("]") > url.count("["):
+            url = url[:-1]
+        try:
+            parsed = urlsplit(url)
+            _ = parsed.port
+        except ValueError as exc:
+            raise BuildError(f"{relative}: source {label} has an invalid URL") from exc
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or any(character.isspace() for character in url)
+        ):
+            raise BuildError(f"{relative}: source {label} must use a valid absolute HTTPS URL")
         sources.append({"label": label, "description": _clean_text(description), "url": url})
     if not sources:
         raise BuildError(f"{relative}: sourceEvidence requires numbered HTTPS sources")
@@ -327,10 +349,43 @@ def _payment_rows(
     metadata = parsed["metadata"]
     return {
         "id": payment_id,
+        "name": metadata["product"],
         "product": metadata["product"],
         "issuer": metadata["issuer"],
         "coverageStatus": metadata["coverage_status"],
+        "customerScope": metadata["customer_scope"],
+        "targetFrom": metadata["target_from"],
+        "targetTo": metadata["target_to"],
+        "verifiedAt": metadata["verified_at"],
+        "evidencePath": relative,
+        "summary": parsed["sections"]["summary"],
+        "sources": parsed["sources"],
+        "uncertainties": parsed["sections"]["uncertainties"],
         "rows": output_rows,
+    }
+
+
+def _read_readme_contract(corpus_root: Path) -> dict[str, object]:
+    relative = "README.md"
+    try:
+        text = (corpus_root / relative).read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise BuildError(f"{relative}: cannot read strict input contract: {exc}") from exc
+    audit_matches = README_AUDIT_RE.findall(text)
+    target_matches = README_TARGET_RE.findall(text)
+    coverage_matches = README_COVERAGE_RE.findall(text)
+    if len(audit_matches) != 1:
+        raise BuildError(f"{relative}: requires exactly one audit date")
+    if len(target_matches) != 1:
+        raise BuildError(f"{relative}: requires exactly one target window")
+    coverage_counts = {key: int(value) for key, value in coverage_matches}
+    if len(coverage_matches) != 3 or set(coverage_counts) != {"complete", "partial", "unavailable"}:
+        raise BuildError(f"{relative}: requires one coverage count for each status")
+    return {
+        "auditDate": audit_matches[0],
+        "targetFrom": target_matches[0][0],
+        "targetTo": target_matches[0][1],
+        "coverageCounts": coverage_counts,
     }
 
 
@@ -418,6 +473,7 @@ def build_dataset(root: Path) -> dict[str, object]:
     issues = validate_corpus(corpus_root)
     if issues:
         raise BuildError("\n".join(f"{issue.code}: {issue.path}: {issue.message}" for issue in issues))
+    readme_contract = _read_readme_contract(corpus_root)
     comparison, labels, footnotes = _comparison(corpus_root)
     payment_documents = [
         _payment_rows(corpus_root / "payments" / filename, corpus_root=corpus_root, labels=labels)
@@ -438,6 +494,16 @@ def build_dataset(root: Path) -> dict[str, object]:
         product_id = comparison_row["productId"]
         parsed = parse_document(corpus_root / "cards" / f"{product_id}.md", corpus_root=corpus_root)
         metadata = parsed["metadata"]
+        comparison_coverage = COMPARISON_COVERAGE_RE.fullmatch(str(comparison_row["coverage"]))
+        if comparison_coverage is None:
+            raise BuildError(
+                f"comparison.md: {product_id} coverage must begin with a known backticked status"
+            )
+        if comparison_coverage.group(1) != metadata["coverage_status"]:
+            raise BuildError(
+                f"comparison.md: {product_id} coverage {comparison_coverage.group(1)!r} "
+                f"does not match cards/{product_id}.md frontmatter {metadata['coverage_status']!r}"
+            )
         coverage[str(metadata["coverage_status"])] += 1
         audit_dates.add(str(metadata["verified_at"]))
         target_from.add(str(metadata["target_from"]))
@@ -468,22 +534,40 @@ def build_dataset(root: Path) -> dict[str, object]:
         )
     for payment in payment_documents:
         coverage[str(payment["coverageStatus"])] += 1
-        parsed = parse_document(corpus_root / "payments" / f"{payment['id']}.md", corpus_root=corpus_root)
-        metadata = parsed["metadata"]
-        audit_dates.add(str(metadata["verified_at"]))
-        target_from.add(str(metadata["target_from"]))
-        target_to.add(str(metadata["target_to"]))
-    expected_coverage = {"complete": 9, "partial": 9, "unavailable": 0}
-    coverage_counts = {key: coverage[key] for key in expected_coverage}
-    if coverage_counts != expected_coverage:
-        raise BuildError(f"coverage baseline mismatch: expected {expected_coverage}; found {coverage_counts}")
+        audit_dates.add(str(payment["verifiedAt"]))
+        target_from.add(str(payment["targetFrom"]))
+        target_to.add(str(payment["targetTo"]))
+    coverage_counts = {
+        key: coverage[key] for key in ("complete", "partial", "unavailable")
+    }
+    if coverage_counts != readme_contract["coverageCounts"]:
+        raise BuildError(
+            f"README.md coverage counts mismatch: declared {readme_contract['coverageCounts']}; "
+            f"found {coverage_counts}"
+        )
     if len(target_from) != 1 or len(target_to) != 1:
         raise BuildError("corpus metadata must have one target window")
+    audit_date = max(audit_dates)
+    corpus_target_from = next(iter(target_from))
+    corpus_target_to = next(iter(target_to))
+    if audit_date != readme_contract["auditDate"]:
+        raise BuildError(
+            f"README.md audit date mismatch: declared {readme_contract['auditDate']}; found {audit_date}"
+        )
+    if (
+        corpus_target_from != readme_contract["targetFrom"]
+        or corpus_target_to != readme_contract["targetTo"]
+    ):
+        raise BuildError(
+            "README.md target window mismatch: "
+            f"declared {readme_contract['targetFrom']} to {readme_contract['targetTo']}; "
+            f"found {corpus_target_from} to {corpus_target_to}"
+        )
     return {
         "schemaVersion": "1",
-        "auditDate": max(audit_dates),
-        "targetFrom": next(iter(target_from)),
-        "targetTo": next(iter(target_to)),
+        "auditDate": audit_date,
+        "targetFrom": corpus_target_from,
+        "targetTo": corpus_target_to,
         "baselineCommit": BASELINE_COMMIT,
         "coverageCounts": coverage_counts,
         "cards": cards,
