@@ -521,7 +521,22 @@ def read_embedded_dataset(html_text: str) -> str:
     )
     if match is None:
         raise BuildError("marked block must contain exactly one card-rewards-data JSON script")
-    return match.group(1) + "\n"
+    payload = match.group(1)
+    if re.search(r"</\s*script\s*>\s*<script\b", payload, flags=re.IGNORECASE):
+        raise BuildError("marked block must contain exactly one card-rewards-data JSON script")
+    if re.search(r"</\s*script\b", payload, flags=re.IGNORECASE):
+        raise BuildError("marked block payload must not contain a raw closing script token")
+    try:
+        parsed = json.loads(payload)
+    except json.JSONDecodeError as exc:
+        raise BuildError("marked block must contain valid JSON") from exc
+    return json.dumps(
+        parsed,
+        ensure_ascii=False,
+        sort_keys=True,
+        indent=2,
+        separators=(",", ": "),
+    ) + "\n"
 
 
 def replace_embedded_dataset(html_text: str, json_text: str) -> str:
@@ -560,9 +575,21 @@ def build_output(repo_root: Path, output_path: Path, *, check: bool) -> bool:
             temporary.write(updated)
             temporary_path = Path(temporary.name)
         temporary_path.replace(output_path)
+    except OSError as exc:
+        if temporary_path is not None:
+            try:
+                if temporary_path.exists():
+                    temporary_path.unlink()
+            except OSError:
+                pass
+        raise BuildError(f"cannot write HTML output: {output_path}") from exc
     finally:
-        if temporary_path is not None and temporary_path.exists():
-            temporary_path.unlink()
+        if temporary_path is not None:
+            try:
+                if temporary_path.exists():
+                    temporary_path.unlink()
+            except OSError as exc:
+                raise BuildError(f"cannot clean temporary HTML output: {output_path}") from exc
     return True
 
 

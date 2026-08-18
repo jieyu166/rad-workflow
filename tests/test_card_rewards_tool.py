@@ -8,11 +8,13 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from scripts.build_card_rewards_tool import (
     DATA_END,
     DATA_START,
     BuildError,
+    build_output,
     build_dataset,
     read_embedded_dataset,
     replace_embedded_dataset,
@@ -162,7 +164,7 @@ class CardRewardsBuildTests(unittest.TestCase):
 
         self.assertTrue(updated.startswith(f"before\n{DATA_START}\n"))
         self.assertTrue(updated.endswith(f"{DATA_END}\nafter\n"))
-        self.assertEqual('{"schemaVersion": "1"}\n', read_embedded_dataset(updated))
+        self.assertEqual(serialize_dataset({"schemaVersion": "1"}), read_embedded_dataset(updated))
 
     def test_replace_rejects_missing_or_duplicate_markers(self) -> None:
         with self.assertRaisesRegex(BuildError, "exactly one data marker pair"):
@@ -170,6 +172,45 @@ class CardRewardsBuildTests(unittest.TestCase):
         duplicate = f"{DATA_START}x{DATA_END}{DATA_START}y{DATA_END}"
         with self.assertRaisesRegex(BuildError, "exactly one data marker pair"):
             replace_embedded_dataset(duplicate, "{}\n")
+
+    def test_read_rejects_duplicate_data_scripts(self) -> None:
+        source = (
+            f"{DATA_START}\n"
+            '<script id="card-rewards-data" type="application/json">\n{}\n</script>\n'
+            '<script id="card-rewards-data" type="application/json">\n{}\n</script>\n'
+            f"{DATA_END}"
+        )
+
+        with self.assertRaisesRegex(BuildError, "exactly one card-rewards-data JSON script"):
+            read_embedded_dataset(source)
+
+    def test_read_rejects_raw_script_closer_or_invalid_json_payload(self) -> None:
+        raw_closer = (
+            f"{DATA_START}\n"
+            '<script id="card-rewards-data" type="application/json">\n'
+            '{"value": "</script>"}\n</script>\n'
+            f"{DATA_END}"
+        )
+        invalid_json = (
+            f"{DATA_START}\n"
+            '<script id="card-rewards-data" type="application/json">\nnot JSON\n</script>\n'
+            f"{DATA_END}"
+        )
+
+        with self.assertRaisesRegex(BuildError, "raw closing script token"):
+            read_embedded_dataset(raw_closer)
+        with self.assertRaisesRegex(BuildError, "valid JSON"):
+            read_embedded_dataset(invalid_json)
+
+    def test_read_allows_json_with_a_non_closing_script_token(self) -> None:
+        source = (
+            f"{DATA_START}\n"
+            '<script id="card-rewards-data" type="application/json">\n'
+            '{"value": "<script>"}\n</script>\n'
+            f"{DATA_END}"
+        )
+
+        self.assertEqual(serialize_dataset({"value": "<script>"}), read_embedded_dataset(source))
 
     def test_checked_in_html_matches_generated_dataset(self) -> None:
         expected = serialize_dataset(build_dataset(ROOT))
@@ -181,6 +222,7 @@ class CardRewardsBuildTests(unittest.TestCase):
             output = Path(tmp) / "card-rewards.html"
             output.write_text((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"), encoding="utf-8")
             output.write_text(output.read_text(encoding="utf-8").replace('"schemaVersion": "1"', '"schemaVersion": "9"', 1), encoding="utf-8")
+            before_check = output.read_bytes()
             result = subprocess.run(
                 [sys.executable, str(ROOT / "scripts/build_card_rewards_tool.py"), "--check", "--output", str(output)],
                 cwd=ROOT,
@@ -190,6 +232,38 @@ class CardRewardsBuildTests(unittest.TestCase):
                 env=UTF8_ENV,
                 check=False,
             )
+            after_check = output.read_bytes()
 
         self.assertEqual(1, result.returncode)
         self.assertIn("embedded dataset drift", result.stderr)
+        self.assertEqual(before_check, after_check)
+
+    def test_build_then_check_canonicalizes_script_safe_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "repo"
+            shutil.copytree(ROOT / "docs", fixture / "docs")
+            card = fixture / "docs/card-rewards/2026-h2/cards/first-ileo.md"
+            card.write_text(
+                card.read_text(encoding="utf-8").replace(
+                    "## 不確定事項", "## 不確定事項\n\n</script>", 1
+                ),
+                encoding="utf-8",
+            )
+            output = Path(tmp) / "card-rewards.html"
+            output.write_text((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"), encoding="utf-8")
+
+            self.assertIn("</script>", serialize_dataset(build_dataset(fixture)))
+            self.assertTrue(build_output(fixture, output, check=False))
+            self.assertIn(r"<\/script>", output.read_text(encoding="utf-8"))
+            self.assertTrue(build_output(fixture, output, check=True))
+
+    def test_build_output_wraps_replace_errors_as_build_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "card-rewards.html"
+            output.write_text((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"), encoding="utf-8")
+
+            with mock.patch.object(Path, "replace", side_effect=OSError("replace blocked")):
+                with self.assertRaisesRegex(BuildError, "cannot write HTML output"):
+                    build_output(ROOT, output, check=False)
+
+            self.assertEqual([], list(Path(tmp).glob("*.tmp")))
