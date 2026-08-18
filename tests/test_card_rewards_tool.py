@@ -20,6 +20,7 @@ from scripts.build_card_rewards_tool import (
     build_output,
     build_dataset,
     main,
+    parse_document,
     read_embedded_dataset,
     replace_embedded_dataset,
     serialize_dataset,
@@ -231,8 +232,40 @@ class CardRewardsInterfaceTests(unittest.TestCase):
         self.assertIn("資料無法載入", result["fatalText"])
         self.assertEqual(0, result["facetControlMutations"])
 
+    def test_malformed_comparison_render_field_shows_fatal_before_render(self) -> None:
+        dataset = json.loads(read_embedded_dataset((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")))
+        dataset["cards"][0]["comparison"]["domestic"] = {"not": "renderable text"}
+
+        result = run_runtime(dataset)
+
+        self.assertFalse(result["fatalHidden"])
+        self.assertTrue(result["controlsHidden"])
+        self.assertIn("資料無法載入", result["fatalText"])
+        self.assertEqual(0, result["facetControlMutations"])
+
+    def test_non_string_badge_shows_fatal_before_render(self) -> None:
+        dataset = json.loads(read_embedded_dataset((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")))
+        dataset["cards"][0]["badges"][0] = {"not": "a badge label"}
+
+        result = run_runtime(dataset)
+
+        self.assertFalse(result["fatalHidden"])
+        self.assertTrue(result["controlsHidden"])
+        self.assertIn("資料無法載入", result["fatalText"])
+        self.assertEqual(0, result["facetControlMutations"])
+
 
 class CardRewardsDatasetTests(unittest.TestCase):
+    def test_dataset_card_product_types_match_phase_one_frontmatter(self) -> None:
+        cards = build_dataset(ROOT)["cards"]
+        corpus_root = ROOT / "docs/card-rewards/2026-h2"
+        expected = [
+            parse_document(corpus_root / "cards" / f"{card['id']}.md", corpus_root=corpus_root)["metadata"]["product_type"]
+            for card in cards
+        ]
+
+        self.assertEqual(expected, [card.get("productType") for card in cards])
+
     def test_dataset_contains_exact_approved_products_and_payments(self) -> None:
         dataset = build_dataset(ROOT)
         cards = dataset["cards"]

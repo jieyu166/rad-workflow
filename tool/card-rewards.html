@@ -168,6 +168,7 @@
       "id": "first-ileo",
       "issuer": "第一商業銀行",
       "product": "第一銀行 iLEO 卡",
+      "productType": "credit",
       "searchAliases": [
         "第一銀行 iLEO 信用卡",
         "iLEO",
@@ -418,6 +419,7 @@
       "id": "first-green",
       "issuer": "第一商業銀行",
       "product": "第一銀行 Living Green 綠活卡",
+      "productType": "credit",
       "searchAliases": [
         "第一銀行 Living Green 綠活卡",
         "Living",
@@ -650,6 +652,7 @@
       "id": "taishin-richart-gogo",
       "issuer": "台新國際商業銀行",
       "product": "台新 Richart 卡（原 @GoGo）",
+      "productType": "credit",
       "searchAliases": [
         "台新 Richart 卡（原 @GoGo 卡舊戶）",
         "原 @GoGo 卡舊戶",
@@ -943,6 +946,7 @@
       "id": "sinopac-dawho",
       "issuer": "永豐商業銀行",
       "product": "永豐 DAWHO 卡",
+      "productType": "credit",
       "searchAliases": [
         "永豐 DAWHO 現金回饋信用卡",
         "DAWHO",
@@ -1147,6 +1151,7 @@
       "id": "sinopac-coin",
       "issuer": "永豐商業銀行",
       "product": "永豐幣倍卡",
+      "productType": "credit",
       "searchAliases": [
         "永豐幣倍卡",
         "永豐商業銀行"
@@ -1349,6 +1354,7 @@
       "id": "sinopac-daway",
       "issuer": "永豐商業銀行",
       "product": "永豐 DAWAY 卡",
+      "productType": "credit",
       "searchAliases": [
         "永豐 DAWAY 卡",
         "DAWAY",
@@ -1795,6 +1801,7 @@
       "id": "cathay-cube",
       "issuer": "國泰世華商業銀行",
       "product": "國泰世華 CUBE 卡",
+      "productType": "credit",
       "searchAliases": [
         "國泰世華 CUBE 信用卡",
         "CUBE",
@@ -2094,6 +2101,7 @@
       "id": "ctbc-line-pay",
       "issuer": "中國信託商業銀行",
       "product": "中國信託 LINE Pay 信用卡",
+      "productType": "credit",
       "searchAliases": [
         "中國信託 LINE Pay 信用卡",
         "LINE",
@@ -2384,6 +2392,7 @@
       "id": "rakuten-bank-card",
       "issuer": "樂天國際商業銀行",
       "product": "樂天國際銀行金融卡",
+      "productType": "atm",
       "searchAliases": [
         "樂天國際銀行金融卡",
         "樂天國際商業銀行"
@@ -2602,6 +2611,7 @@
       "id": "obank-debit",
       "issuer": "王道商業銀行",
       "product": "王道銀行一般簽帳金融卡",
+      "productType": "debit",
       "searchAliases": [
         "王道銀行一般簽帳金融卡",
         "王道商業銀行"
@@ -2871,6 +2881,7 @@
       "id": "line-bank-debit",
       "issuer": "連線商業銀行",
       "product": "Visa LINE Bank 快點卡",
+      "productType": "debit",
       "searchAliases": [
         "Visa LINE Bank 快點卡",
         "Visa",
@@ -3107,6 +3118,7 @@
       "id": "esun-pi",
       "issuer": "玉山商業銀行",
       "product": "玉山 Pi 拍錢包信用卡",
+      "productType": "credit",
       "searchAliases": [
         "玉山 Pi 拍錢包信用卡",
         "Pi",
@@ -3373,6 +3385,7 @@
       "id": "esun-unicard",
       "issuer": "玉山商業銀行",
       "product": "玉山 Unicard",
+      "productType": "credit",
       "searchAliases": [
         "玉山 Unicard",
         "Unicard",
@@ -3597,6 +3610,7 @@
       "id": "esun-ubear",
       "issuer": "玉山商業銀行",
       "product": "玉山 U Bear 信用卡",
+      "productType": "credit",
       "searchAliases": [
         "玉山 U Bear 信用卡",
         "U",
@@ -3813,6 +3827,7 @@
       "id": "fubon-costco",
       "issuer": "台北富邦商業銀行",
       "product": "台北富邦 Costco 聯名卡",
+      "productType": "credit",
       "searchAliases": [
         "台北富邦 Costco 聯名卡",
         "Costco",
@@ -5192,8 +5207,12 @@
         }
         if (!Array.isArray(card.facetIds)) throw new Error(`第 ${index + 1} 張卡片的 facetIds 格式不正確。`);
         if (!Array.isArray(card.badges)) throw new Error(`第 ${index + 1} 張卡片的 badges 格式不正確。`);
+        if (!card.badges.every(badge => typeof badge === "string")) throw new Error(`第 ${index + 1} 張卡片的 badges 含有非文字值。`);
         if (!card.comparison || typeof card.comparison !== "object" || Array.isArray(card.comparison)) {
           throw new Error(`第 ${index + 1} 張卡片的 comparison 格式不正確。`);
+        }
+        for (const field of ["domestic", "overseas", "bestSpecial", "capAndDerivedSpend", "conditions"]) {
+          if (typeof card.comparison[field] !== "string") throw new Error(`第 ${index + 1} 張卡片的 comparison.${field} 格式不正確。`);
         }
       }
 

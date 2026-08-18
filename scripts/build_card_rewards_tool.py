@@ -456,6 +456,7 @@ def build_dataset(root: Path) -> dict[str, object]:
                 "id": product_id,
                 "product": labels[str(product_id)],
                 "issuer": metadata["issuer"],
+                "productType": metadata["product_type"],
                 "coverageStatus": metadata["coverage_status"],
                 "comparison": {key: value for key, value in comparison_row.items() if key not in {"product", "productId"}},
                 "sections": parsed["sections"],
