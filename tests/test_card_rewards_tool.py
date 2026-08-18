@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import json
 import os
 import shutil
@@ -8,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from contextlib import redirect_stderr
 from unittest import mock
 
 from scripts.build_card_rewards_tool import (
@@ -16,6 +18,7 @@ from scripts.build_card_rewards_tool import (
     BuildError,
     build_output,
     build_dataset,
+    main,
     read_embedded_dataset,
     replace_embedded_dataset,
     serialize_dataset,
@@ -257,6 +260,27 @@ class CardRewardsBuildTests(unittest.TestCase):
             self.assertIn(r"<\/script>", output.read_text(encoding="utf-8"))
             self.assertTrue(build_output(fixture, output, check=True))
 
+    def test_build_then_check_escapes_mixed_case_closing_script_token(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "repo"
+            shutil.copytree(ROOT / "docs", fixture / "docs")
+            card = fixture / "docs/card-rewards/2026-h2/cards/first-ileo.md"
+            card.write_text(
+                card.read_text(encoding="utf-8").replace(
+                    "## 不確定事項", "## 不確定事項\n\n</ScRiPt>", 1
+                ),
+                encoding="utf-8",
+            )
+            output = Path(tmp) / "card-rewards.html"
+            output.write_text((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"), encoding="utf-8")
+
+            self.assertIn("</ScRiPt>", serialize_dataset(build_dataset(fixture)))
+            self.assertTrue(build_output(fixture, output, check=False))
+            embedded = output.read_text(encoding="utf-8")
+            self.assertNotIn("</ScRiPt>", embedded)
+            self.assertIn(r"<\/ScRiPt>", embedded)
+            self.assertTrue(build_output(fixture, output, check=True))
+
     def test_build_output_wraps_replace_errors_as_build_errors(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "card-rewards.html"
@@ -267,3 +291,19 @@ class CardRewardsBuildTests(unittest.TestCase):
                     build_output(ROOT, output, check=False)
 
             self.assertEqual([], list(Path(tmp).glob("*.tmp")))
+
+    def test_main_reports_temporary_cleanup_errors_as_build_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "card-rewards.html"
+            output.write_text((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"), encoding="utf-8")
+            stderr = io.StringIO()
+
+            with (
+                mock.patch.object(Path, "exists", return_value=True),
+                mock.patch.object(Path, "unlink", side_effect=OSError("cleanup blocked")),
+                redirect_stderr(stderr),
+            ):
+                self.assertEqual(1, main(["--output", str(output)]))
+
+        self.assertIn("card rewards build: cannot clean temporary HTML output", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
