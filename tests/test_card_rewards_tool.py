@@ -218,11 +218,24 @@ def run_headless_interaction_probe() -> dict[str, object]:
     for (let index = 0; index < 3; index += 1) {
       const button = addNext();
       check(Boolean(button), `第 ${index + 1} 張加入比較按鈕不存在`);
-      if (button) button.click();
+      if (button) {
+        const product = button.closest(".card").querySelector("h2").textContent;
+        button.focus();
+        check(document.activeElement === button, `第 ${index + 1} 張加入比較按鈕無法取得焦點`);
+        button.click();
+        const rebuiltCard = [...document.querySelectorAll("#card-grid .card")]
+          .find(card => card.querySelector("h2").textContent === product);
+        const removeButton = rebuiltCard && [...rebuiltCard.querySelectorAll("button")]
+          .find(control => control.textContent === "移出比較");
+        check(document.activeElement === removeButton, `${product} 加入比較後未回到重建的移出比較按鈕`);
+      }
     }
     const fourth = addNext();
     check(document.getElementById("compare-count").textContent.includes("3"), "比較數量未維持 3");
+    check(document.getElementById("compare-count").textContent.includes("最多比較 3 項產品"), "三項比較時缺少 live 最大數量公告");
     check(Boolean(fourth) && fourth.disabled, "第四張加入比較按鈕未停用");
+    check(Boolean(fourth) && fourth.getAttribute("aria-describedby") === "compare-limit", "第四張加入比較按鈕缺少可存取說明");
+    check(!document.getElementById("compare-limit").hidden && document.getElementById("compare-limit").textContent.includes("最多比較 3 項產品"), "第四張加入比較按鈕的可見說明缺少最大數量文字");
     if (fourth) fourth.click();
     check(document.getElementById("compare-count").textContent.includes("3"), "第四張卡改變了比較數量");
 
@@ -236,10 +249,24 @@ def run_headless_interaction_probe() -> dict[str, object]:
     const detailButton = cubeCard && [...cubeCard.querySelectorAll("button")]
       .find(button => button.textContent === "查看詳情");
     check(Boolean(detailButton), "CUBE 詳情按鈕不存在");
-    if (detailButton) detailButton.click();
+    if (detailButton) {
+      detailButton.focus();
+      detailButton.click();
+    }
     const detail = document.getElementById("detail-content");
     check(detail.textContent.includes("部分期間") && detail.textContent.includes("不確定事項"), "CUBE 詳情缺少部分期間或不確定事項");
     check(Boolean(detail.querySelector('a[href^="https://"]')), "CUBE 詳情缺少 HTTPS 官方來源");
+    document.getElementById("detail-close").click();
+    check(document.activeElement === detailButton, "詳情明確關閉後未回到原始開啟按鈕");
+    if (detailButton) {
+      detailButton.focus();
+      detailButton.click();
+    }
+    const detailDialog = document.getElementById("detail-dialog");
+    const cancelWasNotBlocked = detailDialog.dispatchEvent(new Event("cancel", { cancelable: true }));
+    check(cancelWasNotBlocked, "詳情 dialog 阻擋了原生 Escape cancel 事件");
+    detailDialog.close();
+    check(document.activeElement === detailButton, "詳情 Escape 關閉後未回到原始開啟按鈕");
   } catch (error) {
     result.errors.push(String(error));
   }

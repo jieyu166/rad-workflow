@@ -5196,13 +5196,19 @@
         list.append(item);
       }
 
-      function removeFromComparison(productId) {
+      function updateSelection(productId) {
         state.selectedIds = CardRewardsCore.toggleSelection(state.selectedIds, productId).ids;
-        render();
+        return { productId, action: state.selectedIds.includes(productId) ? "remove" : "add" };
+      }
+
+      function removeFromComparison(productId) {
+        const focusToken = updateSelection(productId);
+        render(focusToken);
       }
 
       function renderCard(card) {
         const article = create("article", undefined, "card");
+        article.setAttribute("data-product-id", card.id);
         article.append(create("p", card.issuer, "issuer"));
         article.append(create("h2", card.product));
         article.append(create("p", labelFor(typeLabels, card.productType), "card-type"));
@@ -5225,12 +5231,13 @@
         const compareButton = create("button", state.selectedIds.includes(card.id) ? "移出比較" : "加入比較", "secondary-button");
         compareButton.type = "button";
         compareButton.setAttribute("aria-pressed", String(state.selectedIds.includes(card.id)));
+        compareButton.setAttribute("data-comparison-action", state.selectedIds.includes(card.id) ? "remove" : "add");
         const selectionAtLimit = state.selectedIds.length >= 3 && !state.selectedIds.includes(card.id);
         compareButton.disabled = selectionAtLimit;
         if (selectionAtLimit) compareButton.setAttribute("aria-describedby", "compare-limit");
         compareButton.addEventListener("click", () => {
-          state.selectedIds = CardRewardsCore.toggleSelection(state.selectedIds, card.id).ids;
-          render();
+          const focusToken = updateSelection(card.id);
+          render(focusToken);
         });
         actions.append(detailButton, compareButton);
         article.append(actions);
@@ -5240,7 +5247,9 @@
       function renderCompareTray() {
         const selected = state.selectedIds.map(id => cards.find(card => card.id === id)).filter(Boolean);
         compareTray.hidden = selected.length === 0;
-        compareCount.textContent = `已選擇 ${selected.length} 項產品`;
+        compareCount.textContent = selected.length >= 3
+          ? `已選擇 ${selected.length} 項產品。最多比較 3 項產品`
+          : `已選擇 ${selected.length} 項產品`;
         compareLimit.hidden = selected.length < 3;
         compareOpen.disabled = selected.length < 2;
         clearChildren(compareSelected);
@@ -5369,7 +5378,15 @@
         detailDialog.showModal();
       }
 
-      function render() {
+      function restoreSelectionFocus(focusToken) {
+        if (!focusToken) return;
+        const productCard = [...cardGrid.querySelectorAll("[data-product-id]")]
+          .find(card => card.getAttribute("data-product-id") === focusToken.productId);
+        const control = productCard && productCard.querySelector(`[data-comparison-action="${focusToken.action}"]`);
+        if (control && !control.disabled) control.focus();
+      }
+
+      function render(focusToken) {
         search.value = state.query;
         renderFilters();
         const filtered = CardRewardsCore.filterCards(cards, state);
@@ -5380,6 +5397,7 @@
         const hasFilters = Boolean(state.query || state.facets.size || state.coverage.size || state.productTypes.size);
         clearFilters.disabled = !hasFilters;
         renderCompareTray();
+        restoreSelectionFocus(focusToken);
       }
 
       function showFatal(error) {
