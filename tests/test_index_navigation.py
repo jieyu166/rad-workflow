@@ -44,6 +44,26 @@ class IndexNavigationTests(unittest.TestCase):
         )
         self.assertTrue((ROOT / "tool" / "image-stack-mpr.html").is_file())
 
+    def test_index_links_to_local_card_rewards_tool(self) -> None:
+        parser = LinkParser()
+        parser.feed((ROOT / "index.html").read_text(encoding="utf-8"))
+
+        self.assertIn(
+            ("tool/card-rewards.html", "2026 下半年舊戶卡片回饋查詢"), parser.links
+        )
+        self.assertNotIn(
+            "https://claude.ai/public/artifacts/aa39410d-a1c4-4e5d-8259-df094c2238b8",
+            (ROOT / "index.html").read_text(encoding="utf-8"),
+        )
+        self.assertTrue((ROOT / "tool/card-rewards.html").is_file())
+
+    def test_readme_links_to_local_card_rewards_snapshot(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "[2026 下半年舊戶卡片回饋查詢](tool/card-rewards.html)", readme
+        )
+        self.assertIn("查證基準日 2026-08-18", readme)
+
 
 if __name__ == "__main__":
     unittest.main()
