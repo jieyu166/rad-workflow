@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import io
-import html
+import base64
 import json
 import os
-import re
 import shutil
+import socket
+import struct
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 from html.parser import HTMLParser
 from pathlib import Path
 from contextlib import redirect_stderr
@@ -199,9 +203,124 @@ def find_headless_browser() -> str:
     return str(browser)
 
 
+class DevToolsWebSocket:
+    def __init__(self, websocket_url: str) -> None:
+        parsed = urlparse(websocket_url)
+        self.socket = socket.create_connection((parsed.hostname, parsed.port), timeout=10)
+        self.socket.settimeout(10)
+        key = base64.b64encode(os.urandom(16)).decode("ascii")
+        target_path = parsed.path if not parsed.query else f"{parsed.path}?{parsed.query}"
+        request = (
+            f"GET {target_path} HTTP/1.1\r\n"
+            f"Host: {parsed.netloc}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+            f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\nOrigin: http://localhost\r\n\r\n"
+        )
+        self.socket.sendall(request.encode("ascii"))
+        response = b""
+        while b"\r\n\r\n" not in response:
+            response += self.socket.recv(4096)
+        if not response.startswith(b"HTTP/1.1 101"):
+            self.socket.close()
+            raise AssertionError(f"DevTools WebSocket upgrade failed: {response.decode('utf-8', errors='replace')}")
+        self.next_id = 1
+        self.events: list[dict[str, object]] = []
+
+    def close(self) -> None:
+        self.socket.close()
+
+    def _send_frame(self, opcode: int, payload: bytes) -> None:
+        mask = os.urandom(4)
+        length = len(payload)
+        header = bytes([0x80 | opcode])
+        if length < 126:
+            header += bytes([0x80 | length])
+        elif length < 65536:
+            header += bytes([0x80 | 126]) + struct.pack("!H", length)
+        else:
+            header += bytes([0x80 | 127]) + struct.pack("!Q", length)
+        masked = bytes(value ^ mask[index % 4] for index, value in enumerate(payload))
+        self.socket.sendall(header + mask + masked)
+
+    def _receive_exactly(self, size: int) -> bytes:
+        payload = b""
+        while len(payload) < size:
+            chunk = self.socket.recv(size - len(payload))
+            if not chunk:
+                raise AssertionError("DevTools WebSocket closed unexpectedly")
+            payload += chunk
+        return payload
+
+    def _receive_message(self) -> dict[str, object]:
+        first, second = self._receive_exactly(2)
+        opcode = first & 0x0F
+        masked = bool(second & 0x80)
+        length = second & 0x7F
+        if length == 126:
+            length = struct.unpack("!H", self._receive_exactly(2))[0]
+        elif length == 127:
+            length = struct.unpack("!Q", self._receive_exactly(8))[0]
+        mask = self._receive_exactly(4) if masked else b""
+        payload = self._receive_exactly(length)
+        if masked:
+            payload = bytes(value ^ mask[index % 4] for index, value in enumerate(payload))
+        if opcode == 0x9:
+            self._send_frame(0xA, payload)
+            return self._receive_message()
+        if opcode == 0x8:
+            raise AssertionError("DevTools WebSocket closed unexpectedly")
+        if opcode != 0x1:
+            return self._receive_message()
+        return json.loads(payload.decode("utf-8"))
+
+    def command(self, method: str, params: dict[str, object] | None = None) -> dict[str, object]:
+        message_id = self.next_id
+        self.next_id += 1
+        self._send_frame(0x1, json.dumps({"id": message_id, "method": method, "params": params or {}}).encode("utf-8"))
+        while True:
+            message = self._receive_message()
+            if message.get("id") == message_id:
+                if "error" in message:
+                    raise AssertionError(f"DevTools {method} failed: {message['error']}")
+                return message["result"]
+            self.events.append(message)
+
+    def wait_for_event(self, method: str) -> dict[str, object]:
+        for index, event in enumerate(self.events):
+            if event.get("method") == method:
+                return self.events.pop(index)
+        while True:
+            event = self._receive_message()
+            if event.get("method") == method:
+                return event
+            self.events.append(event)
+
+
+def wait_for_devtools_port(profile: Path, browser: subprocess.Popen[str]) -> int:
+    port_file = profile / "DevToolsActivePort"
+    deadline = time.monotonic() + 10
+    while not port_file.is_file():
+        if browser.poll() is not None:
+            raise AssertionError("Chrome exited before publishing the DevTools port")
+        if time.monotonic() >= deadline:
+            raise AssertionError("Chrome did not publish the DevTools port")
+        time.sleep(0.01)
+    return int(port_file.read_text(encoding="utf-8").splitlines()[0])
+
+
+def devtools_json(url: str, *, method: str = "GET") -> dict[str, object]:
+    with urlopen(Request(url, method=method), timeout=10) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def evaluate(connection: DevToolsWebSocket, expression: str) -> object:
+    result = connection.command("Runtime.evaluate", {"expression": expression, "returnByValue": True})
+    if "exceptionDetails" in result:
+        raise AssertionError(f"DevTools evaluation failed: {result['exceptionDetails']}")
+    return result["result"].get("value")
+
+
 def run_headless_interaction_probe() -> dict[str, object]:
-    probe = r'''
-<script>
+    setup_expression = r'''
 (() => {
   const result = { ok: false, errors: [] };
   const check = (condition, message) => { if (!condition) result.errors.push(message); };
@@ -211,24 +330,19 @@ def run_headless_interaction_probe() -> dict[str, object]:
     search.dispatchEvent(new Event("input", { bubbles: true }));
     const louisaCards = [...document.querySelectorAll("#card-grid .card")];
     check(louisaCards.length === 1 && louisaCards[0].textContent.includes("DAWAY"), "路易莎搜尋結果不正確");
-
     document.getElementById("clear-filters").click();
-    const addNext = () => [...document.querySelectorAll("#card-grid .secondary-button")]
-      .find(button => button.textContent === "加入比較");
+    const addNext = () => [...document.querySelectorAll("#card-grid .secondary-button")].find(button => button.textContent === "加入比較");
     for (let index = 0; index < 3; index += 1) {
       const button = addNext();
       check(Boolean(button), `第 ${index + 1} 張加入比較按鈕不存在`);
-      if (button) {
-        const product = button.closest(".card").querySelector("h2").textContent;
-        button.focus();
-        check(document.activeElement === button, `第 ${index + 1} 張加入比較按鈕無法取得焦點`);
-        button.click();
-        const rebuiltCard = [...document.querySelectorAll("#card-grid .card")]
-          .find(card => card.querySelector("h2").textContent === product);
-        const removeButton = rebuiltCard && [...rebuiltCard.querySelectorAll("button")]
-          .find(control => control.textContent === "移出比較");
-        check(document.activeElement === removeButton, `${product} 加入比較後未回到重建的移出比較按鈕`);
-      }
+      if (!button) continue;
+      const product = button.closest(".card").querySelector("h2").textContent;
+      button.focus();
+      check(document.activeElement === button, `第 ${index + 1} 張加入比較按鈕無法取得焦點`);
+      button.click();
+      const rebuiltCard = [...document.querySelectorAll("#card-grid .card")].find(card => card.querySelector("h2").textContent === product);
+      const removeButton = rebuiltCard && [...rebuiltCard.querySelectorAll("button")].find(control => control.textContent === "移出比較");
+      check(document.activeElement === removeButton, `${product} 加入比較後未回到重建的移出比較按鈕`);
     }
     const fourth = addNext();
     check(document.getElementById("compare-count").textContent.includes("3"), "比較數量未維持 3");
@@ -238,71 +352,76 @@ def run_headless_interaction_probe() -> dict[str, object]:
     check(!document.getElementById("compare-limit").hidden && document.getElementById("compare-limit").textContent.includes("最多比較 3 項產品"), "第四張加入比較按鈕的可見說明缺少最大數量文字");
     if (fourth) fourth.click();
     check(document.getElementById("compare-count").textContent.includes("3"), "第四張卡改變了比較數量");
-
     document.getElementById("compare-open").click();
     const comparison = document.getElementById("comparison-content").textContent;
     check(comparison.includes("國內一般消費") && comparison.includes("海外消費"), "比較表缺少國內或海外列");
     document.getElementById("compare-close").click();
-
-    const cubeCard = [...document.querySelectorAll("#card-grid .card")]
-      .find(card => card.textContent.includes("CUBE"));
-    const detailButton = cubeCard && [...cubeCard.querySelectorAll("button")]
-      .find(button => button.textContent === "查看詳情");
+    const cubeCard = [...document.querySelectorAll("#card-grid .card")].find(card => card.textContent.includes("CUBE"));
+    const detailButton = cubeCard && [...cubeCard.querySelectorAll("button")].find(button => button.textContent === "查看詳情");
     check(Boolean(detailButton), "CUBE 詳情按鈕不存在");
-    if (detailButton) {
-      detailButton.focus();
-      detailButton.click();
-    }
+    if (detailButton) { detailButton.focus(); detailButton.click(); }
     const detail = document.getElementById("detail-content");
     check(detail.textContent.includes("部分期間") && detail.textContent.includes("不確定事項"), "CUBE 詳情缺少部分期間或不確定事項");
     check(Boolean(detail.querySelector('a[href^="https://"]')), "CUBE 詳情缺少 HTTPS 官方來源");
     document.getElementById("detail-close").click();
     check(document.activeElement === detailButton, "詳情明確關閉後未回到原始開啟按鈕");
-    if (detailButton) {
-      detailButton.focus();
-      detailButton.click();
-    }
-    const detailDialog = document.getElementById("detail-dialog");
-    const cancelWasNotBlocked = detailDialog.dispatchEvent(new Event("cancel", { cancelable: true }));
-    check(cancelWasNotBlocked, "詳情 dialog 阻擋了原生 Escape cancel 事件");
-    detailDialog.close();
-    check(document.activeElement === detailButton, "詳情 Escape 關閉後未回到原始開啟按鈕");
+    if (detailButton) { detailButton.focus(); detailButton.click(); }
+    window.__cardRewardsEscapeProbe = { result, detailButton, detailDialog: document.getElementById("detail-dialog") };
   } catch (error) {
     result.errors.push(String(error));
   }
+  return result;
+})()
+'''
+    finish_expression = r'''
+(() => {
+  const probe = window.__cardRewardsEscapeProbe;
+  const { result, detailButton, detailDialog } = probe;
+  const nativeEscape = !detailDialog.open && document.activeElement === detailButton;
+  if (!nativeEscape) result.errors.push("原生 Escape 關閉後未回到原始開啟按鈕");
+  result.nativeEscape = nativeEscape;
   result.ok = result.errors.length === 0;
-  const output = document.createElement("pre");
-  output.id = "e2e-result";
-  output.textContent = JSON.stringify(result);
-  document.body.append(output);
-})();
-</script>
+  return result;
+})()
 '''
     with tempfile.TemporaryDirectory() as temp:
         temporary_root = Path(temp)
         page = temporary_root / "card-rewards.html"
-        source = (ROOT / "tool/card-rewards.html").read_text(encoding="utf-8")
-        page.write_text(source.replace("</body>", f"{probe}</body>", 1), encoding="utf-8")
+        page.write_text((ROOT / "tool/card-rewards.html").read_text(encoding="utf-8"), encoding="utf-8")
         profile = temporary_root / "browser-profile"
-        result = subprocess.run(
+        browser = subprocess.Popen(
             [
                 find_headless_browser(), "--headless=new", "--disable-gpu", "--disable-extensions", "--no-first-run",
-                "--dump-dom", "--window-size=1200,900", f"--user-data-dir={profile}", page.as_uri(),
+                "--remote-debugging-port=0", "--remote-allow-origins=*", "--window-size=1200,900", f"--user-data-dir={profile}", "about:blank",
             ],
             cwd=ROOT,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             env=UTF8_ENV,
-            check=False,
-            timeout=30,
         )
-    if result.returncode:
-        raise AssertionError(result.stderr.strip())
-    match = re.search(r'<pre id="e2e-result">(.*?)</pre>', result.stdout, flags=re.DOTALL)
-    if match is None:
-        raise AssertionError("headless probe did not emit e2e-result")
-    return json.loads(html.unescape(match.group(1)))
+        connection: DevToolsWebSocket | None = None
+        try:
+            port = wait_for_devtools_port(profile, browser)
+            targets = devtools_json(f"http://127.0.0.1:{port}/json/list")
+            target = next((item for item in targets if item.get("type") == "page"), None)
+            if target is None:
+                raise AssertionError("Chrome did not expose a page target for the headless probe")
+            connection = DevToolsWebSocket(str(target["webSocketDebuggerUrl"]))
+            connection.command("Page.enable")
+            connection.command("Page.navigate", {"url": page.as_uri()})
+            connection.wait_for_event("Page.loadEventFired")
+            evaluate(connection, setup_expression)
+            connection.command("Input.dispatchKeyEvent", {"type": "keyDown", "key": "Escape", "code": "Escape", "windowsVirtualKeyCode": 27, "nativeVirtualKeyCode": 27})
+            connection.command("Input.dispatchKeyEvent", {"type": "keyUp", "key": "Escape", "code": "Escape", "windowsVirtualKeyCode": 27, "nativeVirtualKeyCode": 27})
+            result = evaluate(connection, finish_expression)
+        finally:
+            if connection is not None:
+                connection.close()
+            browser.terminate()
+            browser.wait(timeout=10)
+    if not isinstance(result, dict):
+        raise AssertionError("headless probe did not return an object")
+    return result
 
 
 class CardRewardsInterfaceTests(unittest.TestCase):
@@ -350,6 +469,7 @@ class CardRewardsInterfaceTests(unittest.TestCase):
     def test_headless_interaction_probe(self) -> None:
         result = run_headless_interaction_probe()
         self.assertTrue(result["ok"], result["errors"])
+        self.assertTrue(result.get("nativeEscape"), "probe did not prove native Escape dialog closure")
 
     def test_core_search_matches_bank_alias_merchant_and_payment(self) -> None:
         self.assertTrue(run_core("cardMatchesQuery(CARDS.find(c => c.id === 'taishin-richart-gogo'), '@gogo')"))
