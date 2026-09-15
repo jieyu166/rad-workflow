@@ -36,7 +36,7 @@ Changes can be parked（暫存）— temporarily moved out of `openspec/changes/
 | 情境 | 讀這個 |
 |---|---|
 | 指令/程式第一次失敗；要動編碼/Shell/OneDrive/AHK/xlsx | [docs/PITFALLS.md](docs/PITFALLS.md) — 陷阱表，先比對症狀再動手 |
-| radtracker 週報全流程與欄位規則 | [radtracker/claude.md](radtracker/claude.md) |
+| radtracker 任何事 | [radtracker/CLAUDE.md](radtracker/CLAUDE.md)（路由檔，再轉 `radtracker/docs/`）|
 | 派 subagent、選模型、驗證方式 | `~/.claude/playbooks/model-dispatch.md` |
 | 不確定升級/完成/該不該問使用者 | `~/.claude/playbooks/judgment-rubrics.md` |
 | 專案介紹/維護/roadmap/技術債（人看的） | GitHub Wiki: https://github.com/jieyu166/rad-workflow/wiki |
@@ -45,11 +45,11 @@ Changes can be parked（暫存）— temporarily moved out of `openspec/changes/
 
 1. 主控台輸出必須 cp950 相容（print 禁用 `→ ≥ ✓` 等 Unicode 符號）
 2. 醫院 CSV = cp950 + Tab 分隔；AHK 檔 = utf-8-sig；寫回維持原編碼
-3. `radtracker/output/biopsy_tracker_2026.xlsx` 含病患資料，嚴禁 commit；機密一律放環境變數或 `.env`
+3. `radtracker/output/biopsy_tracker_2026.xlsx`、`csv_input/*.csv`、含病歷號的輸出 —— 嚴禁 commit；機密一律放環境變數或 `.env`。⚠ **case_id 前 8 碼即病歷號**，視同 PII，文件範例不可寫真實 case_id
 4. OneDrive 有遺失前例：**寫完立即 commit**（Stop hook 會警告未 commit 檔）
 5. 預設報告醫師代號：A80748
 6. 使用者介面文字 = 繁體中文台灣用語；程式碼與註解 = 英文
-7. 共用技能只改 `skills/<name>/SKILL.md`，再跑 `python sync_skills.py` 散佈；各家資料夾（`.claude/skills/`、`.agents/skills/`、`.opencode/skills/`）是衍生 copy 已 gitignore，勿直接改、勿用 symlink；`--check` 驗 drift（不一致 exit 2）
+7. 共用技能只改 `skills/<name>/SKILL.md`，再跑 `python sync_skills.py` 散佈；各家資料夾（`.claude/skills/`、`.agents/skills/`、`.opencode/skills/`）是衍生 copy 已 gitignore，勿直接改、勿用 symlink；`--check` 比對**內容**驗 drift（不一致 exit 2）。⚠ 個人層 `~/.claude/skills/` 不在同步範圍內，同名副本會遮蔽專案版 —— 別在那裡放重複的 skill
 8. 本檔只當索引：新增長內容一律寫到被引用檔（教訓→PITFALLS.md），不塞回這裡；Spectra 區塊外的本文上限 60 行
 
 ## 常用指令速查
