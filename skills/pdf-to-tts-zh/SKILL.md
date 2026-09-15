@@ -1,6 +1,6 @@
 ---
 name: pdf-to-tts-zh
-description: Turn a PDF (slides, case reports, handouts) into a single narrated Traditional Chinese audiobook MP3. Rasterize each page to an image, read it, write a natural spoken 繁體中文逐字稿 per page, synthesize each with edge-tts, then concatenate into one mp3. Use when asked to make a Chinese voiceover/audio/podcast/audiobook from a PDF or slide deck, "把 PDF 轉成語音/逐字稿/有聲書", or "用 edge-tts 唸投影片".
+description: 使用者要求將 PDF 或投影片製作成繁體中文講稿與有聲書時使用；不處理單純 PDF 摘要。
 ---
 
 # pdf-to-tts-zh

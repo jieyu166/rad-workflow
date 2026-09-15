@@ -1,6 +1,6 @@
 ---
 name: spectra-propose
-description: "Create a change proposal with all required artifacts"
+description: 使用 Spectra 建立新 change 的提案與規格；適用於使用者要求提案或專案採用的規格流程。
 license: MIT
 compatibility: Requires spectra CLI.
 metadata:

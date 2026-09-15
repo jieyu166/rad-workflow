@@ -1,6 +1,6 @@
 ---
 name: whisper-srt-zh
-description: 用本機 GPU ASR（預設 Breeze-ASR-25：台灣口音／中英夾雜術語精確率高；趕時間可切 --engine whisper.cpp 用 ggml-large-v3-turbo）把影片/音檔批次轉成繁體中文字幕，並自動套用 ASR 錯字對照表校正。全本機、用 CUDA、不需網路不上傳雲端，適合院內/病患或大量本機講座影片。Use when 把影片轉字幕/逐字稿、批次產生 SRT、本機 whisper 轉錄、影片轉文字、字幕錯字修正、transcribe video/audio to Chinese SRT。取代手動 bat 批次轉檔；產物直接接 lecture-to-notes（分段 JSON／截圖／筆記／viewer）。
+description: 在本機將音檔或影片轉成字幕／逐字稿，或依對照表校正 ASR 錯字；需要講座筆記與 viewer 時用 lecture-to-notes。
 ---
 
 # whisper-srt-zh

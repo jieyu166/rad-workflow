@@ -1,6 +1,6 @@
 ---
 name: spectra-audit
-description: "Audit changed code for security sharp edges — dangerous defaults, type confusion, and silent failures"
+description: 使用者要求安全稽核，或 Spectra 變更涉及明確安全疑慮時，檢查危險預設與靜默失敗。
 license: MIT
 compatibility: Requires spectra CLI.
 metadata:

@@ -1,6 +1,6 @@
 ---
 name: novel-to-manga
-description: Convert novel text, web-novel chapters, or prose scenes into manga/comic production plans and image-generation prompts. Use when the user asks to turn a novel into manga, make comic pages from story text, create manga page prompts, generate character/scene bibles, split prose into beats/panels/pages, batch-generate comic images, or revise generated manga pages while preserving character consistency.
+description: 將小說或故事改編成漫畫分鏡、角色設定與頁面生成提示，或修改既有漫畫以維持角色一致性。
 ---
 
 # Novel To Manga

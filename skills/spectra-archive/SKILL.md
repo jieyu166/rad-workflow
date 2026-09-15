@@ -1,6 +1,6 @@
 ---
 name: spectra-archive
-description: "Archive a completed change"
+description: 封存已完成的 Spectra change，處理對應規格同步與狀態。
 license: MIT
 compatibility: Requires spectra CLI.
 metadata:

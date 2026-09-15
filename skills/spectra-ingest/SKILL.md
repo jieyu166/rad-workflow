@@ -1,6 +1,6 @@
 ---
 name: spectra-ingest
-description: "Update an existing Spectra change from external context"
+description: 將外部討論或資料整合到既有 Spectra change。
 license: MIT
 compatibility: Requires spectra CLI.
 metadata:

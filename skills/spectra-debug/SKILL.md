@@ -1,6 +1,6 @@
 ---
 name: spectra-debug
-description: "Systematically debug a problem using a four-phase workflow"
+description: 在 Spectra 流程中診斷可重現錯誤、測試失敗或異常行為。
 license: MIT
 compatibility: Requires spectra CLI.
 metadata:

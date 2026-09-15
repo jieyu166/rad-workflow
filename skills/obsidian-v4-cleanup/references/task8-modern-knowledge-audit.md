@@ -8,7 +8,7 @@ Use this workflow for any existing Radiology/medical Obsidian note, regardless o
 
 1. Read the target note without modifying it.
 2. Parse YAML and inventory declared sources, dates, note type, sections, figures/tables, SR comments, embeds, Dataview blocks, and wikilinks.
-3. Resolve and read original sources when available. For PDF sources, use Task 5 extraction/rendering rules when a source claim or figure requires page-level verification. For lecture/video sources, use Task 4 source priority. If no reliable original source exists, mark the affected claims `source_unresolved`.
+3. Resolve and read original sources when available. For PDF sources, use Task 5 extraction/rendering rules when a source claim or figure requires page-level verification. For lecture/video sources, use the configured lecture-to-notes skill's source priority: official handouts, visually reviewed slides, ASR transcript, then OCR as a locator only. If no reliable original source exists, mark the affected claims `source_unresolved`.
 4. Extract material claims into an audit ledger. Include terminology, anatomy, epidemiology, pathology, imaging findings, protocols, diagnostic thresholds, classification/staging, differential diagnosis, pitfalls, management, follow-up, and figure/table interpretation.
 5. Use `radiology-topic-research` to verify current knowledge. Prioritize:
    1. current society guidelines, formal consensus, and WHO classifications;

@@ -1,6 +1,6 @@
 ---
 name: spectra-discuss
-description: "Have a focused discussion about a topic and reach a conclusion"
+description: 在 Spectra 流程中討論需求或設計取捨，形成可執行結論。
 disallowedTools: [Edit, Write]
 license: MIT
 compatibility: Requires spectra CLI.

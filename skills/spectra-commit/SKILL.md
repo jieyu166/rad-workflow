@@ -1,6 +1,6 @@
 ---
 name: spectra-commit
-description: "Commit files related to a specific Spectra change"
+description: 提交指定 Spectra change 的相關檔案；僅在使用者授權 Git commit 時使用。
 license: MIT
 compatibility: Requires spectra CLI.
 metadata:
