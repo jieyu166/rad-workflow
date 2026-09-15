@@ -121,3 +121,11 @@ python -m unittest discover -s tests -v
 ```
 
 解析器有 12 個測試（合成資料）。AHK 端無法在開發機測試——需要 INFINITT 桌面版與院內網路。
+
+## 以病歷號儲存影像
+
+在 `HGH_Build` 視窗按「4. 以病歷號儲存 PACS 影像」。程式會點擊 `PosDICOMLU` 聚焦 INFINITT，按 `n` 取得病歷號存入 `HGH_PatientID`，再按 `Ctrl+C` 複製完整影像，存到本模組的 `work/images/病歷號.png`。保留前導零，同名檔不覆寫；失敗時還原原剪貼簿，成功時剪貼簿保留影像。
+
+需求：主程式已 include `US.ahk` 與 GDI+，PACS 的 `n` 快捷鍵可複製病歷號，且 `PosDICOMLU` 已校正。產物位於既有 Git 忽略的 `work/` 內。
+
+測試：設定 `AHK_V1_EXE` 後執行 `python -m unittest discover -s tests -p test_hgh_image.py`。測試使用合成點陣圖驗證 PNG 與檔名防呆；真實 PACS 快捷鍵及焦點仍需在醫院確認。

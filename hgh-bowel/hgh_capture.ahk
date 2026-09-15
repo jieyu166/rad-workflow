@@ -71,12 +71,14 @@ HGH_BuildGUI() {
     Gui, HGH:Add, Button, x12 y104 w300 h38 gHGH_Btn2, 2. 讀目前影像 DICOM，複製整列
     Gui, HGH:Font, s9
     Gui, HGH:Add, Button, x12 y146 w300 h28 gHGH_Btn3, 3. 除錯：列出 chk060 控件
-    Gui, HGH:Show, w324 h186, 高醫腸阻塞擷取
+    Gui, HGH:Add, Button, x12 y180 w300 h38 gHGH_SaveImageBtn, 4. 以病歷號儲存 PACS 影像
+    Gui, HGH:Show, w324 h230, 高醫腸阻塞擷取
     SetTimer, HGH_UpdateStatus, 1000
     Gosub, HGH_UpdateStatus
 }
 
 ; 重建而不是只 Show：視窗可能還沒被建立過（例如 auto-exec 那行被拿掉時）
+HGH_Build:
 <#+g::
     HGH_BuildGUI()
 return
@@ -352,4 +354,131 @@ HGH_SaveHeader(examNo, header) {
 
     TrayTip, 高醫擷取, %examNo% 已擷取, 2, 1
     return true
+}
+
+; 依賴 US.ahk 的 GDI+ 與 SavePBitmapToPNG；保留完整剪貼簿影像，不裁切。
+HGH_SaveImageBtn:
+    Critical
+    Gui, HGH:Hide
+    hghSavedImage := HGH_CapturePACSImage(hghImageError)
+    Gui, HGH:Show, NA
+    if (hghSavedImage != "") {
+        TrayTip, 高醫影像, 已儲存：%hghSavedImage%, 5, 1
+    } else {
+        MsgBox, 48, 高醫影像儲存失敗, %hghImageError%
+    }
+return
+
+HGH_CapturePACSImage(ByRef error) {
+    global HGH_PatientID
+    error := ""
+    HGH_PatientID := ""
+    savedClipboard := ClipboardAll
+    MouseGetPos, originalX, originalY
+    success := false
+    try {
+        Gosub, PosDICOMLU
+        Click
+        Sleep, 150
+        if (!WinActive("INFINITT"))
+            throw Exception("未能聚焦 INFINITT PACS，請確認 PosDICOMLU 座標。")
+        Clipboard := ""
+        Send, n
+        ClipWait, 2
+        if (ErrorLevel)
+            throw Exception("PACS 未複製病歷號，請確認 n 快捷鍵。")
+        HGH_PatientID := Trim(Clipboard, " `t`r`n")
+        imageDir := HGH_Dir() . "\work\images"
+        path := HGH_ImagePath(HGH_PatientID, imageDir, error)
+        if (path = "")
+            throw Exception(error)
+        if (!WinActive("INFINITT"))
+            throw Exception("PACS 已失去焦點，已停止影像複製。")
+        Clipboard := ""
+        Send, ^c
+        ClipWait, 3, 1
+        if (ErrorLevel)
+            throw Exception("PACS 未複製影像，請確認目前有顯示影像。")
+        FileCreateDir, %imageDir%
+        if (ErrorLevel)
+            throw Exception("無法建立影像資料夾。")
+        if (!HGH_SaveClipboardPNG(path, error))
+            throw Exception(error)
+        success := true
+        return path
+    } catch e {
+        error := e.Message
+        HGH_PatientID := ""
+        return ""
+    } finally {
+        if (!success)
+            Clipboard := savedClipboard
+        MouseMove, %originalX%, %originalY%, 0
+    }
+}
+
+HGH_ImagePath(patientID, directory, ByRef error) {
+    error := ""
+    ; 不刪除非法字元，避免把錯誤的剪貼簿內容轉成另一個病歷號。
+    if (!RegExMatch(patientID, "^[A-Za-z0-9_-]{1,64}$")
+        || RegExMatch(patientID, "i)^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])$")) {
+        error := "複製的內容不是可用的病歷號，請確認 PACS n 快捷鍵。"
+        return ""
+    }
+    path := directory . "\" . patientID . ".png"
+    if (FileExist(path)) {
+        error := "同名影像已存在，未覆寫：" . path
+        return ""
+    }
+    return path
+}
+
+HGH_SaveClipboardPNG(path, ByRef error) {
+    error := ""
+    if (FileExist(path)) {
+        error := "同名影像已存在，未覆寫。"
+        return false
+    }
+    static module := DllCall("LoadLibrary", "Str", "gdiplus.dll", "Ptr")
+    VarSetCapacity(startup, A_PtrSize = 8 ? 24 : 16, 0)
+    NumPut(1, startup, 0, "UInt")
+    token := 0
+    startupStatus := DllCall("gdiplus\GdiplusStartup", "Ptr*", token, "Ptr", &startup, "Ptr", 0)
+    if (startupStatus != 0 || !token) {
+        error := "無法啟動 GDI+。"
+        return false
+    }
+    bitmap := 0
+    temporary := path . "." . DllCall("GetCurrentProcessId") . "." . A_TickCount . ".tmp"
+    try {
+        if (!DllCall("OpenClipboard", "Ptr", A_ScriptHwnd))
+            throw Exception("無法開啟剪貼簿，請稍後重試。")
+        try {
+            handle := DllCall("GetClipboardData", "UInt", 2, "Ptr")
+            if (!handle)
+                throw Exception("剪貼簿中沒有可儲存的影像。")
+            status := DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "Ptr", handle, "Ptr", 0, "Ptr*", bitmap)
+            if (status != 0 || !bitmap)
+                throw Exception("無法讀取剪貼簿影像。")
+        } finally {
+            DllCall("CloseClipboard")
+        }
+        ; handle 屬於剪貼簿，不可 DeleteObject；只釋放自己建立的 GDI+ bitmap。
+        if (SavePBitmapToPNG(bitmap, temporary) != 0)
+            throw Exception("PNG 編碼或寫入失敗。")
+        ; 完整寫好才移至目標；即使同名檔在等待期間出現，也不覆寫。
+        FileMove, %temporary%, %path%, 0
+        if (ErrorLevel)
+            throw Exception("無法存入目標檔案，可能已有同名影像或無寫入權限。")
+        return true
+    } catch e {
+        error := e.Message
+        return false
+    } finally {
+        if (bitmap > 0)
+            DllCall("gdiplus\GdipDisposeImage", "Ptr", bitmap)
+        DllCall("gdiplus\GdiplusShutdown", "Ptr", token)
+        if (FileExist(temporary))
+            FileDelete, %temporary%
+    }
 }
