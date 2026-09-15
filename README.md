@@ -20,6 +20,21 @@
 | [2026 下半年舊戶卡片回饋查詢](tool/card-rewards.html) | 既有持卡人／既有帳戶的 2026-08-01 至 12-31 離線回饋快照；查證基準日 2026-08-18，非即時銀行資料 |
 
 
+## LDCT 報告工具
+
+以瀏覽器開啟 `tool/ldct-report.html`。No lung nodule、Benign features、Insignificant 與 Juxtapleural 為獨立勾選項，可疑結節可另行勾選及編輯。
+
+AI Parse 需要 Gemini API Key 與網路，會將輸入的 Impression 傳送至 Gemini；人工編輯與產生報告不需 API。AI 解析 insignificant nodules 時只填 SE，IM 留白，避免只列出部分影像；醫師可手動填入完整 IM 清單，例如 `4,55`。解析結果仍須人工覆核，PDF 通知單僅支援 Category 1–2。
+
+回歸測試需要 Node.js、Playwright 套件與 Microsoft Edge：
+
+```powershell
+npm install --no-save --package-lock=false playwright
+node tests/test_ldct_report.cjs
+```
+
+測試以合成資料在 headless Edge 執行，Gemini 回應由測試替代，不使用真實 API Key 或傳送病患資料；不涵蓋真實 Gemini 判讀品質、系統列印對話框或完整臨床規則驗證。
+
 ## AHK Scripts
 
 `ahk-scripts/` 目錄下的 AutoHotkey 腳本，用於放射科報告自動化。
@@ -38,6 +53,19 @@
 | `Gdip.ahk` | GDI+ 圖形庫 |
 | `AHKClock - 2.ahk` | 桌面時鐘 |
 | `test.ahk` / `test2m.ahk` | 測試用腳本 |
+
+### usaigui 影像分析
+
+`ahk-scripts/US.ahk` 的 `usaigui` 可選 `gpt-6-astra`（預設）、`gpt-5.6-terra` 或 `gpt-5.6-luna`。檢查部位與模型分開選擇，移除原本部位名稱中的 Thinking；Responses API 統一設定 `reasoning.effort: medium`。影像 prompt 放在獨立的 [ahk-scripts/usai-prompts](ahk-scripts/usai-prompts/README.md)，與 `ahk-scripts/prompts` 的 Impression → Findings 功能分開。更新 AHK 後需重載一次；之後編輯 UTF-8 Markdown 檔，每次分析都會重新讀取，無需重載。缺檔或空檔時停止分析並顯示檔案路徑。
+
+模型路由測試需 Python 與 AutoHotkey v1.1；以隱藏 GUI 實跑選單及 JSON 建構，攔截網路 worker，不呼叫 API：
+
+```powershell
+$env:AHK_V1_EXE = 'C:\path\to\AutoHotkeyU64.exe'
+python -m unittest discover -s tests -p "test_usai_*.py"
+```
+
+測試不代表真實 API 存取權、醫療影像分析品質或院內 HIS 完整操作已驗證。
 
 ### CXR 報告範本
 
@@ -138,3 +166,5 @@ fetcher 僅於每日 21:00–03:00 之間運作。
 
 仍在追蹤中（例如超音波判定 BI-RADS 3 需後續追蹤）請使用 `pending + outcome null + notes`；
 僅在案件可從待追蹤清單移除時，才使用 `resolved + outcome`。
+
+USAI 每次重開視窗會清空影像與 OCR；更換影像、重跑 OCR、關閉視窗或逾時會取消背景工作。每次分析使用獨立暫存檔，回覆完整寫入後才讀取；多段文字依序保留。回歸測試使用隱藏 AHK GUI 與模擬 HTTP，不傳送影像至 API。

@@ -437,9 +437,8 @@
             <!-- Nodule Findings -->
             <div class="section-title" style="font-size:1em;">Lung Nodule Findings</div>
             <div class="check-group" style="margin-bottom:8px;">
-                <label><input type="radio" name="nodulePrimary" value="none" onchange="onNoduleTypeChange()"> No lung nodule</label>
-                <label><input type="radio" name="nodulePrimary" value="benign" onchange="onNoduleTypeChange()"> Benign features</label>
-                <label><input type="radio" name="nodulePrimary" value="other" onchange="onNoduleTypeChange()" checked> Other nodule findings</label>
+                <label><input type="checkbox" id="noduleNone" onchange="onNoduleTypeChange()"> No lung nodule</label>
+                <label><input type="checkbox" id="noduleBenign" onchange="onNoduleTypeChange()"> Benign features</label>
             </div>
             <div class="check-group indent" style="margin-bottom:8px;">
                 <label><input type="checkbox" id="noduleInsignificant" onchange="onNoduleTypeChange()" checked> Insignificant (&lt;6mm)</label>
@@ -456,9 +455,10 @@
                     </div>
                     <div class="form-group">
                         <label>IM:</label>
-                        <input type="text" id="insigImage" style="width:60px;">
+                        <input type="text" id="insigImage" style="width:140px;" placeholder="例如 4,55（可留白）">
                     </div>
                 </div>
+                <div class="sub-label">AI 解析僅填 SE；IM 留白，或由醫師填入完整影像編號。</div>
             </div>
 
             <!-- Significant nodule table -->
@@ -722,10 +722,8 @@
     // UI Interactions
     // ================================================================
     function onNoduleTypeChange() {
-        const primary = document.querySelector('input[name="nodulePrimary"]:checked')?.value || 'other';
-        const isOther = primary === 'other';
-        const hasInsignificant = isOther && document.getElementById('noduleInsignificant').checked;
-        const hasSignificant = isOther && document.getElementById('noduleSignificant').checked;
+        const hasInsignificant = document.getElementById('noduleInsignificant').checked;
+        const hasSignificant = document.getElementById('noduleSignificant').checked;
         document.getElementById('insignificantDetails').style.display = hasInsignificant ? 'block' : 'none';
         document.getElementById('significantDetails').style.display = hasSignificant ? 'block' : 'none';
         updatePreview();
@@ -814,6 +812,20 @@
         updatePreview();
     }
 
+    function changeNoduleDensity(index, select) {
+        const nodule = noduleData[index];
+        nodule.density = select.value;
+        const solidInput = select.closest('tr').querySelector('td:nth-child(4) input');
+        const isPartSolid = nodule.density === 'part-solid';
+        if (!isPartSolid) {
+            nodule.solidPart = '';
+            solidInput.value = '';
+        }
+        solidInput.disabled = !isPartSolid;
+        solidInput.placeholder = isPartSolid ? 'mm' : '-';
+        updatePreview();
+    }
+
     function renderNoduleTable() {
         const tbody = document.getElementById('noduleTableBody');
         tbody.innerHTML = '';
@@ -821,13 +833,13 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${i + 1}</td>
-                <td><input type="number" value="${n.size}" onchange="noduleData[${i}].size=this.value;updatePreview();" step="0.1"></td>
-                <td><select onchange="noduleData[${i}].density=this.value;updatePreview();">
+                <td><input type="number" value="${escapeHtml(n.size)}" onchange="noduleData[${i}].size=this.value;updatePreview();" step="0.1"></td>
+                <td><select onchange="changeNoduleDensity(${i},this)">
                     <option value="non-solid" ${n.density==='non-solid'?'selected':''}>Non-solid</option>
                     <option value="part-solid" ${n.density==='part-solid'?'selected':''}>Part-solid</option>
                     <option value="solid" ${n.density==='solid'?'selected':''}>Solid</option>
                 </select></td>
-                <td><input type="number" value="${n.solidPart}" onchange="noduleData[${i}].solidPart=this.value;updatePreview();" step="0.1" placeholder="${n.density==='part-solid'?'mm':'-'}" ${n.density!=='part-solid'?'disabled':''}></td>
+                <td><input type="number" value="${escapeHtml(n.solidPart)}" onchange="noduleData[${i}].solidPart=this.value;updatePreview();" step="0.1" placeholder="${n.density==='part-solid'?'mm':'-'}" ${n.density!=='part-solid'?'disabled':''}></td>
                 <td><select onchange="noduleData[${i}].lobe=this.value;updatePreview();">
                     <option value="">--</option>
                     <option value="RUL" ${n.lobe==='RUL'?'selected':''}>RUL</option>
@@ -836,7 +848,7 @@
                     <option value="LUL" ${n.lobe==='LUL'?'selected':''}>LUL</option>
                     <option value="LLL" ${n.lobe==='LLL'?'selected':''}>LLL</option>
                 </select></td>
-                <td><input type="text" value="${n.srsImg}" onchange="noduleData[${i}].srsImg=this.value;updatePreview();" placeholder="_/_" style="width:70px;"></td>
+                <td><input type="text" value="${escapeHtml(n.srsImg)}" onchange="noduleData[${i}].srsImg=this.value;updatePreview();" placeholder="_/_" style="width:70px;"></td>
                 <td><select onchange="noduleData[${i}].change=this.value;updatePreview();">
                     <option value="unchanged" ${n.change==='unchanged'?'selected':''}>Unchanged</option>
                     <option value="enlarging" ${n.change==='enlarging'?'selected':''}>Enlarging (&gt;1.5mm)</option>
@@ -855,17 +867,18 @@
     function getFormState() {
         const quality = document.querySelector('input[name="quality"]:checked')?.value || 'Acceptable';
         const cat = document.getElementById('lungRadsCategory').value;
-        const nodulePrimary = document.querySelector('input[name="nodulePrimary"]:checked')?.value || 'other';
-        const hasInsignificant = nodulePrimary === 'other' && document.getElementById('noduleInsignificant').checked;
-        const hasJuxtapleural = nodulePrimary === 'other' && document.getElementById('noduleJuxtapleural').checked;
-        const hasSignificant = nodulePrimary === 'other' && document.getElementById('noduleSignificant').checked;
+        const noNodule = document.getElementById('noduleNone').checked;
+        const benignFeatures = document.getElementById('noduleBenign').checked;
+        const hasInsignificant = document.getElementById('noduleInsignificant').checked;
+        const hasJuxtapleural = document.getElementById('noduleJuxtapleural').checked;
+        const hasSignificant = document.getElementById('noduleSignificant').checked;
         const ctdivol = document.getElementById('ctdivol').value || '__';
         const dlp = document.getElementById('dlp').value || '__';
         const normalizedPriorDate = syncPriorCTState();
         const priorDate = normalizedPriorDate || '0000/00/00';
         const noPrior = document.getElementById('noPriorCT').checked && !normalizedPriorDate;
 
-        return { quality, cat, nodulePrimary, hasInsignificant, hasJuxtapleural, hasSignificant, ctdivol, dlp, priorDate, noPrior };
+        return { quality, cat, noNodule, benignFeatures, hasInsignificant, hasJuxtapleural, hasSignificant, ctdivol, dlp, priorDate, noPrior };
     }
 
     function generateTextReport() {
@@ -884,12 +897,11 @@
         // --- Lung nodule findings ---
         lines.push(`Lung nodule findings related to cancer screening`);
 
-        const primary = s.nodulePrimary;
         const hasInsignificant = s.hasInsignificant;
         const hasJuxtapleural = s.hasJuxtapleural;
         const hasSignificant = s.hasSignificant;
-        lines.push(`${cb(primary==='none')}No lung nodule`);
-        lines.push(`${cb(primary==='benign')}Nodule with benign features.`);
+        lines.push(`${cb(s.noNodule)}No lung nodule`);
+        lines.push(`${cb(s.benignFeatures)}Nodule with benign features.`);
         const insigSE = document.getElementById('insigSeries').value || '_';
         const insigIM = document.getElementById('insigImage').value || '__';
         lines.push(`${cb(hasInsignificant)}Insignificant(<6 mm) (SE:${insigSE}, IM:${insigIM})`);
@@ -1064,9 +1076,9 @@
         const examDate = document.getElementById('examDate').value || '____/____/____';
 
         const dateParts = examDate.split('/');
-        const year = dateParts[0] || '____';
-        const month = dateParts[1] || '__';
-        const day = dateParts[2] || '__';
+        const year = escapeHtml(dateParts[0] || '____');
+        const month = escapeHtml(dateParts[1] || '__');
+        const day = escapeHtml(dateParts[2] || '__');
 
         const honorific = sex === 'F' ? '女士' : '先生';
         const modS = document.getElementById('modifierS').checked;
@@ -1099,8 +1111,10 @@
         if (document.getElementById('emphysema').checked) otherItems.push('emphysema');
         if (document.getElementById('bronchiectasis').checked) otherItems.push('bronchiectasis');
 
-        const otherChestDesc = document.getElementById('otherChestDesc').value.toLowerCase();
-        const otherAbdNeckDesc = document.getElementById('otherAbdNeckDesc').value.toLowerCase();
+        const otherChestDesc = document.getElementById('otherChest').checked
+            ? document.getElementById('otherChestDesc').value.toLowerCase() : '';
+        const otherAbdNeckDesc = document.getElementById('otherAbdNeck').checked
+            ? document.getElementById('otherAbdNeckDesc').value.toLowerCase() : '';
         const hasGallstones = otherChestDesc.includes('gallstone') || otherAbdNeckDesc.includes('gallstone');
         const hasKidneyStones = otherChestDesc.includes('kidney stone') || otherChestDesc.includes('renal stone') || otherAbdNeckDesc.includes('kidney stone') || otherAbdNeckDesc.includes('renal stone');
         const hasThyroid = otherChestDesc.includes('thyroid') || otherAbdNeckDesc.includes('thyroid');
@@ -1199,7 +1213,7 @@ Parse the following LDCT impression text into structured JSON. Follow these rule
    - Non-solid / ground-glass nodule significance: pure ground-glass or non-solid nodules are significant only when >=30mm (3cm), new/growing/suspicious, or explicitly assigned a higher Lung-RADS category. A 6-29mm ground-glass nodule is usually Category 2 and should NOT be put in significant_nodules solely because it is >=6mm.
    - Part-solid nodule significance depends mainly on the solid component size when provided.
    - Juxtapleural/perifissural/fissural/pleural-based nodules <10mm should set juxtapleural_nodules=true and should not be counted as significant unless explicitly suspicious or enlarging.
-5. For insignificant nodules, extract the series and image numbers if provided
+5. For insignificant nodules, extract ALL distinct series numbers if provided, separated by commas (for example "2,3"). Always leave insignificant_image empty: this shared field cannot reliably represent every nodule's image references. Do not return only the first image number. The physician can enter a complete image list manually.
 6. For significant nodules, extract details for each (up to 3): size, density (non-solid/part-solid/solid), solid part size if part-solid, lobe (RUL/RML/RLL/LUL/LLL), series/image, change status (unchanged/enlarging/new/no_prior)
 7. Count the number of significant nodules
 8. Check for airway nodules and atypical cysts
@@ -1241,7 +1255,7 @@ Return ONLY valid JSON with this exact structure:
   "juxtapleural_nodules": false,
   "has_significant_nodules": false,
   "insignificant_series": "3",
-  "insignificant_image": "45",
+  "insignificant_image": "",
   "significant_count": "0",
   "significant_nodules": [],
   "nodules_else": false,
@@ -1332,7 +1346,7 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
         showStatus('Parsing with Gemini AI...', 'loading');
 
         try {
-            const modelId = 'gemini-2.5-flash';
+            const modelId = 'gemini-3.8-flash';
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
             const payload = {
@@ -1371,13 +1385,11 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
     }
 
     function applyParsedData(d, options = {}) {
-        // Category — override to 1 if no nodule found
+        const priorInputState = options.priorInputState || getPriorCTInputState();
+        resetParsedFields();
+        // Preserve the supplied category, including airway/cyst findings.
         if (d.lung_rads_category) {
-            let cat = d.lung_rads_category;
-            if (d.no_nodule && !d.has_significant_nodules && !d.insignificant_nodules && cat === '2') {
-                cat = '1';
-            }
-            document.getElementById('lungRadsCategory').value = cat;
+            document.getElementById('lungRadsCategory').value = d.lung_rads_category;
             onCategoryChange();
         }
 
@@ -1391,7 +1403,6 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
 
         // Prior CT. Gemini only sees the impression text, so preserve a date
         // that the user already entered unless the AI returns an explicit prior.
-        const priorInputState = options.priorInputState || getPriorCTInputState();
         const normalizedPriorDate = normalizeDateInput(d.prior_date);
         if (d.prior_available || normalizedPriorDate) {
             document.getElementById('noPriorCT').checked = false;
@@ -1408,9 +1419,8 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
         }
 
         // Nodule flags
-        const primaryValue = d.no_nodule ? 'none' : (d.benign_features ? 'benign' : 'other');
-        const primaryRadio = document.querySelector(`input[name="nodulePrimary"][value="${primaryValue}"]`);
-        if (primaryRadio) primaryRadio.checked = true;
+        document.getElementById('noduleNone').checked = !!d.no_nodule;
+        document.getElementById('noduleBenign').checked = !!d.benign_features;
         document.getElementById('noduleInsignificant').checked = !!d.insignificant_nodules;
         document.getElementById('noduleJuxtapleural').checked = !!d.juxtapleural_nodules;
         document.getElementById('noduleSignificant').checked = !!d.has_significant_nodules;
@@ -1418,7 +1428,8 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
 
         // Insignificant details
         if (d.insignificant_series) document.getElementById('insigSeries').value = d.insignificant_series;
-        if (d.insignificant_image) document.getElementById('insigImage').value = d.insignificant_image;
+        // Deliberately omit AI image references rather than publish a partial list.
+        document.getElementById('insigImage').value = '';
 
         // Significant nodules
         if (d.significant_count) {
@@ -1541,12 +1552,26 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
         }
     }
 
+    function resetParsedFields() {
+        document.querySelectorAll('#section-parsed input').forEach(el => {
+            if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+            else el.value = '';
+        });
+        document.querySelectorAll('#section-parsed textarea, #section-parsed select').forEach(el => el.value = '');
+        document.querySelector('input[name="quality"][value="Acceptable"]').checked = true;
+        document.querySelector('input[name="noduleCount"][value="1"]').checked = true;
+        noduleData = [];
+        renderNoduleTable();
+        ['nodulesElseLobes','lymphNodesDetail','coronaryDetail','otherChestDetail','otherAbdNeckDetail','airwayDetails','airwaySegmentalDetails','cystDetails'].forEach(id => {
+            document.getElementById(id).style.display = 'none';
+        });
+    }
+
     function clearAll() {
         // Reset all form fields
         document.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(el => el.value = '');
         document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
-        document.querySelector('input[name="quality"][value="Acceptable"]').checked = true;
-        document.querySelector('input[name="nodulePrimary"][value="other"]').checked = true;
+        resetParsedFields();
         document.getElementById('noduleInsignificant').checked = true;
         document.getElementById('noduleJuxtapleural').checked = false;
         document.getElementById('noduleSignificant').checked = false;
