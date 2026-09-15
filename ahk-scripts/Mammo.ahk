@@ -153,6 +153,7 @@ Gui Add, Radio, xp yp+20 w150 h23 vmammoB6, BI-RADS &6
 
 
 Gui Add, Button, x25 y230 w140 h60 gMammo Default, 輸出(&`)
+Gui Add, Button, x25 y310 w140 h38 gMammoSilicone, 小針美容
 
 Gui Show, w380 h400, Mammo
 
@@ -161,7 +162,22 @@ SetTimer, WriteStudyID, 1000
 return
 
 
+MammoSilicone:
+; 套用固定的 D / 2；檢查類型、舊片與 addendum 沿用原組套。
+Loop, 4 {
+    GuiControl,, mammoD%A_Index%, % A_Index = 4
+}
+Loop, 7 {
+    mammoCategory := A_Index - 1
+    GuiControl,, mammoB%mammoCategory%, % mammoCategory = 2
+}
+mammoSiliconePreset := true
+Gosub, MammoBuildReport
+return
+
 Mammo:
+mammoSiliconePreset := false
+MammoBuildReport:
 Gui, Submit, NoHide
 desc := ""
 
@@ -194,7 +210,17 @@ If (mammoD1){
 }
 desc .= "`r`rFindings:`r"
 
-If (mammoB1){
+If (mammoSiliconePreset){
+    desc .= "s/p bilateral multifocal liquid silicone injection throughout both breasts with`r"
+    desc .= "the presence of multiple silicone cysts of various sizes.`r"
+    desc .= "The normal fibroglandular tissue is obscured and cannot be well evaluated.`r"
+    desc .= "Fibrotic changes are also noted in the breast parenchyma. No visible mass lesions`r"
+    desc .= "could be identified.`r`r"
+    desc .= "BI-RADS assessment:`r(BI-RADS category 2, benign)`r`r"
+    desc .= "Recommendation: Annual screening mammography`r`r"
+    desc .= "IMP: Bilateral silicone injection mammoplasty with poor visualization of the`r"
+    desc .= "     breast parenchyma and architectural structures.`r`r"
+}else If (mammoB1){
 	If (mammoT2){ 
 		desc .= "There is no visible lesion corresponding to the clinically mentioned location at __.`r"
 		desc .= "The study is thus concluded as normal, there is no clustered microcalcification, nor architectural distortion noted by this study.`r`r"

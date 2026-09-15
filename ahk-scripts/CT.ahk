@@ -281,9 +281,7 @@ Clinical Indication: Lung cancer screening _/ Nodule follow-up
 Comparison with previous chest CT or LDCT (date): _not available
 
 Findings:
-_Small nodules in  (<6mm,srs/img:)
-Suggest annual image f/u.
-Calcified granuloma in (srs/img:)
+_No significant >3mm lung nodules found in both lungs.
 
 Other incidental findings:
 _N/A

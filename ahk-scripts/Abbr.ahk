@@ -177,7 +177,7 @@ HotstringMenuV("A","MenuShortcut"
     ,"atelectasis"
     ,"atelectasis in _"
     ,"focal atelectasis."
-    ,"nodular atelectasis"
+    ,"nodular atelectasis", "cicatrisation atelectasis"
     ,"subsegmental atelectasis")
 return
 

@@ -125,10 +125,19 @@ _The study is compared with prior diagnostic US.
 Impression:
 Successful ultrasound guided CNB of _.
 
-- Under sonoguidance, _2 pieces of specimens were taken from _hypoechoic lesion in
-_S3 via _anterior abdominal wall approach and sent for pathological exam.
-
 )
+;- Under sonoguidance, _2 pieces of specimens were taken from _hypoechoic lesion in
+;_S3 via _anterior abdominal wall approach and sent for pathological exam.
+
+
+
+MsgBox, 4,, "Would you like to continue Salivary gland...(press Yes or No)"
+IfMsgBox, No
+	return
+
+SendInput 3. Salivary glands:`r - unremarkable.`r`r
+SendInput _tn;`r_tirads; `r
+return
 
 ;============================================================================================
 ; US - Neck
@@ -1204,14 +1213,18 @@ global USAI_APIKey := API_KEY
 
 ; 熱字串觸發
 ::usaigui::
-ShowUSAIGUI:  ; 修改 ShowUSAIGUI 標籤，使用雙欄式佈局
-	Gui, USAIG:New, , 超音波 AI 分析 (GPT-5.4)
+ShowUSAIGUI:  ; 每次重建視窗都開始新的影像工作階段
+    Critical
+    USAIResetSession()
+	Gui, USAIG:New, , 超音波 AI 分析 (OpenAI)
     Gui, USAIG:Font, s10
 
     ; === 左側面板 ===
     Gui, USAIG:Add, GroupBox, x10 y10 w470 h157, API / Backend 設定
     Gui, USAIG:Add, Text, x20 y30 w60 vUSAIAPIKeyLbl, API Key:
     Gui, USAIG:Add, Edit, x85 y30 w380 h20 vUSAIAPIKey Password, %API_KEY%
+    Gui, USAIG:Add, Text, x20 y65 w60 h23, 模型:
+    Gui, USAIG:Add, DropDownList, x85 y62 w380 vUSAIModel Choose1, gpt-6-astra|gpt-5.6-terra|gpt-5.6-luna
 
     Gui, USAIG:Add, GroupBox, x10 y177 w470 h100, 影像狀態
     Gui, USAIG:Add, Text, x20 y197 w220 h40 vUSAIImage1Status Center, 本次影像：未上傳`n點擊下方按鈕貼上影像
@@ -1234,7 +1247,7 @@ ShowUSAIGUI:  ; 修改 ShowUSAIGUI 標籤，使用雙欄式佈局
 	Gui, USAIG:Add, GroupBox, x490 y10 w400 h160, 分析選項
 
     Gui, USAIG:Add, Text, x500 y30 w80 h23, 檢查部位:
-    Gui, USAIG:Add, DropDownList, x580 y27 w300 vUSAIExamType gUSAIExamTypeChanged Choose1, GPT-5.4 Thinking (Breast)||脊椎 (Spine, Thinking)|Ankle Foot 陳主任風格 Thinking| Chest x-ray (Thinking)|Knee Thinking|一般描述 (General)
+    Gui, USAIG:Add, DropDownList, x580 y27 w300 vUSAIExamType gUSAIExamTypeChanged Choose1, 乳房 (Breast)|脊椎 (Spine)|Ankle Foot 陳主任風格|Chest x-ray|Knee|一般描述 (General)
 
     Gui, USAIG:Add, CheckBox, x580 y60 w180 h23 vUSAICropImage Checked, 啟用影像裁切 (去除上方資訊)
     Gui, USAIG:Add, Button, x770 y57 w110 h25 gUSAIExportCrop, 匯出裁切圖
@@ -1252,7 +1265,7 @@ ShowUSAIGUI:  ; 修改 ShowUSAIGUI 標籤，使用雙欄式佈局
     Gui, USAIG:Add, Button, x640 y602 w100 h35 gUSAICopyResult, 複製結果
     Gui, USAIG:Add, Button, x750 y602 w100 h35 gUSAIClearResult, 清除結果
 
-    Gui, USAIG:Add, Text, x10 y677 w880 h20 vUSAIStatus Center, 就緒 (Backend: OpenAI GPT-5.4)
+    Gui, USAIG:Add, Text, x10 y677 w880 h20 vUSAIStatus Center, 就緒 (OpenAI；依模型選單分析)
 
     Gui, USAIG:Show, w900 h707
 return
@@ -1356,6 +1369,11 @@ MatchImageNumber(input) {
 
 ; 貼上本次影像
 USAIPasteImage1:
+    Critical
+    USAICancelJob()
+    USAI_CurrentOCRText := ""
+    GuiControl, USAIG:, USAIOCR1Result,
+    GuiControl, USAIG:, USAIResult,
     USAI_CurrentImage := GetClipboardImageAndSave("current")
     if (USAI_CurrentImage != "") {
         FormatTime, timeString, , yyyy-MM-dd HH:mm:ss
@@ -1373,6 +1391,11 @@ return
 
 ; 貼上前次影像
 USAIPasteImage2:
+    Critical
+    USAICancelJob()
+    USAI_PreviousOCRText := ""
+    GuiControl, USAIG:, USAIOCR2Result,
+    GuiControl, USAIG:, USAIResult,
     USAI_PreviousImage := GetClipboardImageAndSave("previous")
     if (USAI_PreviousImage != "") {
         FormatTime, timeString, , yyyy-MM-dd HH:mm:ss
@@ -1389,6 +1412,11 @@ return
 
 ; 執行 OCR (本次影像)
 USAIExecuteOCR1:
+    Critical
+    USAICancelJob()
+    USAI_CurrentOCRText := ""
+    GuiControl, USAIG:, USAIOCR1Result,
+    GuiControl, USAIG:, USAIResult,
     if (!FileExist(A_Temp . "\usai_current.png")) {
         GuiControl, USAIG:, USAIStatus, 錯誤：找不到本次影像檔案
         return
@@ -1443,6 +1471,11 @@ return
 
 ; 執行 OCR (前次影像)
 USAIExecuteOCR2:
+    Critical
+    USAICancelJob()
+    USAI_PreviousOCRText := ""
+    GuiControl, USAIG:, USAIOCR2Result,
+    GuiControl, USAIG:, USAIResult,
     if (!FileExist(A_Temp . "\usai_previous.png")) {
         GuiControl, USAIG:, USAIStatus, 錯誤：找不到前次影像檔案
         return
@@ -1805,11 +1838,20 @@ if (RegExMatch(input, "is)Dist\s*A\s*([\d.]+)\s*mm.*?Dist\s*B\s*([\d.]+)\s*mm", 
 
 ; 開始分析 (整合 OCR 結果)
 USAIAnalyze:
+    Critical
+    USAICancelJob()
+    GuiControl, USAIG:, USAIResult,
 	Gui, USAIG:Submit, NoHide
+
+    modelID := USAIModel
+    if (!USAIIsSupportedModel(modelID)) {
+        GuiControl, USAIG:, USAIStatus, 錯誤：請選擇支援的模型
+        return
+    }
 
     ; 驗證 API Key
     if (USAIAPIKey = "") {
-        GuiControl, USAIG:, USAIStatus, 錯誤：請輸入 Google API Key
+        GuiControl, USAIG:, USAIStatus, 錯誤：請輸入 OpenAI API Key
         return
     }
 
@@ -1824,385 +1866,15 @@ USAIAnalyze:
     }
 
     GuiControl, USAIG:Disable, USAIAnalyzeBtn
-    GuiControl, USAIG:, USAIStatus, 正在呼叫 GPT-5.4...
+    GuiControl, USAIG:, USAIStatus, % "正在呼叫 " modelID "..."
     
-    ; === 1. 設定 Prompt 與 Thinking 模式 ===
-    SysPrompt := ""
-    useThinking := false
-    
-    ; 判斷是否使用 Thinking 模式 (根據下拉選單名稱)
-	if (InStr(USAIExamType, "Thinking")) {
-        useThinking := true
-        SysPrompt := "Analyze the image with high reasoning effort."
-    } else {
-        SysPrompt := ""
-    }
-
-    if (InStr(USAIExamType, "Breast")) {
-        SysPrompt .= "You are a radiologist assistant specializing in Breast Ultrasound. "
-        SysPrompt .= "Analyze the ultrasound image like a breast imager, not only as BI-RADS category selection. "
-        SysPrompt .= "Use OCR Data when available for side, clock-face location, distance from nipple, size, and series/image number. "
-        SysPrompt .= "Do not invent measurements that are not visible or supplied by OCR. "
-        SysPrompt .= "Do not show hidden chain-of-thought; provide only concise, checkable imaging rationale. "
-        SysPrompt .= "Output plain text in this exact structure. Keep the first Report line in English; after that, start directly with Traditional Chinese differential diagnosis. "
-        SysPrompt .= "Do NOT restate the lesion description in Chinese and do NOT output a generic 病灶分析 section.`n"
-        SysPrompt .= "Report line: [side/location]: [size]mm.(Srs/Img:x/y) [concise lesion description].`n"
-        SysPrompt .= "## 主要鑑別診斷`n"
-        SysPrompt .= "### 1. [最可能診斷]`n"
-        SysPrompt .= "- 支持理由: ...`n"
-        SysPrompt .= "- 不支持或需確認處: ...`n"
-        SysPrompt .= "### 2. [次要鑑別診斷]`n"
-        SysPrompt .= "- 支持理由: ...`n"
-        SysPrompt .= "- 不支持或需確認處: ...`n"
-        SysPrompt .= "### 3. [必要時列低可能但重要診斷]`n"
-        SysPrompt .= "- 何時需考慮: ...`n"
-        SysPrompt .= "## BI-RADS 判斷`n"
-        SysPrompt .= "- 建議分類: BI-RADS [category]`n"
-        SysPrompt .= "- 理由: ...`n"
-        SysPrompt .= "- 建議: ...`n"
-        SysPrompt .= "## 可用報告句`n"
-        SysPrompt .= "[English report sentence, concise and directly usable.]"
-    } else if (InStr(USAIExamType, "Spine")) {
-
-	SysPrompt := "You are an expert Radiologist. Analyze this Spine X-ray."
-	SysPrompt .= " Output a clean, plain-text report in TELEGRAPHIC DIAGNOSTIC style."
-	SysPrompt .= " NO Markdown formatting in the final text (no bold, no italics, no headers)."
-	SysPrompt .= " Each finding on its own line. Spine findings and non-spine incidental findings separated by a blank line."
-
-	SysPrompt .= "`n`n=== OUTPUT FORMAT ==="
-	SysPrompt .= "`nFirst line: L-S Spine ({views}):"
-	SysPrompt .= "`nView labels: Single lateral = (Lat.) | AP + lateral = (AP+Lat.) | AP + flex + ext = (AP+Flex.+Ext.) | Flex + ext only = (Flex.+Ext.)"
-	SysPrompt .= "`nThen findings, one per line, ordered by clinical importance:"
-	SysPrompt .= "`n  1. Compression fracture / acute findings"
-	SysPrompt .= "`n  2. Spondylolisthesis / retrolisthesis"
-	SysPrompt .= "`n  3. Dynamic instability (flex/ext only)"
-	SysPrompt .= "`n  4. Degenerative disc disease / disc space narrowing"
-	SysPrompt .= "`n  5. Spondylosis"
-	SysPrompt .= "`n  6. Facet joint arthrosis"
-	SysPrompt .= "`n  7. Baastrup disease (kissing spinous processes)"
-	SysPrompt .= "`n  8. Loss of lordosis"
-	SysPrompt .= "`n  9. Bone density (osteopenia / osteoporosis / generalized diminished bone density)"
-	SysPrompt .= "`n  10. [blank line]"
-	SysPrompt .= "`n  11. Incidental: Intimal calcification of aorta, bowel gas, renal stones, etc."
-
-	SysPrompt .= "`n`n=== PHASE 0: VERTEBRAL COUNTING (Do This First, Every Time) ==="
-	SysPrompt .= "`n- Find T12: the lowest vertebra with a rib attached."
-	SysPrompt .= "`n- Vertebra directly below T12 = L1. Count downward: L1 -> L2 -> L3 -> L4 -> L5."
-	SysPrompt .= "`n- Confirm L5 by identifying sacrum below it."
-	SysPrompt .= "`n- If ribs not visible (lateral view cropped), identify sacrum first, count upward: L5 -> L4 -> L3 -> L2 -> L1."
-	SysPrompt .= "`n- Common error: assuming a level without confirming T12 rib or sacrum anchor."
-
-	SysPrompt .= "`n`n=== PHASE 1: SYSTEMATIC CHECKLIST (Lateral View) ==="
-
-	SysPrompt .= "`n`n[A: LORDOSIS]"
-	SysPrompt .= "`n- Cobb angle (T12 inferior endplate to L5 inferior endplate):"
-	SysPrompt .= "`n  < 20 degrees = Loss of lordosis (report it)."
-	SysPrompt .= "`n  20-45 degrees = Normal (do NOT report)."
-	SysPrompt .= "`n  > 45 degrees = Hyperlordosis (report it)."
-	SysPrompt .= "`n- Since precise angle measurement is unreliable by visual inspection, only report when spine appears clearly straightened or kyphotic. When uncertain, do NOT report."
-
-	SysPrompt .= "`n`n[B: COMPRESSION FRACTURE - HIGHEST PRIORITY]"
-	SysPrompt .= "`n- THIS IS THE MOST COMMONLY MISSED FINDING. Deliberately slow down and check each vertebra."
-	SysPrompt .= "`n- At EACH level, compare anterior height (Ha) vs posterior height (Hp)."
-	SysPrompt .= "`n- Ha < 80% of Hp = compression fracture (anterior wedging)."
-	SysPrompt .= "`n- Focus T11-L2 (most common) but check ALL levels."
-	SysPrompt .= "`n- Both Ha and Hp reduced vs adjacent levels = burst fracture pattern."
-	SysPrompt .= "`n- Biconcave deformity (both endplates depressed) = insufficiency fracture pattern."
-
-	SysPrompt .= "`n`n[C: SPONDYLOLISTHESIS / RETROLISTHESIS]"
-	SysPrompt .= "`n- Trace posterior vertebral body line from top to bottom (may be gentle curve)."
-	SysPrompt .= "`n- Displacement must be > 5% of endplate AP length to report. < 5% = not significant, do NOT report."
-	SysPrompt .= "`n- Check EVERY level, not just L4/5. Multilevel listhesis (e.g. L2/3/4) is common in elderly."
-	SysPrompt .= "`n- Anterolisthesis grading (use 'Grade'):"
-	SysPrompt .= "`n  Grade I: 5-25%, Grade II: 25-50%, Grade III: >50% (rare)."
-	SysPrompt .= "`n- Retrolisthesis grading (use 'Mild/Moderate/Severe'):"
-	SysPrompt .= "`n  Mild: 5-25%, Moderate: 25-50%, Severe: >50%."
-	SysPrompt .= "`n- Do NOT mix terminology: anterolisthesis = Grade, retrolisthesis = severity words."
-	SysPrompt .= "`n- When uncertain whether displacement meets 5% threshold, do NOT report."
-
-	SysPrompt .= "`n`n[D: DISC SPACE]"
-	SysPrompt .= "`n- Normal: disc height increases from upper to lower lumbar (L1/2 < L2/3 < L3/4 < L4/5)."
-	SysPrompt .= "`n- If a disc space is narrower than the one above it = disc space narrowing."
-	SysPrompt .= "`n- L5/S1: physiologically may be lower than L4/5. Only report if very obviously reduced."
-	SysPrompt .= "`n- Report ALL levels with narrowing, not just the most obvious one."
-	SysPrompt .= "`n- IMPORTANT DISTINCTION:"
-	SysPrompt .= "`n  'Disc space narrowing' = requires directly visible height reduction."
-	SysPrompt .= "`n  'Degenerative disc disease' = can report when endplate sclerosis present even if disc height unclear (e.g. obscured by osteophytes)."
-	SysPrompt .= "`n  These are NOT synonyms. Use appropriate term based on what you can actually see."
-	SysPrompt .= "`n- When large osteophytes obscure disc space:"
-	SysPrompt .= "`n  Endplate sclerosis visible = report 'degenerative disc disease' at that level."
-	SysPrompt .= "`n  No sclerosis and height unclear = do not report."
-
-	SysPrompt .= "`n`n[E: SPONDYLOSIS / OSTEOPHYTES]"
-	SysPrompt .= "`n- Report as 'Spondylosis of spine' - summary term covering osteophyte formation."
-	SysPrompt .= "`n- Do NOT need to specify every level unless specifically asked."
-
-	SysPrompt .= "`n`n[F: FACET JOINT ARTHROSIS]"
-	SysPrompt .= "`n- Look for sclerosis, hypertrophy of facet joints."
-	SysPrompt .= "`n- Report as 'Facet joint arthrosis of lumbar spine'."
-	SysPrompt .= "`n- Only report when clearly visible; do not assume based on age alone."
-
-	SysPrompt .= "`n`n[G: POSTERIOR ELEMENTS]"
-	SysPrompt .= "`n- Spinous processes: if lower lumbar spinous processes touching or show sclerosis at contact = Baastrup disease / kissing spinous processes."
-	SysPrompt .= "`n- Pedicles (AP view): absent pedicle = red flag for metastasis."
-
-	SysPrompt .= "`n`n[H: BONE DENSITY]"
-	SysPrompt .= "`n- Osteopenia / osteoporosis / generalized diminished bone density."
-	SysPrompt .= "`n- Subjective on plain X-ray, acceptable variation between readers."
-
-	SysPrompt .= "`n`n[I: SOFT TISSUE & INCIDENTALS - Always Check]"
-	SysPrompt .= "`n- Intimal calcification of aorta: visible anterior to vertebral bodies. Check EVERY lateral view. Frequently missed."
-	SysPrompt .= "`n- Bowel gas: if increased, report 'Mild increased bowel gas' or 'Mild ileus'."
-	SysPrompt .= "`n- Renal stones: mainly visible on AP view."
-	SysPrompt .= "`n- Surgical hardware: describe type and location if present."
-
-	SysPrompt .= "`n`n=== PHASE 2: FLEXION-EXTENSION VIEWS ==="
-	SysPrompt .= "`n- When two images from same patient with close timestamps are provided:"
-	SysPrompt .= "`n  Identify which is flexion (lordosis reduced/reversed) and which is extension (lordosis accentuated)."
-	SysPrompt .= "`n  Compare posterior vertebral body line alignment between two views."
-	SysPrompt .= "`n  If stable: report 'No obvious hypermobility.' - this is sufficient."
-	SysPrompt .= "`n  If unstable: describe level and type."
-
-	SysPrompt .= "`n`n=== PHASE 3: AP VIEW ==="
-	SysPrompt .= "`n- Scoliosis (convexity direction, severity)."
-	SysPrompt .= "`n- Pedicle integrity (absent pedicle = red flag)."
-	SysPrompt .= "`n- Vertebral body heights (compression fractures ARE visible on AP)."
-	SysPrompt .= "`n- Renal stones, bowel gas."
-
-	SysPrompt .= "`n`n=== POOR IMAGE QUALITY ==="
-	SysPrompt .= "`n- If contrast is poor or bowel gas significantly obscures spine, append at end:"
-	SysPrompt .= "`n  *Poor image contrast, lesion may be obscured."
-	SysPrompt .= "`n- Do NOT compensate for poor visibility by fabricating uncertain findings."
-
-	SysPrompt .= "`n`n=== COMMON ERRORS TO AVOID ==="
-	SysPrompt .= "`n- Missing compression fracture: check Ha vs Hp at EVERY level."
-	SysPrompt .= "`n- Wrong disc level: always count from T12 rib or sacrum."
-	SysPrompt .= "`n- Over-reporting listhesis: must exceed 5% threshold; when uncertain, don't report."
-	SysPrompt .= "`n- Missing multilevel listhesis: check EVERY level, not just L4/5."
-	SysPrompt .= "`n- Missing aortic calcification: check anterior to vertebral bodies on EVERY lateral."
-	SysPrompt .= "`n- Only reporting most obvious disc narrowing: report ALL levels."
-	SysPrompt .= "`n- Confusing disc narrowing vs degenerative disc disease: narrowing = visible height loss; DDD = sclerosis alone is enough."
-	SysPrompt .= "`n- Missing Baastrup disease: check spinous process spacing in lower lumbar."
-
-	SysPrompt .= "`n`n=== EXAMPLE OUTPUT: Lateral ==="
-	SysPrompt .= "`nL-S Spine (Lat.):"
-	SysPrompt .= "`nGrade I spondylolisthesis of L4/5."
-	SysPrompt .= "`nMild retrolisthesis of L2/3."
-	SysPrompt .= "`nDegenerative disc disease with L4/5 disc space narrowing."
-	SysPrompt .= "`nSpondylosis of spine."
-	SysPrompt .= "`nFacet joint arthrosis of lumbar spine."
-	SysPrompt .= "`nOsteoporotic change of visible bony structures."
-	SysPrompt .= "`n"
-	SysPrompt .= "`nIntimal calcification of aorta."
-
-	SysPrompt .= "`n`n=== EXAMPLE OUTPUT: Flex+Ext ==="
-	SysPrompt .= "`nL-S Spine (AP+Flex.+Ext.):"
-	SysPrompt .= "`nNo obvious hypermobility."
-	SysPrompt .= "`nGrade I spondylolisthesis of L2/3/4."
-	SysPrompt .= "`nDegenerative disc disease with L4/5 disc space narrowing."
-	SysPrompt .= "`nSpondylosis of spine."
-	SysPrompt .= "`nGeneralized diminished bone density."
-	SysPrompt .= "`nFacet joint arthrosis of lumbar spine."
-	SysPrompt .= "`n"
-	SysPrompt .= "`nIntimal calcification of aorta."
-	
-	
-    } else if (InStr(USAIExamType, "CXR")) {
-	SysPrompt := "You are an expert Board-Certified Radiologist. Analyze this Chest X-ray."
-	SysPrompt .= " Output a clean, plain-text report in TELEGRAPHIC DIAGNOSTIC style."
-	SysPrompt .= " NO Markdown formatting in the final text (no bold, no italics, no headers). Use hyphens '- ' for each line."
-
-	SysPrompt .= "`n`n=== PHASE 1: TECHNICAL & PATIENT ASSESSMENT (Internal - do not output) ==="
-	SysPrompt .= "`n- View: PA / AP / Lateral / Decubitus."
-	SysPrompt .= "`n- Rotation: Check spinous processes centered between clavicular heads."
-	SysPrompt .= "`n- Inspiration: Good (>=9 posterior ribs above diaphragm) / Poor."
-	SysPrompt .= "`n- Estimate patient age from visual cues: bone density, aortic knob, disc degeneration, soft tissue."
-
-	SysPrompt .= "`n`n=== PHASE 2: SYSTEMATIC ANALYSIS (Follow this order strictly) ==="
-
-	SysPrompt .= "`n`n[1. LUNGS - The Anchor, most critical]"
-	SysPrompt .= "`n- Compare both lung fields systematically: apex -> mid -> base."
-	SysPrompt .= "`n- NORMAL: output exactly 'No active lung lesion is noted.'"
-	SysPrompt .= "`n- IF ABNORMAL, use the most specific applicable:"
-	SysPrompt .= "`n  a. Infiltration: 'Patchy opacity/infiltration in [RUL/RML/RLL/LUL/LLL], could be pneumonia or others.'"
-	SysPrompt .= "`n  b. Consolidation: 'Consolidation with air bronchograms in [location], could be pneumonia or others.'"
-	SysPrompt .= "`n  c. Mass/Nodule: 'A nodular opacity/mass lesion in [location]. Recommend CT for further evaluation.'"
-	SysPrompt .= "`n  d. Emphysema/COPD: 'Hyperinflated lungs with flattened diaphragms, compatible with COPD/emphysematous change.'"
-	SysPrompt .= "`n  e. Congestion: 'Bilateral perihilar haziness and upper lobe venous distention, compatible with pulmonary congestion.'"
-	SysPrompt .= "`n  f. Old TB/Fibrosis: 'Fibrocalcified change in [bilateral upper lobes / location], suspect old infection/inflammatory changes, eg. old TB or others.'"
-	SysPrompt .= "`n  g. Atelectasis: 'Band-like opacity/volume loss in [location], compatible with atelectasis.'"
-	SysPrompt .= "`n  h. Interstitial: 'Reticular/reticulonodular pattern in [location], suggest interstitial lung disease. Recommend CT correlation.'"
-
-	SysPrompt .= "`n`n[2. PLEURA]"
-	SysPrompt .= "`n- Costophrenic angles: Sharp (normal) / Blunted (effusion)."
-	SysPrompt .= "`n  If blunted: 'Blunting of [R/L/bilateral] costophrenic angle(s), suggesting pleural effusion.'"
-	SysPrompt .= "`n  Grade: Small / Moderate / Large."
-	SysPrompt .= "`n- Pneumothorax: 'Pneumothorax at [R/L] [apex/hemithorax].'"
-	SysPrompt .= "`n- Pleural thickening: 'Apical pleural thickening [bilateral/unilateral].'"
-	SysPrompt .= "`n- If all normal: omit this section entirely."
-
-	SysPrompt .= "`n`n[3. HEART]"
-	SysPrompt .= "`n- Cardiothoracic ratio (CTR) on PA view:"
-	SysPrompt .= "`n  CTR <0.5 -> 'Normal heart size.'"
-	SysPrompt .= "`n  CTR 0.5-0.55 -> 'Borderline cardiomegaly.'"
-	SysPrompt .= "`n  CTR >0.55 -> 'Cardiomegaly.'"
-	SysPrompt .= "`n- On AP view: 'Heart size appears mildly enlarged, may be accentuated by AP projection.'"
-
-	SysPrompt .= "`n`n[4. AORTA & MEDIASTINUM]"
-	SysPrompt .= "`n- ONLY report what is visually evident. Do NOT assume calcification based on age alone."
-	SysPrompt .= "`n  Calcification seen -> 'Intimal calcification of aorta.'"
-	SysPrompt .= "`n  Tortuous -> 'Tortuous aorta with intimal calcification.'"
-	SysPrompt .= "`n  Dilated -> 'Dilated ascending aorta.'"
-	SysPrompt .= "`n  Widened mediastinum -> 'Mild mediastinal widening.'"
-	SysPrompt .= "`n- Hilar prominence/lymphadenopathy: note if present."
-	SysPrompt .= "`n- Tracheal deviation: note direction if present."
-	SysPrompt .= "`n- If all normal: omit this section entirely."
-
-	SysPrompt .= "`n`n[5. DIAPHRAGM]"
-	SysPrompt .= "`n- Elevated hemidiaphragm: note side."
-	SysPrompt .= "`n- Free air under diaphragm -> 'Free air under [R/L] hemidiaphragm. Pneumoperitoneum? Clinical correlation required.'"
-	SysPrompt .= "`n- Flattened diaphragm -> supports COPD (report with lungs)."
-	SysPrompt .= "`n- If normal: omit this section entirely."
-
-	SysPrompt .= "`n`n[6. BONES & SOFT TISSUE]"
-	SysPrompt .= "`n- IF visually normal (young, no degeneration) -> 'Unremarkable bony structure.'"
-	SysPrompt .= "`n- IF degenerative changes visible -> 'Degenerative change and spur formation of spine.'"
-	SysPrompt .= "`n- IF reduced bone density visible -> add 'Generalized diminished bone density.' or 'Osteoporotic change of visible bony structures.' if severe."
-	SysPrompt .= "`n- Rib fractures: note level and side if seen."
-	SysPrompt .= "`n- Soft tissue: subcutaneous emphysema, mastectomy, chest wall mass."
-
-	SysPrompt .= "`n`n[7. DEVICES & FOREIGN BODIES - Only if present]"
-	SysPrompt .= "`n- ETT: 'Status post endotracheal tube insertion with tip approximately [X] cm above carina.'"
-	SysPrompt .= "`n- CVC: 'Status post central venous catheter via [R/L] [subclavian/IJ] with tip in SVC.'"
-	SysPrompt .= "`n- NGT: 'Status post nasogastric tube insertion with tip in stomach.'"
-	SysPrompt .= "`n- Chest tube: 'Chest tube in [R/L] hemithorax.'"
-	SysPrompt .= "`n- Pacemaker/ICD: 'Pacemaker/ICD with leads in [RA/RV/CS].'"
-	SysPrompt .= "`n- Port-A-Cath: 'Implantable port via [side] with tip in SVC.'"
-	SysPrompt .= "`n- Sternal wires, IABP, ECMO, or other devices: describe accordingly."
-	SysPrompt .= "`n- If no devices: omit this section entirely."
-
-	SysPrompt .= "`n`n[8. OTHERS - Only if present]"
-	SysPrompt .= "`n- Distended stomach."
-	SysPrompt .= "`n- Calcified granuloma."
-	SysPrompt .= "`n- Any other incidental findings."
-	SysPrompt .= "`n- If none: omit this section entirely."
-
-	SysPrompt .= "`n`n=== OUTPUT STRUCTURE (Strict) ==="
-	SysPrompt .= "`n(Output strictly as a list of lines starting with '- '. Only include lines for findings present or required.)"
-	SysPrompt .= "`n- [Lungs - ALWAYS include. Default: 'No active lung lesion is noted.']"
-	SysPrompt .= "`n- [Pleura - Include if effusion, pneumothorax, or thickening. Omit if normal.]"
-	SysPrompt .= "`n- [Heart - ALWAYS include. Default: 'Normal heart size.']"
-	SysPrompt .= "`n- [Aorta/Mediastinum - Include ONLY if calcification, tortuosity, dilation, or deviation is VISIBLE. Do NOT assume.]"
-	SysPrompt .= "`n- [Diaphragm - Include only if abnormal. Omit if normal.]"
-	SysPrompt .= "`n- [Bones - ALWAYS include. Select: 'Unremarkable bony structure' OR specific findings.]"
-	SysPrompt .= "`n- [Devices - Include each device on its own line. Omit if no devices.]"
-	SysPrompt .= "`n- [Others - Omit if none.]"
-
-	
-    } else if (InStr(USAIExamType, "Foot")) {
-	; =================================================================================
-	; Gemini Pro Prompt for Foot/Ankle X-ray (Dr. Style Optimized)
-	; =================================================================================
-
-	SysPrompt .= "You are an expert Board-Certified Radiologist specialized in Foot & Ankle imaging."
-	SysPrompt .= " Your goal is to output a clean, plain-text report in TELEGRAPHIC DIAGNOSTIC style. NO Markdown. NO Bullet points."
-
-	SysPrompt .= " `n`n**PHASE 1: ANATOMY & VIEW RECOGNITION:**"
-	SysPrompt .= " `n- Identify if the image is **Ankle** or **Foot**."
-	SysPrompt .= " `n- If the image is unrelated (e.g., Spine, Chest, Knee), output 'Non-target anatomy' and STOP."
-
-	SysPrompt .= " `n`n**PHASE 2: TRAUMA & POST-OP CHECK (HIGHEST PRIORITY):**"
-	SysPrompt .= " `n- **Hardware:** Look for Plates, Screws, Pins, or Intramedullary Nails."
-	SysPrompt .= " `n- **Union Status (CRITICAL):** If hardware or old fracture is present, you MUST classify healing status as:"
-	SysPrompt .= " `n  1. 'With bone union' (Fully healed)"
-	SysPrompt .= " `n  2. 'With callus formation and near bone union' (Healing)"
-	SysPrompt .= " `n  3. 'Without bone union' (Non-union/Delayed)"
-	SysPrompt .= " `n- **Fractures:** If acute, specify type (e.g., 'Trimalleolar', 'Avulsion', 'Spiral')."
-
-	SysPrompt .= " `n`n**PHASE 3: SPECIFIC ANATOMY CHECKLIST:**"
-
-	SysPrompt .= " `n`n**(IF ANKLE):**"
-	SysPrompt .= " `n1. **Malleoli:** Check Medial, Lateral, and Posterior malleoli."
-	SysPrompt .= " `n2. **Talar Dome:** Check for Osteochondral lesions (OCD) or 'Valgus deformity'."
-	SysPrompt .= " `n3. **Accessory Bones:** Distinguish 'Os trigonum' or 'Os subfibulare' from fractures."
-	SysPrompt .= " `n4. **Soft Tissue:** Report location of swelling (e.g., 'Soft tissue swelling around lateral malleolus')."
-
-	SysPrompt .= " `n`n**(IF FOOT):**"
-	SysPrompt .= " `n1. **Navicular:** Check for compression/sclerosis indicative of **'Mueller-Weiss disease'**."
-	SysPrompt .= " `n2. **Calcaneus:** Check for **'Plantar spur'** or **'Haglund deformity'** (posterior superior prominence)."
-	SysPrompt .= " `n3. **5th Metatarsal:** Check base for Jones/Avulsion fracture."
-	SysPrompt .= " `n4. **Alignment:** Check for Hallux Valgus or Pes Planus."
-
-	SysPrompt .= " `n`n**PHASE 4: REPORTING STYLE RULES:**"
-	SysPrompt .= " `n1. **Phrasing:** Use 'Status post [procedure] with/without [finding]'. Example: 'Fracture of lateral malleolus status post screw fixation with bone union.'"
-	SysPrompt .= " `n2. **Tone:** Direct and definitive. Avoid 'I think' or 'Possible'. Use 'suggestive of' only if uncertain."
-	SysPrompt .= " `n3. **Negative Findings:** Only mention relevant negatives (e.g., 'No evident bone lesion')."
-
-	SysPrompt .= " `n`n**REQUIRED OUTPUT STRUCTURE:**"
-
-	SysPrompt .= " `n(Block 1: Primary Diagnosis / Trauma)"
-	SysPrompt .= " `n[Line 1: Major Finding (e.g., 'Trimalleolar fracture status post plate fixation') or 'No acute fracture']"
-	SysPrompt .= " `n[Line 2: Healing Status (e.g., 'With callus formation and near bone union') - Omit if normal]"
-	SysPrompt .= " `n"
-	SysPrompt .= " `n(Block 2: Secondary Findings & Degeneration)"
-	SysPrompt .= " `n[Line 1: Bone Lesions/Deformity (e.g., 'Mueller-Weiss disease considered' or 'Plantar calcaneal spur')]"
-	SysPrompt .= " `n[Line 2: Joints (e.g., 'Tibiotalar osteoarthritis' or 'Joint space narrowing')]"
-	SysPrompt .= " `n"
-	SysPrompt .= " `n(Block 3: Soft Tissues & Others)"
-	SysPrompt .= " `n[Line 1: Soft Tissue (e.g., 'Lateral ankle swelling')]"
-	SysPrompt .= " `n[Line 2: Accessory Bones (e.g., 'Prominent os trigonum')]"
-	SysPrompt .= " `n"
-	SysPrompt .= " `n(Block 4: Summary)"
-	SysPrompt .= " `n[Single concise summary line]"
-    } else if (InStr(USAIExamType, "Knee")) {
-	SysPrompt .= "You are an expert Board-Certified Radiologist. Analyze the Knee X-ray."
-	SysPrompt .= " Your goal is to output a clean, plain-text report in TELEGRAPHIC DIAGNOSTIC style. NO Markdown. NO Bullet points."
-
-	SysPrompt .= " `n`n**PHASE 1: ANATOMY & VIEW RECOGNITION:**"
-	SysPrompt .= " `n- Identify if the image shows Right, Left, or Bilateral Knees."
-	SysPrompt .= " `n- Identify if post-surgical implants (TKA) are present."
-	SysPrompt .= " `n- **CRITICAL:** Ignore any non-knee anatomy (e.g., faint spine or pelvis parts) unless clinically significant to the knee."
-
-	SysPrompt .= " `n`n**PHASE 2: SPECIFIC ANALYSIS LOGIC:**"
-
-	SysPrompt .= " `n`n**(1. FRACTURE & DISLOCATION CHECK):**"
-	SysPrompt .= " `n- Scan femur, tibia, fibula, and patella for fracture lines."
-	SysPrompt .= " `n- **If Normal:** Output 'No obvious evidence of displaced bony fracture. No obvious joint dislocation.'"
-	SysPrompt .= " `n- **If Fracture:** Describe location, type (e.g., 'Non-displaced', 'Comminuted'), and union status (e.g., 'Without bone union', 'Healing fracture')."
-
-	SysPrompt .= " `n`n**(2. OSTEOARTHRITIS (OA) ASSESSMENT - MANDATORY):**"
-	SysPrompt .= " `n- **Detection:** Look for osteophytes, joint space narrowing, and subchondral sclerosis."
-	SysPrompt .= " `n- **GRADING (Must use 'Kellgren & Lawrence system'):**"
-	SysPrompt .= " `n  - **Grade I:** Doubtful narrowing, possible osteophytic lipping."
-	SysPrompt .= " `n  - **Grade II:** Definite osteophytes, possible narrowing."
-	SysPrompt .= " `n  - **Grade III:** Moderate multiple osteophytes, definite narrowing, some sclerosis."
-	SysPrompt .= " `n  - **Grade IV:** Large osteophytes, marked narrowing, severe sclerosis."
-	SysPrompt .= " `n- **Standard Phrase:** 'OA in [side] knee. Kellgren & Lawrence system, grade [I-IV].'"
-
-	SysPrompt .= " `n`n**(3. PATELLA & ALIGNMENT):**"
-	SysPrompt .= " `n- Check for Patellar Tilt (especially on Merchant/Skyline view)."
-	SysPrompt .= " `n- **If Normal:** 'No obvious patellar tilt or patellar subluxation.'"
-	SysPrompt .= " `n- **If Abnormal:** 'Lateral tilting of patella.'"
-
-	SysPrompt .= " `n`n**(4. SOFT TISSUE & BONE MATRIX):**"
-	SysPrompt .= " `n- **Effusion:** Check suprapatellar pouch. If ANY fluid is suspected, output 'Mild joint effusion' (This is a high-frequency finding)."
-	SysPrompt .= " `n- **Bone Density:** Check for 'Disuse osteoporosis' or 'Probably osteoporosis'."
-
-	SysPrompt .= " `n`n**PHASE 3: OUTPUT STRUCTURE & STYLE RULES:**"
-	SysPrompt .= " `n1. **Telegraphic Style:** Use short phrases. (e.g., 'Facet arthrosis' instead of 'There is facet arthrosis')."
-	SysPrompt .= " `n2. **No Comparisons:** Do NOT mention 'Comparing with previous study'."
-	SysPrompt .= " `n3. **Sequence:** Fracture/Implant -> OA/Degeneration -> Patella -> Soft Tissue."
-
-	SysPrompt .= " `n`n**REQUIRED OUTPUT TEMPLATE (Examples):**"
-	SysPrompt .= " `n(Example 1 - Normal/Mild):"
-	SysPrompt .= " `n'No obvious evidence of displaced bony fracture. No obvious joint dislocation. No obvious patellar tilt. Mild joint effusion.'"
-	SysPrompt .= " `n(Example 2 - OA):"
-	SysPrompt .= " `n'OA in right knee. Kellgren & Lawrence system, grade III. Joint space narrowing, osteophyte formation of patellofemoral joint. Mild joint effusion. Disuse osteoporosis.'"
-	SysPrompt .= " `n(Example 3 - Fracture):"
-	SysPrompt .= " `n'Non-displaced fracture of patella. Without bone union. Mild joint effusion. Soft tissue swelling.'"
-
-    } else {
-        SysPrompt := "You are a helpful radiologist assistant. Describe the medical image findings concisely in English. "
+    ; === 1. 每次分析重新讀取部位與影像模式的外部 prompt ===
+    imageMode := USAIChoice3 ? "comparison" : (USAIChoice2 ? "same_lesion" : "current")
+    SysPrompt := USAILoadPrompt(USAIExamType, imageMode, promptError)
+    if (promptError != "") {
+        GuiControl, USAIG:Enable, USAIAnalyzeBtn
+        GuiControl, USAIG:, USAIStatus, %promptError%
+        return
     }
 	; === 2. 構建 User Prompt ===
     UserPrompt := ""
@@ -2211,44 +1883,31 @@ USAIAnalyze:
     promptPrefix := SysPrompt
 
     if (USAIChoice1) {
-        UserPrompt := promptPrefix . "`n`nPlease analyze this image."
+        UserPrompt := promptPrefix
         if (USAI_CurrentOCRText != "") {
             UserPrompt .= "`nOCR Data: " . USAI_CurrentOCRText
         }
-        if (InStr(USAIExamType, "Breast"))
-            UserPrompt .= "`nReturn exactly one English Report line, then start at ## 主要鑑別診斷. Do not output 病灶分析, Impression, or a Comparison section."
-        else
-            UserPrompt .= "`nOutput format: Location, Size, Description, Impression. (In English)"
         images.Push(USAI_CurrentImage)
     } else if (USAIChoice2) {
-        UserPrompt := promptPrefix . "`n`nAnalyze these TWO images as two current views/images of the SAME lesion, not as old-vs-new comparison."
+        UserPrompt := promptPrefix
         if (USAI_CurrentOCRText != "" || USAI_PreviousOCRText != "") {
              UserPrompt .= "`nOCR Data - Image 1: " . USAI_CurrentOCRText . ", Image 2: " . USAI_PreviousOCRText
         }
-        if (InStr(USAIExamType, "Breast"))
-            UserPrompt .= "`nReturn exactly one English Report line, then start at ## 主要鑑別診斷. Do not output 病灶分析, Impression, or a Comparison section. Do not compare the two images."
-        else
-            UserPrompt .= "`nOutput format (Single line): Location, Size, Description, Comparison findings. (In English)"
         images.Push(USAI_CurrentImage)
         images.Push(USAI_PreviousImage)
     } else if (USAIChoice3) {
-        UserPrompt := promptPrefix . "`n`nCompare size change. Image 1 is PREVIOUS, Image 2 is CURRENT."
+        UserPrompt := promptPrefix
         if (USAI_CurrentOCRText != "" || USAI_PreviousOCRText != "") {
              UserPrompt .= "`nOCR Data - Previous: " . USAI_PreviousOCRText . ", Current: " . USAI_CurrentOCRText
         }
-        if (InStr(USAIExamType, "Breast"))
-            UserPrompt .= "`nReturn Report line, size change, lesion analysis, BI-RADS reasoning, and Impression."
-        else
-            UserPrompt .= "`nOutput format (Single line): Location, Size change, Brief description. (In English)"
         images.Push(USAI_PreviousImage)
         images.Push(USAI_CurrentImage)
     }
 
     ; === 3. 呼叫 API (非同步) ===
-    modelID := "gpt-5.4"
     g_USAI_StartTick := A_TickCount
     g_USAI_LastModel := modelID
-    started := StartOpenAIBackgroundJob(USAIAPIKey, modelID, UserPrompt, images, useThinking)
+    started := StartOpenAIBackgroundJob(USAIAPIKey, modelID, UserPrompt, images)
     if (!started) {
         GuiControl, USAIG:Enable, USAIAnalyzeBtn
         GuiControl, USAIG:, USAIStatus, 無法啟動 GPT 背景程序
@@ -2270,7 +1929,12 @@ return
 ;return
 
 CheckOpenAIResult:
-    resultFile := A_Temp . "\openai_usai_response.txt"
+    Critical
+    if (!IsObject(g_USAI_Job)) {
+        SetTimer, CheckOpenAIResult, Off
+        return
+    }
+    resultFile := g_USAI_Job.result
     elapsed_s := Round((A_TickCount - g_USAI_StartTick) / 1000, 1)
     
     ; 檢查結果檔案是否存在
@@ -2302,39 +1966,91 @@ CheckOpenAIResult:
         }
         
         ; 清理臨時檔案
-        FileDelete, %resultFile%
-        FileDelete, %A_Temp%\openai_usai_request.json
-        FileDelete, %A_Temp%\openai_usai_worker.ahk
+        USAICancelJob()
     }
     else {
         if (elapsed_s > 180) {
             SetTimer, CheckOpenAIResult, Off
             GuiControl, USAIG:Enable, USAIAnalyzeBtn
             GuiControl, USAIG:, USAIStatus, % "逾時（>180s / " g_USAI_LastModel "）"
-            FileDelete, %A_Temp%\openai_usai_request.json
-            FileDelete, %A_Temp%\openai_usai_worker.ahk
+            USAICancelJob()
         } else {
-            GuiControl, USAIG:, USAIStatus, % "GPT-5.4 分析中... " elapsed_s "s"
+            GuiControl, USAIG:, USAIStatus, % g_USAI_LastModel " 分析中... " elapsed_s "s"
         }
     }
 return
 
-StartOpenAIBackgroundJob(apiKey, modelID, prompt, images, useThinking) {
+USAIPromptFileName(examType) {
+    if (InStr(examType, "Breast"))
+        return "breast.md"
+    if (InStr(examType, "Spine"))
+        return "spine.md"
+    if (InStr(examType, "CXR") || InStr(examType, "Chest x-ray"))
+        return "cxr.md"
+    if (InStr(examType, "Foot"))
+        return "foot_ankle.md"
+    if (InStr(examType, "Knee"))
+        return "knee.md"
+    if (InStr(examType, "General"))
+        return "general.md"
+    return ""
+}
+
+USAILoadPrompt(examType, imageMode, ByRef errorMessage) {
+    errorMessage := ""
+    fileName := USAIPromptFileName(examType)
+    if (fileName = "" || !(imageMode = "current" || imageMode = "same_lesion" || imageMode = "comparison")) {
+        errorMessage := "錯誤：不支援的檢查部位或影像模式"
+        return ""
+    }
+    ; A_LineFile 指向本函式所在 US.ahk，支援由其他位置的主程式 #Include。
+    SplitPath, A_LineFile,, sourceDir
+    promptDir := sourceDir . "\usai-prompts"
+    prompt := ""
+    for _, relativePath in ["common.md", fileName, "modes\" . imageMode . ".md"] {
+        promptPath := promptDir . "\" . relativePath
+        FileRead, content, *P65001 %promptPath%
+        if (ErrorLevel || Trim(content, " `t`r`n" . Chr(0xFEFF)) = "") {
+            errorMessage := "無法讀取 prompt（檔案不存在、無法存取或空白）：" . promptPath
+            return ""
+        }
+        prompt .= (prompt = "" ? "" : "`n`n") . Trim(content, " `t`r`n" . Chr(0xFEFF))
+    }
+    return prompt
+}
+
+USAIIsSupportedModel(modelID) {
+    return modelID = "gpt-6-astra" || modelID = "gpt-5.6-terra" || modelID = "gpt-5.6-luna"
+}
+
+StartOpenAIBackgroundJob(apiKey, modelID, prompt, images) {
+    global g_USAI_Job
+    static sequence := 0
+    USAICancelJob()
+    sequence += 1
+    ; 每個工作有獨立路徑；晚到的回覆不能被另一工作讀取。
+    base := A_Temp . "\openai_usai_" . DllCall("GetCurrentProcessId") . "_" . A_NowUTC . "_" . A_TickCount . "_" . sequence
+    g_USAI_Job := {prefix: base, result: base . "_response.txt", pid: 0}
+
     ; 1. 構建完整的 JSON 字串 (OpenAI Responses API)
-    jsonBody := BuildOpenAIResponsesJSON(modelID, prompt, images, useThinking)
+    jsonBody := BuildOpenAIResponsesJSON(modelID, prompt, images)
     
     ; 2. 將 JSON 寫入臨時檔案 (解決命令列長度限制)
-    requestFile := A_Temp . "\openai_usai_request.json"
+    requestFile := base . "_request.json"
     FileDelete, %requestFile%
     FileAppend, %jsonBody%, %requestFile%, UTF-8
+    if (ErrorLevel) {
+        USAICancelJob()
+        return false
+    }
     
     ; 3. 準備結果檔案路徑
-    resultFile := A_Temp . "\openai_usai_response.txt"
+    resultFile := g_USAI_Job.result
     FileDelete, %resultFile%
     
     ; 4. 建立背景 Worker 腳本
     ; 這個腳本非常精簡，只負責讀 JSON -> POST -> 寫入結果
-    workerScriptPath := A_Temp . "\openai_usai_worker.ahk"
+    workerScriptPath := base . "_worker.ahk"
     FileDelete, %workerScriptPath%
     
     endpoint := "https://api.openai.com/v1/responses"
@@ -2343,6 +2059,7 @@ StartOpenAIBackgroundJob(apiKey, modelID, prompt, images, useThinking) {
     workerCode = 
     (
     #NoTrayIcon
+    #SingleInstance Off
     FileRead, jsonBody, *P65001 %requestFile%
     
     url := "%endpoint%"
@@ -2356,24 +2073,39 @@ StartOpenAIBackgroundJob(apiKey, modelID, prompt, images, useThinking) {
     try {
         whr.Send(jsonBody)
         if (whr.Status = 200) {
-            FileAppend, `% whr.ResponseText, %resultFile%, UTF-8
+            FileAppend, `% whr.ResponseText, %resultFile%.part, UTF-8
         } else {
             err := "HTTP_ERROR " . whr.Status . Chr(10) . whr.ResponseText
-            FileAppend, `% err, %resultFile%, UTF-8
+            FileAppend, `% err, %resultFile%.part, UTF-8
         }
     } catch e {
         err := "API Error: " . e.Message
-        FileAppend, `% err, %resultFile%, UTF-8
+        FileAppend, `% err, %resultFile%.part, UTF-8
     }
+    FileMove, %resultFile%.part, %resultFile%, 1
     ExitApp
     )
     
     FileAppend, %workerCode%, %workerScriptPath%, UTF-8
     
     ; 5. 執行背景腳本 (使用 Run 不會卡住主程式)
-    Run, "%A_AhkPath%" "%workerScriptPath%",, Hide UseErrorLevel
-    if (ErrorLevel)
+    if (ErrorLevel) {
+        USAICancelJob()
         return false
+    }
+    Run, "%A_AhkPath%" "%workerScriptPath%",, Hide UseErrorLevel, workerPID
+    if (ErrorLevel) {
+        USAICancelJob()
+        return false
+    }
+    ; 持有程序 handle，避免 PID 重用時取消到無關程序。
+    g_USAI_Job.handle := DllCall("OpenProcess", "UInt", 0x100001, "Int", 0, "UInt", workerPID, "Ptr")
+    if (!g_USAI_Job.handle) {
+        Process, Close, %workerPID%
+        USAICancelJob()
+        return false
+    }
+    g_USAI_Job.pid := workerPID
     return true
 }
 
@@ -2431,15 +2163,43 @@ return
 ; 關閉視窗
 USAIGGuiClose:
 USAIGGuiEscape:
+    Critical
+    USAIResetSession()
     Gui, USAIG:Destroy
+return
+
+USAICancelJob() {
+    global g_USAI_Job
+    SetTimer, CheckOpenAIResult, Off
+    job := g_USAI_Job
+    g_USAI_Job := ""
+    if (IsObject(job)) {
+        if (job.handle) {
+            DllCall("TerminateProcess", "Ptr", job.handle, "UInt", 0)
+            DllCall("WaitForSingleObject", "Ptr", job.handle, "UInt", 2000)
+            DllCall("CloseHandle", "Ptr", job.handle)
+        }
+        ; 只清除此工作明確建立的檔案，不使用萬用字元。
+        for _, suffix in ["_request.json", "_worker.ahk", "_response.txt", "_response.txt.part"] {
+            path := job.prefix . suffix
+            FileDelete, %path%
+        }
+    }
+    GuiControl, USAIG:Enable, USAIAnalyzeBtn
+}
+
+USAIResetSession() {
+    global USAI_CurrentImage, USAI_PreviousImage, USAI_CurrentOCRText, USAI_PreviousOCRText
+    USAICancelJob()
     USAI_CurrentImage := ""
     USAI_PreviousImage := ""
     USAI_CurrentOCRText := ""
     USAI_PreviousOCRText := ""
-    ; 清理臨時檔案
-    FileDelete, %A_Temp%\usai_current.png
-    FileDelete, %A_Temp%\usai_previous.png
-return
+    for _, name in ["current", "previous", "current_ai", "previous_ai", "current_ocr", "previous_ocr"] {
+        path := A_Temp . "\usai_" . name . ".png"
+        FileDelete, %path%
+    }
+}
 
 ; Base64 編碼函數（二進制文件版本）- 保留原有功能
 B64EncodeFile(filePath) {
@@ -2617,9 +2377,9 @@ B64Encode(string) {
 
 
 ; ============================================================================
-; OpenAI GPT-5.4 / legacy Gemini API helpers
+; OpenAI Responses / legacy Gemini API helpers
 ; ============================================================================
-BuildOpenAIResponsesJSON(modelID, prompt, images, useThinking) {
+BuildOpenAIResponsesJSON(modelID, prompt, images) {
     json := "{""model"":" . JEscape(modelID) . ",""input"":[{""role"":""user"",""content"":["
     json .= "{""type"":""input_text"",""text"":" . JEscape(prompt) . "}"
 
@@ -2629,15 +2389,15 @@ BuildOpenAIResponsesJSON(modelID, prompt, images, useThinking) {
     }
 
     json .= "]}],""max_output_tokens"":4000"
-    if (useThinking)
-        json .= ",""reasoning"":{""effort"":""medium""}"
+    ; 三個可選模型均支援 medium；不再依檢查部位名稱切換 Thinking。
+    json .= ",""reasoning"":{""effort"":""medium""}"
     json .= "}"
     return json
 }
 
 ParseOpenAIResponse(responseText) {
     ; Responses API returns output text blocks inside output[].content[].
-    ; Keep the last text block in case the model emits multiple output_text items.
+    ; 依序保留所有文字區塊，避免多段 findings 被最後一段覆蓋。
     if RegExMatch(responseText, """status""\s*:\s*""incomplete""") {
         reason := RegGet(responseText, """reason""\s*:\s*""((?:\\.|[^""\\])*)""")
         used := RegGet(responseText, """output_tokens""\s*:\s*(\d+)")
@@ -2647,12 +2407,12 @@ ParseOpenAIResponse(responseText) {
     finalResult := ""
     pos := 1
     while (pos := RegExMatch(responseText, """text""\s*:\s*""((?:\\.|[^""\\])*)""", match, pos)) {
-        finalResult := match1
+        finalResult .= (finalResult = "" ? "" : "`n") . JsonUnescape(match1)
         pos += StrLen(match)
     }
 
     if (finalResult != "")
-        return JsonUnescape(finalResult)
+        return finalResult
 
     if RegExMatch(responseText, """message""\s*:\s*""((?:\\.|[^""\\])*)""", err)
         return "Error parsing response: " . JsonUnescape(err1)

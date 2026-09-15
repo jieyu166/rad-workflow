@@ -777,6 +777,7 @@ Gui Add, Text, x500 yp+55 w120 h18 vSpineStatus, 已選 0 項
 Gui Font, s14
 Gui Add, Button, x500 yp+22 w120 h44 Default gFlushSpineBuffer, 輸出全部(&G)
 Gui Add, Button, xp yp+50 w120 h32 gClearSpineBuffer, 清空緩衝(&Q)
+Gui Add, Button, xp yp+60 w120 h32 gHGH_SaveImageBtn, 以病歷號儲存 PACS 影像
 
 ; 常用非 spine finding
 Gui Add, Text, x10 y370 w470 h2 0x10

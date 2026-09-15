@@ -742,10 +742,10 @@ CopyOld:
     CopyCXRtoHISWithParam(1)
 return
 
-; --- 查看 AI 報告 + 自動提取摘要至 chk060 ---
+; --- 查看 AI 報告 + 將 Lunit findings 複製到剪貼簿 ---
 <#1::
 SeeCXRAI:
-    MouseGetPos, tmpX, tmpY
+    MouseGetPos, aiOriginalX, aiOriginalY
 
     ; Step 1: G2 - 切到 Lunit AI series
     gosub PosDICOMLU
@@ -755,60 +755,29 @@ SeeCXRAI:
     Sleep, 10
     Send 2
     Sleep, 1000  ; 等待 PACS 載入 AI series
-return
-
-	
-    ; 確認是否要提取 AI 摘要至報告(暫時不用)
-    MsgBox, 4, Lunit AI, Copy AI report to chk060?
-    IfMsgBox, No
-    {
-        DllCall("SetCursorPos", "int", tmpX, "int", tmpY)
-        return
-    }
 
     ; Step 2: 抓 DICOM 檔頭
-    ClipboardBackup := Clipboard
+    ClipboardBackup := ClipboardAll
+    Clipboard := ""
     gosub CallDICOMWinL
-    aiDicomText := clipboard
-    Clipboard := ClipboardBackup
+    aiDicomText := Clipboard
 
-    ; Step 3: 還原滑鼠
-    DllCall("SetCursorPos", "int", tmpX, "int", tmpY)
-
-    ; Step 4: 提取 Lunit 摘要
+    ; Step 3: 提取 Lunit findings（排除 Threshold value 後內容）
     aiSummary := ExtractLunitSummary(aiDicomText)
-    if (aiSummary = "") {
-        TrayTip, AI, No Lunit AI data found in DICOM header, 3, 2
+    if (aiSummary != "") {
+        Clipboard := aiSummary
+        ClipWait, 1
+        ClipboardBackup := ""
+        DllCall("SetCursorPos", "int", aiOriginalX, "int", aiOriginalY)
+        TrayTip, AI, Lunit findings 已複製到剪貼簿, 2, 1
         return
     }
 
-    ; Step 5: 提取異常分數
-    abnScore := ExtractLunitAbnormalityScore(aiDicomText)
-
-    ; Step 6: 格式化並貼到 chk060
-    ; 移除 "normal" 相關句子，只保留異常發現
-    aiOutput := ""
-    Loop, Parse, aiSummary, `n, `r
-    {
-        line := Trim(A_LoopField)
-        if (line = "")
-            continue
-        ; 跳過正常/陰性描述
-        if (InStr(line, "appears normal") || InStr(line, "is not seen") || InStr(line, "is not suspected"))
-            continue
-        if (aiOutput != "")
-            aiOutput .= " "
-        aiOutput .= line
-    }
-
-    if (aiOutput = "") {
-        ; 全部正常，用簡短描述
-        desc := "* Lunit AI (score " . abnScore . "%): No significant findings.`r"
-    } else {
-        desc := "* Lunit AI (score " . abnScore . "%): " . aiOutput . "`r"
-    }
-	
-    CopyCXRtoHISWithParam(2)
+    ; DICOM 視窗失敗或沒有 0009,1005 時，不破壞原剪貼簿
+    Clipboard := ClipboardBackup
+    ClipboardBackup := ""
+    DllCall("SetCursorPos", "int", aiOriginalX, "int", aiOriginalY)
+    TrayTip, AI, DICOM header 中找不到 Lunit findings, 3, 2
 return
 
 
@@ -1277,6 +1246,7 @@ XButton1::
     Menu, XB1Menu, Add, 設定管理器 (&G), XB1_OpenConfig
     Menu, XB1Menu, Add, 測試目前座標 (&T), WizTestCurrentCoords
     Menu, XB1Menu, Add, 顯示快速鍵 (&H), XB1_ShowHotkeys
+	Menu, XB1Menu, Add, KMU專案用, HGH_Build
     Menu, XB1Menu, Add, 置頂, XB1_OnTop
     Menu, XB1Menu, Add, 複製 Gemini API Key (&K), XB1_CopyGeminiKey
     Menu, XB1Menu, Add, 重新載入腳本 (&E), XB1_Reload
