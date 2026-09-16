@@ -91,6 +91,37 @@ def parse_lungrads(text: str | None) -> dict:
             "issue": None}
 
 
+# baseline vs incidence round. Template line:
+#   In comparison with the prior CT, Date 0000/00/00 ■No prior chest CT avilable
+#                                        ^placeholder ^ticked -> no prior -> baseline
+#   In comparison with the prior CT, Date 2024/08/21 □No prior chest CT avilable
+#                                        ^real date  ^unticked -> has prior -> incidence
+# "avilable" is the template's own typo; match it as written.
+_PRIOR = re.compile(
+    rf"In comparison with the prior CT,\s*Date\s*([\d./-]*)\s*([{CHECKED}{UNCHECKED}])\s*No prior chest CT")
+_PLACEHOLDER_DATE = re.compile(r"^[0./-]*$")   # 0000/00/00 and friends
+
+
+def parse_round(text: str | None) -> dict:
+    """回傳 {'round': 'baseline'|'incidence'|None, 'prior_date': str|None, 'issue': str|None}."""
+    text = fix_encoding(text)
+    if not text:
+        return {"round": None, "prior_date": None, "issue": "no_text"}
+    m = _PRIOR.search(text)
+    if not m:
+        return {"round": None, "prior_date": None, "issue": "no_prior_line"}
+    date_s, mark = m.group(1).strip().rstrip("."), m.group(2)
+    has_date = bool(date_s) and not _PLACEHOLDER_DATE.match(date_s)
+    if mark == CHECKED:
+        # 勾了「無前次」，卻又填了日期 -> 互相矛盾，不猜
+        if has_date:
+            return {"round": None, "prior_date": date_s, "issue": "ticked_no_prior_but_date_given"}
+        return {"round": "baseline", "prior_date": None, "issue": None}
+    if not has_date:
+        return {"round": None, "prior_date": None, "issue": "has_prior_but_no_date"}
+    return {"round": "incidence", "prior_date": date_s, "issue": None}
+
+
 def cases_path(scope: str) -> Path:
     return OUTPUT_DIR / f"ldct_{scope}_cases.json"
 
@@ -111,6 +142,8 @@ def _load_json(path: Path, default):
 def summarize(reports: list[dict]) -> dict:
     cat = Counter()
     full = Counter()
+    rounds = Counter()
+    by_round: dict[str, Counter] = {}
     for r in reports:
         if r.get("status") != "fetched":
             cat["fetch_failed"] += 1
@@ -119,7 +152,13 @@ def summarize(reports: list[dict]) -> dict:
         cat[m if m is not None else "unparsed"] += 1
         if r.get("lungrads_full"):
             full[r["lungrads_full"]] += 1
-    return {"by_main": dict(cat), "by_full": dict(full)}
+        rnd = r.get("screen_round") or "unknown"
+        rounds[rnd] += 1
+        if m is not None:
+            by_round.setdefault(rnd, Counter())[m] += 1
+    return {"by_main": dict(cat), "by_full": dict(full),
+            "by_round": dict(rounds),
+            "category_by_round": {k: dict(v) for k, v in by_round.items()}}
 
 
 def run(scope: str, limit: int | None, reporter: str) -> dict:
@@ -157,9 +196,12 @@ def run(scope: str, limit: int | None, reporter: str) -> dict:
     # 舊檔可能是用先前版本的 parser 存的 -> 一律用現行規則重新判讀一次
     for r in existing.values():
         lr = parse_lungrads(r.get("report_text"))
+        rd = parse_round(r.get("report_text"))
         r.update(lungrads_main=lr["main"], lungrads_full=lr["full"],
                  lungrads_modifier_s=lr["modifier_s"],
-                 lungrads_checked=lr["checked"], lungrads_issue=lr["issue"])
+                 lungrads_checked=lr["checked"], lungrads_issue=lr["issue"],
+                 screen_round=rd["round"], prior_date=rd["prior_date"],
+                 round_issue=rd["issue"])
         r.pop("lungrads_all", None)
         r.pop("lungrads_conflict", None)
 
