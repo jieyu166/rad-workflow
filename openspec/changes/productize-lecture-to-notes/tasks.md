@@ -30,11 +30,11 @@
 
 ## 5. 抓圖與 OCR
 
-- [ ] 5.1 依「抓圖雙模式與影格策展 staging」實作「Two capture modes with one manifest format」：--mode scene（PySceneDetect，缺套件退 ffmpeg scene filter 並印訊息）與 --mode interval --every，輸出 frames/<stem>-<MMSS>.png 與含 sha256 的 manifest；驗證：tests/test_frames.py 以 30 秒 fixture 在兩種模式各產 manifest 並斷言每筆有 timestamp_sec、frame、sha256；以 monkeypatch 使 scenedetect 不可 import 時斷言印出 fallback 訊息
-- [ ] 5.2 實作「Adjacent-duplicate suppression in interval mode」：64x36 灰階平均絕對差低於 --diff-min（預設 4.0，含等於則保留）即丟棄；驗證：tests/test_dedup.py 以合成影格斷言 3.99 丟、4.00 留、25.3 留，並斷言十張相同畫面只留第一張
-- [ ] 5.3 實作「Frames are merged into the canonical JSON by time range」：依 [start_sec,end_sec) 指派 frames、frame 取第一張、無則取最近的前一張或首張、原子寫回；驗證：tests/test_frame_merge.py 以段落 1260–1440 與影格 1254、1441 斷言 frames 為空且 frame 為 1254 那張
-- [ ] 5.4 實作「Staged candidate curation」：--stage 寫入 staging/frames/、--curate 依 --max-per-segment（預設 4）與 sha256 驗證晉升並寫 .curation.json，正式 JSON 只引用晉升影格；驗證：tests/test_curation.py 竄改一張 staged 檔後斷言該候選被拒（reason: hash mismatch）、其餘照常處理、exit 2
-- [ ] 5.5 實作「OCR is cached and attached to frames」：RapidOCR 以 size+mtime 指紋快取於 .frames_ocr.json，寫入每段 frame_ocr，缺 rapidocr exit 3；驗證：tests/test_ocr.py 以 mock OCR 跑兩次，第二次印 `[ocr] N frames, 0 need OCR (N cached)` 且未呼叫 OCR
+- [x] 5.1 依「抓圖雙模式與影格策展 staging」實作「Two capture modes with one manifest format」：--mode scene（PySceneDetect，缺套件退 ffmpeg scene filter 並印訊息）與 --mode interval --every，輸出 frames/<stem>-<MMSS>.png 與含 sha256 的 manifest；驗證：tests/test_frames.py 以 30 秒 fixture 在兩種模式各產 manifest 並斷言每筆有 timestamp_sec、frame、sha256；以 monkeypatch 使 scenedetect 不可 import 時斷言印出 fallback 訊息
+- [x] 5.2 實作「Adjacent-duplicate suppression in interval mode」：64x36 灰階平均絕對差低於 --diff-min（預設 4.0，含等於則保留）即丟棄；驗證：tests/test_dedup.py 以合成影格斷言 3.99 丟、4.00 留、25.3 留，並斷言十張相同畫面只留第一張
+- [x] 5.3 實作「Frames are merged into the canonical JSON by time range」：依 [start_sec,end_sec) 指派 frames、frame 取第一張、無則取最近的前一張或首張、原子寫回；驗證：tests/test_frame_merge.py 以段落 1260–1440 與影格 1254、1441 斷言 frames 為空且 frame 為 1254 那張
+- [x] 5.4 實作「Staged candidate curation」：--stage 寫入 staging/frames/、--curate 依 --max-per-segment（預設 4）與 sha256 驗證晉升並寫 .curation.json，正式 JSON 只引用晉升影格；驗證：tests/test_curation.py 竄改一張 staged 檔後斷言該候選被拒（reason: hash mismatch）、其餘照常處理、exit 2
+- [x] 5.5 實作「OCR is cached and attached to frames」：RapidOCR 以 size+mtime 指紋快取於 .frames_ocr.json，寫入每段 frame_ocr，缺 rapidocr exit 3；驗證：tests/test_ocr.py 以 mock OCR 跑兩次，第二次印 `[ocr] N frames, 0 need OCR (N cached)` 且未呼叫 OCR
 
 ## 6. 筆記產生
 
