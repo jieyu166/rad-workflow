@@ -38,25 +38,25 @@
 
 ## 6. 筆記產生
 
-- [ ] 6.1 依「兩層筆記產生：骨架 render 與 LLM 擴寫」實作「Deterministic skeleton note rendered from canonical JSON」：固定章節順序、每段影格嵌入→summary→quotes（「」+時間）→bullets、References 含 corrections 表與 unverified_terms（標「未寫入本文」）與 source 區塊；驗證：tests/test_render.py 斷言同一 JSON 兩次 render 的 sha256 相同、unverified 詞只出現在 References、frame 為 null 時無嵌入行
-- [ ] 6.2 實作「Style selection」：--style faithful 全量 quotes、concise 每段最多一則且省略 kind=quote 的 bullet，預設取 outputs.toml 的 note.style（generic 為 concise）；驗證：tests/test_style.py 以三則 quotes 的段落斷言 concise 只出現一個 blockquote
-- [ ] 6.3 實作「Frontmatter comes from templates, not code」：frontmatter 完全由 note.frontmatter.yaml 模板渲染，generic 只含 title、date、source、tags；驗證：tests/test_frontmatter.py 斷言無 overlay 時 frontmatter 鍵集合恰為四鍵，套用含 noteVer/DateRev/subspecialty 的 overlay 模板後出現該三鍵，且 `grep -rn "noteVer\|DateRev" src/` 無結果
-- [ ] 6.4 實作「LLM expansion contract」：`l2n render --expand-prompt` 印出擴寫指令包（規範文字 + 需讀取的檔案路徑），並在 skill 的 note-writing 參考中規定擴寫後必須通過 check note；驗證：tests/test_expand_prompt.py 斷言輸出含規範版本字串與 .v4.md／.srt／.json 三個路徑；以 Claude Code 對 fixture 擴寫一次後 `l2n check note` exit 0（手動驗收，結果記錄於 PR 描述）
+- [x] 6.1 依「兩層筆記產生：骨架 render 與 LLM 擴寫」實作「Deterministic skeleton note rendered from canonical JSON」：固定章節順序、每段影格嵌入→summary→quotes（「」+時間）→bullets、References 含 corrections 表與 unverified_terms（標「未寫入本文」）與 source 區塊；驗證：tests/test_render.py 斷言同一 JSON 兩次 render 的 sha256 相同、unverified 詞只出現在 References、frame 為 null 時無嵌入行
+- [x] 6.2 實作「Style selection」：--style faithful 全量 quotes、concise 每段最多一則且省略 kind=quote 的 bullet，預設取 outputs.toml 的 note.style（generic 為 concise）；驗證：tests/test_style.py 以三則 quotes 的段落斷言 concise 只出現一個 blockquote
+- [x] 6.3 實作「Frontmatter comes from templates, not code」：frontmatter 完全由 note.frontmatter.yaml 模板渲染，generic 只含 title、date、source、tags；驗證：tests/test_frontmatter.py 斷言無 overlay 時 frontmatter 鍵集合恰為四鍵，套用含 noteVer/DateRev/subspecialty 的 overlay 模板後出現該三鍵，且 `grep -rn "noteVer\|DateRev" src/` 無結果
+- [x] 6.4 實作「LLM expansion contract」：`l2n render --expand-prompt` 印出擴寫指令包（規範文字 + 需讀取的檔案路徑），並在 skill 的 note-writing 參考中規定擴寫後必須通過 check note；驗證：tests/test_expand_prompt.py 斷言輸出含規範版本字串與 .v4.md／.srt／.json 三個路徑；以 Claude Code 對 fixture 擴寫一次後 `l2n check note` exit 0（手動驗收，結果記錄於 PR 描述）
 
 ## 7. 筆記撰寫規範
 
-- [ ] 7.1 依「筆記撰寫規範作為可檢查的合約」撰寫 docs/note-writing-guideline.md 並完成「The guideline is a shipped, versioned document」：含版本字串、「LLM 必須遵守」與「機器可檢查」兩部分，skill/references/note-writing.md 指向它；驗證：tests/test_guideline_doc.py 斷言檔案存在、含兩個部分標題與版本字串，且 check note 報告印出同一版本
-- [ ] 7.2 在規範中寫入「Source precedence and evidence rules for the model」（講義＞人眼看的影格＞逐字稿＞OCR，OCR 不入文，不可證實的術語進 unverified_terms 並只在 References 出現）與「Quotation and synthesis rules for the model」（「」標示原話、faithful 每段至少一句、禁止原句直貼、講者能力邊界照錄、ASR 錯字入表）；驗證：內容審閱——以本 session 的 A hip（Schrodinger's lobe sign）與 C1 wrist（韌帶長回來「我沒有經驗」）兩案例作為規範內的正例說明
-- [ ] 7.3 在規範中寫入「Privacy rules for the model」（與會者／病患姓名以角色取代、講者姓名只採檔名／講義／畫面名牌）並附錄一份去識別化的失敗樣態範例（財經講座筆記：原句倒入、錯字未校、Evergreen 截斷）；驗證：tests/test_guideline_appendix.py 對附錄範例跑 check note 斷言至少一個 R5 與一個 R4 finding
-- [ ] 7.4 實作「Machine-checkable rules」R1–R7 於 `l2n check note`：章節順序、嵌入存在、unverified 只在 References、corrections 表完整、≥40 字（去空白標點）逐字稿重複且未以「」或 blockquote 標示（預設 warning，profile 可設 error）、faithful 每段至少一句引用、privacy.toml 模式；每項 finding 一行含 rule id／severity／位置，exit 0/1/2；驗證：tests/test_check_note.py 覆蓋 R5 boundary 表四列（39 過、40 報、120 加「」過、120 blockquote 過）與 R1–R7 各一個正反例
+- [x] 7.1 依「筆記撰寫規範作為可檢查的合約」撰寫 docs/note-writing-guideline.md 並完成「The guideline is a shipped, versioned document」：含版本字串、「LLM 必須遵守」與「機器可檢查」兩部分，skill/references/note-writing.md 指向它；驗證：tests/test_guideline_doc.py 斷言檔案存在、含兩個部分標題與版本字串，且 check note 報告印出同一版本
+- [x] 7.2 在規範中寫入「Source precedence and evidence rules for the model」（講義＞人眼看的影格＞逐字稿＞OCR，OCR 不入文，不可證實的術語進 unverified_terms 並只在 References 出現）與「Quotation and synthesis rules for the model」（「」標示原話、faithful 每段至少一句、禁止原句直貼、講者能力邊界照錄、ASR 錯字入表）；驗證：內容審閱——以本 session 的 A hip（Schrodinger's lobe sign）與 C1 wrist（韌帶長回來「我沒有經驗」）兩案例作為規範內的正例說明
+- [x] 7.3 在規範中寫入「Privacy rules for the model」（與會者／病患姓名以角色取代、講者姓名只採檔名／講義／畫面名牌）並附錄一份去識別化的失敗樣態範例（財經講座筆記：原句倒入、錯字未校、Evergreen 截斷）；驗證：tests/test_guideline_appendix.py 對附錄範例跑 check note 斷言至少一個 R5 與一個 R4 finding
+- [x] 7.4 實作「Machine-checkable rules」R1–R7 於 `l2n check note`：章節順序、嵌入存在、unverified 只在 References、corrections 表完整、≥40 字（去空白標點）逐字稿重複且未以「」或 blockquote 標示（預設 warning，profile 可設 error）、faithful 每段至少一句引用、privacy.toml 模式；每項 finding 一行含 rule id／severity／位置，exit 0/1/2；驗證：tests/test_check_note.py 覆蓋 R5 boundary 表四列（39 過、40 報、120 加「」過、120 blockquote 過）與 R1–R7 各一個正反例
 
 ## 8. 衍生輸出
 
-- [ ] 8.1 實作「Viewer is generated from canonical JSON v2」：改寫 viewer 產生器讀 v2，非 null 的 bullet t 用真實時間、null 者內插並標波浪號，保留三層同步、點擊跳播、跨層搜尋、?t= 深連結；驗證：tests/test_viewer.py 斷言產出 HTML 內嵌的段落資料與 JSON 一致，t=812.5 的 bullet 在 HTML 中無波浪號；瀏覽器手動驗證 ?t=1234 跳播並高亮對應段
-- [ ] 8.2 實作「PotPlayer chapter file is opt-in via outputs configuration」：`l2n pbf` 產每段一章的 .pbf，run 只在 outputs.toml 的 pbf=true 時執行，generic 預設 false；驗證：tests/test_pbf.py 斷言無 overlay 時 run 不產 .pbf 且階段清單無 pbf，overlay 設 true 時章數等於段數
-- [ ] 8.3 實作「Course hub with cross-lecture search」：`l2n hub` 掃資料夾內 v2 JSON 產 課程首頁.html，索引含段落標題、重點、bullet、quote、frame OCR，結果連到 ?t=段落起點，卡片依 (no, stem) 字串排序；驗證：tests/test_hub.py 以兩份 JSON（其中一份只有 OCR 含「Haglund」）斷言搜尋索引含該詞並指向正確段落
-- [ ] 8.4 實作「Card overrides via _titles.json」：stem→{no, speaker, topic} 覆寫卡片與排序，未列者用推導值；驗證：tests/test_hub_titles.py 斷言覆寫的 topic 文字出現且卡片位置符合 no
-- [ ] 8.5 實作「Hub link integrity」：寫出後對每個相對 href 做 percent-decode 後檢查存在，缺檔即 exit 2；驗證：tests/test_hub_links.py 刪除一份 .viewer.html 後斷言 hub 報缺檔並 exit 2
+- [x] 8.1 實作「Viewer is generated from canonical JSON v2」：改寫 viewer 產生器讀 v2，非 null 的 bullet t 用真實時間、null 者內插並標波浪號，保留三層同步、點擊跳播、跨層搜尋、?t= 深連結；驗證：tests/test_viewer.py 斷言產出 HTML 內嵌的段落資料與 JSON 一致，t=812.5 的 bullet 在 HTML 中無波浪號；瀏覽器手動驗證 ?t=1234 跳播並高亮對應段
+- [x] 8.2 實作「PotPlayer chapter file is opt-in via outputs configuration」：`l2n pbf` 產每段一章的 .pbf，run 只在 outputs.toml 的 pbf=true 時執行，generic 預設 false；驗證：tests/test_pbf.py 斷言無 overlay 時 run 不產 .pbf 且階段清單無 pbf，overlay 設 true 時章數等於段數
+- [x] 8.3 實作「Course hub with cross-lecture search」：`l2n hub` 掃資料夾內 v2 JSON 產 課程首頁.html，索引含段落標題、重點、bullet、quote、frame OCR，結果連到 ?t=段落起點，卡片依 (no, stem) 字串排序；驗證：tests/test_hub.py 以兩份 JSON（其中一份只有 OCR 含「Haglund」）斷言搜尋索引含該詞並指向正確段落
+- [x] 8.4 實作「Card overrides via _titles.json」：stem→{no, speaker, topic} 覆寫卡片與排序，未列者用推導值；驗證：tests/test_hub_titles.py 斷言覆寫的 topic 文字出現且卡片位置符合 no
+- [x] 8.5 實作「Hub link integrity」：寫出後對每個相對 href 做 percent-decode 後檢查存在，缺檔即 exit 2；驗證：tests/test_hub_links.py 刪除一份 .viewer.html 後斷言 hub 報缺檔並 exit 2
 
 ## 9. 階段驗收、稽核與發布
 
