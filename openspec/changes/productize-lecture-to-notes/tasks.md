@@ -83,8 +83,8 @@
 
 ## 12. 測試基礎、fixture 與遷移驗證
 
-- [ ] 12.1 依「測試策略與 CC fixture」選定並裁切一支 ≤30 秒的 CC BY 或 CC0 公開演講片段（Wikimedia Commons 為首選來源）放 tests/fixtures/，附 README 記錄來源 URL、授權文字與裁切區間；驗證：fixtures README 存在且授權欄非 NC／ND；`l2n run fixture.mp4 --lang en --engine faster_whisper --model tiny` 到 render 為止四階段 check 皆 exit 0
-- [ ] 12.2 建立 GitHub Actions：Windows 與 Linux 各跑 pytest（GPU 測試以 marker 跳過），Windows job 以 PYTHONIOENCODING=cp950 跑一次；驗證：兩個 job 皆綠，且 `gh run view --log` 可見 cp950 job 名稱
+- [x] 12.1 依「測試策略與 CC fixture」選定並裁切一支 ≤30 秒的 CC BY 或 CC0 公開演講片段（Wikimedia Commons 為首選來源）放 tests/fixtures/，附 README 記錄來源 URL、授權文字與裁切區間；驗證：fixtures README 存在且授權欄非 NC／ND；`l2n run fixture.mp4 --lang en --engine faster_whisper --model tiny` 到 render 為止四階段 check 皆 exit 0
+- [x] 12.2 建立 GitHub Actions：Windows 與 Linux 各跑 pytest（GPU 測試以 marker 跳過），Windows job 以 PYTHONIOENCODING=cp950 跑一次；驗證：兩個 job 皆綠，且 `gh run view --log` 可見 cp950 job 名稱
 - [x] 12.3 本機遷移驗證（不進 Git）：對本 session 的 9 份既有 JSON 跑 `l2n migrate` 與 `check json`，對 Copilot 三場 VTT 跑 calibrate-subs 與手工量測值比對；驗證：9 份皆 exit 0；三場各探針中位偏移與 (+3.14/+2.23/+0.86)、(+1.44/+0.80/+0.96)、(+1.81/+2.37/+2.66) 差異皆 ≤0.5 秒，結果摘要貼入 PR 描述
 - [x] 12.4 本機品質對照（不進 Git）：從 Downloads 的 YT 資料夾依日期選一支有對應 Jenny 舊筆記的影片，以新流程 + 規範重產筆記；驗證：新筆記 `l2n check note` exit 0，且人工對照確認舊版三種失敗樣態（原句倒入、錯字未校、Evergreen 截斷）不再出現，對照結論寫入 PR 描述
 - [ ] 12.5 以 Claude Code 與 Codex 各對 fixture 執行一次 skill 擴寫；驗證：兩者輸出皆 `l2n check note` exit 0，Codex 產出的 R5 finding 數記錄於 PR 描述作為規範有效性的基準
