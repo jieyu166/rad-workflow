@@ -86,7 +86,7 @@
 - [ ] 12.1 依「測試策略與 CC fixture」選定並裁切一支 ≤30 秒的 CC BY 或 CC0 公開演講片段（Wikimedia Commons 為首選來源）放 tests/fixtures/，附 README 記錄來源 URL、授權文字與裁切區間；驗證：fixtures README 存在且授權欄非 NC／ND；`l2n run fixture.mp4 --lang en --engine faster_whisper --model tiny` 到 render 為止四階段 check 皆 exit 0
 - [ ] 12.2 建立 GitHub Actions：Windows 與 Linux 各跑 pytest（GPU 測試以 marker 跳過），Windows job 以 PYTHONIOENCODING=cp950 跑一次；驗證：兩個 job 皆綠，且 `gh run view --log` 可見 cp950 job 名稱
 - [x] 12.3 本機遷移驗證（不進 Git）：對本 session 的 9 份既有 JSON 跑 `l2n migrate` 與 `check json`，對 Copilot 三場 VTT 跑 calibrate-subs 與手工量測值比對；驗證：9 份皆 exit 0；三場各探針中位偏移與 (+3.14/+2.23/+0.86)、(+1.44/+0.80/+0.96)、(+1.81/+2.37/+2.66) 差異皆 ≤0.5 秒，結果摘要貼入 PR 描述
-- [ ] 12.4 本機品質對照（不進 Git）：從 Downloads 的 YT 資料夾依日期選一支有對應 Jenny 舊筆記的影片，以新流程 + 規範重產筆記；驗證：新筆記 `l2n check note` exit 0，且人工對照確認舊版三種失敗樣態（原句倒入、錯字未校、Evergreen 截斷）不再出現，對照結論寫入 PR 描述
+- [x] 12.4 本機品質對照（不進 Git）：從 Downloads 的 YT 資料夾依日期選一支有對應 Jenny 舊筆記的影片，以新流程 + 規範重產筆記；驗證：新筆記 `l2n check note` exit 0，且人工對照確認舊版三種失敗樣態（原句倒入、錯字未校、Evergreen 截斷）不再出現，對照結論寫入 PR 描述
 - [ ] 12.5 以 Claude Code 與 Codex 各對 fixture 執行一次 skill 擴寫；驗證：兩者輸出皆 `l2n check note` exit 0，Codex 產出的 R5 finding 數記錄於 PR 描述作為規範有效性的基準
 - [ ] 12.6 打 tag v0.1.0（第 1–2、5、8 群可用）與 v0.2.0（全部群），README 加入版本說明；驗證：`gh release list` 顯示兩個 tag，且 `pip install git+https://github.com/jieyu166/lecture2notes@v0.2.0` 後 `l2n --help` exit 0
 
@@ -97,6 +97,18 @@
 - [x] 14.3 講者骨架（Reverse Outline）：骨架新增 `## 講者骨架` 節，由 JSON segments 機械生成每段一行「時間碼 ｜ 佔比% ｜ 動詞開頭一句（ai-draft）」；規範規定只寫「做了什麼」不寫「講了什麼」、坡道（前 5–8%）是 Evergreen 的原料、首段與末段不呼應時檢查分段；驗證：tests/test_render.py 以三段 JSON 斷言三行且佔比合計 100±1
 - [x] 14.4 摘要不重寫與六選一：規範規定 Summary 直接引用 `takeaways_zh`、筆記相對 JSON 只新增講者骨架／跨版本對照／閱片連結；講者補充採六選一（界定概念／後果嚴重／與認知相反／遞進缺環／轉折／多面向印證），不符者只在 JSON 留時間碼；schema v2 新增選填 `questions_zh`（跨段出題，每題含 `text` 與 `segments` 索引陣列），skill/references/segmentation.md 要求 LLM 產出並寫入四段弧（坡道／背景／正文／昇華）檢查項；驗證：tests/test_schema.py 斷言 `questions_zh` 缺省合法、格式錯誤報 error；segmentation.md 含四段弧字樣
 - [x] 14.5 Step 0 第三層與課程首頁摘要：規範 §0 加「產物型態」層（看到 X→判斷 Y 且題材已自動化者不做完整筆記，只講機制者才做；以題材而非專科為單位）；`l2n hub` 支援選填 `_course.json`（`question`、`start_with`、`no_common_thread` 三鍵）在卡片上方輸出「本系列在回答的問題／最該先看的一場」，`no_common_thread: true` 時輸出「本系列各場主題獨立，無共同主線」；驗證：tests/test_hub.py 斷言兩種輸出，tests/test_guideline_doc.py 斷言規範含「產物型態」
+
+## 15. 實地試跑回饋修正（12.4 財經講座全流程試跑發現）
+
+- [ ] 15.1 `l2n render --expand-prompt` 的指令包必須帶實際生效的 style（cli > overlay > profile），且「完成後必做」的驗收指令含 `--style <同一值>`；驗證：tests/test_expand_prompt.py 斷言 `--style faithful` 時指令包內 style 為 faithful 且驗收指令含 `--style faithful`
+- [ ] 15.2 `l2n ocr` 輸入正規化：傳資料夾時改以同層唯一的 `<stem>.json`／`<stem>.frames.json` 解析 stem，找不到或多於一個即 exit 2 並說明，不得產出 `frames.frames_ocr.json` 這種孤兒檔；skill/references/frames-and-notes.md 同步；驗證：tests/test_ocr.py 加資料夾輸入的成功與 exit 2 兩案
+- [ ] 15.3 文件內 JSON 範例必須可驗證：修正 skill/references/segmentation.md 的最小 v2 範例（bullets_zh 物件含 kind、frame 鍵、takeaways ≥6），並統一「每段條列數」說法與檢查器一致；驗證：tests/test_skill_doc.py 從 segmentation.md 抽出 json 區塊跑 validate_document 無 error
+- [ ] 15.4 影格與分段解耦：`check json` 對「區間內無影格但已沿用前一張（frame 非 null、frames 為空）」的段落不得報 error；frames-and-notes.md 改寫指引為「scene 張數少於預計段數即改 interval」；驗證：tests/test_schema.py 加沿用影格段落 exit 0 的案例
+- [ ] 15.5 場景偵測期間的進度回饋：ffmpeg scene filter 與 PySceneDetect 掃描時以 ffmpeg `-progress`（或 scenedetect callback）每 5 秒印一次已掃秒數／總秒數；驗證：tests/test_frames.py 以假的 ffmpeg 進度輸出斷言 Progress 被呼叫多次
+- [ ] 15.6 新增 `l2n condense <srt> [--window 60]` 暴露 schema/condense（子命令數 17，回補 lecture-pipeline-cli 規格與 SKILL 路由表）並實作 `l2n scaffold <srt> --segments N`：產出形狀合法、內容為 ai-draft 佔位的 v2 JSON 骨架（等時間切段、每段附壓縮逐字稿路徑），`--help` 明寫「段落語意由 LLM 填寫」；驗證：tests/test_scaffold.py 斷言輸出通過 validate_document 的結構檢查（內容長度類規則以 draft 旗標豁免並在 check json 報 warning `draft`）
+- [ ] 15.7 R5 涵蓋範圍擴大到 Evergreen 與 Summary 章節（題目的答案區亦同），仍以「」與 blockquote 為豁免；規範同步；驗證：tests/test_check_note.py 加 Summary 貼 40 字原句報 R5 的案例，既有 boundary 四列不退步
+- [ ] 15.8 `check note` 統計殘留的 `<!-- ai-draft -->` 標記數，於結尾行後加印 `note: ai_draft_remaining=N`，並寫入 `check --all --report` 的 note 階段；不影響 exit code；驗證：tests/test_check_note.py 與 tests/test_audit_report.py 各加一案
+- [ ] 15.9 以真實 cmd.exe（chcp 950）重現 `l2n --help` 是否亂碼：可重現即修（help 字串改為 cp950 可編碼字元或在 stdout 非 UTF-8 時以 errors=replace 輸出並印一次提示），不可重現則在 README 疑難排解記錄結論；驗證：結論與重現步驟寫入 README 疑難排解段
 
 ## 13. 上游標示與授權（Upstream attribution）
 
