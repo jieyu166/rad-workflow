@@ -38,7 +38,7 @@
 
 ### 套件結構與 CLI 階段化子命令
 
-**決定**：Python 套件 `lecture2notes`，`pyproject.toml` 定義 console script `l2n`。子命令對應階段：`transcribe`、`calibrate-subs`、`frames`、`ocr`、`scaffold`、`render`、`viewer`、`pbf`、`hub`、`check`、`migrate`、`run`（串接機械階段）、`publish`（交易式發布）、`convert-model`、`profile`、`install-skill`。每個子命令可獨立重跑、冪等（已有產物即跳過，`--force` 重做）。所有子命令輸出 cp950 安全字元（ASCII 標記）。
+**決定**：Python 套件 `lecture2notes`，`pyproject.toml` 定義 console script `l2n`。子命令對應階段：`transcribe`、`calibrate-subs`、`frames`、`ocr`、`condense`（逐字稿壓縮）、`scaffold`、`render`、`viewer`、`pbf`、`hub`、`check`、`migrate`、`run`（串接機械階段）、`publish`（交易式發布）、`convert-model`、`profile`、`install-skill`。每個子命令可獨立重跑、冪等（已有產物即跳過，`--force` 重做）。所有子命令輸出 cp950 安全字元（ASCII 標記）。
 
 **替代方案**：單一 `l2n video.mp4` 一鍵到底——LLM 階段做不到無人化，且無法從中間階段續跑；保留 `run` 只串機械階段。
 
