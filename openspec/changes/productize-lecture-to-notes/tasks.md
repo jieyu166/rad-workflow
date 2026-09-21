@@ -92,6 +92,6 @@
 
 ## 13. 上游標示與授權（Upstream attribution）
 
-- [ ] 13.1 依「移植來源與 ZeroType 內容清除」對上游 drpwchen/lecture-to-notes（MIT）做來源稽核：以 git 取得上游最新 commit，逐檔比對本專案 src/ 與 skill/ 內容與上游 scripts/、SKILL.md、docs/，產出 ATTRIBUTION.md 列出每個「修改自上游」的檔案、對應的上游路徑與 commit hash、修改摘要；驗證：ATTRIBUTION.md 存在且每列的上游路徑以 `gh api repos/drpwchen/lecture-to-notes/contents/<path>` 可取得，未列入的檔案在 PR 描述中說明為原創或移植自 rad-workflow
-- [ ] 13.2 依 MIT 條款保留上游著作權聲明：新增 NOTICE（或 LICENSE 附錄）收錄上游 LICENSE 的著作權行與全文，ATTRIBUTION.md 列出的每個檔案檔頭加註「Adapted from drpwchen/lecture-to-notes (MIT), <upstream path>@<commit>」；驗證：tests/test_attribution.py 斷言 ATTRIBUTION.md 內每個檔案的檔頭含該註記，且 NOTICE 含上游著作權行
-- [ ] 13.3 README 的致謝段以連結明確標示本專案部分程式碼修改自 https://github.com/drpwchen/lecture-to-notes，並說明兩者差異（profile／overlay 分層、schema v2、官方字幕偏移校正、撰寫規範與機器檢查、三家 skill 安裝器）；驗證：tests/test_readme.py 斷言 README 含該 URL 與「修改自」或「Adapted from」字樣
+- [x] 13.1 依「移植來源與 ZeroType 內容清除」對上游 drpwchen/lecture-to-notes（MIT）做來源稽核：以 git 取得上游最新 commit，逐檔比對本專案 src/ 與 skill/ 內容與上游 scripts/、SKILL.md、docs/，產出 ATTRIBUTION.md 列出每個「修改自上游」的檔案、對應的上游路徑與 commit hash、修改摘要；驗證：ATTRIBUTION.md 存在且每列的上游路徑以 `gh api repos/drpwchen/lecture-to-notes/contents/<path>` 可取得，未列入的檔案在 PR 描述中說明為原創或移植自 rad-workflow
+- [x] 13.2 依 MIT 條款保留上游著作權聲明：新增 NOTICE（或 LICENSE 附錄）收錄上游 LICENSE 的著作權行與全文，ATTRIBUTION.md 列出的每個檔案檔頭加註「Adapted from drpwchen/lecture-to-notes (MIT), <upstream path>@<commit>」；驗證：tests/test_attribution.py 斷言 ATTRIBUTION.md 內每個檔案的檔頭含該註記，且 NOTICE 含上游著作權行
+- [x] 13.3 README 的致謝段以連結明確標示本專案部分程式碼修改自 https://github.com/drpwchen/lecture-to-notes，並說明兩者差異（profile／overlay 分層、schema v2、官方字幕偏移校正、撰寫規範與機器檢查、三家 skill 安裝器）；驗證：tests/test_readme.py 斷言 README 含該 URL 與「修改自」或「Adapted from」字樣
