@@ -14,19 +14,19 @@
 
 ## 3. Canonical JSON schema v2
 
-- [ ] 3.1 依「JSON schema v2 與 legacy 正規化」實作「Versioned canonical lecture JSON」的 pydantic 或 dataclass 模型與驗證器（頂層與 segments[] 所有必要鍵、100–500 字摘要、6–12 條重點、index 連號、首尾相接、start_time 與秒數一致、bullets 物件化）；驗證：tests/test_schema.py 覆蓋 spec 內 boundary 表五列，`l2n check json` 對合法檔 exit 0、對 1,2,4 索引與時間不接的檔 exit 2 並列出段落索引
-- [ ] 3.2 實作「Legacy documents are migrated, not silently accepted」：無 schema_version 時 check json 印 `legacy schema detected; run: l2n migrate <file>` 且 exit 2；`l2n migrate` 原地升級並留 .bak，字串 bullet 轉 {text,t:null,kind:"synthesis"}，缺欄位補預設；驗證：tests/test_migrate.py 以 41 段的 legacy 檔跑 migrate 後斷言 .bak 位元組相同、schema_version 為 2.0、段數 41、check json exit 0
-- [ ] 3.3 實作「Atomic UTF-8 writes without BOM」：tmp 檔同目錄寫入後 rename，UTF-8 無 BOM、二空格縮排、非 ASCII 不轉義；驗證：tests/test_atomic_write.py 在寫入中途注入例外後斷言原檔未變，並斷言檔案前三位元組非 EF BB BF
+- [x] 3.1 依「JSON schema v2 與 legacy 正規化」實作「Versioned canonical lecture JSON」的 pydantic 或 dataclass 模型與驗證器（頂層與 segments[] 所有必要鍵、100–500 字摘要、6–12 條重點、index 連號、首尾相接、start_time 與秒數一致、bullets 物件化）；驗證：tests/test_schema.py 覆蓋 spec 內 boundary 表五列，`l2n check json` 對合法檔 exit 0、對 1,2,4 索引與時間不接的檔 exit 2 並列出段落索引
+- [x] 3.2 實作「Legacy documents are migrated, not silently accepted」：無 schema_version 時 check json 印 `legacy schema detected; run: l2n migrate <file>` 且 exit 2；`l2n migrate` 原地升級並留 .bak，字串 bullet 轉 {text,t:null,kind:"synthesis"}，缺欄位補預設；驗證：tests/test_migrate.py 以 41 段的 legacy 檔跑 migrate 後斷言 .bak 位元組相同、schema_version 為 2.0、段數 41、check json exit 0
+- [x] 3.3 實作「Atomic UTF-8 writes without BOM」：tmp 檔同目錄寫入後 rename，UTF-8 無 BOM、二空格縮排、非 ASCII 不轉義；驗證：tests/test_atomic_write.py 在寫入中途注入例外後斷言原檔未變，並斷言檔案前三位元組非 EF BB BF
 
 ## 4. 轉錄引擎
 
-- [ ] 4.1 依「轉錄引擎抽象、Qwen3-ASR 與官方字幕偏移校正」定義 Engine 介面與中繼資料（name、local、needs_gpu、native_timestamps、default_model），實作「Pluggable local transcription engines」的四個引擎 breeze_ct2、faster_whisper、whisper_cpp、qwen3_asr，並提供 `--list-engines`；驗證：tests/test_engines.py 斷言四個引擎註冊且 local 皆為 true；`l2n transcribe --list-engines` 印四行並標示相依是否滿足
+- [x] 4.1 依「轉錄引擎抽象、Qwen3-ASR 與官方字幕偏移校正」定義 Engine 介面與中繼資料（name、local、needs_gpu、native_timestamps、default_model），實作「Pluggable local transcription engines」的四個引擎 breeze_ct2、faster_whisper、whisper_cpp、qwen3_asr，並提供 `--list-engines`；驗證：tests/test_engines.py 斷言四個引擎註冊且 local 皆為 true；`l2n transcribe --list-engines` 印四行並標示相依是否滿足
 - [ ] 4.2 實作 qwen3_asr 引擎：以 qwen-asr 套件載入 Qwen3-ASR-0.6B 或 1.7B，transformers 後端預設、vLLM 選配、`--model-dir` 指向本機權重、以其時間戳產生 cue；驗證：CI 標記 gpu 的測試以 0.6B 對 fixture 轉錄產出合法 SRT 並通過 check transcribe（無 CUDA 時跳過），README 相容表記錄實測的 torch 版本
-- [ ] 4.3 實作「Cloud engines are gated」：local=false 的外掛引擎未帶 --allow-cloud 即 exit 2 並說明隱私規則；驗證：tests/test_engine_gate.py 註冊一個假的 local=false 引擎，斷言無旗標 exit 2、有旗標可執行
-- [ ] 4.4 實作「Model conversion helper for Breeze-ASR-25」：`l2n convert-model` 先印磁碟需求、float16 預設、目標存在時無 --force 拒絕；驗證：tests/test_convert_model.py 以 mock 的 converter 斷言參數與拒絕覆寫行為；手動於本機轉檔一次後 `l2n transcribe --lang zh` 預設引擎可用
-- [ ] 4.5 實作「Raw transcript and correction sidecar are preserved」：套用對照表時寫 .raw.srt 與 .corrections.json（heard/correct/count/source），校正檔保持序號、時間、空行結構；驗證：tests/test_corrections.py 以含 12 次「口拍的」的 SRT 斷言 sidecar 內容與 raw 檔保留原文、且兩檔 cue 數與時間碼完全相同
-- [ ] 4.6 實作「Hallucination loop detection」：≥30 個連續相同 cue 文字回報 warning 並標示首尾 cue 編號；驗證：tests/test_hallucination.py 以尾端 71 個「OK」的 SRT 斷言 check transcribe 印 `hallucination loop cues N..M (71 identical)` 且 exit 1
-- [ ] 4.7 實作「Official subtitle offset calibration」：`l2n calibrate-subs` 依 spec 的探針位置、最長共同子串門檻、cue 內插補、每探針中位數、最小平方擬合、零長度保底 0.3 秒，輸出 .srt、.official.srt、.offset.json；驗證：tests/test_calibrate.py 覆蓋常數偏移、漂移標示（全距 2.28 秒）、合成三點擬合 a≈3.06 與 b≈-0.000196、文字不變（兩檔文字行串接相等）、可靠探針不足 3 個時不寫檔 exit 2
+- [x] 4.3 實作「Cloud engines are gated」：local=false 的外掛引擎未帶 --allow-cloud 即 exit 2 並說明隱私規則；驗證：tests/test_engine_gate.py 註冊一個假的 local=false 引擎，斷言無旗標 exit 2、有旗標可執行
+- [x] 4.4 實作「Model conversion helper for Breeze-ASR-25」：`l2n convert-model` 先印磁碟需求、float16 預設、目標存在時無 --force 拒絕；驗證：tests/test_convert_model.py 以 mock 的 converter 斷言參數與拒絕覆寫行為；手動於本機轉檔一次後 `l2n transcribe --lang zh` 預設引擎可用
+- [x] 4.5 實作「Raw transcript and correction sidecar are preserved」：套用對照表時寫 .raw.srt 與 .corrections.json（heard/correct/count/source），校正檔保持序號、時間、空行結構；驗證：tests/test_corrections.py 以含 12 次「口拍的」的 SRT 斷言 sidecar 內容與 raw 檔保留原文、且兩檔 cue 數與時間碼完全相同
+- [x] 4.6 實作「Hallucination loop detection」：≥30 個連續相同 cue 文字回報 warning 並標示首尾 cue 編號；驗證：tests/test_hallucination.py 以尾端 71 個「OK」的 SRT 斷言 check transcribe 印 `hallucination loop cues N..M (71 identical)` 且 exit 1
+- [x] 4.7 實作「Official subtitle offset calibration」：`l2n calibrate-subs` 依 spec 的探針位置、最長共同子串門檻、cue 內插補、每探針中位數、最小平方擬合、零長度保底 0.3 秒，輸出 .srt、.official.srt、.offset.json；驗證：tests/test_calibrate.py 覆蓋常數偏移、漂移標示（全距 2.28 秒）、合成三點擬合 a≈3.06 與 b≈-0.000196、文字不變（兩檔文字行串接相等）、可靠探針不足 3 個時不寫檔 exit 2
 
 ## 5. 抓圖與 OCR
 
