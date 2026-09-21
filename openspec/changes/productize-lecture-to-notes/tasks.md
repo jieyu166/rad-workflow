@@ -113,6 +113,15 @@
 - [x] 15.11 style 單一來源：render 寫入 `<!-- l2n:style=… guideline=… -->` 標記，`check note` 未給 --style 時讀取之、與 CLI 不同時報 `style mismatch` warning；驗證：tests/test_style.py 斷言 faithful 骨架在不帶 --style 的 check 下仍套用 R6
 - [x] 15.12 指令包與規範補洞：`--expand-prompt` 加「已落地／待擴寫」逐章節清單；規範明定 `[推論]` 標記格式且 R9 訊息提示之；釐清 `<stem>.frames_ocr.json`（快取）與 JSON 內 `frame_ocr`（筆記階段來源）的關係；驗證：tests/test_expand_prompt.py 斷言清單存在，tests/test_guideline_doc.py 斷言規範含標記格式定義
 
+## 16. 發版前收尾（最終驗收、Codex 對照與盲評回饋）
+
+- [ ] 16.1 `l2n ocr` 先解析目標（歧義／找不到即 exit 2）再檢查 rapidocr 相依（exit 3）；驗證：tests/test_ocr.py 在 rapidocr 不可 import 的情況下，兩份 json 的資料夾仍得到 exit 2
+- [ ] 16.2 R10 改為殘留比例判定：段落本文中逐字來自骨架（summary 句與 bullets）的字元占比 ≥60% 即報 `unexpanded skeleton (NN% of the body is render output)`，保留「完全相同」為 100%；驗證：tests/test_check_note.py 以「骨架前加一句新話」的段落斷言仍報 R10，真正重寫的段落不報
+- [ ] 16.3 新增 R11（warning）：同一句（去空白標點後 ≥25 字）逐字出現在兩個以上章節即報，Summary 對 takeaways 的引用與 References 除外；規範同步說明；驗證：tests/test_check_note.py 正反例各一
+- [ ] 16.4 規範與指令包修正：消除 §0.6「ai-draft 標記會留在檔案裡」與完成定義 `ai_draft_remaining=0` 的矛盾（定義何時該刪標記）；指令包與規範把 Evergreen 列為第一個必寫項並說明「可遷移原則」與「單一數據點」的差別（附正反例）；規範升 1.3；驗證：tests/test_guideline_doc.py 與 tests/test_expand_prompt.py 斷言對應字串
+- [ ] 16.5 skill 檔案編碼提示：`skill/SKILL.md` 與六份 references 在 frontmatter 之後加一行純 ASCII 註解，說明檔案為 UTF-8、Windows PowerShell 需以 `Get-Content -Encoding UTF8` 讀取；SKILL.md 仍 ≤80 行；驗證：tests/test_skill_doc.py 斷言每檔含該行且該行為純 ASCII
+- [ ] 16.6 版號與發版說明：pyproject version 升為 0.2.0，README 加「版本說明」列出 v0.1.0 與 v0.2.0 的範圍；驗證：tests/test_readme.py 斷言含兩個版本標題，`python -m lecture2notes --version` 印 0.2.0
+
 ## 13. 上游標示與授權（Upstream attribution）
 
 - [x] 13.1 依「移植來源與 ZeroType 內容清除」對上游 drpwchen/lecture-to-notes（MIT）做來源稽核：以 git 取得上游最新 commit，逐檔比對本專案 src/ 與 skill/ 內容與上游 scripts/、SKILL.md、docs/，產出 ATTRIBUTION.md 列出每個「修改自上游」的檔案、對應的上游路徑與 commit hash、修改摘要；驗證：ATTRIBUTION.md 存在且每列的上游路徑以 `gh api repos/drpwchen/lecture-to-notes/contents/<path>` 可取得，未列入的檔案在 PR 描述中說明為原創或移植自 rad-workflow
