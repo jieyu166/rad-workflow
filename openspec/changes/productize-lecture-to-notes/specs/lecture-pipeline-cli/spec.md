@@ -7,7 +7,7 @@ The system SHALL be distributed as a Python package named lecture2notes that ins
 #### Scenario: Fresh install exposes the CLI
 
 - **WHEN** a user runs `pip install lecture2notes` in a clean virtual environment and then `l2n --help`
-- **THEN** the command exits 0 and lists the subcommands transcribe, calibrate-subs, frames, ocr, scaffold, render, viewer, pbf, hub, check, migrate, run, convert-model, profile, install-skill
+- **THEN** the command exits 0 and lists the subcommands transcribe, calibrate-subs, frames, ocr, scaffold, render, viewer, pbf, hub, check, migrate, run, publish, convert-model, profile, install-skill
 
 #### Scenario: Missing external dependency is reported, never silently degraded
 

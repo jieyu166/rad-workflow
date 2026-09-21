@@ -16,7 +16,7 @@ The repository SHALL contain `skill/SKILL.md` with frontmatter `name: lecture2no
 
 ### Requirement: Three-target installer
 
-`install.py` (also exposed as `l2n install-skill`) SHALL copy the `skill/` directory to a target directory chosen by `--target claude` (`~/.claude/skills/lecture-to-notes`), `--target codex` (`~/.agents/skills/lecture-to-notes`), or `--target opencode` (`~/.config/opencode/skills/lecture-to-notes`); `--dest <path>` SHALL override the directory; `--all` SHALL install to all three. Installation MUST copy files (no symbolic links), MUST NOT delete or overwrite any of the overlay file names listed in profiles-and-overlay that already exist in the target, and SHALL write `<target>/.installed.json` with version, source_sha256 (hash of the concatenated sorted skill file contents), installed_at (ISO 8601), and target.
+`install.py` (also exposed as `l2n install-skill`) SHALL copy the `skill/` directory to a target directory chosen by `--target claude` (`~/.claude/skills/lecture2notes`), `--target codex` (`~/.agents/skills/lecture2notes`), or `--target opencode` (`~/.config/opencode/skills/lecture2notes`); `--dest <path>` SHALL override the directory; `--all` SHALL install to all three. Installation MUST copy files (no symbolic links), MUST NOT delete or overwrite any of the overlay file names listed in profiles-and-overlay that already exist in the target, and SHALL write `<target>/.installed.json` with version, source_sha256 (hash of the concatenated sorted skill file contents), installed_at (ISO 8601), and target.
 
 #### Scenario: Install to all targets
 
@@ -34,7 +34,7 @@ The repository SHALL contain `skill/SKILL.md` with frontmatter `name: lecture2no
 
 #### Scenario: Edited target is detected
 
-- **WHEN** one line of `~/.claude/skills/lecture-to-notes/SKILL.md` is edited after installation
+- **WHEN** one line of `~/.claude/skills/lecture2notes/SKILL.md` is edited after installation
 - **THEN** `l2n install-skill --check --all` prints `[drift]` for the claude target naming SKILL.md and exits 2
 
 #### Scenario: Missing target
