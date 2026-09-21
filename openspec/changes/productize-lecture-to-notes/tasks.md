@@ -8,9 +8,9 @@
 
 ## 2. 移植與清理既有腳本
 
-- [ ] 2.1 依「移植來源與 ZeroType 內容清除」把 rad-workflow 的 skills/lecture-to-notes/scripts 與 skills/whisper-srt-zh/scripts 移入套件對應模組，檔頭保留原作者註記；驗證：`python -c "import lecture2notes.frames, lecture2notes.engines, lecture2notes.outputs"` 成功，且 `grep -r "ZeroType\|USER.md" src/ profiles/` 無結果
-- [ ] 2.2 從分支 codex/rebuild-nr-viewer 的 .worktrees/rebuild-nr-viewer/skills/lecture-to-notes/scripts 移植 lecture_model、lecture_content_rules、frame_curator、lecture_audit、publish_transaction、rebuild_course、render_v4_note 的資料結構與流程骨幹到 acceptance 與 notes 子套件，不移植 attestation 雙 digest；驗證：每支移植模組各有一個 tests/test_port_*.py 冒煙測試 import 並呼叫一個純函式
-- [ ] 2.3 把本 session 的 scratchpad 程序固化為模組：offset3 量測、vtt_fix 校正、pacs_frames 間隔取樣、condense 逐字稿壓縮、mkseg3 建構器、_titles.json 覆寫；驗證：tests/test_ported_procedures.py 對每支以固定輸入斷言固定輸出
+- [x] 2.1 依「移植來源與 ZeroType 內容清除」把 rad-workflow 的 skills/lecture-to-notes/scripts 與 skills/whisper-srt-zh/scripts 移入套件對應模組，檔頭保留原作者註記；驗證：`python -c "import lecture2notes.frames, lecture2notes.engines, lecture2notes.outputs"` 成功，且 `grep -r "ZeroType\|USER.md" src/ profiles/` 無結果
+- [x] 2.2 從分支 codex/rebuild-nr-viewer 的 .worktrees/rebuild-nr-viewer/skills/lecture-to-notes/scripts 移植 lecture_model、lecture_content_rules、frame_curator、lecture_audit、publish_transaction、rebuild_course、render_v4_note 的資料結構與流程骨幹到 acceptance 與 notes 子套件，不移植 attestation 雙 digest；驗證：每支移植模組各有一個 tests/test_port_*.py 冒煙測試 import 並呼叫一個純函式
+- [x] 2.3 把本 session 的 scratchpad 程序固化為模組：offset3 量測、vtt_fix 校正、pacs_frames 間隔取樣、condense 逐字稿壓縮、mkseg3 建構器、_titles.json 覆寫；驗證：tests/test_ported_procedures.py 對每支以固定輸入斷言固定輸出
 
 ## 3. Canonical JSON schema v2
 
