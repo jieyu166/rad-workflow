@@ -12,7 +12,7 @@ description: 整理 Obsidian 放射科筆記的 V4 格式、引用或閱片 call
 | V4 YAML／筆記格式 | [Task 1](references/task1-v4.md) |
 | 外部引用改成腳註 | [Task 2](references/task2-footnotes.md) |
 | 閱片題目表格改 callout | [Task 3](references/task3-callouts.md) |
-| PDF 論文或教科書章節深讀 | [Task 5](references/task5-pdf.md)，先跑 Step 0 兩層分流決定 L1／L3，保留來源覆蓋與 Canvas 驗證 |
+| PDF 論文或教科書章節深讀 | [Task 5](references/task5-pdf.md)，先跑 Step 0 三層分流決定 L1／L3，保留來源覆蓋與 Canvas 驗證 |
 | 既有醫學筆記現代新知查核 | [Task 8](references/task8-overview.md)，再讀其指定的查核規範 |
 | 已授權的批次格式整理 | 相應 Task，加上 [批次整理與驗證](references/bulk-cleanup.md) |
 | 影片、SRT 導航、課程首頁 | 使用 lecture-to-notes，不在本 skill 重複影片流程 |
@@ -24,6 +24,11 @@ description: 整理 Obsidian 放射科筆記的 V4 格式、引用或閱片 call
 一般整理保留以下內容；Task 5 另遵循 PDF 重建的歸檔與來源要求，Task 8 保留歷史層並分開呈現現代證據。
 
 1. **Spaced Repetition comments**: `<!--SR:!2024-01-15,30,270-->` — do not touch these under any circumstance
+
+   邊界（不改上面那條禁令，只說明它適用到哪裡）：
+   - SR 註解**只掛在 `## 題目` 的題目上**，不掛筆記本體、Summary、Stage 2 大綱或 Canvas；證據支持的是「間隔＋提取」，不是「間隔＋重讀」。
+   - 排程**逾期不需要補，也不必為此愧疚**（Karpicke & Bauernschmidt 2011：絕對間隔有效，相對間隔遞增與等距沒有差別，晚幾天沒有損失）。
+   - **不做 ease factor 調參**：同一份證據顯示相對間隔的精巧調整沒有價值，調參是浪費時間。
 2. **Image embeds**: `![[image.png]]` — preserve exactly during ordinary cleanup; validate before carrying into a Task 5 rebuild
 3. **Embed references**: `![[other note#heading]]` — preserve exactly during ordinary cleanup; validate before carrying into a Task 5 rebuild
 4. **Dataview queries**: ` ```dataview ... ``` ` blocks — preserve during ordinary cleanup; retain in Task 5 only when still applicable

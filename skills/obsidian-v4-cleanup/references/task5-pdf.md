@@ -1,10 +1,10 @@
 ## Task 5: PDF 閱讀筆記
 
-Applies when the user provides a PDF (journal paper, textbook chapter, or reference material) and asks for reading notes. L3 不是預設——**先跑 Step 0 兩層分流**；只有通過分流的材料才產出 **L3 深讀筆記** 加一份 **visual canvas map**，其餘停在 L1 檢索摘要。
+Applies when the user provides a PDF (journal paper, textbook chapter, or reference material) and asks for reading notes. L3 不是預設——**先跑 Step 0 三層分流**；只有通過分流的材料才產出 **L3 深讀筆記** 加一份 **visual canvas map**，其餘停在 L1 檢索摘要。
 
-### Step 0：兩層分流（必做，不可跳過）
+### Step 0：三層分流（必做，不可跳過）
 
-不要先讀全文。先跑兩層判斷，決定這份材料值不值得 L3。判讀結果與理由要先告訴使用者，再開始執行。
+不要先讀全文。先跑三層判斷，決定這份材料值不值得 L3。判讀結果與理由要先告訴使用者，再開始執行。
 
 **第一層——檢視閱讀（Adler）**：只看 title / abstract、章節標題與小標、圖表清單、結論與 Limitations、參考文獻的年代分佈（教科書章節看章首摘要與章末總結）。目標只有一個：判斷這份材料值不值得多花時間仔細閱讀。
 
@@ -13,6 +13,11 @@ Applies when the user provides a PDF (journal paper, textbook chapter, or refere
 1. 這篇解決了什麼別人沒解決的問題？（前人卡在哪。要寫出**是哪個東西不知道**，不可寫「相關研究不多」這種空話）
 2. 它用什麼方法解決？（學術界怎麼稱呼這個方法）
 3. 跟既有知識差在哪？（作者自承的 limitation 是什麼）
+
+**第三層——產物型態（這份材料該讀，還是該做）**：材料若是「看到 X → 判斷 Y」型（影像判讀、標註、操作流程），且題材是使用者**已自動化**的（讀起來完全順暢、沒有一處卡住），**不做 L3**——做成筆記等於把練習替換成觀摩，正確動作是直接去做那件事。只有講**機制**（為什麼會這樣、條件改變會怎樣）的材料才升 L3。
+
+- 邊界：「已自動化」**以題材為單位判斷，不是以專科為單位**——乳房專科裡仍是新手的那個題材照做 L3。
+- 判到「該做」時，不進 Stage 1／Stage 2、不產 canvas；只在對應索引筆記留一行練習標的，然後停止。
 
 **判決（預設是「停在 L1」，要升 L3 必須說得出理由）**：
 
@@ -89,7 +94,7 @@ Working from the Stage 1 draft, do two things:
 
 ### Workflow
 
-0. **跑 Step 0 兩層分流**；判決為「停在 L1」時只產 L1 檢索摘要，以下步驟不執行。
+0. **跑 Step 0 三層分流**；判決為「停在 L1」時只產 L1 檢索摘要，以下步驟不執行。
 1. **Resolve source**: locate the exact PDF; record its path, page count, citation, edition, and SHA-256 when applicable.
 2. **Archive existing note** before overwriting; confirm the archive hash equals the original hash.
 3. **Extract text** page by page with page boundaries retained.
@@ -99,7 +104,7 @@ Working from the Stage 1 draft, do two things:
 7. **Write Stage 1 in source order**（工作底稿，不進 .md）with bilingual headings mirroring the PDF. Work in bounded chunks and re-check the PDF after each chunk.
 8. **Run the Stage 1 gate**: calculate the coverage ratio, check section coverage, and compare every figure/table ID against the inventory. Continue translating until all checks pass.
 9. **Write Stage 2** from the verified Stage 1: restructure into a hierarchical clinical learning note without adding content. Stage 2 是唯一寫進 .md 的筆記層；每個段落標題後標原文頁碼 `[p.12]`。
-10. **Write Summary**：Canvas link、我為什麼開這篇、這篇的貢獻（三格）、KEY TAKEAWAYS、Slides Outline。
+10. **Write Summary**：Canvas link、定位宣告、我為什麼開這篇、這篇的貢獻（三格）、KEY TAKEAWAYS。
 11. **Create and validate Canvas** in `Learning Map/`.
 12. **Verify final artifacts**: YAML, citation, ratios, figures/tables, numbers, Canvas JSON, preserved artifacts, archive hashes, and absence of unresolved placeholders.
 
@@ -186,17 +191,19 @@ noteVer: v4
 tags:
   - "L3"
 subspecialty: XX
-消化層級: 1
+消化層級: 1  # 模型產出一律 1；本人答過「## 題目」的題並留下任何修改才是 3
 source:
   - "Author et al. Journal. Year" or "Author(s). Book Title. Edition. Publisher, Year. Chapter X."
 ---
 
 # Summary
+> 本筆記為模型產出的初稿，未經本人確認。
+
 [[Learning Map/Note Title.canvas|Note Title]]
 
-## 我為什麼開這篇（讀前填）
-- 讀前想解決的問題：
-- 讀完的答案：
+## 我為什麼開這篇（本人填；句首已備好，接著寫就好，寫不完就停）
+- 開這篇之前我卡在___
+- 這篇沒回答到的是___
 - 下一步：□ 改報告用語 □ 進專案 □ 只存檔備查 □ 丟棄
 
 ## 這篇的貢獻（必填，禁止寫「本文探討…」「本文回顧…」）
@@ -210,12 +217,6 @@ source:
 - 臨床要點
 - 考試要點
 - 教學要點
-
-## Slides Outline
-（one teachable concept per slide, ready for Google Slides via Apps Script）
-1. **Slide title** — key message
-2. **Slide title** — key message
-3. ...
 
 # Note (Stage 2 — 結構重組)
 （Stage 1 忠實翻譯為工作底稿，不出現在本檔；段落標題後標原文頁碼 `[p.12]`）
@@ -261,10 +262,15 @@ source:
 ## Clinical Significance & Pitfalls｜臨床意義與陷阱
 - ...
 
-## 我應該記住的 3 件事（AI 預寫 3 條候選，使用者只做保留／刪除／改寫；一個字都沒改則 `消化層級` 停在 1）
+## 我應該記住的 3 件事（本人填；模型的候選收進下方摺疊 callout，不直接列在正文）
 1.
 2.
 3.
+
+> [!note]- 模型候選（未經本人確認）
+> 1. （模型預寫的候選一）
+> 2. （模型預寫的候選二）
+> 3. （模型預寫的候選三）
 
 ## Important Figures｜重要圖片
 - Fig X: {描述}
@@ -290,6 +296,11 @@ source:
 ### 參考來源
 
 ## 題目
+（不得留空：3–5 題，至少一題推論題，答案一律 `> [!answer]-` 預設收合）
+
+Q1: （問題）
+> [!answer]- 答案
+> （答案 + 一行解釋）
 
 ## 閱片
 ```
@@ -396,6 +407,17 @@ After writing each canvas file, validate:
 7. 若有包含數據的表格，需解讀原文支持的數據走勢並保留 denominators、units、conditions 與 uncertainty
 8. 所有關鍵數值、公式、sample size、scan parameters、diagnostic thresholds、treatment recommendations 與 conclusions 必須能定位至 PDF 頁面或章節
 9. **Canvas 僅在 L3 時產生** — 每份 L3 筆記都要搭配一份 .canvas 視覺地圖（含河川路徑與 reader-voice 節點）；L1 檢索摘要不產 canvas
+10. **`## 題目` 不得留空。** 每份 L3 筆記必須產出 3–5 題自我測驗：
+    - 問題要是「闔上筆記也答得出來才算會」的形式，不是「本文第幾節寫了什麼」。
+    - **至少一題是推論題**：條件改變會怎樣、兩個相似情況怎麼分。範例句型「若病人有 A 但沒有 B，這篇的結論還成立嗎」；**不是**「X 的定義是什麼」這種複述題。
+    - 至少一題針對這份材料最容易記錯的地方（數值邊界、相似診斷的分界、例外條件）。
+    - 答案一律用 `> [!answer]-` 摺疊 callout，**預設收合**，確保打開筆記時看不到答案。
+    - 材料本身產不出 3 題可測驗的內容（純綜述、純背景）→ 這份材料本來就不該做 L3，回 Step 0 重新分流。
+11. **坡道句自檢（模型自己做，不要求使用者複述）。** 寫 `# Summary` 前，模型先嘗試寫出一句「坡道句」——這篇為什麼值得開、前人卡在哪。寫得出來就寫進貢獻三格的「前人卡在哪」；**寫不出來**，就在 `# Summary` 第一行加上：
+
+        > [!warning] 降級：本筆記只是資訊重排，未找到問題意識
+
+    這一行不是失敗標記，是給日後的自己看的座標：這份筆記可以當檢索用，但不要當成讀懂了。
 
 ---
 
@@ -408,9 +430,13 @@ After writing each canvas file, validate:
 - [ ] Every PDF page visually reviewed via renders/contact sheets
 - [ ] Full-resolution visual review completed for every figure/table/equation page and extraction anomaly
 - [ ] Source inventory covers every section, figure, table, box, equation, and appendix
-- [ ] Step 0 兩層分流已執行，判決與理由已先告知使用者
+- [ ] Step 0 三層分流已執行，判決與理由已先告知使用者
 - [ ] 交付檔只含 Stage 2；Stage 1 底稿未寫進 .md
 - [ ] 貢獻三格三格皆有實質內容（任一格空白時應已降級為 L1）
+- [ ] Step 0 第三層「產物型態」已判定；判為「該做」的材料未產出 L3
+- [ ] `# Summary` 首行有定位宣告；坡道句寫不出來時已加 `[!warning] 降級` 一行
+- [ ] `## 題目` 有 3–5 題且含至少一題推論題，答案全部為 `> [!answer]-` 預設收合的 callout
+- [ ] `我為什麼開這篇` 為有句首的填空；`我應該記住的 3 件事` 的模型候選收在摺疊 callout，未直接列在正文
 - [ ] Stage 1 is a substantive source-order full translation, not a summary or translated outline
 - [ ] Stage 1 工作底稿 non-whitespace/PDF extracted non-whitespace ratio is ≥0.20, or ratio is N/A with documented OCR/extraction reason and page-based coverage proof
 - [ ] Ratio was not inflated with filler, duplication, copied English text, or identifier-only lists
@@ -425,7 +451,7 @@ After writing each canvas file, validate:
 - [ ] Every figure has collapsible `[!figure]-` analysis block
 - [ ] Every table has collapsible `[!table-guide]-` reading guide
 - [ ] Mechanical figure/table ID comparison reports no missing source IDs
-- [ ] Summary contains: 我為什麼開這篇 + 這篇的貢獻（三格）+ KEY TAKEAWAYS + Slides Outline
+- [ ] Summary contains: 定位宣告 + 我為什麼開這篇 + 這篇的貢獻（三格）+ KEY TAKEAWAYS
 - [ ] Imaging modality 段落只含原文涉及的模態，無 `N/A` 佔位段落與空標題
 - [ ] DDx／classification／management 內容全部可回溯到原文；原文未談的整段省略，無教科書套語補充
 - [ ] No newer classification, guideline, external threshold, typical finding, or recommendation is presented as source content
