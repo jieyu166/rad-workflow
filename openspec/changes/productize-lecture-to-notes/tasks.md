@@ -1,14 +1,14 @@
 ## 1. Repo 骨架與套件（v0.1.0 起點）
 
-- [ ] 1.1 依「單一程式碼庫、公開版與 overlay 分層」在 GitHub 建立 public repo lecture-to-notes（MIT LICENSE、.gitignore 排除 frames/、*.srt、*.json 樣本以外的媒體），本機 clone 到 OneDrive 之外的磁碟；驗證：`gh repo view jieyu166/lecture-to-notes --json visibility,licenseInfo` 顯示 PUBLIC 與 MIT
-- [ ] 1.2 依「套件結構與 CLI 階段化子命令」建立 pyproject.toml 與 src/lecture_to_notes/ 套件骨架（cli、engines、schema、frames、notes、outputs、acceptance、profiles 子套件），實作「Installable package with a single console entry point」：extras 為 [breeze]、[qwen]、[whispercpp]、[scene]；驗證：乾淨 venv 內 `pip install -e .` 後 `l2n --help` exit 0 且列出 15 個子命令
+- [ ] 1.1 依「單一程式碼庫、公開版與 overlay 分層」在 GitHub 建立 public repo lecture2notes（MIT LICENSE、.gitignore 排除 frames/、*.srt、*.json 樣本以外的媒體），本機 clone 到 OneDrive 之外的磁碟；驗證：`gh repo view jieyu166/lecture2notes --json visibility,licenseInfo` 顯示 PUBLIC 與 MIT
+- [ ] 1.2 依「套件結構與 CLI 階段化子命令」建立 pyproject.toml 與 src/lecture2notes/ 套件骨架（cli、engines、schema、frames、notes、outputs、acceptance、profiles 子套件），實作「Installable package with a single console entry point」：extras 為 [breeze]、[qwen]、[whispercpp]、[scene]；驗證：乾淨 venv 內 `pip install -e .` 後 `l2n --help` exit 0 且列出 15 個子命令
 - [ ] 1.3 實作缺相依的統一錯誤路徑：任一子命令缺 ffmpeg／rapidocr／CT2 模型／qwen-asr 時印缺項與安裝指令、不產檔、exit 3；驗證：tests/test_cli_deps.py 以 monkeypatch 移除 PATH 上的 ffmpeg 後斷言 exit 3 與訊息
 - [ ] 1.4 依「進度回饋與 cp950 相容輸出」實作共用進度器與輸出層，滿足「Console output is cp950-safe and shows progress」：ASCII 標記、每 5 秒一行、`--quiet`、`--json-progress` 每行一個 JSON；驗證：tests/test_progress.py 在 PYTHONIOENCODING=cp950 下跑所有子命令的 --help 與一次假進度不拋 UnicodeEncodeError，且 --json-progress 每行 json.loads 成功並含 stage/done/total/elapsed_sec/eta_sec
 - [ ] 1.5 實作「Language is mandatory for transcription」：transcribe 與 run 缺 --lang 時印 `--lang is required (zh|en|ja|auto)`、不建檔、exit 2；驗證：tests/test_cli_lang.py 斷言 exit 2 且工作目錄無新檔
 
 ## 2. 移植與清理既有腳本
 
-- [ ] 2.1 依「移植來源與 ZeroType 內容清除」把 rad-workflow 的 skills/lecture-to-notes/scripts 與 skills/whisper-srt-zh/scripts 移入套件對應模組，檔頭保留原作者註記；驗證：`python -c "import lecture_to_notes.frames, lecture_to_notes.engines, lecture_to_notes.outputs"` 成功，且 `grep -r "ZeroType\|USER.md" src/ profiles/` 無結果
+- [ ] 2.1 依「移植來源與 ZeroType 內容清除」把 rad-workflow 的 skills/lecture-to-notes/scripts 與 skills/whisper-srt-zh/scripts 移入套件對應模組，檔頭保留原作者註記；驗證：`python -c "import lecture2notes.frames, lecture2notes.engines, lecture2notes.outputs"` 成功，且 `grep -r "ZeroType\|USER.md" src/ profiles/` 無結果
 - [ ] 2.2 從分支 codex/rebuild-nr-viewer 的 .worktrees/rebuild-nr-viewer/skills/lecture-to-notes/scripts 移植 lecture_model、lecture_content_rules、frame_curator、lecture_audit、publish_transaction、rebuild_course、render_v4_note 的資料結構與流程骨幹到 acceptance 與 notes 子套件，不移植 attestation 雙 digest；驗證：每支移植模組各有一個 tests/test_port_*.py 冒煙測試 import 並呼叫一個純函式
 - [ ] 2.3 把本 session 的 scratchpad 程序固化為模組：offset3 量測、vtt_fix 校正、pacs_frames 間隔取樣、condense 逐字稿壓縮、mkseg3 建構器、_titles.json 覆寫；驗證：tests/test_ported_procedures.py 對每支以固定輸入斷言固定輸出
 
@@ -68,15 +68,15 @@
 
 ## 10. Profile 與 overlay
 
-- [ ] 10.1 依「profile 與 overlay 解析順序」實作「Layered configuration resolution」：cli > 專案 .lecture-to-notes/ > ~/.lecture-to-notes/ > profiles/<name>/ > builtin；模板檔整檔取代、corrections／outputs／privacy 逐鍵合併；驗證：tests/test_config_layers.py 斷言專案層 concise 勝過使用者層 faithful，且 corrections 合併後兩組替換皆生效並可被高層覆寫
+- [ ] 10.1 依「profile 與 overlay 解析順序」實作「Layered configuration resolution」：cli > 專案 .lecture2notes/ > ~/.lecture2notes/ > profiles/<name>/ > builtin；模板檔整檔取代、corrections／outputs／privacy 逐鍵合併；驗證：tests/test_config_layers.py 斷言專案層 concise 勝過使用者層 faithful，且 corrections 合併後兩組替換皆生效並可被高層覆寫
 - [ ] 10.2 建立「Built-in profiles」：profiles/generic（concise、pbf=false、hub=true、四鍵 frontmatter、自寫通用術語表）與 profiles/radiology（閱片 callout 模板、放射術語表、病患識別 privacy 模式，不預設啟用）；驗證：tests/test_profiles.py 斷言無指定時 profile=generic 來源 builtin，且兩份 corrections 表無 source 含 ZeroType 或 USER.md 的項目
 - [ ] 10.3 實作「Effective configuration is inspectable」：`l2n profile show` 列每鍵的值與來源層，--json 輸出同內容；驗證：tests/test_profile_show.py 斷言 --json 可解析且 note.style 項有 value 與 source
 - [ ] 10.4 實作「Invalid overlay files fail loudly」：TOML／YAML 解析錯誤時印路徑與行號、exit 2、不套用該檔任何部分；驗證：tests/test_overlay_errors.py 以第 7 行壞掉的 outputs.toml 斷言輸出含路徑與 `line 7` 且 exit 2
-- [ ] 10.5 完成「Minimal overlay example ships with the repository」：examples/overlay-minimal/ 含五個 overlay 檔的合法佔位範例，README 說明複製到 ~/.lecture-to-notes/；驗證：tests/test_overlay_example.py 把範例複製到暫時 HOME 後 `l2n profile show` 每個定義鍵來源為 user 且無解析錯誤
+- [ ] 10.5 完成「Minimal overlay example ships with the repository」：examples/overlay-minimal/ 含五個 overlay 檔的合法佔位範例，README 說明複製到 ~/.lecture2notes/；驗證：tests/test_overlay_example.py 把範例複製到暫時 HOME 後 `l2n profile show` 每個定義鍵來源為 user 且無解析錯誤
 
 ## 11. Skill 打包與安裝
 
-- [ ] 11.1 依「單一 SKILL.md 路由與 install.py 三家部署」撰寫「Single routed skill」：skill/SKILL.md（name: lecture-to-notes，≤80 行，路由表指向六份 references，保留六條 HARD RULES 與完成條件）與 skill/references/ 六份文件，segmentation.md 明寫 LLM 產 JSON v2、機械階段一律呼叫 l2n 子命令；驗證：tests/test_skill_doc.py 斷言 SKILL.md 行數 ≤80、路由表提及十個 CLI 階段、六個 reference 檔存在
+- [ ] 11.1 依「單一 SKILL.md 路由與 install.py 三家部署」撰寫「Single routed skill」：skill/SKILL.md（name: lecture2notes，≤80 行，路由表指向六份 references，保留六條 HARD RULES 與完成條件）與 skill/references/ 六份文件，segmentation.md 明寫 LLM 產 JSON v2、機械階段一律呼叫 l2n 子命令；驗證：tests/test_skill_doc.py 斷言 SKILL.md 行數 ≤80、路由表提及十個 CLI 階段、六個 reference 檔存在
 - [ ] 11.2 實作「Three-target installer」：install.py 與 `l2n install-skill`，--target claude/codex/opencode、--dest、--all，複製不 symlink、不覆蓋既有 overlay 檔名、寫 .installed.json；驗證：tests/test_install.py 以暫時 HOME 斷言三目標各有 SKILL.md 與六份 references 與 .installed.json，且預先放入的 corrections.json 位元組不變
 - [ ] 11.3 實作「Drift check」：--check 重算來源與目標內容 hash，逐檔列差異，缺目標印 `not installed`，全符 exit 0 否則 2；驗證：tests/test_install_check.py 修改目標 SKILL.md 一行後斷言 `[drift]` 與 exit 2；刪除 opencode 目標後斷言 `not installed`
 - [ ] 11.4 撰寫 README 完成「README states scope and privacy boundary」：隱私段（本機 ASR 不上傳、LLM 擴寫送模型供應商）、Windows 優先聲明、MIT、四引擎表（local／GPU）、安裝與 overlay 教學、引擎相容表；驗證：tests/test_readme.py 斷言含「隱私」或「Privacy」標題且段內同時提及本機 ASR 與模型供應商
@@ -88,7 +88,7 @@
 - [ ] 12.3 本機遷移驗證（不進 Git）：對本 session 的 9 份既有 JSON 跑 `l2n migrate` 與 `check json`，對 Copilot 三場 VTT 跑 calibrate-subs 與手工量測值比對；驗證：9 份皆 exit 0；三場各探針中位偏移與 (+3.14/+2.23/+0.86)、(+1.44/+0.80/+0.96)、(+1.81/+2.37/+2.66) 差異皆 ≤0.5 秒，結果摘要貼入 PR 描述
 - [ ] 12.4 本機品質對照（不進 Git）：從 Downloads 的 YT 資料夾依日期選一支有對應 Jenny 舊筆記的影片，以新流程 + 規範重產筆記；驗證：新筆記 `l2n check note` exit 0，且人工對照確認舊版三種失敗樣態（原句倒入、錯字未校、Evergreen 截斷）不再出現，對照結論寫入 PR 描述
 - [ ] 12.5 以 Claude Code 與 Codex 各對 fixture 執行一次 skill 擴寫；驗證：兩者輸出皆 `l2n check note` exit 0，Codex 產出的 R5 finding 數記錄於 PR 描述作為規範有效性的基準
-- [ ] 12.6 打 tag v0.1.0（第 1–2、5、8 群可用）與 v0.2.0（全部群），README 加入版本說明；驗證：`gh release list` 顯示兩個 tag，且 `pip install git+https://github.com/jieyu166/lecture-to-notes@v0.2.0` 後 `l2n --help` exit 0
+- [ ] 12.6 打 tag v0.1.0（第 1–2、5、8 群可用）與 v0.2.0（全部群），README 加入版本說明；驗證：`gh release list` 顯示兩個 tag，且 `pip install git+https://github.com/jieyu166/lecture2notes@v0.2.0` 後 `l2n --help` exit 0
 
 ## 13. 上游標示與授權（Upstream attribution）
 

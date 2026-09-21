@@ -29,7 +29,7 @@ Any engine whose metadata declares local=false SHALL be refused unless `--allow-
 
 #### Scenario: Conversion produces a usable engine
 
-- **WHEN** `l2n convert-model --output ~/.lecture-to-notes/models/breeze-asr-25-ct2` completes with exit 0
+- **WHEN** `l2n convert-model --output ~/.lecture2notes/models/breeze-asr-25-ct2` completes with exit 0
 - **THEN** `l2n transcribe video.mp4 --lang zh` (default engine) locates that directory and transcribes without further configuration
 
 ### Requirement: Raw transcript and correction sidecar are preserved

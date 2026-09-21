@@ -2,11 +2,11 @@
 
 ### Requirement: Installable package with a single console entry point
 
-The system SHALL be distributed as a Python package named lecture-to-notes that installs a console script `l2n`. The package MUST declare all mandatory Python dependencies in `pyproject.toml`; optional engines MUST be declared as extras (`[breeze]`, `[qwen]`, `[whispercpp]`, `[scene]`). `l2n --help` MUST list every subcommand.
+The system SHALL be distributed as a Python package named lecture2notes that installs a console script `l2n`. The package MUST declare all mandatory Python dependencies in `pyproject.toml`; optional engines MUST be declared as extras (`[breeze]`, `[qwen]`, `[whispercpp]`, `[scene]`). `l2n --help` MUST list every subcommand.
 
 #### Scenario: Fresh install exposes the CLI
 
-- **WHEN** a user runs `pip install lecture-to-notes` in a clean virtual environment and then `l2n --help`
+- **WHEN** a user runs `pip install lecture2notes` in a clean virtual environment and then `l2n --help`
 - **THEN** the command exits 0 and lists the subcommands transcribe, calibrate-subs, frames, ocr, scaffold, render, viewer, pbf, hub, check, migrate, run, convert-model, profile, install-skill
 
 #### Scenario: Missing external dependency is reported, never silently degraded

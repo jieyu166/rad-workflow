@@ -12,7 +12,7 @@
 
 **Goals:**
 
-- 一套程式碼、兩個發行面：public repo lecture-to-notes 是通用版；使用者專屬內容以 overlay 疊加，程式碼不分岔。
+- 一套程式碼、兩個發行面：public repo lecture2notes 是通用版；使用者專屬內容以 overlay 疊加，程式碼不分岔。
 - 不靠 agent 也能跑完機械階段（轉錄、字幕校正、抓圖、OCR、骨架筆記、viewer、首頁）；LLM 階段（分段、擴寫）有明確的輸入輸出合約與撰寫規範。
 - 正式 JSON 是唯一真實來源，所有衍生物（筆記、viewer、pbf、首頁）由它同源產生。
 - 每個階段有驗收合約，失敗即停、可回滾。
@@ -20,7 +20,7 @@
 
 **Non-Goals:**
 
-- 不在本 change 內修改 rad-workflow 的 `sync_skills.py`、不刪除本機 29 份舊副本、不把 rad-workflow 改成 submodule 引用——這三件事屬後續 change adopt-lecture-to-notes-submodule。
+- 不在本 change 內修改 rad-workflow 的 `sync_skills.py`、不刪除本機 29 份舊副本、不把 rad-workflow 改成 submodule 引用——這三件事屬後續 change adopt-lecture2notes-submodule。
 - 不實作雲端 ASR；只保留引擎擴充點與雲端閘門。
 - 不把 obsidian-v4-cleanup 的 Task 5（PDF 深讀）與 Task 8（新知查核）納入核心；它們維持在 rad-workflow，未來以「附加模組」形式評估。
 - 不做 Obsidian canvas 產生器；canvas 屬 overlay 的既有工具。
@@ -32,13 +32,13 @@
 
 ### 單一程式碼庫、公開版與 overlay 分層
 
-**決定**：只有一份程式碼（public repo）。使用者專屬的東西（V4 YAML frontmatter、pbf 輸出、個人 corrections、faithful 預設）全部以 overlay 檔案表達，放在 rad-workflow 的 `skills-overlay/lecture-to-notes/`，執行時由解析順序疊加。程式碼裡沒有任何「使用者專屬」分支。
+**決定**：只有一份程式碼（public repo）。使用者專屬的東西（V4 YAML frontmatter、pbf 輸出、個人 corrections、faithful 預設）全部以 overlay 檔案表達，放在 rad-workflow 的 `skills-overlay/lecture2notes/`，執行時由解析順序疊加。程式碼裡沒有任何「使用者專屬」分支。
 
 **替代方案**：(a) 兩個 repo 各一份程式碼——會分岔，正是現在的問題；(b) 把使用者內容做成 radiology profile——錯誤歸類，YAML 與 pbf 是「使用者」不是「放射科」。
 
 ### 套件結構與 CLI 階段化子命令
 
-**決定**：Python 套件 `lecture_to_notes`，`pyproject.toml` 定義 console script `l2n`。子命令對應階段：`transcribe`、`calibrate-subs`、`frames`、`ocr`、`scaffold`、`render`、`viewer`、`pbf`、`hub`、`check`、`migrate`、`run`（串接機械階段）、`convert-model`、`profile`、`install-skill`。每個子命令可獨立重跑、冪等（已有產物即跳過，`--force` 重做）。所有子命令輸出 cp950 安全字元（ASCII 標記）。
+**決定**：Python 套件 `lecture2notes`，`pyproject.toml` 定義 console script `l2n`。子命令對應階段：`transcribe`、`calibrate-subs`、`frames`、`ocr`、`scaffold`、`render`、`viewer`、`pbf`、`hub`、`check`、`migrate`、`run`（串接機械階段）、`convert-model`、`profile`、`install-skill`。每個子命令可獨立重跑、冪等（已有產物即跳過，`--force` 重做）。所有子命令輸出 cp950 安全字元（ASCII 標記）。
 
 **替代方案**：單一 `l2n video.mp4` 一鍵到底——LLM 階段做不到無人化，且無法從中間階段續跑；保留 `run` 只串機械階段。
 
@@ -76,7 +76,7 @@
 
 ### profile 與 overlay 解析順序
 
-**決定**：解析順序為 CLI 參數 > 專案內 `.lecture-to-notes/` > 使用者家目錄 `~/.lecture-to-notes/` > `profiles/<name>/` > 套件內建預設。可覆寫的檔案：`note.frontmatter.yaml`、`note.template.md`、`corrections.json`（合併，後者優先）、`outputs.toml`（pbf、hub、viewer 開關與樣式預設）、`privacy.toml`（個資模式）。`profiles/generic` 內建；`profiles/radiology` 內建但不預設啟用，含閱片 callout 模板與放射術語對照表。`l2n profile show` 印出最終生效值與每一項的來源層。
+**決定**：解析順序為 CLI 參數 > 專案內 `.lecture2notes/` > 使用者家目錄 `~/.lecture2notes/` > `profiles/<name>/` > 套件內建預設。可覆寫的檔案：`note.frontmatter.yaml`、`note.template.md`、`corrections.json`（合併，後者優先）、`outputs.toml`（pbf、hub、viewer 開關與樣式預設）、`privacy.toml`（個資模式）。`profiles/generic` 內建；`profiles/radiology` 內建但不預設啟用，含閱片 callout 模板與放射術語對照表。`l2n profile show` 印出最終生效值與每一項的來源層。
 
 **替代方案**：環境變數控制——不可版控、不可分享給團隊。
 
@@ -88,7 +88,7 @@
 
 ### 單一 SKILL.md 路由與 install.py 三家部署
 
-**決定**：repo 內 `skill/SKILL.md`（frontmatter name: lecture-to-notes）為路由：依「本次工作」表指向 `skill/references/` 下的 transcription、segmentation、frames-and-notes、note-writing、outputs-and-batch、profiles-and-overlay 六份文件；HARD RULES 六條與完成條件保留並更新。`install.py`（同時掛為 `l2n install-skill`）把 `skill/` 複製到目標：`--target claude` → `~/.claude/skills/lecture-to-notes`、`--target codex` → `~/.agents/skills/lecture-to-notes`、`--target opencode` → `~/.config/opencode/skills/lecture-to-notes`，`--dest` 可覆寫、`--all` 三家一次；複製而非 symlink；寫入 `.installed.json`（版本、來源 hash、時間）；`--check` 比對內容 hash 回報 drift（不一致 exit 2）。安裝時不覆蓋目標內既有 overlay 檔。
+**決定**：repo 內 `skill/SKILL.md`（frontmatter name: lecture2notes）為路由：依「本次工作」表指向 `skill/references/` 下的 transcription、segmentation、frames-and-notes、note-writing、outputs-and-batch、profiles-and-overlay 六份文件；HARD RULES 六條與完成條件保留並更新。`install.py`（同時掛為 `l2n install-skill`）把 `skill/` 複製到目標：`--target claude` → `~/.claude/skills/lecture-to-notes`、`--target codex` → `~/.agents/skills/lecture-to-notes`、`--target opencode` → `~/.config/opencode/skills/lecture-to-notes`，`--dest` 可覆寫、`--all` 三家一次；複製而非 symlink；寫入 `.installed.json`（版本、來源 hash、時間）；`--check` 比對內容 hash 回報 drift（不一致 exit 2）。安裝時不覆蓋目標內既有 overlay 檔。
 
 **替代方案**：symlink——rad-workflow 已有明文禁止；各家對 symlink 支援不一。
 
@@ -112,7 +112,7 @@
 
 **可觀察行為**
 
-- `pip install lecture-to-notes` 後，`l2n --help` 列出全部子命令；`l2n run <video> --lang zh` 依序執行 transcribe → frames → ocr → scaffold → render → viewer，每階段結束印 `[stage] ok` 或 `[stage] error: <原因>` 並在 error 時停止，exit code 2。
+- `pip install lecture2notes` 後，`l2n --help` 列出全部子命令；`l2n run <video> --lang zh` 依序執行 transcribe → frames → ocr → scaffold → render → viewer，每階段結束印 `[stage] ok` 或 `[stage] error: <原因>` 並在 error 時停止，exit code 2。
 - `l2n transcribe <video>` 未給 `--lang` 時印出「--lang is required (zh|en|ja|auto)」並 exit 2；不產生任何檔案。`--engine qwen3_asr` 時使用本機開源權重推論，不發出任何網路請求（首次權重下載除外，且可用 `--model-dir` 指向已下載目錄）。
 - `l2n calibrate-subs <video> <subs.vtt>` 產生 `<stem>.srt`（校正後）與 `<stem>.official.srt`（原始），並印偏移報告：每探針點的中位偏移、全距、`offset(t)=a+b*t` 係數。全距 ≥ 1.5 秒時報告標示 drift。
 - `l2n frames <video> --mode interval --every 45` 產生 `frames/<stem>-<MMSS>.png` 與 `<stem>.frames.json`；manifest 每筆含 `timestamp_sec`、`frame`、`sha256`。
@@ -160,7 +160,7 @@
 ## Risks / Trade-offs
 
 - [Breeze-ASR-25 需使用者自行轉 CT2，安裝門檻高] → `l2n convert-model` 一鍵轉檔並印出磁碟需求；README 提供 faster-whisper 官方模型作為零設定替代。
-- [Qwen3-ASR 的 qwen-asr 套件與 transformers 版本耦合，升級易斷] → 引擎為 optional extra（`pip install lecture-to-notes[qwen]`），版本上界鎖定並在 CI 內以 0.6B 權重跑一次冒煙測試。
+- [Qwen3-ASR 的 qwen-asr 套件與 transformers 版本耦合，升級易斷] → 引擎為 optional extra（`pip install lecture2notes[qwen]`），版本上界鎖定並在 CI 內以 0.6B 權重跑一次冒煙測試。
 - [schema v2 破壞既有 viewer／hub 腳本對字串 bullet 的假設] → 所有衍生腳本改讀 v2；`migrate` 保留 `.bak`；E2E 與本機 9 份 JSON 遷移驗證兜底。
 - [撰寫規範的機器檢查誤判合理引用為原句倒入] → 只檢查未以「」或引用區塊標示的 ≥40 字完全相同片段；門檻可在 profile 調整；誤判以 warning 回報。
 - [其他 LLM 仍不遵守規範] → 機器檢查擋住最常見失敗；無法保證判斷品質，README 明說。
@@ -172,16 +172,16 @@
 
 ## Migration Plan
 
-1. 在 GitHub 建立 public repo lecture-to-notes（MIT），本機 clone 至 OneDrive 之外的本機磁碟目錄。
+1. 在 GitHub 建立 public repo lecture2notes（MIT），本機 clone 至 OneDrive 之外的本機磁碟目錄。
 2. 依移植來源表複製腳本並重構進套件；先讓既有功能在新結構下跑通（v0.1.0），再做 schema v2、Qwen3-ASR 與新功能（v0.2.0）。
 3. 對本機 9 份既有 JSON 跑 migrate 與 check、對一支 Jenny 影片重產筆記，作為遷移與品質驗證；結果不進 Git。
 4. `l2n install-skill --all` 部署到本機三家；此時舊 skill 仍在，新 skill 同名會遮蔽專案版——這是預期行為，`--check` 用來確認三家讀到同一版。
-5. 後續 change adopt-lecture-to-notes-submodule：rad-workflow 以 submodule 引用、建立 `skills-overlay/lecture-to-notes/`、修改 sync_skills.py、清除 29 份舊副本與三個 worktree 內的舊版。
+5. 後續 change adopt-lecture2notes-submodule：rad-workflow 以 submodule 引用、建立 `skills-overlay/lecture2notes/`、修改 sync_skills.py、清除 29 份舊副本與三個 worktree 內的舊版。
 6. 回滾：新 repo 打 tag，本機以 `l2n install-skill --dest` 指回舊 skill 目錄即可；正式 JSON 遷移保留 `.bak`。
 
 ## Open Questions
 
-- Repo 與 skill 名稱與上游 drpwchen/lecture-to-notes 完全相同，使用者若同時裝兩者會在 `~/.claude/skills/` 撞名，且對外容易混淆。候選：維持 lecture-to-notes（已由使用者選定）、或改為 lecture2notes／l2n-notes 以區隔並在 README 明示衍生關係。此決策在建立 GitHub repo（任務 1.1）前必須定案。
+- （已決策）名稱定為 lecture2notes：repo、Python 套件、skill name、overlay 目錄（.lecture2notes/）與安裝目標皆用此名，以區隔上游 drpwchen/lecture-to-notes 並在 README 明示衍生關係。CLI 指令維持 l2n。
 - fixture 的具體來源：需選定一支 CC BY／CC0 的公開演講並裁 ≤30 秒片段；候選來源為 Wikimedia Commons 的授課影片，選定後記錄於 fixtures README。
 - OpenCode 的使用者層 skill 目錄慣例需以其現行文件確認；設計暫定 `~/.config/opencode/skills/`，`--dest` 可覆寫。
 - Qwen3-ASR 在 Windows 上的 transformers 後端是否需要額外的 CUDA／torch 版本組合，於實作時以 0.6B 權重實測後寫進 README 的相容表。

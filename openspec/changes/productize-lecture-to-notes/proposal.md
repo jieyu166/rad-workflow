@@ -4,7 +4,7 @@
 
 ## What Changes
 
-- 新建 public GitHub repo lecture-to-notes（MIT），一套程式碼、兩個發行面：公開通用版，以及留在 rad-workflow 的 private overlay（使用者的 V4 YAML、PotPlayer pbf、Obsidian canvas、個人 corrections）。公開版不含這些。
+- 新建 public GitHub repo lecture2notes（MIT），一套程式碼、兩個發行面：公開通用版，以及留在 rad-workflow 的 private overlay（使用者的 V4 YAML、PotPlayer pbf、Obsidian canvas、個人 corrections）。公開版不含這些。
 - 合併三個 skill 為**一個** agent skill（單一 SKILL.md 路由 + references），同時提供不依賴 agent 的 pip 可安裝 CLI（console entry point），可跑完轉錄→分段骨架→截圖→OCR→viewer→骨架筆記；LLM 才能做的分段與擴寫由 skill 指引。
 - 轉錄引擎：預設 Breeze-ASR-25（使用者自行以 ct2 轉檔，附轉檔腳本）、faster-whisper 官方模型選配、無 NVIDIA 時可用 CPU 或 whisper.cpp；保留 --engine 擴充點但**預設不接任何雲端**。--lang 無預設值維持不變。
 - 新增「官方字幕時間校正」：以短段 ASR 探針量測 VTT/SRT 偏移（多點取中位數、cue 內插補），線性校正時間碼、不改文字。
@@ -49,9 +49,9 @@
 
 - Affected specs: 上列十項全為新建。
 - Affected code:
-  - New（位於新 repo lecture-to-notes，不在本專案內；主要路徑以純文字列出）: pyproject.toml；src/lecture_to_notes/ 下的 cli、engines、schema、frames、notes、outputs、acceptance、profiles 子套件；skill/SKILL.md 與 skill/references/；profiles/generic 與 profiles/radiology；install.py；tests/ 與 tests/fixtures/；README.md、LICENSE、docs/note-writing-guideline.md。
+  - New（位於新 repo lecture2notes，不在本專案內；主要路徑以純文字列出）: pyproject.toml；src/lecture2notes/ 下的 cli、engines、schema、frames、notes、outputs、acceptance、profiles 子套件；skill/SKILL.md 與 skill/references/；profiles/generic 與 profiles/radiology；install.py；tests/ 與 tests/fixtures/；README.md、LICENSE、docs/note-writing-guideline.md。
   - Source（本專案內，唯讀移植來源）: `skills/lecture-to-notes/`、`skills/whisper-srt-zh/`、`skills/obsidian-v4-cleanup/references/task1-v4.md`、`skills/obsidian-v4-cleanup/references/task2-footnotes.md`、`skills/obsidian-v4-cleanup/references/task3-callouts.md`，以及分支 codex/rebuild-nr-viewer 下 `.worktrees/rebuild-nr-viewer/skills/lecture-to-notes/scripts/` 的 render_v4_note、lecture_audit、publish_transaction、rebuild_course、frame_curator、rewrite_lecture、lecture_model、lecture_content_rules。
-  - Modified（本專案）: 無。rad-workflow 改為 submodule 引用、清除 29 份舊副本、退休 `sync_skills.py` 對這三個 skill 的散佈，另立後續 change adopt-lecture-to-notes-submodule 處理，不在本 change。
+  - Modified（本專案）: 無。rad-workflow 改為 submodule 引用、清除 29 份舊副本、退休 `sync_skills.py` 對這三個 skill 的散佈，另立後續 change adopt-lecture2notes-submodule 處理，不在本 change。
   - Removed: 無。
 - 相依：ffmpeg／ffprobe（PATH）、faster-whisper + CTranslate2、rapidocr-onnxruntime、opencc-python-reimplemented、scenedetect（選配）、opencv-python、pypdf、whisper.cpp 二進位（選配）；Node 的 defuddle CLI 降為選配。
 - 使用者資料：測試 fixture 只用 CC 授權公開素材；任何院內、付費或個人影片與其產物不進 Git。
