@@ -12,7 +12,7 @@ description: 整理 Obsidian 放射科筆記的 V4 格式、引用或閱片 call
 | V4 YAML／筆記格式 | [Task 1](references/task1-v4.md) |
 | 外部引用改成腳註 | [Task 2](references/task2-footnotes.md) |
 | 閱片題目表格改 callout | [Task 3](references/task3-callouts.md) |
-| PDF 論文或教科書章節深讀 | [Task 5](references/task5-pdf.md)，保留來源覆蓋與 Canvas 驗證 |
+| PDF 論文或教科書章節深讀 | [Task 5](references/task5-pdf.md)，先跑 Step 0 兩層分流決定 L1／L3，保留來源覆蓋與 Canvas 驗證 |
 | 既有醫學筆記現代新知查核 | [Task 8](references/task8-overview.md)，再讀其指定的查核規範 |
 | 已授權的批次格式整理 | 相應 Task，加上 [批次整理與驗證](references/bulk-cleanup.md) |
 | 影片、SRT 導航、課程首頁 | 使用 lecture-to-notes，不在本 skill 重複影片流程 |
