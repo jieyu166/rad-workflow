@@ -90,6 +90,14 @@
 - [ ] 12.5 以 Claude Code 與 Codex 各對 fixture 執行一次 skill 擴寫；驗證：兩者輸出皆 `l2n check note` exit 0，Codex 產出的 R5 finding 數記錄於 PR 描述作為規範有效性的基準
 - [ ] 12.6 打 tag v0.1.0（第 1–2、5、8 群可用）與 v0.2.0（全部群），README 加入版本說明；驗證：`gh release list` 顯示兩個 tag，且 `pip install git+https://github.com/jieyu166/lecture2notes@v0.2.0` 後 `l2n --help` exit 0
 
+## 14. 筆記方法第二批決議（B 系列，落在 lecture2notes 的部分）
+
+- [ ] 14.1 骨架與規範加入「題目不得留空」：render 骨架在 `## 題目` 放 3–5 題的 ai-draft 佔位（至少一題標 `[推論]`），答案以 `> [!answer]-` 收合；docs/note-writing-guideline.md 升 1.1 並規定推論題句型；`l2n check note` 加 R9（warning）：題目節少於 3 題或無 `[推論]` 標記；驗證：tests/test_check_note.py 加 R9 正反例，tests/test_render.py 斷言骨架含 `[!answer]-`
+- [ ] 14.2 首段定位宣告與句首空槽：骨架第一行為 `> 本筆記為模型產出的初稿，未經本人確認。`；Summary 的「我為什麼開這篇」改為兩個有句首的空槽（`開這篇之前我卡在___`、`這篇沒回答到的是___`）；「我應該記住的 3 件事」候選移入 `> [!note]- 模型候選（未經本人確認）` 收合 callout；規範新增「坡道句自檢」：模型寫不出坡道句即在 Summary 首行加 `> [!warning] 降級：本筆記只是資訊重排`；驗證：tests/test_render.py 斷言宣告行與收合 callout 存在，tests/test_guideline_doc.py 斷言規範含自檢條
+- [ ] 14.3 講者骨架（Reverse Outline）：骨架新增 `## 講者骨架` 節，由 JSON segments 機械生成每段一行「時間碼 ｜ 佔比% ｜ 動詞開頭一句（ai-draft）」；規範規定只寫「做了什麼」不寫「講了什麼」、坡道（前 5–8%）是 Evergreen 的原料、首段與末段不呼應時檢查分段；驗證：tests/test_render.py 以三段 JSON 斷言三行且佔比合計 100±1
+- [ ] 14.4 摘要不重寫與六選一：規範規定 Summary 直接引用 `takeaways_zh`、筆記相對 JSON 只新增講者骨架／跨版本對照／閱片連結；講者補充採六選一（界定概念／後果嚴重／與認知相反／遞進缺環／轉折／多面向印證），不符者只在 JSON 留時間碼；schema v2 新增選填 `questions_zh`（跨段出題，每題含 `text` 與 `segments` 索引陣列），skill/references/segmentation.md 要求 LLM 產出並寫入四段弧（坡道／背景／正文／昇華）檢查項；驗證：tests/test_schema.py 斷言 `questions_zh` 缺省合法、格式錯誤報 error；segmentation.md 含四段弧字樣
+- [ ] 14.5 Step 0 第三層與課程首頁摘要：規範 §0 加「產物型態」層（看到 X→判斷 Y 且題材已自動化者不做完整筆記，只講機制者才做；以題材而非專科為單位）；`l2n hub` 支援選填 `_course.json`（`question`、`start_with`、`no_common_thread` 三鍵）在卡片上方輸出「本系列在回答的問題／最該先看的一場」，`no_common_thread: true` 時輸出「本系列各場主題獨立，無共同主線」；驗證：tests/test_hub.py 斷言兩種輸出，tests/test_guideline_doc.py 斷言規範含「產物型態」
+
 ## 13. 上游標示與授權（Upstream attribution）
 
 - [x] 13.1 依「移植來源與 ZeroType 內容清除」對上游 drpwchen/lecture-to-notes（MIT）做來源稽核：以 git 取得上游最新 commit，逐檔比對本專案 src/ 與 skill/ 內容與上游 scripts/、SKILL.md、docs/，產出 ATTRIBUTION.md 列出每個「修改自上游」的檔案、對應的上游路徑與 commit hash、修改摘要；驗證：ATTRIBUTION.md 存在且每列的上游路徑以 `gh api repos/drpwchen/lecture-to-notes/contents/<path>` 可取得，未列入的檔案在 PR 描述中說明為原創或移植自 rad-workflow
