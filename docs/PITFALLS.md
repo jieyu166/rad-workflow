@@ -17,6 +17,7 @@
 - **症狀**：git bash 裡多行 commit message 寫不進去。根因：bash 不支援 PowerShell here-string `@'...'@`。修法：訊息寫到 `.git/CM.txt` 後 `git commit -F .git/CM.txt`。（2026-06）
 - **症狀**：settings.json 的 hook command 跳脫寫到懷疑人生。修法：外部化成 `~/.claude/hooks/*.sh`，JSON 只放路徑。（2026-06）
 
+- **症狀**：repo 根目錄冒出 `pyvenv.cfg`、`Lib/`、`Include/`，`scripts/` 混入 `python.exe`／`pip.exe`，`.gitignore` 只剩 `*`，`git add` 說全部被忽略、`spectra task done` 顯示成功但 tasks.md 沒勾。根因：subagent 的 Bash cwd 每次呼叫後會重設回本 repo，agent 以相對路徑或空變數執行 `python -m venv`，venv 建在 repo 根目錄；venv 會寫一份內容為 `*` 的 `.gitignore` 蓋掉原檔。修法：`git checkout -- .gitignore`，逐檔刪 venv 殘留（`scripts/` 內只刪未追蹤的 venv 檔）；交辦 prompt 一律給**絕對路徑**的 venv 位置並要求建立前 `pwd`。（2026-09）
 ## OneDrive（資料遺失風險）
 
 - **症狀**：原始 .py 檔憑空消失。案例：slide-extractor 曾遺失 .py，靠 .pyc 字串重建。修法：**寫完立即 commit**；Stop hook `~/.claude/hooks/check-uncommitted.sh` 會警告未 commit 的 .py/.md/.html/.yaml/.ahk。（2026-05）
