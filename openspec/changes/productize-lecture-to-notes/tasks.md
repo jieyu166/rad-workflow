@@ -87,7 +87,7 @@
 - [x] 12.2 建立 GitHub Actions：Windows 與 Linux 各跑 pytest（GPU 測試以 marker 跳過），Windows job 以 PYTHONIOENCODING=cp950 跑一次；驗證：兩個 job 皆綠，且 `gh run view --log` 可見 cp950 job 名稱
 - [x] 12.3 本機遷移驗證（不進 Git）：對本 session 的 9 份既有 JSON 跑 `l2n migrate` 與 `check json`，對 Copilot 三場 VTT 跑 calibrate-subs 與手工量測值比對；驗證：9 份皆 exit 0；三場各探針中位偏移與 (+3.14/+2.23/+0.86)、(+1.44/+0.80/+0.96)、(+1.81/+2.37/+2.66) 差異皆 ≤0.5 秒，結果摘要貼入 PR 描述
 - [x] 12.4 本機品質對照（不進 Git）：從 Downloads 的 YT 資料夾依日期選一支有對應 Jenny 舊筆記的影片，以新流程 + 規範重產筆記；驗證：新筆記 `l2n check note` exit 0，且人工對照確認舊版三種失敗樣態（原句倒入、錯字未校、Evergreen 截斷）不再出現，對照結論寫入 PR 描述
-- [ ] 12.5 以 Claude Code 與 Codex 各對 fixture 執行一次 skill 擴寫；驗證：兩者輸出皆 `l2n check note` exit 0，Codex 產出的 R5 finding 數記錄於 PR 描述作為規範有效性的基準
+- [x] 12.5 以 Claude Code 與 Codex 各對 fixture 執行一次 skill 擴寫；驗證：兩者輸出皆 `l2n check note` exit 0，Codex 產出的 R5 finding 數記錄於 PR 描述作為規範有效性的基準
 - [ ] 12.6 打 tag v0.1.0（第 1–2、5、8 群可用）與 v0.2.0（全部群），README 加入版本說明；驗證：`gh release list` 顯示兩個 tag，且 `pip install git+https://github.com/jieyu166/lecture2notes@v0.2.0` 後 `l2n --help` exit 0
 
 ## 14. 筆記方法第二批決議（B 系列，落在 lecture2notes 的部分）
@@ -100,18 +100,18 @@
 
 ## 15. 實地試跑回饋修正（12.4 財經講座全流程試跑發現）
 
-- [ ] 15.1 `l2n render --expand-prompt` 的指令包必須帶實際生效的 style（cli > overlay > profile），且「完成後必做」的驗收指令含 `--style <同一值>`；驗證：tests/test_expand_prompt.py 斷言 `--style faithful` 時指令包內 style 為 faithful 且驗收指令含 `--style faithful`
-- [ ] 15.2 `l2n ocr` 輸入正規化：傳資料夾時改以同層唯一的 `<stem>.json`／`<stem>.frames.json` 解析 stem，找不到或多於一個即 exit 2 並說明，不得產出 `frames.frames_ocr.json` 這種孤兒檔；skill/references/frames-and-notes.md 同步；驗證：tests/test_ocr.py 加資料夾輸入的成功與 exit 2 兩案
-- [ ] 15.3 文件內 JSON 範例必須可驗證：修正 skill/references/segmentation.md 的最小 v2 範例（bullets_zh 物件含 kind、frame 鍵、takeaways ≥6），並統一「每段條列數」說法與檢查器一致；驗證：tests/test_skill_doc.py 從 segmentation.md 抽出 json 區塊跑 validate_document 無 error
-- [ ] 15.4 影格與分段解耦：`check json` 對「區間內無影格但已沿用前一張（frame 非 null、frames 為空）」的段落不得報 error；frames-and-notes.md 改寫指引為「scene 張數少於預計段數即改 interval」；驗證：tests/test_schema.py 加沿用影格段落 exit 0 的案例
-- [ ] 15.5 場景偵測期間的進度回饋：ffmpeg scene filter 與 PySceneDetect 掃描時以 ffmpeg `-progress`（或 scenedetect callback）每 5 秒印一次已掃秒數／總秒數；驗證：tests/test_frames.py 以假的 ffmpeg 進度輸出斷言 Progress 被呼叫多次
-- [ ] 15.6 新增 `l2n condense <srt> [--window 60]` 暴露 schema/condense（子命令數 17，回補 lecture-pipeline-cli 規格與 SKILL 路由表）並實作 `l2n scaffold <srt> --segments N`：產出形狀合法、內容為 ai-draft 佔位的 v2 JSON 骨架（等時間切段、每段附壓縮逐字稿路徑），`--help` 明寫「段落語意由 LLM 填寫」；驗證：tests/test_scaffold.py 斷言輸出通過 validate_document 的結構檢查（內容長度類規則以 draft 旗標豁免並在 check json 報 warning `draft`）
-- [ ] 15.7 R5 涵蓋範圍擴大到 Evergreen 與 Summary 章節（題目的答案區亦同），仍以「」與 blockquote 為豁免；規範同步；驗證：tests/test_check_note.py 加 Summary 貼 40 字原句報 R5 的案例，既有 boundary 四列不退步
-- [ ] 15.8 `check note` 統計殘留的 `<!-- ai-draft -->` 標記數，於結尾行後加印 `note: ai_draft_remaining=N`，並寫入 `check --all --report` 的 note 階段；不影響 exit code；驗證：tests/test_check_note.py 與 tests/test_audit_report.py 各加一案
-- [ ] 15.9 以真實 cmd.exe（chcp 950）重現 `l2n --help` 是否亂碼：可重現即修（help 字串改為 cp950 可編碼字元或在 stdout 非 UTF-8 時以 errors=replace 輸出並印一次提示），不可重現則在 README 疑難排解記錄結論；驗證：結論與重現步驟寫入 README 疑難排解段
-- [ ] 15.10 未擴寫偵測：`check note` 新增 R10（warning，profile 可升 error）——段落本文與同一 JSON／style 重新 render 的骨架相同即報 `unexpanded skeleton`，Evergreen 仍為佔位句亦同；結尾加印 `note: unexpanded_segments=K/N` 並寫入稽核報告；驗證：tests/test_check_note.py 斷言骨架直接 check 得到每段一條 R10 且 exit 1，擴寫其中一段後 K 減 1
-- [ ] 15.11 style 單一來源：render 寫入 `<!-- l2n:style=… guideline=… -->` 標記，`check note` 未給 --style 時讀取之、與 CLI 不同時報 `style mismatch` warning；驗證：tests/test_style.py 斷言 faithful 骨架在不帶 --style 的 check 下仍套用 R6
-- [ ] 15.12 指令包與規範補洞：`--expand-prompt` 加「已落地／待擴寫」逐章節清單；規範明定 `[推論]` 標記格式且 R9 訊息提示之；釐清 `<stem>.frames_ocr.json`（快取）與 JSON 內 `frame_ocr`（筆記階段來源）的關係；驗證：tests/test_expand_prompt.py 斷言清單存在，tests/test_guideline_doc.py 斷言規範含標記格式定義
+- [x] 15.1 `l2n render --expand-prompt` 的指令包必須帶實際生效的 style（cli > overlay > profile），且「完成後必做」的驗收指令含 `--style <同一值>`；驗證：tests/test_expand_prompt.py 斷言 `--style faithful` 時指令包內 style 為 faithful 且驗收指令含 `--style faithful`
+- [x] 15.2 `l2n ocr` 輸入正規化：傳資料夾時改以同層唯一的 `<stem>.json`／`<stem>.frames.json` 解析 stem，找不到或多於一個即 exit 2 並說明，不得產出 `frames.frames_ocr.json` 這種孤兒檔；skill/references/frames-and-notes.md 同步；驗證：tests/test_ocr.py 加資料夾輸入的成功與 exit 2 兩案
+- [x] 15.3 文件內 JSON 範例必須可驗證：修正 skill/references/segmentation.md 的最小 v2 範例（bullets_zh 物件含 kind、frame 鍵、takeaways ≥6），並統一「每段條列數」說法與檢查器一致；驗證：tests/test_skill_doc.py 從 segmentation.md 抽出 json 區塊跑 validate_document 無 error
+- [x] 15.4 影格與分段解耦：`check json` 對「區間內無影格但已沿用前一張（frame 非 null、frames 為空）」的段落不得報 error；frames-and-notes.md 改寫指引為「scene 張數少於預計段數即改 interval」；驗證：tests/test_schema.py 加沿用影格段落 exit 0 的案例
+- [x] 15.5 場景偵測期間的進度回饋：ffmpeg scene filter 與 PySceneDetect 掃描時以 ffmpeg `-progress`（或 scenedetect callback）每 5 秒印一次已掃秒數／總秒數；驗證：tests/test_frames.py 以假的 ffmpeg 進度輸出斷言 Progress 被呼叫多次
+- [x] 15.6 新增 `l2n condense <srt> [--window 60]` 暴露 schema/condense（子命令數 17，回補 lecture-pipeline-cli 規格與 SKILL 路由表）並實作 `l2n scaffold <srt> --segments N`：產出形狀合法、內容為 ai-draft 佔位的 v2 JSON 骨架（等時間切段、每段附壓縮逐字稿路徑），`--help` 明寫「段落語意由 LLM 填寫」；驗證：tests/test_scaffold.py 斷言輸出通過 validate_document 的結構檢查（內容長度類規則以 draft 旗標豁免並在 check json 報 warning `draft`）
+- [x] 15.7 R5 涵蓋範圍擴大到 Evergreen 與 Summary 章節（題目的答案區亦同），仍以「」與 blockquote 為豁免；規範同步；驗證：tests/test_check_note.py 加 Summary 貼 40 字原句報 R5 的案例，既有 boundary 四列不退步
+- [x] 15.8 `check note` 統計殘留的 `<!-- ai-draft -->` 標記數，於結尾行後加印 `note: ai_draft_remaining=N`，並寫入 `check --all --report` 的 note 階段；不影響 exit code；驗證：tests/test_check_note.py 與 tests/test_audit_report.py 各加一案
+- [x] 15.9 以真實 cmd.exe（chcp 950）重現 `l2n --help` 是否亂碼：可重現即修（help 字串改為 cp950 可編碼字元或在 stdout 非 UTF-8 時以 errors=replace 輸出並印一次提示），不可重現則在 README 疑難排解記錄結論；驗證：結論與重現步驟寫入 README 疑難排解段
+- [x] 15.10 未擴寫偵測：`check note` 新增 R10（warning，profile 可升 error）——段落本文與同一 JSON／style 重新 render 的骨架相同即報 `unexpanded skeleton`，Evergreen 仍為佔位句亦同；結尾加印 `note: unexpanded_segments=K/N` 並寫入稽核報告；驗證：tests/test_check_note.py 斷言骨架直接 check 得到每段一條 R10 且 exit 1，擴寫其中一段後 K 減 1
+- [x] 15.11 style 單一來源：render 寫入 `<!-- l2n:style=… guideline=… -->` 標記，`check note` 未給 --style 時讀取之、與 CLI 不同時報 `style mismatch` warning；驗證：tests/test_style.py 斷言 faithful 骨架在不帶 --style 的 check 下仍套用 R6
+- [x] 15.12 指令包與規範補洞：`--expand-prompt` 加「已落地／待擴寫」逐章節清單；規範明定 `[推論]` 標記格式且 R9 訊息提示之；釐清 `<stem>.frames_ocr.json`（快取）與 JSON 內 `frame_ocr`（筆記階段來源）的關係；驗證：tests/test_expand_prompt.py 斷言清單存在，tests/test_guideline_doc.py 斷言規範含標記格式定義
 
 ## 13. 上游標示與授權（Upstream attribution）
 
