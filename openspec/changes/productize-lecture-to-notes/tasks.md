@@ -60,26 +60,26 @@
 
 ## 9. 階段驗收、稽核與發布
 
-- [ ] 9.1 依「階段驗收合約與交易式發布」實作「Per-stage acceptance checks」的 transcribe／frames／json／note 四階段與統一輸出格式（每 finding 一行、`<stage>: N errors, M warnings`、exit 0/1/2）；驗證：tests/test_check_stages.py 對竄改 sha256 的影格斷言 `error sha256 ...: manifest .. actual ..` 與 exit 2；對 fixture 全流程產物四階段皆 exit 0
-- [ ] 9.2 實作「Structured audit report」：`l2n check --all <stem> --report <path>` 寫 JSON（guideline_version、各階段 findings、summary.errors/warnings），exit 取各階段最大值；驗證：tests/test_audit_report.py 斷言 summary.errors 等於 severity=error 的 finding 數
-- [ ] 9.3 實作「Rebuild preflight is read-only」：hub 與 viewer 的 --preflight 列出將建立／覆蓋的檔與是否存在，不寫任何檔；驗證：tests/test_preflight.py 前後記錄資料夾檔案清單與 mtime 斷言完全相同
-- [ ] 9.4 實作「Transactional publication with rollback」：`l2n publish` 同檔案系統檢查、manifest、時間戳備份、tmp 名複製、sha256 驗證、整批 rename、任一失敗全數還原並清 tmp、成功寫 <stem>.publish.json；驗證：tests/test_publish.py 在第三檔注入雜湊失敗斷言目的地檔案集合與內容不變、備份目錄移除、exit 2 並指出失敗檔；成功案例斷言 manifest 列出每檔 sha256
-- [ ] 9.5 實作 `l2n run` 的階段串接與「Stage subcommands are idempotent and resumable」：已有產物即 `[stage] skip (exists)`、--force 重做、check error 即停 exit 2、僅 warning 續行 exit 1；驗證：tests/test_run.py 對 fixture 連跑兩次斷言第二次所有階段 skip 且檔案 mtime 不變；注入一個 error 後斷言後續階段未執行
+- [x] 9.1 依「階段驗收合約與交易式發布」實作「Per-stage acceptance checks」的 transcribe／frames／json／note 四階段與統一輸出格式（每 finding 一行、`<stage>: N errors, M warnings`、exit 0/1/2）；驗證：tests/test_check_stages.py 對竄改 sha256 的影格斷言 `error sha256 ...: manifest .. actual ..` 與 exit 2；對 fixture 全流程產物四階段皆 exit 0
+- [x] 9.2 實作「Structured audit report」：`l2n check --all <stem> --report <path>` 寫 JSON（guideline_version、各階段 findings、summary.errors/warnings），exit 取各階段最大值；驗證：tests/test_audit_report.py 斷言 summary.errors 等於 severity=error 的 finding 數
+- [x] 9.3 實作「Rebuild preflight is read-only」：hub 與 viewer 的 --preflight 列出將建立／覆蓋的檔與是否存在，不寫任何檔；驗證：tests/test_preflight.py 前後記錄資料夾檔案清單與 mtime 斷言完全相同
+- [x] 9.4 實作「Transactional publication with rollback」：`l2n publish` 同檔案系統檢查、manifest、時間戳備份、tmp 名複製、sha256 驗證、整批 rename、任一失敗全數還原並清 tmp、成功寫 <stem>.publish.json；驗證：tests/test_publish.py 在第三檔注入雜湊失敗斷言目的地檔案集合與內容不變、備份目錄移除、exit 2 並指出失敗檔；成功案例斷言 manifest 列出每檔 sha256
+- [x] 9.5 實作 `l2n run` 的階段串接與「Stage subcommands are idempotent and resumable」：已有產物即 `[stage] skip (exists)`、--force 重做、check error 即停 exit 2、僅 warning 續行 exit 1；驗證：tests/test_run.py 對 fixture 連跑兩次斷言第二次所有階段 skip 且檔案 mtime 不變；注入一個 error 後斷言後續階段未執行
 
 ## 10. Profile 與 overlay
 
-- [ ] 10.1 依「profile 與 overlay 解析順序」實作「Layered configuration resolution」：cli > 專案 .lecture2notes/ > ~/.lecture2notes/ > profiles/<name>/ > builtin；模板檔整檔取代、corrections／outputs／privacy 逐鍵合併；驗證：tests/test_config_layers.py 斷言專案層 concise 勝過使用者層 faithful，且 corrections 合併後兩組替換皆生效並可被高層覆寫
-- [ ] 10.2 建立「Built-in profiles」：profiles/generic（concise、pbf=false、hub=true、四鍵 frontmatter、自寫通用術語表）與 profiles/radiology（閱片 callout 模板、放射術語表、病患識別 privacy 模式，不預設啟用）；驗證：tests/test_profiles.py 斷言無指定時 profile=generic 來源 builtin，且兩份 corrections 表無 source 含 ZeroType 或 USER.md 的項目
-- [ ] 10.3 實作「Effective configuration is inspectable」：`l2n profile show` 列每鍵的值與來源層，--json 輸出同內容；驗證：tests/test_profile_show.py 斷言 --json 可解析且 note.style 項有 value 與 source
-- [ ] 10.4 實作「Invalid overlay files fail loudly」：TOML／YAML 解析錯誤時印路徑與行號、exit 2、不套用該檔任何部分；驗證：tests/test_overlay_errors.py 以第 7 行壞掉的 outputs.toml 斷言輸出含路徑與 `line 7` 且 exit 2
-- [ ] 10.5 完成「Minimal overlay example ships with the repository」：examples/overlay-minimal/ 含五個 overlay 檔的合法佔位範例，README 說明複製到 ~/.lecture2notes/；驗證：tests/test_overlay_example.py 把範例複製到暫時 HOME 後 `l2n profile show` 每個定義鍵來源為 user 且無解析錯誤
+- [x] 10.1 依「profile 與 overlay 解析順序」實作「Layered configuration resolution」：cli > 專案 .lecture2notes/ > ~/.lecture2notes/ > profiles/<name>/ > builtin；模板檔整檔取代、corrections／outputs／privacy 逐鍵合併；驗證：tests/test_config_layers.py 斷言專案層 concise 勝過使用者層 faithful，且 corrections 合併後兩組替換皆生效並可被高層覆寫
+- [x] 10.2 建立「Built-in profiles」：profiles/generic（concise、pbf=false、hub=true、四鍵 frontmatter、自寫通用術語表）與 profiles/radiology（閱片 callout 模板、放射術語表、病患識別 privacy 模式，不預設啟用）；驗證：tests/test_profiles.py 斷言無指定時 profile=generic 來源 builtin，且兩份 corrections 表無 source 含 ZeroType 或 USER.md 的項目
+- [x] 10.3 實作「Effective configuration is inspectable」：`l2n profile show` 列每鍵的值與來源層，--json 輸出同內容；驗證：tests/test_profile_show.py 斷言 --json 可解析且 note.style 項有 value 與 source
+- [x] 10.4 實作「Invalid overlay files fail loudly」：TOML／YAML 解析錯誤時印路徑與行號、exit 2、不套用該檔任何部分；驗證：tests/test_overlay_errors.py 以第 7 行壞掉的 outputs.toml 斷言輸出含路徑與 `line 7` 且 exit 2
+- [x] 10.5 完成「Minimal overlay example ships with the repository」：examples/overlay-minimal/ 含五個 overlay 檔的合法佔位範例，README 說明複製到 ~/.lecture2notes/；驗證：tests/test_overlay_example.py 把範例複製到暫時 HOME 後 `l2n profile show` 每個定義鍵來源為 user 且無解析錯誤
 
 ## 11. Skill 打包與安裝
 
-- [ ] 11.1 依「單一 SKILL.md 路由與 install.py 三家部署」撰寫「Single routed skill」：skill/SKILL.md（name: lecture2notes，≤80 行，路由表指向六份 references，保留六條 HARD RULES 與完成條件）與 skill/references/ 六份文件，segmentation.md 明寫 LLM 產 JSON v2、機械階段一律呼叫 l2n 子命令；驗證：tests/test_skill_doc.py 斷言 SKILL.md 行數 ≤80、路由表提及十個 CLI 階段、六個 reference 檔存在
-- [ ] 11.2 實作「Three-target installer」：install.py 與 `l2n install-skill`，--target claude/codex/opencode、--dest、--all，複製不 symlink、不覆蓋既有 overlay 檔名、寫 .installed.json；驗證：tests/test_install.py 以暫時 HOME 斷言三目標各有 SKILL.md 與六份 references 與 .installed.json，且預先放入的 corrections.json 位元組不變
-- [ ] 11.3 實作「Drift check」：--check 重算來源與目標內容 hash，逐檔列差異，缺目標印 `not installed`，全符 exit 0 否則 2；驗證：tests/test_install_check.py 修改目標 SKILL.md 一行後斷言 `[drift]` 與 exit 2；刪除 opencode 目標後斷言 `not installed`
-- [ ] 11.4 撰寫 README 完成「README states scope and privacy boundary」：隱私段（本機 ASR 不上傳、LLM 擴寫送模型供應商）、Windows 優先聲明、MIT、四引擎表（local／GPU）、安裝與 overlay 教學、引擎相容表；驗證：tests/test_readme.py 斷言含「隱私」或「Privacy」標題且段內同時提及本機 ASR 與模型供應商
+- [x] 11.1 依「單一 SKILL.md 路由與 install.py 三家部署」撰寫「Single routed skill」：skill/SKILL.md（name: lecture2notes，≤80 行，路由表指向六份 references，保留六條 HARD RULES 與完成條件）與 skill/references/ 六份文件，segmentation.md 明寫 LLM 產 JSON v2、機械階段一律呼叫 l2n 子命令；驗證：tests/test_skill_doc.py 斷言 SKILL.md 行數 ≤80、路由表提及十個 CLI 階段、六個 reference 檔存在
+- [x] 11.2 實作「Three-target installer」：install.py 與 `l2n install-skill`，--target claude/codex/opencode、--dest、--all，複製不 symlink、不覆蓋既有 overlay 檔名、寫 .installed.json；驗證：tests/test_install.py 以暫時 HOME 斷言三目標各有 SKILL.md 與六份 references 與 .installed.json，且預先放入的 corrections.json 位元組不變
+- [x] 11.3 實作「Drift check」：--check 重算來源與目標內容 hash，逐檔列差異，缺目標印 `not installed`，全符 exit 0 否則 2；驗證：tests/test_install_check.py 修改目標 SKILL.md 一行後斷言 `[drift]` 與 exit 2；刪除 opencode 目標後斷言 `not installed`
+- [x] 11.4 撰寫 README 完成「README states scope and privacy boundary」：隱私段（本機 ASR 不上傳、LLM 擴寫送模型供應商）、Windows 優先聲明、MIT、四引擎表（local／GPU）、安裝與 overlay 教學、引擎相容表；驗證：tests/test_readme.py 斷言含「隱私」或「Privacy」標題且段內同時提及本機 ASR 與模型供應商
 
 ## 12. 測試基礎、fixture 與遷移驗證
 
@@ -92,11 +92,11 @@
 
 ## 14. 筆記方法第二批決議（B 系列，落在 lecture2notes 的部分）
 
-- [ ] 14.1 骨架與規範加入「題目不得留空」：render 骨架在 `## 題目` 放 3–5 題的 ai-draft 佔位（至少一題標 `[推論]`），答案以 `> [!answer]-` 收合；docs/note-writing-guideline.md 升 1.1 並規定推論題句型；`l2n check note` 加 R9（warning）：題目節少於 3 題或無 `[推論]` 標記；驗證：tests/test_check_note.py 加 R9 正反例，tests/test_render.py 斷言骨架含 `[!answer]-`
-- [ ] 14.2 首段定位宣告與句首空槽：骨架第一行為 `> 本筆記為模型產出的初稿，未經本人確認。`；Summary 的「我為什麼開這篇」改為兩個有句首的空槽（`開這篇之前我卡在___`、`這篇沒回答到的是___`）；「我應該記住的 3 件事」候選移入 `> [!note]- 模型候選（未經本人確認）` 收合 callout；規範新增「坡道句自檢」：模型寫不出坡道句即在 Summary 首行加 `> [!warning] 降級：本筆記只是資訊重排`；驗證：tests/test_render.py 斷言宣告行與收合 callout 存在，tests/test_guideline_doc.py 斷言規範含自檢條
-- [ ] 14.3 講者骨架（Reverse Outline）：骨架新增 `## 講者骨架` 節，由 JSON segments 機械生成每段一行「時間碼 ｜ 佔比% ｜ 動詞開頭一句（ai-draft）」；規範規定只寫「做了什麼」不寫「講了什麼」、坡道（前 5–8%）是 Evergreen 的原料、首段與末段不呼應時檢查分段；驗證：tests/test_render.py 以三段 JSON 斷言三行且佔比合計 100±1
-- [ ] 14.4 摘要不重寫與六選一：規範規定 Summary 直接引用 `takeaways_zh`、筆記相對 JSON 只新增講者骨架／跨版本對照／閱片連結；講者補充採六選一（界定概念／後果嚴重／與認知相反／遞進缺環／轉折／多面向印證），不符者只在 JSON 留時間碼；schema v2 新增選填 `questions_zh`（跨段出題，每題含 `text` 與 `segments` 索引陣列），skill/references/segmentation.md 要求 LLM 產出並寫入四段弧（坡道／背景／正文／昇華）檢查項；驗證：tests/test_schema.py 斷言 `questions_zh` 缺省合法、格式錯誤報 error；segmentation.md 含四段弧字樣
-- [ ] 14.5 Step 0 第三層與課程首頁摘要：規範 §0 加「產物型態」層（看到 X→判斷 Y 且題材已自動化者不做完整筆記，只講機制者才做；以題材而非專科為單位）；`l2n hub` 支援選填 `_course.json`（`question`、`start_with`、`no_common_thread` 三鍵）在卡片上方輸出「本系列在回答的問題／最該先看的一場」，`no_common_thread: true` 時輸出「本系列各場主題獨立，無共同主線」；驗證：tests/test_hub.py 斷言兩種輸出，tests/test_guideline_doc.py 斷言規範含「產物型態」
+- [x] 14.1 骨架與規範加入「題目不得留空」：render 骨架在 `## 題目` 放 3–5 題的 ai-draft 佔位（至少一題標 `[推論]`），答案以 `> [!answer]-` 收合；docs/note-writing-guideline.md 升 1.1 並規定推論題句型；`l2n check note` 加 R9（warning）：題目節少於 3 題或無 `[推論]` 標記；驗證：tests/test_check_note.py 加 R9 正反例，tests/test_render.py 斷言骨架含 `[!answer]-`
+- [x] 14.2 首段定位宣告與句首空槽：骨架第一行為 `> 本筆記為模型產出的初稿，未經本人確認。`；Summary 的「我為什麼開這篇」改為兩個有句首的空槽（`開這篇之前我卡在___`、`這篇沒回答到的是___`）；「我應該記住的 3 件事」候選移入 `> [!note]- 模型候選（未經本人確認）` 收合 callout；規範新增「坡道句自檢」：模型寫不出坡道句即在 Summary 首行加 `> [!warning] 降級：本筆記只是資訊重排`；驗證：tests/test_render.py 斷言宣告行與收合 callout 存在，tests/test_guideline_doc.py 斷言規範含自檢條
+- [x] 14.3 講者骨架（Reverse Outline）：骨架新增 `## 講者骨架` 節，由 JSON segments 機械生成每段一行「時間碼 ｜ 佔比% ｜ 動詞開頭一句（ai-draft）」；規範規定只寫「做了什麼」不寫「講了什麼」、坡道（前 5–8%）是 Evergreen 的原料、首段與末段不呼應時檢查分段；驗證：tests/test_render.py 以三段 JSON 斷言三行且佔比合計 100±1
+- [x] 14.4 摘要不重寫與六選一：規範規定 Summary 直接引用 `takeaways_zh`、筆記相對 JSON 只新增講者骨架／跨版本對照／閱片連結；講者補充採六選一（界定概念／後果嚴重／與認知相反／遞進缺環／轉折／多面向印證），不符者只在 JSON 留時間碼；schema v2 新增選填 `questions_zh`（跨段出題，每題含 `text` 與 `segments` 索引陣列），skill/references/segmentation.md 要求 LLM 產出並寫入四段弧（坡道／背景／正文／昇華）檢查項；驗證：tests/test_schema.py 斷言 `questions_zh` 缺省合法、格式錯誤報 error；segmentation.md 含四段弧字樣
+- [x] 14.5 Step 0 第三層與課程首頁摘要：規範 §0 加「產物型態」層（看到 X→判斷 Y 且題材已自動化者不做完整筆記，只講機制者才做；以題材而非專科為單位）；`l2n hub` 支援選填 `_course.json`（`question`、`start_with`、`no_common_thread` 三鍵）在卡片上方輸出「本系列在回答的問題／最該先看的一場」，`no_common_thread: true` 時輸出「本系列各場主題獨立，無共同主線」；驗證：tests/test_hub.py 斷言兩種輸出，tests/test_guideline_doc.py 斷言規範含「產物型態」
 
 ## 13. 上游標示與授權（Upstream attribution）
 
