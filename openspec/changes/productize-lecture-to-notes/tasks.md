@@ -21,7 +21,7 @@
 ## 4. 轉錄引擎
 
 - [x] 4.1 依「轉錄引擎抽象、Qwen3-ASR 與官方字幕偏移校正」定義 Engine 介面與中繼資料（name、local、needs_gpu、native_timestamps、default_model），實作「Pluggable local transcription engines」的四個引擎 breeze_ct2、faster_whisper、whisper_cpp、qwen3_asr，並提供 `--list-engines`；驗證：tests/test_engines.py 斷言四個引擎註冊且 local 皆為 true；`l2n transcribe --list-engines` 印四行並標示相依是否滿足
-- [ ] 4.2 實作 qwen3_asr 引擎：以 qwen-asr 套件載入 Qwen3-ASR-0.6B 或 1.7B，transformers 後端預設、vLLM 選配、`--model-dir` 指向本機權重、以其時間戳產生 cue；驗證：CI 標記 gpu 的測試以 0.6B 對 fixture 轉錄產出合法 SRT 並通過 check transcribe（無 CUDA 時跳過），README 相容表記錄實測的 torch 版本
+- [x] 4.2 實作 qwen3_asr 引擎：以 qwen-asr 套件載入 Qwen3-ASR-0.6B 或 1.7B，transformers 後端預設、vLLM 選配、`--model-dir` 指向本機權重、以其時間戳產生 cue；驗證：CI 標記 gpu 的測試以 0.6B 對 fixture 轉錄產出合法 SRT 並通過 check transcribe（無 CUDA 時跳過），README 相容表記錄實測的 torch 版本
 - [x] 4.3 實作「Cloud engines are gated」：local=false 的外掛引擎未帶 --allow-cloud 即 exit 2 並說明隱私規則；驗證：tests/test_engine_gate.py 註冊一個假的 local=false 引擎，斷言無旗標 exit 2、有旗標可執行
 - [x] 4.4 實作「Model conversion helper for Breeze-ASR-25」：`l2n convert-model` 先印磁碟需求、float16 預設、目標存在時無 --force 拒絕；驗證：tests/test_convert_model.py 以 mock 的 converter 斷言參數與拒絕覆寫行為；手動於本機轉檔一次後 `l2n transcribe --lang zh` 預設引擎可用
 - [x] 4.5 實作「Raw transcript and correction sidecar are preserved」：套用對照表時寫 .raw.srt 與 .corrections.json（heard/correct/count/source），校正檔保持序號、時間、空行結構；驗證：tests/test_corrections.py 以含 12 次「口拍的」的 SRT 斷言 sidecar 內容與 raw 檔保留原文、且兩檔 cue 數與時間碼完全相同
