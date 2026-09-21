@@ -33,6 +33,23 @@ lecture2notes v0.2.x 已在獨立 public repo 發布並通過實地驗證（同�
 
 - Affected specs: 新增 lecture2notes-vendoring、legacy-skill-retirement
 - Affected code:
-  - New: vendor/lecture2notes（submodule）、.gitmodules、skills-overlay/lecture2notes/note.frontmatter.yaml、skills-overlay/lecture2notes/note.template.md、skills-overlay/lecture2notes/outputs.toml、skills-overlay/lecture2notes/corrections.json、skills-overlay/lecture2notes/privacy.toml、skills-overlay/lecture2notes/README.md、deploy_lecture2notes.py、tests/test_deploy_lecture2notes.py
-  - Modified: CLAUDE.md、docs/PITFALLS.md、README.md、docs/superpowers/plans/2026-08-08-nr-viewer-rebuild.md、docs/superpowers/specs/2026-08-08-nr-viewer-rebuild-design.md
-  - Removed: skills/lecture-to-notes、skills/whisper-srt-zh
+  - New:
+    - vendor/lecture2notes
+    - .gitmodules
+    - skills-overlay/lecture2notes/note.frontmatter.yaml
+    - skills-overlay/lecture2notes/note.template.md
+    - skills-overlay/lecture2notes/outputs.toml
+    - skills-overlay/lecture2notes/corrections.json
+    - skills-overlay/lecture2notes/privacy.toml
+    - skills-overlay/lecture2notes/README.md
+    - deploy_lecture2notes.py
+    - tests/test_deploy_lecture2notes.py
+  - Modified:
+    - CLAUDE.md
+    - docs/PITFALLS.md
+    - README.md
+    - docs/superpowers/plans/2026-08-08-nr-viewer-rebuild.md
+    - docs/superpowers/specs/2026-08-08-nr-viewer-rebuild-design.md
+  - Removed:
+    - skills/lecture-to-notes
+    - skills/whisper-srt-zh
