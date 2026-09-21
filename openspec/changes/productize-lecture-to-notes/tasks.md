@@ -1,10 +1,10 @@
 ## 1. Repo 骨架與套件（v0.1.0 起點）
 
-- [ ] 1.1 依「單一程式碼庫、公開版與 overlay 分層」在 GitHub 建立 public repo lecture2notes（MIT LICENSE、.gitignore 排除 frames/、*.srt、*.json 樣本以外的媒體），本機 clone 到 OneDrive 之外的磁碟；驗證：`gh repo view jieyu166/lecture2notes --json visibility,licenseInfo` 顯示 PUBLIC 與 MIT
-- [ ] 1.2 依「套件結構與 CLI 階段化子命令」建立 pyproject.toml 與 src/lecture2notes/ 套件骨架（cli、engines、schema、frames、notes、outputs、acceptance、profiles 子套件），實作「Installable package with a single console entry point」：extras 為 [breeze]、[qwen]、[whispercpp]、[scene]；驗證：乾淨 venv 內 `pip install -e .` 後 `l2n --help` exit 0 且列出 15 個子命令
-- [ ] 1.3 實作缺相依的統一錯誤路徑：任一子命令缺 ffmpeg／rapidocr／CT2 模型／qwen-asr 時印缺項與安裝指令、不產檔、exit 3；驗證：tests/test_cli_deps.py 以 monkeypatch 移除 PATH 上的 ffmpeg 後斷言 exit 3 與訊息
-- [ ] 1.4 依「進度回饋與 cp950 相容輸出」實作共用進度器與輸出層，滿足「Console output is cp950-safe and shows progress」：ASCII 標記、每 5 秒一行、`--quiet`、`--json-progress` 每行一個 JSON；驗證：tests/test_progress.py 在 PYTHONIOENCODING=cp950 下跑所有子命令的 --help 與一次假進度不拋 UnicodeEncodeError，且 --json-progress 每行 json.loads 成功並含 stage/done/total/elapsed_sec/eta_sec
-- [ ] 1.5 實作「Language is mandatory for transcription」：transcribe 與 run 缺 --lang 時印 `--lang is required (zh|en|ja|auto)`、不建檔、exit 2；驗證：tests/test_cli_lang.py 斷言 exit 2 且工作目錄無新檔
+- [x] 1.1 依「單一程式碼庫、公開版與 overlay 分層」在 GitHub 建立 public repo lecture2notes（MIT LICENSE、.gitignore 排除 frames/、*.srt、*.json 樣本以外的媒體），本機 clone 到 OneDrive 之外的磁碟；驗證：`gh repo view jieyu166/lecture2notes --json visibility,licenseInfo` 顯示 PUBLIC 與 MIT
+- [x] 1.2 依「套件結構與 CLI 階段化子命令」建立 pyproject.toml 與 src/lecture2notes/ 套件骨架（cli、engines、schema、frames、notes、outputs、acceptance、profiles 子套件），實作「Installable package with a single console entry point」：extras 為 [breeze]、[qwen]、[whispercpp]、[scene]；驗證：乾淨 venv 內 `pip install -e .` 後 `l2n --help` exit 0 且列出 15 個子命令
+- [x] 1.3 實作缺相依的統一錯誤路徑：任一子命令缺 ffmpeg／rapidocr／CT2 模型／qwen-asr 時印缺項與安裝指令、不產檔、exit 3；驗證：tests/test_cli_deps.py 以 monkeypatch 移除 PATH 上的 ffmpeg 後斷言 exit 3 與訊息
+- [x] 1.4 依「進度回饋與 cp950 相容輸出」實作共用進度器與輸出層，滿足「Console output is cp950-safe and shows progress」：ASCII 標記、每 5 秒一行、`--quiet`、`--json-progress` 每行一個 JSON；驗證：tests/test_progress.py 在 PYTHONIOENCODING=cp950 下跑所有子命令的 --help 與一次假進度不拋 UnicodeEncodeError，且 --json-progress 每行 json.loads 成功並含 stage/done/total/elapsed_sec/eta_sec
+- [x] 1.5 實作「Language is mandatory for transcription」：transcribe 與 run 缺 --lang 時印 `--lang is required (zh|en|ja|auto)`、不建檔、exit 2；驗證：tests/test_cli_lang.py 斷言 exit 2 且工作目錄無新檔
 
 ## 2. 移植與清理既有腳本
 
