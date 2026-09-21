@@ -119,7 +119,7 @@
 - `l2n render <stem>.json` 產生 `<stem>.v4.md` 骨架，內容只來自 JSON；同一 JSON 兩次 render 位元組相同。
 - `l2n check json <stem>.json` 對缺 `schema_version` 的檔印 `legacy schema detected; run: l2n migrate` 並 exit 2；`l2n migrate <stem>.json` 原地升級並保留 `<stem>.json.bak`。
 - `l2n profile show` 印出最終生效設定，每一項標示來源層（cli／project／user／profile／builtin）。
-- `l2n install-skill --all` 在三家目錄各建立 `lecture-to-notes/`，並印每家路徑；`--check` 在任一家內容 hash 不符時 exit 2 並列出差異檔。
+- `l2n install-skill --all` 在三家目錄各建立 `lecture2notes/`，並印每家路徑；`--check` 在任一家內容 hash 不符時 exit 2 並列出差異檔。
 
 **介面與資料形狀**
 
