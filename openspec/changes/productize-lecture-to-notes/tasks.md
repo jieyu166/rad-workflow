@@ -115,12 +115,12 @@
 
 ## 16. 發版前收尾（最終驗收、Codex 對照與盲評回饋）
 
-- [ ] 16.1 `l2n ocr` 先解析目標（歧義／找不到即 exit 2）再檢查 rapidocr 相依（exit 3）；驗證：tests/test_ocr.py 在 rapidocr 不可 import 的情況下，兩份 json 的資料夾仍得到 exit 2
-- [ ] 16.2 R10 改為殘留比例判定：段落本文中逐字來自骨架（summary 句與 bullets）的字元占比 ≥60% 即報 `unexpanded skeleton (NN% of the body is render output)`，保留「完全相同」為 100%；驗證：tests/test_check_note.py 以「骨架前加一句新話」的段落斷言仍報 R10，真正重寫的段落不報
-- [ ] 16.3 新增 R11（warning）：同一句（去空白標點後 ≥25 字）逐字出現在兩個以上章節即報，Summary 對 takeaways 的引用與 References 除外；規範同步說明；驗證：tests/test_check_note.py 正反例各一
-- [ ] 16.4 規範與指令包修正：消除 §0.6「ai-draft 標記會留在檔案裡」與完成定義 `ai_draft_remaining=0` 的矛盾（定義何時該刪標記）；指令包與規範把 Evergreen 列為第一個必寫項並說明「可遷移原則」與「單一數據點」的差別（附正反例）；規範升 1.3；驗證：tests/test_guideline_doc.py 與 tests/test_expand_prompt.py 斷言對應字串
-- [ ] 16.5 skill 檔案編碼提示：`skill/SKILL.md` 與六份 references 在 frontmatter 之後加一行純 ASCII 註解，說明檔案為 UTF-8、Windows PowerShell 需以 `Get-Content -Encoding UTF8` 讀取；SKILL.md 仍 ≤80 行；驗證：tests/test_skill_doc.py 斷言每檔含該行且該行為純 ASCII
-- [ ] 16.6 版號與發版說明：pyproject version 升為 0.2.0，README 加「版本說明」列出 v0.1.0 與 v0.2.0 的範圍；驗證：tests/test_readme.py 斷言含兩個版本標題，`python -m lecture2notes --version` 印 0.2.0
+- [x] 16.1 `l2n ocr` 先解析目標（歧義／找不到即 exit 2）再檢查 rapidocr 相依（exit 3）；驗證：tests/test_ocr.py 在 rapidocr 不可 import 的情況下，兩份 json 的資料夾仍得到 exit 2
+- [x] 16.2 R10 改為殘留比例判定：段落本文中逐字來自骨架（summary 句與 bullets）的字元占比 ≥60% 即報 `unexpanded skeleton (NN% of the body is render output)`，保留「完全相同」為 100%；驗證：tests/test_check_note.py 以「骨架前加一句新話」的段落斷言仍報 R10，真正重寫的段落不報
+- [x] 16.3 新增 R11（warning）：同一句（去空白標點後 ≥25 字）逐字出現在兩個以上章節即報，Summary 對 takeaways 的引用與 References 除外；規範同步說明；驗證：tests/test_check_note.py 正反例各一
+- [x] 16.4 規範與指令包修正：消除 §0.6「ai-draft 標記會留在檔案裡」與完成定義 `ai_draft_remaining=0` 的矛盾（定義何時該刪標記）；指令包與規範把 Evergreen 列為第一個必寫項並說明「可遷移原則」與「單一數據點」的差別（附正反例）；規範升 1.3；驗證：tests/test_guideline_doc.py 與 tests/test_expand_prompt.py 斷言對應字串
+- [x] 16.5 skill 檔案編碼提示：`skill/SKILL.md` 與六份 references 在 frontmatter 之後加一行純 ASCII 註解，說明檔案為 UTF-8、Windows PowerShell 需以 `Get-Content -Encoding UTF8` 讀取；SKILL.md 仍 ≤80 行；驗證：tests/test_skill_doc.py 斷言每檔含該行且該行為純 ASCII
+- [x] 16.6 版號與發版說明：pyproject version 升為 0.2.0，README 加「版本說明」列出 v0.1.0 與 v0.2.0 的範圍；驗證：tests/test_readme.py 斷言含兩個版本標題，`python -m lecture2notes --version` 印 0.2.0
 
 ## 13. 上游標示與授權（Upstream attribution）
 
