@@ -12,7 +12,7 @@
 
 ## 3. 遷移後實跑驗收
 
-- [ ] 3.1 依「遷移後實跑驗收」完成「Post-migration verification run」：在 repo 以外的暫存目錄（絕對路徑）以 submodule 內的 CC BY fixture 跑 transcribe（faster_whisper、tiny、en）→ frames → scaffold → render → check note；驗證：骨架 frontmatter 含 noteVer 與 消化層級、含 faithful 的 style 標記、`l2n profile show` 的 overlay 來源為 user、對照表條數為 186 加 radiology profile 內建條數；四項結果連同日期與版本寫入 skills-overlay/lecture2notes/README.md 的「部署驗證」段
+- [x] 3.1 依「遷移後實跑驗收」完成「Post-migration verification run」：在 repo 以外的暫存目錄（絕對路徑）以 submodule 內的 CC BY fixture 跑 transcribe（faster_whisper、tiny、en）→ frames → scaffold → render → check note；驗證：骨架 frontmatter 含 noteVer 與 消化層級、含 faithful 的 style 標記、`l2n profile show` 的 overlay 來源為 user、對照表條數為 186 加 radiology profile 內建條數；四項結果連同日期與版本寫入 skills-overlay/lecture2notes/README.md 的「部署驗證」段
 
 ## 4. 舊 skill 退役
 
