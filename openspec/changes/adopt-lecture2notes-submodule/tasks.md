@@ -8,7 +8,7 @@
 
 - [x] 2.1 依「部署腳本與 drift 檢查」實作 deploy_lecture2notes.py 的無旗標流程與 `--home`，完成「Deployment script」：submodule 初始化檢查（未初始化印 `run: git submodule update --init vendor/lecture2notes` 並 exit 2）、editable 安裝、`l2n install-skill --all`、逐檔複製五個 overlay 檔、印 note.style／pbf／profile 的值與來源；每步一行 ASCII 進度；驗證：tests/test_deploy_lecture2notes.py 以暫時家目錄與記錄參數的假 l2n 斷言呼叫順序、五檔位元組相同、exit 0，以及未初始化時 exit 2 且未呼叫安裝
 - [x] 2.2 實作 `--check` 完成「Drift check」：不寫任何檔、呼叫 `l2n install-skill --check --all`、sha256 逐檔比對 overlay，exit 0／2／3；驗證：同一測試檔斷言改動 outputs.toml 一個位元組後輸出指名該檔且 exit 2、PATH 無 l2n 時 exit 3 且訊息含 deploy_lecture2notes.py、`--check` 前後暫時家目錄的檔案清單與 mtime 相同
-- [ ] 2.3 在本機實際執行部署：`python deploy_lecture2notes.py`，再 `python deploy_lecture2notes.py --check`；驗證：三家使用者層目錄各有 lecture2notes/SKILL.md 與六份 references、家目錄 .lecture2notes 有五個 overlay 檔、`--check` exit 0、`l2n profile show` 顯示 faithful／pbf true／radiology 且來源為 user
+- [x] 2.3 在本機實際執行部署：`python deploy_lecture2notes.py`，再 `python deploy_lecture2notes.py --check`；驗證：三家使用者層目錄各有 lecture2notes/SKILL.md 與六份 references、家目錄 .lecture2notes 有五個 overlay 檔、`--check` exit 0、`l2n profile show` 顯示 faithful／pbf true／radiology 且來源為 user
 
 ## 3. 遷移後實跑驗收
 
