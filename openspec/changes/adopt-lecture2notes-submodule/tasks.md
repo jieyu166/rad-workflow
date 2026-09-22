@@ -1,13 +1,13 @@
 ## 1. Submodule 與 overlay
 
-- [ ] 1.1 依「submodule 位置與版本釘選」加入 submodule 完成「Pinned submodule」：`git submodule add https://github.com/jieyu166/lecture2notes vendor/lecture2notes`，checkout v0.2.1 tag 後 commit；驗證：`git -C vendor/lecture2notes describe --tags --exact-match` 印 v0.2.1，`python sync_skills.py --check` 輸出不含 lecture2notes 且 exit 0
-- [ ] 1.2 依「overlay 內容與對照表轉換」建立 skills-overlay/lecture2notes/ 的 note.frontmatter.yaml、note.template.md、outputs.toml、privacy.toml 完成「Versioned personal overlay」的模板與設定部分：先讀 submodule 內 generic 與 radiology profile 的同名檔確認格式；frontmatter 含 title、date、DateRev、aliases、noteVer、tags、subspecialty、tier、消化層級、source、sourceType；outputs.toml 設 profile=radiology、note.style=faithful、pbf=true、hub=true；驗證：把該目錄複製到暫時家目錄的 .lecture2notes 後 `l2n profile show --json` 無解析錯誤且三個鍵來源為 user
-- [ ] 1.3 依「overlay 內容與對照表轉換」把 skills/whisper-srt-zh/references/corrections.json 轉成 overlay 的 corrections.json（轉換腳本放 scratchpad 不進版控；新格式鍵名以 submodule 內 generic profile 的 corrections.json 為準；缺 source 者填 rad-workflow-legacy）；驗證：確定性區 179 條、語境區 7 條、每條 source 非空，並抽樣 10 條與原檔逐條比對一致
+- [x] 1.1 依「submodule 位置與版本釘選」加入 submodule 完成「Pinned submodule」：`git submodule add https://github.com/jieyu166/lecture2notes vendor/lecture2notes`，checkout v0.2.1 tag 後 commit；驗證：`git -C vendor/lecture2notes describe --tags --exact-match` 印 v0.2.1，`python sync_skills.py --check` 輸出不含 lecture2notes 且 exit 0
+- [x] 1.2 依「overlay 內容與對照表轉換」建立 skills-overlay/lecture2notes/ 的 note.frontmatter.yaml、note.template.md、outputs.toml、privacy.toml 完成「Versioned personal overlay」的模板與設定部分：先讀 submodule 內 generic 與 radiology profile 的同名檔確認格式；frontmatter 含 title、date、DateRev、aliases、noteVer、tags、subspecialty、tier、消化層級、source、sourceType；outputs.toml 設 profile=radiology、note.style=faithful、pbf=true、hub=true；驗證：把該目錄複製到暫時家目錄的 .lecture2notes 後 `l2n profile show --json` 無解析錯誤且三個鍵來源為 user
+- [x] 1.3 依「overlay 內容與對照表轉換」把 skills/whisper-srt-zh/references/corrections.json 轉成 overlay 的 corrections.json（轉換腳本放 scratchpad 不進版控；新格式鍵名以 submodule 內 generic profile 的 corrections.json 為準；缺 source 者填 rad-workflow-legacy）；驗證：確定性區 179 條、語境區 7 條、每條 source 非空，並抽樣 10 條與原檔逐條比對一致
 
 ## 2. 部署腳本
 
-- [ ] 2.1 依「部署腳本與 drift 檢查」實作 deploy_lecture2notes.py 的無旗標流程與 `--home`，完成「Deployment script」：submodule 初始化檢查（未初始化印 `run: git submodule update --init vendor/lecture2notes` 並 exit 2）、editable 安裝、`l2n install-skill --all`、逐檔複製五個 overlay 檔、印 note.style／pbf／profile 的值與來源；每步一行 ASCII 進度；驗證：tests/test_deploy_lecture2notes.py 以暫時家目錄與記錄參數的假 l2n 斷言呼叫順序、五檔位元組相同、exit 0，以及未初始化時 exit 2 且未呼叫安裝
-- [ ] 2.2 實作 `--check` 完成「Drift check」：不寫任何檔、呼叫 `l2n install-skill --check --all`、sha256 逐檔比對 overlay，exit 0／2／3；驗證：同一測試檔斷言改動 outputs.toml 一個位元組後輸出指名該檔且 exit 2、PATH 無 l2n 時 exit 3 且訊息含 deploy_lecture2notes.py、`--check` 前後暫時家目錄的檔案清單與 mtime 相同
+- [x] 2.1 依「部署腳本與 drift 檢查」實作 deploy_lecture2notes.py 的無旗標流程與 `--home`，完成「Deployment script」：submodule 初始化檢查（未初始化印 `run: git submodule update --init vendor/lecture2notes` 並 exit 2）、editable 安裝、`l2n install-skill --all`、逐檔複製五個 overlay 檔、印 note.style／pbf／profile 的值與來源；每步一行 ASCII 進度；驗證：tests/test_deploy_lecture2notes.py 以暫時家目錄與記錄參數的假 l2n 斷言呼叫順序、五檔位元組相同、exit 0，以及未初始化時 exit 2 且未呼叫安裝
+- [x] 2.2 實作 `--check` 完成「Drift check」：不寫任何檔、呼叫 `l2n install-skill --check --all`、sha256 逐檔比對 overlay，exit 0／2／3；驗證：同一測試檔斷言改動 outputs.toml 一個位元組後輸出指名該檔且 exit 2、PATH 無 l2n 時 exit 3 且訊息含 deploy_lecture2notes.py、`--check` 前後暫時家目錄的檔案清單與 mtime 相同
 - [ ] 2.3 在本機實際執行部署：`python deploy_lecture2notes.py`，再 `python deploy_lecture2notes.py --check`；驗證：三家使用者層目錄各有 lecture2notes/SKILL.md 與六份 references、家目錄 .lecture2notes 有五個 overlay 檔、`--check` exit 0、`l2n profile show` 顯示 faithful／pbf true／radiology 且來源為 user
 
 ## 3. 遷移後實跑驗收
