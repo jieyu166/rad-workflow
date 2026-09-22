@@ -1,0 +1,32 @@
+# Output settings for the rad-workflow overlay (user layer).
+#
+# Merges key by key with the layers below, so only what differs has to be
+# stated. Deleting a key here hands the question back to the profile rather
+# than setting it to false.
+
+# Read the layers below this one from the radiology profile: its note template
+# ships the 閱片 callouts and its corrections table carries the radiology
+# terminology the local engines mishear.
+profile = "radiology"
+
+# PotPlayer chapter file. On here: the lectures in this vault are reviewed in
+# PotPlayer, and a `.pbf` beside the video is what makes the chapters appear.
+pbf = true
+
+# Course home page and cross-lecture search index.
+hub = true
+
+# Three-pane time-synced player page.
+viewer = true
+
+[note]
+# faithful keeps every quote the speaker actually said; concise keeps at most
+# one per section. A radiology lecture's value is in what the speaker said in
+# front of the image, so the quotes stay.
+style = "faithful"
+
+[guideline]
+# Severity `l2n check note` reports R5 (an unmarked run of transcript pasted
+# into the note) at. These notes are read months later as if they were written
+# by hand, so a paste that is not marked as a quote is an error.
+transcript_paste = "error"

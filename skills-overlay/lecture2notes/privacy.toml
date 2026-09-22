@@ -1,0 +1,31 @@
+# Patterns a rendered note must not contain (rule R7 of the writing guideline).
+#
+# Python regular expressions, written as TOML literal strings so a backslash
+# means a backslash and nothing has to be double-escaped.
+#
+# `patterns` is ONE key and the layers merge key by key, so this list REPLACES
+# the radiology profile's list instead of adding to it. Every pattern of that
+# profile is restated below; the last entry is the only one this overlay adds.
+
+patterns = [
+  # Taiwan national identification number: a letter, 1 or 2, then eight digits.
+  '\b[A-Za-z][12]\d{8}\b',
+  # A medical record or chart number written out with its label.
+  '(病歷號|病歷號碼|[Cc]hart [Nn]o\.?|[Cc]hart number)\s*[:：]?\s*\w{6,}',
+  # A bare eight-digit chart number, the local format, with no label at all.
+  # Broad on purpose: it also matches a bare yyyymmdd date, so a note that
+  # needs to state a date writes it as 2026-09-21 rather than 20260921.
+  '(?<!\d)\d{8}(?!\d)',
+  # A patient named after the word for patient.
+  '病患\s*[:：]\s*\S+',
+  '病人\s*[:：]\s*\S+',
+  # A phone number written out with its label.
+  '(電話|手機|聯絡電話)\s*[:：]?\s*[\d\-() ]{8,}',
+  # An e-mail address.
+  '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}',
+  # A radtracker case_id: eight digits (which ARE the chart number) followed by
+  # a separator and a suffix. The bare-eight-digit pattern above already
+  # catches the prefix; this one names the composite form so a finding says
+  # what it found. No real case_id is written anywhere in this repository.
+  '\b\d{8}[-_][A-Za-z0-9]{1,}\b',
+]

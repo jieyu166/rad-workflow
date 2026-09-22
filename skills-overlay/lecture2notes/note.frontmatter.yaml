@@ -1,0 +1,43 @@
+# Frontmatter template for the rad-workflow vault (Obsidian note V4).
+#
+# This file replaces the lower layers whole: what is written between the two
+# `---` fences is the entire frontmatter block of every rendered note, so the
+# generic profile's four fields only survive because they are restated here.
+#
+# Flat `key: value` lines only -- the package validates this format and refuses
+# nested keys. `{{placeholder}}` is substituted from the canonical JSON; an
+# unknown placeholder renders as the empty string.
+#
+# Available placeholders: title, date, stem, profile, source_video,
+# source_subtitle, source_origin, source_engine, source_lang, duration_min,
+# segment_count, tags.
+---
+title: "{{title}}"
+date: {{date}}
+# Last substantive revision of the body. Born equal to `date`; raise it by hand
+# only when the content below `# Note` actually changed, never after a pure
+# formatting pass.
+DateRev: {{date}}
+# Search entry points, not title variants: 2-4 strings the future reader would
+# really type. Filled by hand after the note is read.
+aliases: []
+noteVer: v4
+tags: [{{tags}}]
+# Vault subspecialty code (NR, MSK, CH, AB, BR, PD, ...). NR is the fallback;
+# correct it by hand when the lecture belongs elsewhere.
+subspecialty: NR
+# Legacy vault field, kept so migrated and freshly rendered notes share one
+# schema. Deliberately left empty: no defensible default exists, so the reader
+# fills it rather than every note inheriting a guess.
+tier:
+# How far this note has been digested. AI output is always born at 1; only a
+# human edit may raise it.
+# 0 = 只有骨架，材料還沒進來
+# 1 = AI 已寫完筆記，沒人看過
+# 2 = 看過了，但沒在筆記裡留下自己的字
+# 3 = 答過 `## 題目` 的題並留下任何修改
+消化層級: 1
+source: ["{{source_video}}"]
+# What the source is: lecture, paper, book, case, conference.
+sourceType: lecture
+---
