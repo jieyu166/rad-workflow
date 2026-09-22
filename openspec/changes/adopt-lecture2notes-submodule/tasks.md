@@ -24,4 +24,4 @@
 
 - [x] 5.1 依「指引與歷史文件」完成「Guidance points to the new product」：CLAUDE.md 路由表加一列、常用指令加部署與檢查兩行、核心規則第 7 條補一句 lecture2notes 不經 sync_skills.py（Spectra 區塊外本文維持 60 行以內）；三份歷史文件各在檔頭加一行註記；docs/PITFALLS.md 加 submodule 未初始化的症狀與修法；README.md 的目錄說明加 vendor 與 skills-overlay；驗證：`grep -n lecture2notes CLAUDE.md` 有路由列與 deploy_lecture2notes.py，三份歷史文件的 `git diff --stat` 各為 1 行新增
 - [ ] 5.2 撰寫 skills-overlay/lecture2notes/README.md：overlay 各檔用途、升級 submodule 的步驟、部署與檢查指令、退役資料夾位置與一個月後可自行刪除的說明、回滾步驟；驗證：檔案含「升級」「部署驗證」「回滾」「退役」四個段落標題
-- [ ] 5.3 更新自動記憶：project_skill_canonical_locations.md 與 project_lecture2notes.md 反映新現況（lecture2notes 由 submodule 與 deploy 腳本管理、舊兩個 skill 已退役、退役資料夾位置）；驗證：MEMORY.md 索引對應條目的描述已更新，兩個記憶檔不再稱舊 skill 為 canonical
+- [x] 5.3 更新自動記憶：project_skill_canonical_locations.md 與 project_lecture2notes.md 反映新現況（lecture2notes 由 submodule 與 deploy 腳本管理、舊兩個 skill 已退役、退役資料夾位置）；驗證：MEMORY.md 索引對應條目的描述已更新，兩個記憶檔不再稱舊 skill 為 canonical
