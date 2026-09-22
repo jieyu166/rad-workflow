@@ -16,12 +16,12 @@
 
 ## 4. 舊 skill 退役
 
-- [ ] 4.1 依「舊 skill 退役採搬移而非刪除」完成「Copies outside version control are moved, not deleted」：先記錄 `~/.agents/skills/obsidian-v4-cleanup` 全部檔案的 sha256 與 `~/.claude/skills/obsidian-v4-cleanup` 的 junction 目標；把使用者層與三家專案層的 lecture-to-notes、whisper-srt-zh 副本，以及 vault 內 `.claude/skills/obsidian-v4-cleanup` 與 `tmp/skill-validate/obsidian-v4-cleanup` 兩份過期分岔，逐檔 copy 到 `~/.claude/skills-retired-20260922/<原位置名>/` 後移除來源；被鎖的檔列出、保留來源、回報；驗證：退役資料夾每個子資料夾都有 SKILL.md、原位置不再有這兩個 skill 的資料夾、obsidian-v4-cleanup 的 sha256 與 junction 前後相同
-- [ ] 4.2 完成「Legacy lecture skills leave version control」：`git rm -r skills/lecture-to-notes skills/whisper-srt-zh`，commit 訊息記錄最後一個含它們的 commit hash；接著 `python sync_skills.py` 與 `python sync_skills.py --check`；驗證：`git ls-files skills` 無這兩個前綴且 obsidian-v4-cleanup 仍在、兩個指令皆 exit 0、`git checkout <記錄的 hash> -- skills/whisper-srt-zh` 可還原（驗證後再移除還原出的檔）
-- [ ] 4.3 確認「Worktrees are out of scope」：退役前後各記錄一次 `git worktree list` 與 `git branch --list`；驗證：兩次記錄完全相同，現況（各 worktree 的未提交檔數與未合併 commit 數）寫入 skills-overlay/lecture2notes/README.md
+- [x] 4.1 依「舊 skill 退役採搬移而非刪除」完成「Copies outside version control are moved, not deleted」：先記錄 `~/.agents/skills/obsidian-v4-cleanup` 全部檔案的 sha256 與 `~/.claude/skills/obsidian-v4-cleanup` 的 junction 目標；把使用者層與三家專案層的 lecture-to-notes、whisper-srt-zh 副本，以及 vault 內 `.claude/skills/obsidian-v4-cleanup` 與 `tmp/skill-validate/obsidian-v4-cleanup` 兩份過期分岔，逐檔 copy 到 `~/.claude/skills-retired-20260922/<原位置名>/` 後移除來源；被鎖的檔列出、保留來源、回報；驗證：退役資料夾每個子資料夾都有 SKILL.md、原位置不再有這兩個 skill 的資料夾、obsidian-v4-cleanup 的 sha256 與 junction 前後相同
+- [x] 4.2 完成「Legacy lecture skills leave version control」：`git rm -r skills/lecture-to-notes skills/whisper-srt-zh`，commit 訊息記錄最後一個含它們的 commit hash；接著 `python sync_skills.py` 與 `python sync_skills.py --check`；驗證：`git ls-files skills` 無這兩個前綴且 obsidian-v4-cleanup 仍在、兩個指令皆 exit 0、`git checkout <記錄的 hash> -- skills/whisper-srt-zh` 可還原（驗證後再移除還原出的檔）
+- [x] 4.3 確認「Worktrees are out of scope」：退役前後各記錄一次 `git worktree list` 與 `git branch --list`；驗證：兩次記錄完全相同，現況（各 worktree 的未提交檔數與未合併 commit 數）寫入 skills-overlay/lecture2notes/README.md
 
 ## 5. 指引與記憶
 
-- [ ] 5.1 依「指引與歷史文件」完成「Guidance points to the new product」：CLAUDE.md 路由表加一列、常用指令加部署與檢查兩行、核心規則第 7 條補一句 lecture2notes 不經 sync_skills.py（Spectra 區塊外本文維持 60 行以內）；三份歷史文件各在檔頭加一行註記；docs/PITFALLS.md 加 submodule 未初始化的症狀與修法；README.md 的目錄說明加 vendor 與 skills-overlay；驗證：`grep -n lecture2notes CLAUDE.md` 有路由列與 deploy_lecture2notes.py，三份歷史文件的 `git diff --stat` 各為 1 行新增
+- [x] 5.1 依「指引與歷史文件」完成「Guidance points to the new product」：CLAUDE.md 路由表加一列、常用指令加部署與檢查兩行、核心規則第 7 條補一句 lecture2notes 不經 sync_skills.py（Spectra 區塊外本文維持 60 行以內）；三份歷史文件各在檔頭加一行註記；docs/PITFALLS.md 加 submodule 未初始化的症狀與修法；README.md 的目錄說明加 vendor 與 skills-overlay；驗證：`grep -n lecture2notes CLAUDE.md` 有路由列與 deploy_lecture2notes.py，三份歷史文件的 `git diff --stat` 各為 1 行新增
 - [ ] 5.2 撰寫 skills-overlay/lecture2notes/README.md：overlay 各檔用途、升級 submodule 的步驟、部署與檢查指令、退役資料夾位置與一個月後可自行刪除的說明、回滾步驟；驗證：檔案含「升級」「部署驗證」「回滾」「退役」四個段落標題
 - [ ] 5.3 更新自動記憶：project_skill_canonical_locations.md 與 project_lecture2notes.md 反映新現況（lecture2notes 由 submodule 與 deploy 腳本管理、舊兩個 skill 已退役、退役資料夾位置）；驗證：MEMORY.md 索引對應條目的描述已更新，兩個記憶檔不再稱舊 skill 為 canonical
