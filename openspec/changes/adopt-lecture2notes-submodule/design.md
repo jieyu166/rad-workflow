@@ -3,7 +3,7 @@
 lecture2notes（public repo，本機開發位置在 OneDrive 之外）已發布 v0.2.x：pip 可安裝的 `l2n` CLI、單一路由 skill、撰寫規範與 R1–R11 檢查。rad-workflow 目前仍以 skills/lecture-to-notes 與 skills/whisper-srt-zh 為 canonical，由 sync_skills.py（自動掃 skills 目錄下含 SKILL.md 的子目錄）散佈到三家專案資料夾，使用者層副本靠手動覆蓋。盤點（2026-09-22）：
 
 - lecture-to-notes 5 份副本 1 個版本；whisper-srt-zh 6 份 2 個版本（使用者層 `~/.agents/skills/whisper-srt-zh` 停在 112 行舊版）；obsidian-v4-cleanup 8 份 3 個版本，`~/.claude/skills/obsidian-v4-cleanup` 是指向 `~/.agents/skills/` 的 junction，vault 內另有 778 行與 1023 行兩份過期分岔。
-- 個人化資料：skills/whisper-srt-zh/references/corrections.json 共 186 條（deterministic 135、radiology 7、context_sensitive 44）。
+- 個人化資料：skills/whisper-srt-zh/references/corrections.json 共 186 條（deterministic 135、radiology 44、context_sensitive 7）。
 - 引用舊腳本路徑的只有三份歷史文件；CLAUDE.md、sync_skills.py、radtracker、tool、settings、全域 playbooks 與 hooks 皆無引用。
 - .worktrees 下有未提交與未合併的工作，與本案無關或不可動。
 
@@ -33,7 +33,7 @@ submodule 放在 vendor/lecture2notes，checkout 在 v0.2.1 tag（detached HEAD�
 
 ### overlay 內容與對照表轉換
 
-skills-overlay/lecture2notes/ 為 overlay 的 canonical。五個檔名與 lecture2notes 的 overlay 規格一致。corrections.json 由舊對照表一次性轉換：deterministic 與 radiology 兩區進入新格式的確定性取代區，context_sensitive 進入新格式的語境區；每條保留原 source 欄位值，缺 source 者填 `rad-workflow-legacy`。轉換腳本為一次性工具，放在 scratchpad 執行、不進版控；轉換後以條數（135＋7＝142 與 44）與抽樣 10 條人工比對驗收。新格式的鍵名以 submodule 內 generic profile 的 corrections.json 為準，實作時先讀該檔再轉換。
+skills-overlay/lecture2notes/ 為 overlay 的 canonical。五個檔名與 lecture2notes 的 overlay 規格一致。corrections.json 由舊對照表一次性轉換：deterministic 與 radiology 兩區進入新格式的確定性取代區，context_sensitive 進入新格式的語境區；每條保留原 source 欄位值，缺 source 者填 `rad-workflow-legacy`。轉換腳本為一次性工具，放在 scratchpad 執行、不進版控；轉換後以條數（135＋44＝179 與 7）與抽樣 10 條人工比對驗收。新格式的鍵名以 submodule 內 generic profile 的 corrections.json 為準，實作時先讀該檔再轉換。
 
 outputs.toml 設 profile 為 radiology、note.style 為 faithful、pbf 為 true、hub 為 true。note.frontmatter.yaml 含 title、date、DateRev、aliases、noteVer、tags、subspecialty、tier、消化層級、source、sourceType，其中消化層級預設 1。
 
@@ -95,7 +95,7 @@ CLAUDE.md：路由表加一列「講座影片→筆記：用 lecture2notes skill
 
 - tests/test_deploy_lecture2notes.py 全過；既有測試不退步。
 - `python deploy_lecture2notes.py --check` 與 `python sync_skills.py --check` 皆 exit 0。
-- 對照表條數：轉換後確定性區 142 條、語境區 44 條。
+- 對照表條數：轉換後確定性區 179 條、語境區 7 條。
 - 遷移後實跑驗收段的四項皆成立。
 - `git status` 無含病歷號或機密的檔案被加入；.gitignore 行數與內容不變。
 

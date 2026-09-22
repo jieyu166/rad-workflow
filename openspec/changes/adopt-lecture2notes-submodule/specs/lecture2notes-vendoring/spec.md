@@ -16,12 +16,12 @@ The repository SHALL include lecture2notes as a git submodule at `vendor/lecture
 
 ### Requirement: Versioned personal overlay
 
-The directory `skills-overlay/lecture2notes/` SHALL be the canonical source of the personal overlay and SHALL contain exactly these overlay files: `note.frontmatter.yaml`, `note.template.md`, `corrections.json`, `outputs.toml`, `privacy.toml`, plus a `README.md`. `outputs.toml` SHALL set profile to radiology, note.style to faithful, and pbf to true. `note.frontmatter.yaml` SHALL define the keys title, date, DateRev, aliases, noteVer, tags, subspecialty, tier, 消化層級, source, sourceType. `corrections.json` SHALL carry every entry of the legacy correction table: 142 deterministic entries (135 general plus 7 radiology) and 44 context-sensitive entries.
+The directory `skills-overlay/lecture2notes/` SHALL be the canonical source of the personal overlay and SHALL contain exactly these overlay files: `note.frontmatter.yaml`, `note.template.md`, `corrections.json`, `outputs.toml`, `privacy.toml`, plus a `README.md`. `outputs.toml` SHALL set profile to radiology, note.style to faithful, and pbf to true. `note.frontmatter.yaml` SHALL define the keys title, date, DateRev, aliases, noteVer, tags, subspecialty, tier, 消化層級, source, sourceType. `corrections.json` SHALL carry every entry of the legacy correction table: 179 deterministic entries (135 general plus 44 radiology) and 7 context-sensitive entries.
 
 #### Scenario: Correction counts survive conversion
 
 - **WHEN** the converted `corrections.json` is loaded
-- **THEN** its deterministic section has 142 entries and its context-sensitive section has 44 entries, and every entry has a non-empty source value
+- **THEN** its deterministic section has 179 entries and its context-sensitive section has 7 entries, and every entry has a non-empty source value
 
 ##### Example: entry conversion
 

@@ -1,0 +1,3 @@
+[submodule "vendor/lecture2notes"]
+	path = vendor/lecture2notes
+	url = https://github.com/jieyu166/lecture2notes

@@ -4,7 +4,7 @@ rad-workflow 改以 git submodule 引用已發布的 lecture2notes 產品，個�
 
 ## Motivation
 
-lecture2notes v0.2.x 已在獨立 public repo 發布並通過實地驗證（同一份逐字稿：舊筆記盲評 9/40、新流程 39/40），但本機三家 agent（Claude Code、Codex、OpenCode）實際載入的仍是舊的 lecture-to-notes 與 whisper-srt-zh。盤點結果：lecture-to-notes 5 份副本、whisper-srt-zh 6 份副本 2 個版本（使用者層 Codex 讀到的停在 112 行舊版）、obsidian-v4-cleanup 8 份副本 3 個版本（vault 內兩份 778 行與 1023 行的過期分岔）。只要舊 skill 還在，agent 就會繼續走沒有撰寫規範、沒有 check 的舊流程，新產品等於沒上線。另外使用者累積的 186 條錯字對照（135 deterministic、7 radiology、44 context_sensitive）與 V4 frontmatter、pbf、faithful 等個人偏好，目前綁在即將退役的 skill 裡，需要搬到 lecture2notes 的 overlay 機制，否則退役即遺失。
+lecture2notes v0.2.x 已在獨立 public repo 發布並通過實地驗證（同一份逐字稿：舊筆記盲評 9/40、新流程 39/40），但本機三家 agent（Claude Code、Codex、OpenCode）實際載入的仍是舊的 lecture-to-notes 與 whisper-srt-zh。盤點結果：lecture-to-notes 5 份副本、whisper-srt-zh 6 份副本 2 個版本（使用者層 Codex 讀到的停在 112 行舊版）、obsidian-v4-cleanup 8 份副本 3 個版本（vault 內兩份 778 行與 1023 行的過期分岔）。只要舊 skill 還在，agent 就會繼續走沒有撰寫規範、沒有 check 的舊流程，新產品等於沒上線。另外使用者累積的 186 條錯字對照（135 deterministic、44 radiology、7 context_sensitive）與 V4 frontmatter、pbf、faithful 等個人偏好，目前綁在即將退役的 skill 裡，需要搬到 lecture2notes 的 overlay 機制，否則退役即遺失。
 
 ## Proposed Solution
 
