@@ -43,3 +43,57 @@
 驗證產物保留於暫存工作目錄（未 commit 進 repo）：
 `C:\Users\jai16\AppData\Local\Temp\claude\C--Users-jai16-OneDrive-00-----5---rad-workflow-main\7dfccd5b-6c07-43ad-b120-8772012717ea\scratchpad\adopt\verify31\`
 （含 clip.mp4、clip.srt、clip.frames.json、clip.json、clip.v4.md、各階段 log、profile.json 等）
+
+## 退役紀錄
+
+退役日期：2026-09-22。版控外副本一律**搬移不刪除**，退役資料夾：
+`C:\Users\jai16\.claude\skills-retired-20260922\`（子資料夾名＝原位置）。
+
+| 退役資料夾內路徑 | 原位置 | 檔數 |
+|---|---|---|
+| `user-claude\lecture-to-notes` | `~\.claude\skills\lecture-to-notes` | 24 |
+| `user-claude\whisper-srt-zh` | `~\.claude\skills\whisper-srt-zh` | 4 |
+| `user-agents\whisper-srt-zh` | `~\.agents\skills\whisper-srt-zh`（112 行舊版分岔） | 4 |
+| `project-claude\lecture-to-notes` | `rad-workflow-main\.claude\skills\lecture-to-notes` | 21 |
+| `project-claude\whisper-srt-zh` | `rad-workflow-main\.claude\skills\whisper-srt-zh` | 4 |
+| `project-agents\lecture-to-notes` | `rad-workflow-main\.agents\skills\lecture-to-notes` | 21 |
+| `project-agents\whisper-srt-zh` | `rad-workflow-main\.agents\skills\whisper-srt-zh` | 6 |
+| `project-opencode\lecture-to-notes` | `rad-workflow-main\.opencode\skills\lecture-to-notes` | 21 |
+| `project-opencode\whisper-srt-zh` | `rad-workflow-main\.opencode\skills\whisper-srt-zh` | 4 |
+| `vault-claude\obsidian-v4-cleanup` | `Radiology\.claude\skills\obsidian-v4-cleanup`（778 行過期分岔） | 3 |
+| `vault-tmp-skill-validate\obsidian-v4-cleanup` | `Radiology\tmp\skill-validate\obsidian-v4-cleanup`（1023 行過期分岔） | 1 |
+
+共 11 份、113 檔，逐檔 sha256 比對相同後才移除來源，無被鎖或失敗的檔。
+未動：`~\.agents\skills\obsidian-v4-cleanup`（本體）與 `~\.claude\skills\obsidian-v4-cleanup`（指向它的 junction）、
+`skills\obsidian-v4-cleanup`（canonical）、剛部署的 lecture2notes 三家副本。
+
+Git 內移除：commit `c21fdc97a0088b0e5d268d5bd8e2fa4a5ed40b39`
+（`chore(skills): retire lecture-to-notes and whisper-srt-zh`）。
+最後一個含舊 skill 的 commit：`c22a2f81513d725a9b92d7f5f0bdb7413be9752b`。還原指令：
+
+```bash
+git checkout c22a2f81513d725a9b92d7f5f0bdb7413be9752b -- skills/whisper-srt-zh
+git checkout c22a2f81513d725a9b92d7f5f0bdb7413be9752b -- skills/lecture-to-notes
+```
+
+還原已於 2026-09-22 實測通過（whisper-srt-zh 4 檔含 scripts 與 references 全數回來），測後已還原為退役狀態。
+
+確認一個月無問題後（約 2026-10-22），可自行刪除整個 `C:\Users\jai16\.claude\skills-retired-20260922\` 資料夾。
+
+## Worktree 現況
+
+本次遷移**未動任何 worktree、未刪除任何分支**；下表為 2026-09-22 退役當下的狀態快照，僅供日後接手參考。
+
+| 路徑 | 分支 | 未提交檔數 | 相對 main 未合併 commit |
+|---|---|---|---|
+| `.claude\worktrees\great-kirch-1a3518` | `claude/great-kirch-1a3518` | 1 | 0 |
+| `.worktrees\image-stack-mpr-viewer` | `codex/image-stack-mpr-viewer-clean` | 0 | 0 |
+| `.worktrees\rebuild-nr-viewer` | `codex/rebuild-nr-viewer` | 24 | 0 |
+| `.worktrees\turtle-trader-manga` | `codex/turtle-trader-manga` | 7 | 53 |
+
+`.worktrees\card-rewards-2026-h2` 不是註冊的 git worktree（`git worktree list` 未列出），同樣未動。
+
+退役前後各記錄一次 `git worktree list` 與 `git branch --list`：worktree 路徑與分支清單、分支列表完全相同；
+唯一差異是主 worktree 的 HEAD 由 `c22a2f8` 前進到 `c21fdc9`，即本次退役 commit 本身。
+`.worktrees\rebuild-nr-viewer` 的 24 個未提交變更直接針對舊 `skills/lecture-to-notes/scripts/*`；
+若日後要續做該工作，需先 `git checkout c22a2f8 -- skills/lecture-to-notes` 還原，或改以 `l2n` 為基礎重寫。
