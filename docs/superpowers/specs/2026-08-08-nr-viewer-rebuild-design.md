@@ -1,3 +1,4 @@
+> 註（2026-09-22）：本文引用的 skills/lecture-to-notes 與 skills/whisper-srt-zh 腳本已由 lecture2notes（vendor/lecture2notes）取代；內文保留作歷史紀錄。
 # NR Viewer 全課重建設計
 
 ## 背景

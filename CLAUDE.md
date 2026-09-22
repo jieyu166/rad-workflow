@@ -29,7 +29,7 @@ Changes can be parked（暫存）— temporarily moved out of `openspec/changes/
 
 # Rad Workflow — Claude Code Project Guide
 
-放射科工作流程自動化工具集：`radtracker/`（週工作量與品質追蹤）、`ahk-scripts/`（RIS 報告範本，AutoHotkey v1）、`tool/`（GitHub Pages 網頁工具）、`skills/`（三家 AI 代理共用技能庫 canonical）。
+放射科工作流程自動化工具集：`radtracker/`（週工作量與品質追蹤）、`ahk-scripts/`（RIS 報告範本，AutoHotkey v1）、`tool/`（GitHub Pages 網頁工具）、`skills/`（三家 AI 代理共用技能庫 canonical，僅存 obsidian-v4-cleanup）、`vendor/lecture2notes`（講座管線 submodule）、`skills-overlay/lecture2notes/`（個人 overlay）。
 
 ## 路由表（按需讀取，不要憑記憶做）
 
@@ -40,6 +40,7 @@ Changes can be parked（暫存）— temporarily moved out of `openspec/changes/
 | 派 subagent、選模型、驗證方式 | `~/.claude/playbooks/model-dispatch.md` |
 | 不確定升級/完成/該不該問使用者 | `~/.claude/playbooks/judgment-rubrics.md` |
 | 專案介紹/維護/roadmap/技術債（人看的） | GitHub Wiki: https://github.com/jieyu166/rad-workflow/wiki |
+| 講座影片→筆記 | 用 `lecture2notes` skill 與 `l2n`；升級／部署見 [skills-overlay/lecture2notes/README.md](skills-overlay/lecture2notes/README.md) |
 
 ## 核心規則（違反即算錯）
 
@@ -49,7 +50,7 @@ Changes can be parked（暫存）— temporarily moved out of `openspec/changes/
 4. OneDrive 有遺失前例：**寫完立即 commit**（Stop hook 會警告未 commit 檔）
 5. 預設報告醫師代號：A80748
 6. 使用者介面文字 = 繁體中文台灣用語；程式碼與註解 = 英文
-7. 共用技能只改 `skills/<name>/SKILL.md`，再跑 `python sync_skills.py` 散佈；各家資料夾（`.claude/skills/`、`.agents/skills/`、`.opencode/skills/`）是衍生 copy 已 gitignore，勿直接改、勿用 symlink；`--check` 比對**內容**驗 drift（不一致 exit 2）。⚠ 個人層 `~/.claude/skills/` 不在同步範圍內，同名副本會遮蔽專案版 —— 別在那裡放重複的 skill
+7. 共用技能只改 `skills/<name>/SKILL.md`，再跑 `python sync_skills.py` 散佈；各家資料夾（`.claude/skills/`、`.agents/skills/`、`.opencode/skills/`）是衍生 copy 已 gitignore，勿直接改、勿用 symlink；`--check` 比對**內容**驗 drift（不一致 exit 2）。⚠ 個人層 `~/.claude/skills/` 不在同步範圍內，同名副本會遮蔽專案版 —— 別在那裡放重複的 skill。lecture2notes 不經 sync_skills.py，由 vendor/lecture2notes submodule＋deploy_lecture2notes.py 管理
 8. 本檔只當索引：新增長內容一律寫到被引用檔（教訓→PITFALLS.md），不塞回這裡；Spectra 區塊外的本文上限 60 行
 
 ## 常用指令速查
@@ -61,6 +62,10 @@ cd radtracker && python generate_report.py --csv YYYYMM.csv --yk YYYYMMYK.csv --
 # 技能庫同步 / drift 檢查
 python sync_skills.py
 python sync_skills.py --check
+
+# lecture2notes 部署 / drift 檢查
+python deploy_lecture2notes.py
+python deploy_lecture2notes.py --check
 
 # 台鐵時刻表重抓（改點後跑；原地更新 tool/timetable.html 的 TRAIN DATA 區塊）
 cd tool && python update_timetable.py

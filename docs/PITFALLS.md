@@ -59,3 +59,4 @@
 - Web 工具部署於 GitHub Pages：https://jieyu166.github.io/rad-workflow/ ，push main 即生效
 - GitHub Wiki 的 `[[A|B]]` 語法 = 顯示文字在前、頁面名在後；wiki.git 首頁必須先從網頁建立，直接 push 回 "Repository not found"（2026-07）
 - `radiologist_settings.ini` 為個人設定檔，不可含真實密碼/API Key；機密放環境變數或 .env
+- **症狀**：`deploy_lecture2notes.py` 印 `run: git submodule update --init vendor/lecture2notes` 並 exit 2。根因：clone 時未帶 `--recurse-submodules` 或 submodule 未初始化。修法：照印出的指令執行後重跑。（2026-09）

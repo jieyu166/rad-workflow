@@ -2,6 +2,9 @@
 
 放射科工作流程自動化工具集，包含 AutoHotkey 腳本與網頁工具。
 
+- `vendor/lecture2notes`（submodule，講座管線產品）
+- `skills-overlay/lecture2notes/`（個人 overlay）
+
 ## Web Tools
 
 透過 GitHub Pages 直接使用：https://jieyu166.github.io/rad-workflow/

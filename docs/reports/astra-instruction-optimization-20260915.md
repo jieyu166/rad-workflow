@@ -1,3 +1,4 @@
+> 註（2026-09-22）：本文引用的 skills/lecture-to-notes 與 skills/whisper-srt-zh 腳本已由 lecture2notes（vendor/lecture2notes）取代；內文保留作歷史紀錄。
 # 指示、skills 與 USAI prompt 優化紀錄
 
 日期：2026-09-15。依使用者核准的範圍修改。
