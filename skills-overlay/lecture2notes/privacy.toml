@@ -13,9 +13,14 @@ patterns = [
   # A medical record or chart number written out with its label.
   '(病歷號|病歷號碼|[Cc]hart [Nn]o\.?|[Cc]hart number)\s*[:：]?\s*\w{6,}',
   # A bare eight-digit chart number, the local format, with no label at all.
-  # Broad on purpose: it also matches a bare yyyymmdd date, so a note that
-  # needs to state a date writes it as 2026-09-21 rather than 20260921.
-  '(?<!\d)\d{8}(?!\d)',
+  #
+  # A yyyymmdd date is NOT a chart number: a valid date shape (1900-2099, month
+  # 01-12, day 01-31) is excluded. Lecture stems, file names and frame embeds
+  # are routinely dates -- `l2n render` writes the stem into the frontmatter
+  # `source:`, the References block and every `![[frames/<stem>-NNNN.png]]` --
+  # and every one of those findings was a false positive. Any other bare
+  # eight-digit run is still an error.
+  '(?<!\d)(?!(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])(?!\d))\d{8}(?!\d)',
   # A patient named after the word for patient.
   '病患\s*[:：]\s*\S+',
   '病人\s*[:：]\s*\S+',
@@ -27,5 +32,7 @@ patterns = [
   # a separator and a suffix. The bare-eight-digit pattern above already
   # catches the prefix; this one names the composite form so a finding says
   # what it found. No real case_id is written anywhere in this repository.
-  '\b\d{8}[-_][A-Za-z0-9]{1,}\b',
+  # A date prefix is excluded for the same reason as above: `20230215-0000.png`
+  # is a frame file name, not a case_id.
+  '\b(?!(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[-_])\d{8}[-_][A-Za-z0-9]{1,}\b',
 ]
