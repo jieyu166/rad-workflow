@@ -69,6 +69,10 @@ python deploy_lecture2notes.py --check
 
 # 台鐵時刻表重抓（改點後跑；原地更新 tool/timetable.html 的 TRAIN DATA 區塊）
 cd tool && python update_timetable.py
+
+# 跑測試（AHK 測試沒有這個環境變數會全紅，訊息不會告訴你路徑）
+$env:AHK_V1_EXE="C:\Users\jai16\OneDrive\00 放射科\5工作\AutoHotkey_1.1.26.01\AutoHotkeyU64.exe"
+python -m pytest -q tests/
 ```
 
 Web 工具部署：push main 後由 GitHub Pages 自動發佈至 https://jieyu166.github.io/rad-workflow/
