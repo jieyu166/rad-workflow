@@ -216,6 +216,28 @@ def sha256_of(path: Path) -> str:
     return digest.hexdigest()
 
 
+def locally_edited(home: Path) -> List[str]:
+    """Overlay files whose deployed copy differs from the source. Writes nothing.
+
+    The repository is the source and the home copy is the artefact, so a deploy
+    is right to overwrite -- but an edit made directly in the home copy is about
+    to be discarded, and discarding it without a word is how one gets lost.
+    """
+    destination = overlay_target(home)
+    edited: List[str] = []
+    for name in OVERLAY_FILES:
+        source = OVERLAY_SOURCE / name
+        deployed = destination / name
+        if not source.is_file() or not deployed.is_file():
+            continue
+        try:
+            if sha256_of(source) != sha256_of(deployed):
+                edited.append(name)
+        except OSError:  # unreadable here is the copy step's finding to report
+            continue
+    return edited
+
+
 def copy_overlay(home: Path) -> List[str]:
     """Copy the five overlay files into *home*. Returns one line per failure.
 
@@ -334,6 +356,9 @@ def deploy(home: Path) -> int:
     ok("skill 已部署")
 
     step(4, "複製 overlay 到 %s" % overlay_target(home))
+    for name in locally_edited(home):
+        warn("overlay %s 與版控內容不同，本次複製會覆蓋掉；"
+             "要保留請改 skills-overlay/lecture2notes/ 再重跑" % name)
     failures = copy_overlay(home)
     for line in failures:
         error(line)

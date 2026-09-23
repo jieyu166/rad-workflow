@@ -192,6 +192,37 @@ def test_deploy_copies_the_five_overlay_files_byte_for_byte(harness, capsys):
         ).read_bytes(), name
 
 
+def test_deploy_names_a_locally_edited_overlay_file_it_overwrites(harness, capsys):
+    """An edit made in the home copy is about to be lost, so say so.
+
+    The home copy is the deployed artefact and the repository is the source, so
+    overwriting is correct -- but silently discarding an edit someone made an
+    hour ago is not. A real case: a privacy pattern edited in the home copy
+    vanished on the next deploy with no line printed anywhere.
+    """
+    deployed = harness.overlay_dir()
+    deployed.mkdir(parents=True)
+    (deployed / "privacy.toml").write_text("patterns = []\n", encoding="utf-8")
+
+    assert harness.deploy() == 0
+    out = capsys.readouterr().out
+
+    assert "privacy.toml" in out
+    assert "[warn]" in out
+    assert "skills-overlay" in out
+    assert (deployed / "privacy.toml").read_bytes() == (
+        deploy.OVERLAY_SOURCE / "privacy.toml"
+    ).read_bytes()
+
+
+def test_deploy_says_nothing_about_a_file_that_already_matches(harness, capsys):
+    harness.deploy()
+    capsys.readouterr()
+
+    assert harness.deploy() == 0
+    assert "[warn] overlay" not in capsys.readouterr().out
+
+
 def test_deploy_keeps_other_files_in_the_overlay_directory(harness, capsys):
     keep = harness.overlay_dir()
     keep.mkdir(parents=True)
