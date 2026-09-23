@@ -214,10 +214,14 @@ def render_crosslink_filename_probe() -> dict[str, bool | str]:
   const crosslinkViewport = api.state.viewports.get('filename-crosslink');
   if (api.updateViewportFilename) api.updateViewportFilename(crosslinkViewport);
   const footer = crosslinkRoot.querySelector('.viewport-filename');
+  const nameNode = footer ? footer.querySelector('.filename-text') : null;
+  const copyNode = footer ? footer.querySelector('.filename-copy') : null;
   const card = crosslinkViewport.card;
   const result = {
-    crosslinkText: footer ? footer.textContent : '',
-    crosslinkTitle: footer ? footer.title : '',
+    crosslinkText: nameNode ? nameNode.textContent : '',
+    crosslinkTitle: nameNode ? nameNode.title : '',
+    copyButtonText: copyNode ? copyNode.textContent : '',
+    copyButtonPresent: Boolean(copyNode),
     footerBelowCard: footer
       ? footer.getBoundingClientRect().top >= card.getBoundingClientRect().bottom
       : false,
@@ -628,7 +632,9 @@ class ImageStackMprTests(unittest.TestCase):
         result = render_crosslink_filename_probe()
 
         self.assertEqual(result["crosslinkText"], "檔案：0002.jpg")
-        self.assertEqual(result["crosslinkTitle"], "0002.jpg")
+        self.assertEqual(result["crosslinkTitle"], "點一下複製完整檔名 0002.jpg")
+        self.assertTrue(result["copyButtonPresent"])
+        self.assertEqual(result["copyButtonText"], "複製 0002")
         self.assertTrue(result["footerBelowCard"])
         self.assertFalse(result["mprHasFilename"])
 
@@ -662,7 +668,18 @@ class ImageStackMprTests(unittest.TestCase):
         self.assertTrue(required_ids.issubset(parser.elements))
         self.assertIn("accept=\".png,.jpg,.jpeg,image/png,image/jpeg\"", source)
         self.assertFalse(parser.external_assets)
-        self.assertIsNone(re.search(r"(?:https?:)?//", source, re.IGNORECASE))
+        # External resource references (src=/href=/url()) must not point at
+        # http(s) or protocol-relative URLs; data: and blob: stay allowed.
+        # A bare "//" also appears in JS line comments, so only flag it when
+        # it is actually part of a resource reference.
+        self.assertIsNone(
+            re.search(
+                r"(?:src|href)\s*=\s*['\"](?:https?:)?//"
+                r"|url\(\s*['\"]?(?:https?:)?//",
+                source,
+                re.IGNORECASE,
+            )
+        )
         self.assertIsNone(re.search(r"url\s*\(\s*['\"]?(?!data:|blob:)", source))
 
     def test_core_script_is_extractable_and_executable(self) -> None:
@@ -705,14 +722,20 @@ class ImageStackMprTests(unittest.TestCase):
   }));
   const two = C.assignByBoundaries(sixtySix, 2, [30]);
   const three = C.assignByBoundaries(sixtySix.slice(0, 6), 3, [2, 4]);
+  // Sequence count now defaults to 3 and allows up to 4 (see
+  // "sequence-count" <select> options 2/3/4 in image-stack-mpr.html), so 4
+  // sequences must be accepted...
+  const four = C.assignByBoundaries(sixtySix, 4, [15, 30, 45]);
+  // ...while a count above the allowed maximum must still be rejected.
   let rejected = false;
-  try { C.assignByBoundaries(sixtySix, 4, [20, 40, 60]); }
+  try { C.assignByBoundaries(sixtySix, 5, [12, 24, 36, 48]); }
   catch (error) { rejected = true; }
   return {
     names,
     firstSequence: two.slice(0, 30).map(item => item.sequenceId),
     secondSequence: two.slice(30).map(item => item.sequenceId),
     three: three.map(item => item.sequenceId),
+    four: four.map(item => item.sequenceId),
     rejected
   };
 })()
@@ -723,6 +746,10 @@ class ImageStackMprTests(unittest.TestCase):
         self.assertEqual(result["firstSequence"], [1] * 30)
         self.assertEqual(result["secondSequence"], [2] * 36)
         self.assertEqual(result["three"], [1, 1, 2, 2, 3, 3])
+        self.assertEqual(
+            result["four"],
+            [1] * 15 + [2] * 15 + [3] * 15 + [4] * 21,
+        )
         self.assertTrue(result["rejected"])
 
     def test_boundary_and_per_image_assignment(self) -> None:
