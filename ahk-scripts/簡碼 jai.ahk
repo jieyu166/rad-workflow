@@ -263,7 +263,7 @@ return
 :O:hilar;::
 HotstringMenuV("A","MenuShortcut"
     ,"Bilateral hilar fullness, could be vascular shadows or others"
-    ,"Bilateral hilar fullness, could be vessels but _lymphadenopathy can not be excluded"
+    ,"Bilateral hilar fullness, could be vessels but _calcified lymphadenopathy can not be excluded"
     ,"Bilateral hilar fullness, could be vessels but lymphadenopathy or other lesions can not be excluded"
     ,"BRK"
     ,"{LtRt} hilar fullness, could be vascular shadow or others"
