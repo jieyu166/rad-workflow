@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>乳篩疑似異常個案報告表</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        padding: 16px;
+        background: #d9dde3;
+        font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif;
+        color: #222;
+    }
+    /* ---------- Control panel (screen only) ---------- */
+    .panel {
+        max-width: 210mm;
+        margin: 0 auto 16px;
+        background: #fff;
+        border-radius: 10px;
+        padding: 16px 20px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    }
+    .panel h1 { font-size: 1.3em; margin: 0 0 4px; color: #8e2453; }
+    .panel .hint { font-size: 0.85em; color: #666; margin: 0 0 12px; }
+    .panel textarea {
+        width: 100%;
+        min-height: 150px;
+        font-family: Consolas, 'Courier New', monospace;
+        font-size: 0.85em;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+    }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+    .row label.key-label { font-weight: 600; font-size: 0.9em; }
+    #apiKey { flex: 1; min-width: 200px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; }
+    .btn {
+        padding: 7px 14px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9em;
+        font-weight: 600;
+    }
+    .btn-primary { background: #b03a6f; color: #fff; }
+    .btn-primary:hover { background: #8e2453; }
+    .btn-secondary { background: #e4e7eb; color: #333; }
+    .btn-secondary:hover { background: #cfd4da; }
+    .btn-danger { background: #f3d6d6; color: #8a1c1c; }
+    .status { display: none; margin-top: 8px; padding: 8px 10px; border-radius: 6px; font-size: 0.9em; }
+    .status.show { display: block; }
+    .status.loading { background: #fff3cd; color: #856404; }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+    .status.warning { background: #fff3cd; color: #7a4d00; }
+    #rawBox { display: none; margin-top: 8px; }
+    #rawBox.show { display: block; }
+    #rawResponse { min-height: 90px; background: #fafafa; }
+    /* ---------- Form pages ---------- */
+    .page-wrap { margin: 0 auto 20px; width: 210mm; }
+    .page-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85em;
+        color: #444;
+        padding: 0 2px 4px;
+    }
+    .form-page {
+        width: 210mm;
+        min-height: 297mm;
+        padding: 12mm 13mm;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+        font-family: 'PMingLiU', '新細明體', 'MingLiU', 'Times New Roman', serif;
+        font-size: 10.5pt;
+        line-height: 1.45;
+        color: #000;
+    }
+    .fp-top { display: flex; justify-content: space-between; align-items: flex-start; font-size: 10pt; }
+    .fp-top .fp-fund { font-size: 8.5pt; }
+    .fp-title { text-align: center; font-size: 14.5pt; font-weight: bold; margin: 6mm 0 2mm; letter-spacing: 0.5px; }
+    .fp-chart { text-align: right; margin-bottom: 1.5mm; }
+    .fp-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .fp-table td, .fp-table th { border: 1px solid #000; padding: 1.2mm 2mm; vertical-align: middle; }
+    .fp-table th.grey {
+        background: #d9d9d9;
+        text-align: left;
+        font-weight: bold;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .fp-table td.lbl { text-align: center; }
+    .fp-rev { text-align: right; font-size: 9.5pt; margin-top: 1.5mm; }
+    .fp-cat div { margin: 0.6mm 0; }
+    .fp-cat .sub { padding-left: 9mm; }
+    .item { margin: 0.4mm 0 1.6mm; }
+    .item .sub { padding-left: 7mm; }
+    .item .head { font-weight: normal; }
+    /* Inputs styled as handwriting lines */
+    .form-page input[type="text"] {
+        font: inherit;
+        border: none;
+        border-bottom: 1px dotted #888;
+        background: transparent;
+        padding: 0 2px;
+        outline: none;
+    }
+    .form-page input[type="text"]:focus { background: #fff8d6; }
+    .w-name { width: 95%; }
+    .w-date { width: 2.3em; text-align: center; }
+    td.date-cell { white-space: nowrap; padding-left: 1.2mm; padding-right: 1mm; }
+    .w-full { width: 95%; }
+    .w-chart { width: 32mm; text-align: center; }
+    .w-other { width: 120mm; }
+    .idboxes { display: flex; gap: 0; }
+    .form-page input.idbox {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 6.2mm;
+        height: 7mm;
+        border: 1px solid #000;
+        border-right: none;
+        text-align: center;
+        padding: 0;
+    }
+    .form-page input.idbox:last-child { border-right: 1px solid #000; }
+    .form-page input.needs-check { background: #ffe08a; border-bottom: 2px solid #d48a00; }
+    /* Checkboxes drawn as paper-style boxes so print output is consistent */
+    label.cb { white-space: nowrap; margin-right: 2.2mm; cursor: pointer; }
+    label.cb input[type="checkbox"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 3.3mm;
+        height: 3.3mm;
+        border: 1px solid #000;
+        margin: 0 0.8mm 0 0;
+        vertical-align: -0.4mm;
+        background: #fff center / 100% 100% no-repeat;
+        cursor: pointer;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    label.cb input[type="checkbox"]:checked {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5.2 L4 7.7 L8.7 2' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E");
+    }
+    @page { size: A4 portrait; margin: 12mm; }
+    @media print {
+        body { background: #fff; padding: 0; margin: 0; }
+        .no-print { display: none !important; }
+        .page-wrap { width: auto; margin: 0; }
+        .form-page {
+            width: auto;
+            min-height: 0;
+            padding: 0;
+            box-shadow: none;
+            page-break-after: always;
+            break-after: page;
+        }
+        .page-wrap:last-child .form-page { page-break-after: auto; break-after: auto; }
+        .form-page input[type="text"] { border-bottom: none; }
+        .form-page input.needs-check { background: transparent; border-bottom: none; }
+        .form-page input.idbox { border: 1px solid #000; border-right: none; }
+        .form-page input.idbox:last-child { border-right: 1px solid #000; }
+    }
+</style>
+</head>
+<body>
+
+<div class="panel no-print" id="panel">
+    <h1>乳篩疑似異常個案報告表（附表四之五）</h1>
+    <p class="hint">在 mammo; 按「疑陽表單」後回到此頁按 Ctrl+V（或按「從剪貼簿匯入」）。病人資料只存在此分頁，不會寫入網址或瀏覽器儲存空間；送給 Gemini 的只有報告文字。</p>
+    <div class="row">
+        <button class="btn btn-primary" id="btnImport" type="button">從剪貼簿匯入</button>
+        <button class="btn btn-secondary" id="btnAddPage" type="button">新增空白頁</button>
+        <button class="btn btn-secondary" id="btnPrint" type="button">列印</button>
+    </div>
+    <label for="reportText" style="font-weight:600;font-size:0.9em;">報告內容（可編輯）</label>
+    <textarea id="reportText" placeholder="匯入後顯示報告全文；也可直接貼上報告文字。"></textarea>
+    <div class="status" id="catWarning"></div>
+    <div class="row">
+        <label class="key-label" for="apiKey">Gemini API 金鑰：</label>
+        <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off">
+        <button class="btn btn-secondary" id="btnToggleKey" type="button">顯示</button>
+        <button class="btn btn-primary" id="btnParse" type="button">AI 解析</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div id="rawBox">
+        <div class="row" style="margin-bottom:4px;">
+            <span style="font-size:0.85em;font-weight:600;">模型原始回應（可複製）：</span>
+            <button class="btn btn-secondary" id="btnCopyRaw" type="button">複製</button>
+        </div>
+        <textarea id="rawResponse" readonly></textarea>
+    </div>
+</div>
+
+<div id="pages"></div>
+
+<script>
+/* MAMMO-PROMPT-START */
+const MAMMO_SYSTEM_PROMPT = `You extract the SUSPICIOUS findings of a screening mammography report into JSON for the Taiwan Health Promotion Administration form "附表四之五" (suspicious-abnormality case report). Read the whole report (Findings, Abnormalities, IMP).
+
+Return ONLY one JSON object, no markdown, with exactly this shape:
+{"cat4Sub": "a"|"b"|"c"|null,
+ "lesions": [
+  {"type": string, "side": string, "location": [string], "oneView": [string],
+   "size": string|null, "shape": string|null, "margin": string|null, "density": string|null,
+   "distribution": string|null, "morphology": string|null, "asymmetryType": string|null,
+   "otherText": string|null}
+ ]}
+
+Allowed values (exact strings only; never invent other values):
+- type: "mass" | "calcification" | "asymmetry" | "distortion" | "skin_nipple" | "axillary_ln" | "ducts" | "diffuse_skin" | "other"
+  mass = mass or nodule; calcification = suspicious (micro)calcifications; asymmetry = asymmetry, focal asymmetry or developing asymmetry;
+  distortion = architectural distortion; skin_nipple = thickening or retraction of the skin and/or nipple;
+  axillary_ln = dense, enlarged or borderline-size axillary lymph nodes; ducts = dilated lactiferous ducts;
+  diffuse_skin = diffuse thickening of the skin with increased breast density;
+  other = any other suspicious finding with no matching type; then put a short English description in otherText.
+- side: "R" | "L" | "multiple_unilateral" | "multiple_bilateral"
+  Use "R" or "L" for one lesion. Use "multiple_unilateral" only when the report describes several lesions of the same type in one breast as a single finding, "multiple_bilateral" when it describes them as one finding in both breasts.
+- location (array, may be empty): "UOQ" | "UIQ" | "LOQ" | "LIQ" | "Subareolar" | "Axillary tail"
+- oneView (array, may be empty): "upper" | "lower" | "outer" | "inner"
+  Fill oneView only when the report says the finding is seen on one view only (upper/lower from MLO, outer/inner from CC).
+- size (largest diameter, mass only): "<1" (< 1.0 cm) | "1-2" (1.0-1.9 cm) | "2-3" (2.0-2.9 cm) | "3-4" (3.0-3.9 cm) | ">4" (>= 4.0 cm). Convert mm to cm.
+- shape (mass only): "round" | "oval" | "lobular" | "irregular"
+- margin (mass only): "circumscribed" | "microlobulated" | "obscured" | "indistinct" | "spiculated"
+- density (mass only): "high" | "equal" | "low" | "fat" (fat-containing)
+- distribution (calcification only): "grouped" (also clustered) | "linear" | "segmental" | "regional" | "diffuse" (also scattered)
+- morphology (calcification only): "amorphous" | "coarse_heterogeneous" | "fine_pleomorphic" | "fine_linear_branching"
+  If several morphologies are listed, choose the most suspicious: fine_linear_branching > fine_pleomorphic > coarse_heterogeneous > amorphous.
+- asymmetryType (asymmetry only): "asymmetry" | "focal" | "developing"
+- cat4Sub: "a", "b" or "c" when the report states category 4A/4B/4C or low/moderate/high suspicion; otherwise null.
+
+Rules:
+1. List ONLY findings that drive the suspicious assessment (BI-RADS 0, 3, 4 or 5). If the report is BI-RADS 1 or 2, return "lesions": [].
+2. EXCLUDE findings described as benign, stable and concluded benign, typically benign, postoperative or negative ("no ..."), for example "Benign calcification of both breasts". Breast composition/density and comparison statements are never lesions.
+3. One lesion object per distinct lesion, in the order the lesions first appear in the report. A lesion repeated in IMP is the same lesion; do not duplicate it.
+4. Fields that do not apply to the type, or are not stated, are null (scalars) or [] (arrays). Never guess.
+5. Location: use the quadrant when the report states it (UOQ, UIQ, LOQ, LIQ, subareolar/retroareolar = "Subareolar", axillary tail). A clock position may be converted only when unambiguous:
+   right breast: 12-3 o'clock = UIQ, 9-12 o'clock = UOQ, 3-6 o'clock = LIQ, 6-9 o'clock = LOQ;
+   left breast: 12-3 o'clock = UOQ, 9-12 o'clock = UIQ, 3-6 o'clock = LOQ, 6-9 o'clock = LIQ.
+   Exactly 12, 3, 6 or 9 o'clock is a boundary: leave location empty. In "10/2" the first number is the clock position and the second is the distance. Words like "medial", "lateral", "upper" or "posterior" alone are not a quadrant.
+6. otherText is a string only for type "other"; otherwise null.`;
+/* MAMMO-PROMPT-END */
+
+// Same model id constant value as tool/ldct-report.html.
+const MODEL_ID = 'gemini-3.8-flash';
+const PAYLOAD_SOURCE = 'rad-workflow/mammo-form';
+const DEFAULT_HOSPITAL = '佳里奇美醫院';
+const CATEGORY_RE = /(?:BI-?RADS\s*)?category\s*:?\s*(\d)([abc])?(?![a-z])/i;
+
+const ENUMS = {
+    type: ['mass', 'calcification', 'asymmetry', 'distortion', 'skin_nipple', 'axillary_ln', 'ducts', 'diffuse_skin', 'other'],
+    side: ['R', 'L', 'multiple_unilateral', 'multiple_bilateral'],
+    location: ['UOQ', 'UIQ', 'LOQ', 'LIQ', 'Subareolar', 'Axillary tail'],
+    oneView: ['upper', 'lower', 'outer', 'inner'],
+    size: ['<1', '1-2', '2-3', '3-4', '>4'],
+    shape: ['round', 'oval', 'lobular', 'irregular'],
+    margin: ['circumscribed', 'microlobulated', 'obscured', 'indistinct', 'spiculated'],
+    density: ['high', 'equal', 'low', 'fat'],
+    distribution: ['grouped', 'linear', 'segmental', 'regional', 'diffuse'],
+    morphology: ['amorphous', 'coarse_heterogeneous', 'fine_pleomorphic', 'fine_linear_branching'],
+    asymmetryType: ['asymmetry', 'focal', 'developing']
+};
+const SCALAR_FIELDS = ['size', 'shape', 'margin', 'density', 'distribution', 'morphology', 'asymmetryType'];
+const TYPE_TO_ITEM = { mass: 1, calcification: 2, asymmetry: 3, distortion: 4, skin_nipple: 5,
+    axillary_ln: 6, ducts: 7, diffuse_skin: 8, other: 9 };
+const SIZE_KEY = { '<1': 'lt1', '1-2': '1-2', '2-3': '2-3', '3-4': '3-4', '>4': 'gt4' };
+
+// ---------------------------------------------------------------
+// In-memory state only (never persisted).
+// ---------------------------------------------------------------
+const header = {
+    chartNo: '', name: '', nameNeedsCheck: false,
+    by: '', bm: '', bd: '', sy: '', sm: '', sd: '',
+    hospital: DEFAULT_HOSPITAL, physician: '',
+    id: Array(10).fill('')
+};
+let categoryState = { category: null, sub: null };
+let lesionList = [];
+
+// ---------------------------------------------------------------
+// Form page template (static markup only; data is set via DOM properties)
+// ---------------------------------------------------------------
+function cb(key, label) {
+    return `<label class="cb"><input type="checkbox" data-k="${key}">${label}</label>`;
+}
+function sideBoxes(n, withMultiple) {
+    let s = cb(`i${n}.R`, 'Rt.') + cb(`i${n}.L`, 'Lt.');
+    if (withMultiple) s += cb(`i${n}.mu`, 'Multiple, Unilateral') + cb(`i${n}.mb`, 'Multiple, Bilateral');
+    return s;
+}
+function locationBlock(n) {
+    const loc = ENUMS.location.map(v => cb(`i${n}.loc.${v.replace(' ', '_')}`, v)).join('');
+    const ov = [['upper', 'Upper Hemisphere'], ['lower', 'Lower Hemisphere'], ['outer', 'Outer Hemisphere'], ['inner', 'Inner Hemisphere']]
+        .map(([v, l]) => cb(`i${n}.ov.${v}`, l)).join('');
+    return `<div class="sub">Location: ${loc}</div><div class="sub">One view only: ${ov}</div>`;
+}
+function optionLine(n, field, title, pairs) {
+    return `<div class="sub">${title}: ` + pairs.map(([v, l]) => cb(`i${n}.${field}.${v}`, l)).join('') + '</div>';
+}
+function simpleItem(n, text) {
+    return `<div class="item">${cb(`i${n}`, `${n}. ${text}:`)} ${cb(`i${n}.R`, 'Rt.')}／${cb(`i${n}.L`, 'Lt.')}</div>`;
+}
+
+function buildPageMarkup() {
+    const dateSlots = p => `民國 <input type="text" class="w-date" data-f="${p}y"> 年 <input type="text" class="w-date" data-f="${p}m"> 月 <input type="text" class="w-date" data-f="${p}d"> 日`;
+    const idBoxes = Array.from({ length: 10 }, (_, i) => `<input type="text" class="idbox" maxlength="1" data-f="id${i}">`).join('');
+    return `
+<div class="fp-top"><span>附表四之五</span><span class="fp-fund">本檢查「由衛生福利部國民健康署運用菸品健康福利捐/公務預算補助」</span></div>
+<div class="fp-title">健康署婦女乳房X光攝影檢查服務之篩檢疑似異常個案報告表</div>
+<div class="fp-chart">病歷號：<input type="text" class="w-chart" data-f="chartNo">。</div>
+<table class="fp-table">
+  <colgroup><col style="width:13%"><col style="width:35%"><col style="width:17%"><col style="width:35%"></colgroup>
+  <tr><th colspan="4" class="grey">檢查資訊</th></tr>
+  <tr><td class="lbl">姓名</td><td><input type="text" class="w-name" data-f="name"></td>
+      <td class="lbl">身分證統一編號<br>／統一證號（外籍）</td><td><div class="idboxes">${idBoxes}</div></td></tr>
+  <tr><td class="lbl">出生日期</td><td class="date-cell">${dateSlots('b')}</td><td class="lbl">攝影日期</td><td class="date-cell">${dateSlots('s')}</td></tr>
+  <tr><td class="lbl">醫院名稱</td><td><input type="text" class="w-full" data-f="hospital"></td>
+      <td class="lbl">放射科醫師</td><td><input type="text" class="w-full" data-f="physician"></td></tr>
+  <tr><th colspan="4" class="grey">乳房X光攝影疑似異常結果</th></tr>
+  <tr><td colspan="4" class="fp-cat">
+    <div>${cb('cat0', 'Category 0: Need Additional Imaging Evaluation.')}</div>
+    <div>${cb('cat3', 'Category 3: Probably Benign Finding — Short Interval Follow-up Is Suggested.')}</div>
+    <div>${cb('cat4', 'Category 4: Suspicious Abnormality — Biopsy Should Be Considered.')}</div>
+    <div class="sub">${cb('cat4a', 'a. Low suspicion；')}${cb('cat4b', 'b. Moderate suspicion；')}${cb('cat4c', 'c. High suspicion')}</div>
+    <div>${cb('cat5', 'Category 5: Highly Suggestive of Malignancy — Appropriate Action Should Be Taken.')}</div>
+  </td></tr>
+  <tr><th colspan="4" class="grey">病灶勾選（如單側多處病灶或兩側皆有病灶，請以不同表單分開呈現）</th></tr>
+  <tr><td colspan="4" class="fp-lesions">
+    <div class="item">${cb('i1', '1. Mass:')} ${sideBoxes(1, true)}
+      ${locationBlock(1)}
+      ${optionLine(1, 'size', 'Size', [['lt1', '&lt;1.0 cm'], ['1-2', '1-2 cm'], ['2-3', '2-3 cm'], ['3-4', '3-4 cm'], ['gt4', '&gt;4 cm']])}
+      ${optionLine(1, 'shape', 'Shape', [['round', 'Round'], ['oval', 'Oval'], ['lobular', 'Lobular'], ['irregular', 'Irregular']])}
+      ${optionLine(1, 'margin', 'Margin', [['circumscribed', 'Circumscribed'], ['microlobulated', 'Microlobulated'], ['obscured', 'Obscured'], ['indistinct', 'Indistinct'], ['spiculated', 'Spiculated']])}
+      ${optionLine(1, 'density', 'Density', [['high', 'High density'], ['equal', 'Equal density'], ['low', 'Low-density'], ['fat', 'Fat-containing']])}
+    </div>
+    <div class="item">${cb('i2', '2. Calcifications:')} ${sideBoxes(2, true)}
+      ${locationBlock(2)}
+      ${optionLine(2, 'distribution', 'Distribution', [['grouped', 'Grouped'], ['linear', 'Linear'], ['segmental', 'Segmental'], ['regional', 'Regional'], ['diffuse', 'Diffuse']])}
+      ${optionLine(2, 'morphology', 'Morphology', [['amorphous', 'Amorphous'], ['coarse_heterogeneous', 'Coarse Heterogeneous'], ['fine_pleomorphic', 'Fine Pleomorphic'], ['fine_linear_branching', 'Fine Linear Branching']])}
+    </div>
+    <div class="item">${cb('i3', '3. Asymmetry:')} ${sideBoxes(3, false)}${cb('i3.at.asymmetry', 'Asymmetry')}${cb('i3.at.focal', 'Focal asymmetry')}${cb('i3.at.developing', 'Developing asymmetry')}
+      ${locationBlock(3)}
+    </div>
+    <div class="item">${cb('i4', '4. Architectural Distortion:')} ${sideBoxes(4, false)}
+      ${locationBlock(4)}
+    </div>
+    ${simpleItem(5, 'Thickening or retraction of the skin and/or nipple')}
+    ${simpleItem(6, 'Dense or enlarged axillary LNs')}
+    ${simpleItem(7, 'Dilated lactiferous ducts')}
+    ${simpleItem(8, 'Diffuse thickening of the skin and increased density')}
+    <div class="item">${cb('i9', '9.Others:')} <input type="text" class="w-other" data-t="i9.text"></div>
+  </td></tr>
+</table>
+<div class="fp-rev">(114 年 1 月修訂)</div>`;
+}
+
+function createPage() {
+    const wrap = document.createElement('div');
+    wrap.className = 'page-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'page-bar no-print';
+    const label = document.createElement('span');
+    label.className = 'page-label';
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'btn btn-danger btn-delete-page';
+    del.textContent = '刪除此頁';
+    del.addEventListener('click', () => deletePage(wrap));
+    bar.append(label, del);
+    const page = document.createElement('div');
+    page.className = 'form-page';
+    page.innerHTML = buildPageMarkup();
+    wrap.append(bar, page);
+    fillHeader(page);
+    applyCategoryToPage(page);
+    return wrap;
+}
+
+function getPages() { return Array.from(document.querySelectorAll('#pages .form-page')); }
+function box(page, key) { return page.querySelector(`input[data-k="${key}"]`); }
+function tick(page, key) { const el = box(page, key); if (el) el.checked = true; }
+
+function renumberPages() {
+    const wraps = document.querySelectorAll('#pages .page-wrap');
+    wraps.forEach((w, i) => { w.querySelector('.page-label').textContent = `第 ${i + 1} 頁／共 ${wraps.length} 頁`; });
+}
+
+// Render one complete form page per lesion (at least one page).
+function renderPages() {
+    const container = document.getElementById('pages');
+    container.innerHTML = '';
+    const list = lesionList.length ? lesionList : [null];
+    list.forEach(lesion => {
+        const wrap = createPage();
+        if (lesion) applyLesionToPage(wrap.querySelector('.form-page'), lesion);
+        container.appendChild(wrap);
+    });
+    renumberPages();
+}
+
+function addBlankPage() {
+    document.getElementById('pages').appendChild(createPage());
+    renumberPages();
+}
+
+function deletePage(wrap) {
+    if (document.querySelectorAll('#pages .page-wrap').length <= 1) {
+        showStatus('至少需保留一頁表單。', 'error');
+        return;
+    }
+    wrap.remove();
+    renumberPages();
+}
+
+// ---------------------------------------------------------------
+// Header (shared by all pages)
+// ---------------------------------------------------------------
+function headerValue(f) {
+    if (/^id\d$/.test(f)) return header.id[Number(f.slice(2))];
+    return header[f] ?? '';
+}
+
+function fillHeader(page) {
+    page.querySelectorAll('input[data-f]').forEach(el => {
+        el.value = headerValue(el.dataset.f);
+        if (el.dataset.f === 'name') el.classList.toggle('needs-check', header.nameNeedsCheck);
+    });
+}
+
+function refreshHeaders() { getPages().forEach(fillHeader); }
+
+function onHeaderInput(e) {
+    const el = e.target;
+    if (!el.matches || !el.matches('.form-page input[data-f]')) return;
+    const f = el.dataset.f;
+    if (/^id\d$/.test(f)) header.id[Number(f.slice(2))] = el.value;
+    else header[f] = el.value;
+    if (f === 'name') header.nameNeedsCheck = false;
+    getPages().forEach(page => {
+        page.querySelectorAll(`input[data-f="${f}"]`).forEach(other => {
+            if (other !== el) other.value = el.value;
+            if (f === 'name') other.classList.remove('needs-check');
+        });
+    });
+    // Move to next ID box after one character.
+    if (el.classList.contains('idbox') && el.value.length === 1) {
+        const next = el.nextElementSibling;
+        if (next) next.focus();
+    }
+}
+
+// ---------------------------------------------------------------
+// Dates
+// ---------------------------------------------------------------
+function toRocDate(str) {
+    const raw = String(str ?? '').trim();
+    const m = raw.match(/^(\d{4})(\d{2})(\d{2})$/) || raw.match(/^(\d{4})([./-])(\d{1,2})\2(\d{1,2})$/);
+    if (!m) return null;
+    const y = Number(m[1]);
+    const mo = Number(m.length === 5 ? m[3] : m[2]);
+    const d = Number(m.length === 5 ? m[4] : m[3]);
+    const dt = new Date(y, mo - 1, d);
+    if (y <= 1911 || dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+    return { y: String(y - 1911), m: String(mo), d: String(d) };
+}
+
+// ---------------------------------------------------------------
+// Category (deterministic, never from the LLM except the 4 sub-box fallback)
+// ---------------------------------------------------------------
+function detectCategory(text) {
+    const m = CATEGORY_RE.exec(String(text ?? ''));
+    if (!m) return { category: null, sub: null };
+    const category = Number(m[1]);
+    const sub = category === 4 && m[2] ? m[2].toLowerCase() : null;
+    return { category, sub };
+}
+
+function updateCategoryFromText() {
+    const text = document.getElementById('reportText').value;
+    categoryState = detectCategory(text);
+    const warn = document.getElementById('catWarning');
+    const c = categoryState.category;
+    if ([0, 3, 4, 5].includes(c)) {
+        warn.className = 'status';
+        warn.textContent = '';
+    } else if (text.trim()) {
+        warn.textContent = c === null
+            ? '報告中找不到 BI-RADS category，此報告可能不需要填寫本表單；如需要請手動勾選分類。'
+            : `報告為 BI-RADS category ${c}，不需要填寫本表單；如需要請手動勾選分類。`;
+        warn.className = 'status show warning';
+    } else {
+        warn.className = 'status';
+        warn.textContent = '';
+    }
+    getPages().forEach(applyCategoryToPage);
+}
+
+function applyCategoryToPage(page) {
+    ['cat0', 'cat3', 'cat4', 'cat4a', 'cat4b', 'cat4c', 'cat5'].forEach(k => { box(page, k).checked = false; });
+    const c = categoryState.category;
+    if (![0, 3, 4, 5].includes(c)) return;
+    tick(page, `cat${c}`);
+    if (c === 4 && categoryState.sub) tick(page, `cat4${categoryState.sub}`);
+}
+
+// ---------------------------------------------------------------
+// Clipboard import
+// ---------------------------------------------------------------
+function importPayload(obj) {
+    let data = obj;
+    if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) { data = null; }
+    }
+    if (!data || typeof data !== 'object' || Array.isArray(data) || data.source !== PAYLOAD_SOURCE) {
+        showStatus('剪貼簿內容不是本工具的病人資料（需由 mammo;「疑陽表單」產生），表單未變更。', 'error');
+        return false;
+    }
+    const str = v => (typeof v === 'string' ? v.trim() : '');
+    const nameZh = str(data.nameZh);
+    header.chartNo = str(data.chartNo);
+    header.name = nameZh || str(data.nameEn).replace(/\^/g, ' ').replace(/\s+/g, ' ').trim();
+    header.nameNeedsCheck = !nameZh;
+    const birth = toRocDate(data.birthDate) || { y: '', m: '', d: '' };
+    const study = toRocDate(data.studyDate) || { y: '', m: '', d: '' };
+    Object.assign(header, { by: birth.y, bm: birth.m, bd: birth.d, sy: study.y, sm: study.m, sd: study.d });
+    header.hospital = DEFAULT_HOSPITAL;
+    header.physician = '';
+    header.id = Array(10).fill('');
+    document.getElementById('reportText').value = typeof data.reportText === 'string' ? data.reportText : '';
+    // A new patient starts from one blank page.
+    lesionList = [];
+    renderPages();
+    updateCategoryFromText();
+    hideRaw();
+    showStatus(header.nameNeedsCheck
+        ? '已匯入。未取得中文姓名，已暫填英文姓名，請人工修正（黃色標示）。'
+        : '已匯入病人資料，請確認後按「AI 解析」。', header.nameNeedsCheck ? 'warning' : 'success');
+    return true;
+}
+
+function handleClipboardText(text) {
+    return importPayload(String(text ?? '').trim());
+}
+
+async function importFromClipboard() {
+    let text;
+    try {
+        if (!navigator.clipboard || !navigator.clipboard.readText) throw new Error('unsupported');
+        text = await navigator.clipboard.readText();
+    } catch (e) {
+        showStatus('無法讀取剪貼簿（瀏覽器未授權），請在頁面空白處按 Ctrl+V 貼上。', 'error');
+        return false;
+    }
+    return handleClipboardText(text);
+}
+
+function onDocumentPaste(e) {
+    const active = document.activeElement;
+    // Let text-entry fields receive normal pastes; checkboxes and buttons do not count.
+    const textInput = 'textarea, [contenteditable], input:not([type]), input[type="text"], input[type="password"], input[type="search"]';
+    if (active && active.matches && active.matches(textInput)) return;
+    const text = e.clipboardData ? e.clipboardData.getData('text') : '';
+    e.preventDefault();
+    handleClipboardText(text);
+}
+
+// ---------------------------------------------------------------
+// LLM result validation and application
+// ---------------------------------------------------------------
+function validateParsed(obj) {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj) || !Array.isArray(obj.lesions)) return null;
+    const out = { cat4Sub: ['a', 'b', 'c'].includes(obj.cat4Sub) ? obj.cat4Sub : null, lesions: [] };
+    for (const l of obj.lesions) {
+        if (!l || typeof l !== 'object' || Array.isArray(l)) return null;
+        const lesion = {
+            type: ENUMS.type.includes(l.type) ? l.type : null,
+            side: ENUMS.side.includes(l.side) ? l.side : null,
+            location: Array.isArray(l.location) ? [...new Set(l.location.filter(v => ENUMS.location.includes(v)))] : [],
+            oneView: Array.isArray(l.oneView) ? [...new Set(l.oneView.filter(v => ENUMS.oneView.includes(v)))] : [],
+            otherText: typeof l.otherText === 'string' && l.otherText.trim() ? l.otherText.trim() : null
+        };
+        SCALAR_FIELDS.forEach(f => { lesion[f] = ENUMS[f].includes(l[f]) ? l[f] : null; });
+        out.lesions.push(lesion);
+    }
+    return out;
+}
+
+function applyLesionToPage(page, l) {
+    const n = TYPE_TO_ITEM[l.type];
+    if (!n) return;
+    tick(page, `i${n}`);
+    if (l.side === 'R') tick(page, `i${n}.R`);
+    else if (l.side === 'L') tick(page, `i${n}.L`);
+    else if (l.side === 'multiple_unilateral' && n <= 2) tick(page, `i${n}.mu`);
+    else if (l.side === 'multiple_bilateral' && n <= 2) tick(page, `i${n}.mb`);
+    if (n <= 4) {
+        l.location.forEach(v => tick(page, `i${n}.loc.${v.replace(' ', '_')}`));
+        l.oneView.forEach(v => tick(page, `i${n}.ov.${v}`));
+    }
+    if (n === 1) {
+        if (l.size) tick(page, `i1.size.${SIZE_KEY[l.size]}`);
+        ['shape', 'margin', 'density'].forEach(f => { if (l[f]) tick(page, `i1.${f}.${l[f]}`); });
+    }
+    if (n === 2) ['distribution', 'morphology'].forEach(f => { if (l[f]) tick(page, `i2.${f}.${l[f]}`); });
+    if (n === 3 && l.asymmetryType) tick(page, `i3.at.${l.asymmetryType}`);
+    if (n === 9 && l.otherText) page.querySelector('input[data-t="i9.text"]').value = l.otherText;
+}
+
+function applyParsedData(obj) {
+    const v = validateParsed(obj);
+    if (!v) throw new Error('資料格式不符（lesions 必須是陣列）');
+    updateCategoryFromText();
+    if (categoryState.category === 4 && !categoryState.sub && v.cat4Sub) {
+        categoryState = { category: 4, sub: v.cat4Sub };
+    }
+    lesionList = v.lesions;
+    renderPages();
+    return v;
+}
+
+// ---------------------------------------------------------------
+// Gemini call (only the report text is sent)
+// ---------------------------------------------------------------
+async function parseWithAI() {
+    const text = document.getElementById('reportText').value.trim();
+    const apiKey = document.getElementById('apiKey').value.trim();
+    hideRaw();
+    if (!text) { showStatus('請先匯入或貼上報告內容。', 'error'); return; }
+    if (!apiKey) { showStatus('請輸入 Gemini API 金鑰後再按「AI 解析」。', 'error'); return; }
+    showStatus('Gemini 解析中…', 'loading');
+    let raw = '';
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+            body: JSON.stringify({
+                systemInstruction: { parts: [{ text: MAMMO_SYSTEM_PROMPT }] },
+                contents: [{ role: 'user', parts: [{ text: 'MAMMOGRAPHY REPORT:\n' + text }] }],
+                generationConfig: { responseMimeType: 'application/json', temperature: 0 }
+            })
+        });
+        raw = await response.text();
+        if (!response.ok) throw new Error(`Gemini 回傳錯誤（HTTP ${response.status}）`);
+        let data;
+        try { data = JSON.parse(raw); } catch (e) { throw new Error('Gemini 回應無法解讀'); }
+        const parts = data?.candidates?.[0]?.content?.parts;
+        const modelText = Array.isArray(parts) ? parts.map(p => p.text || '').join('') : '';
+        if (!modelText) throw new Error('Gemini 回應沒有內容');
+        raw = modelText;
+        let parsed;
+        try { parsed = JSON.parse(modelText); } catch (e) { throw new Error('模型回應不是有效的 JSON'); }
+        if (!validateParsed(parsed)) throw new Error('模型回應格式不符（缺少 lesions 陣列或病灶格式錯誤）');
+        const v = applyParsedData(parsed);
+        showStatus(`AI 解析完成：${v.lesions.length} 個病灶，產生 ${getPages().length} 頁。請逐頁核對後列印。`, 'success');
+    } catch (err) {
+        const msg = err instanceof TypeError ? '無法連線到 Gemini（網路錯誤）' : err.message;
+        showStatus(`AI 解析失敗：${msg}；勾選未變更。`, 'error');
+        if (raw) showRaw(raw);
+    }
+}
+
+// ---------------------------------------------------------------
+// UI helpers
+// ---------------------------------------------------------------
+function showStatus(msg, type) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status show ' + type;
+}
+function showRaw(text) {
+    document.getElementById('rawResponse').value = text;
+    document.getElementById('rawBox').className = 'show';
+}
+function hideRaw() {
+    document.getElementById('rawResponse').value = '';
+    document.getElementById('rawBox').className = '';
+}
+function toggleKeyVisibility() {
+    const field = document.getElementById('apiKey');
+    const show = field.type === 'password';
+    field.type = show ? 'text' : 'password';
+    document.getElementById('btnToggleKey').textContent = show ? '隱藏' : '顯示';
+}
+async function copyRaw() {
+    const ta = document.getElementById('rawResponse');
+    ta.select();
+    try { await navigator.clipboard.writeText(ta.value); showStatus('已複製原始回應。', 'success'); }
+    catch (e) { showStatus('無法自動複製，請在框內按 Ctrl+C。', 'error'); }
+}
+
+document.getElementById('btnImport').addEventListener('click', importFromClipboard);
+document.getElementById('btnAddPage').addEventListener('click', addBlankPage);
+document.getElementById('btnPrint').addEventListener('click', () => window.print());
+document.getElementById('btnToggleKey').addEventListener('click', toggleKeyVisibility);
+document.getElementById('btnParse').addEventListener('click', parseWithAI);
+document.getElementById('btnCopyRaw').addEventListener('click', copyRaw);
+document.getElementById('reportText').addEventListener('input', updateCategoryFromText);
+document.getElementById('pages').addEventListener('input', onHeaderInput);
+document.addEventListener('paste', onDocumentPaste);
+renderPages();
+</script>
+</body>
+</html>

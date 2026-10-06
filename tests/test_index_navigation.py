@@ -44,6 +44,16 @@ class IndexNavigationTests(unittest.TestCase):
         )
         self.assertTrue((ROOT / "tool" / "image-stack-mpr.html").is_file())
 
+    def test_index_links_to_mammo_suspicious_form(self) -> None:
+        parser = LinkParser()
+        parser.feed((ROOT / "index.html").read_text(encoding="utf-8"))
+
+        self.assertIn(
+            ("tool/mammo-suspicious-form.html", "乳篩疑似異常個案報告表"),
+            parser.links,
+        )
+        self.assertTrue((ROOT / "tool" / "mammo-suspicious-form.html").is_file())
+
     def test_index_links_to_local_card_rewards_tool(self) -> None:
         parser = LinkParser()
         parser.feed((ROOT / "index.html").read_text(encoding="utf-8"))
