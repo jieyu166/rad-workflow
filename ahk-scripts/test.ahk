@@ -551,7 +551,7 @@ PosDICOMLU:
     } else if(varWhere=5) {
         MouseMove 3700,-250     ; 遠端
     } else if(varWhere=6) {
-        MouseMove 50,30         ; R小房間(Win7)
+        MouseMove 3045, 50         ; B1 US
     } else if(varWhere=7) {
         MouseMove 3400,-900      ; 乳醫(Win12)
     } else if(varWhere=8) {
@@ -567,7 +567,6 @@ PosDICOMRU:
         MouseMove 4793, 940     ; 佳里學姊
     } else if(varWhere=2) {
         MouseMove 4400,150        ; 佳里座位
-		;MouseMove 4800,140        ; 佳里座位125%
     } else if(varWhere=3) {
         MouseMove 4450,700      ; 第三VS佳里
     } else if(varWhere=4) {
@@ -575,7 +574,7 @@ PosDICOMRU:
     } else if(varWhere=5) {
         MouseMove 2200,-2600     ; 遠端
     } else if(varWhere=6) {
-        MouseMove 4400,500      ; R小房間
+        MouseMove 4758, 34      ; B1 US
     } else if(varWhere=7) {
         MouseMove 7350,-1000      ; 12F乳醫
     } else if(varWhere=8) {
@@ -597,7 +596,7 @@ PosDICOMButton:
     } else if(varWhere=5) {
         MouseMove 3500,-840      ; 遠端
     } else if(varWhere=6) {
-        MouseMove 4400,145      ; 小房間
+        MouseMove 4390, -515      ; B1 US
     } else if(varWhere=7) {
         MouseMove 6560,-1890      ; 12F乳醫
     } else if(varWhere=8) {
@@ -617,7 +616,7 @@ PosNextExam:
     } else if(varWhere=5) {
         MouseMove 1260,75       ; 遠端
     } else if(varWhere=6) {
-        MouseMove 580,30       ; R小房間
+        MouseMove  783, 47      ; B1 US
     } else if(varWhere=7) {
         MouseMove 770,50       ; 乳醫
     } else if(varWhere=8) {
