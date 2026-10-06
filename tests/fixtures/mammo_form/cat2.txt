@@ -1,0 +1,26 @@
+Screening mammography of bilateral breast with CC and MLO views:
+
+Comparison of previous mammography(date): YYYY/MM/DD. YYYY/MM/DD. YYYY/MM/DD. YYYY/MM/DD.
+
+Breast composition: BIRADS density C - heterogeneously dense breasts, which may obscure small masses.
+
+Findings:
+Benign coarse calcifciation in left medial breast.
+Scattered microcalcifications of bilateral breasts, relatively monomorphic pattern, concluded as benign finding.
+Stable focal asymmetry in right medial breast, concluded as benign.
+There is no clustered microcalcification, nor architectural distortion 
+bilaterally.
+
+BI-RADS assessment:
+(BI-RADS category 2, benign)
+
+Recommendation: Annual screening mammography
+
+IMP: 
+Benign scattered microcalcifications of bilateral breasts.
+Benign coarse calcifciation in left medial breast.
+Stable focal asymmetry in right medial breast, concluded as benign.
+
+Addendum: Although this report follows the standard lexicon of ACR BI-RADS, 
+          small cancers maybe invisible within dense fibroglandular tissue, 
+          Adjunct ultrasound screening is always recommended for dense breast.

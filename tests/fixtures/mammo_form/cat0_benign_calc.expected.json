@@ -1,0 +1,22 @@
+{
+  "category": 0,
+  "cat4Sub": null,
+  "lesions": [
+    {
+      "type": "asymmetry",
+      "side": "R",
+      "location": [
+        "UOQ"
+      ],
+      "oneView": [],
+      "size": null,
+      "shape": null,
+      "margin": null,
+      "density": null,
+      "distribution": null,
+      "morphology": null,
+      "asymmetryType": "focal",
+      "otherText": null
+    }
+  ]
+}

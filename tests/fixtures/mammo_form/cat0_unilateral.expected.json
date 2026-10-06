@@ -1,0 +1,22 @@
+{
+  "category": 0,
+  "cat4Sub": null,
+  "lesions": [
+    {
+      "type": "mass",
+      "side": "R",
+      "location": [
+        "UOQ"
+      ],
+      "oneView": [],
+      "size": "<1",
+      "shape": "oval",
+      "margin": "circumscribed",
+      "density": "equal",
+      "distribution": null,
+      "morphology": null,
+      "asymmetryType": null,
+      "otherText": null
+    }
+  ]
+}

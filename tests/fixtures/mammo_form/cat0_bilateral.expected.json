@@ -1,0 +1,36 @@
+{
+  "category": 0,
+  "cat4Sub": null,
+  "lesions": [
+    {
+      "type": "mass",
+      "side": "R",
+      "location": [],
+      "oneView": [],
+      "size": "1-2",
+      "shape": "irregular",
+      "margin": "indistinct",
+      "density": "equal",
+      "distribution": null,
+      "morphology": null,
+      "asymmetryType": null,
+      "otherText": null
+    },
+    {
+      "type": "calcification",
+      "side": "L",
+      "location": [
+        "UIQ"
+      ],
+      "oneView": [],
+      "size": null,
+      "shape": null,
+      "margin": null,
+      "density": null,
+      "distribution": "grouped",
+      "morphology": "coarse_heterogeneous",
+      "asymmetryType": null,
+      "otherText": null
+    }
+  ]
+}

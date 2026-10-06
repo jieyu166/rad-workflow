@@ -1,0 +1,50 @@
+{
+  "category": 5,
+  "cat4Sub": null,
+  "lesions": [
+    {
+      "type": "calcification",
+      "side": "L",
+      "location": [
+        "UOQ"
+      ],
+      "oneView": [],
+      "size": null,
+      "shape": null,
+      "margin": null,
+      "density": null,
+      "distribution": "regional",
+      "morphology": "fine_linear_branching",
+      "asymmetryType": null,
+      "otherText": null
+    },
+    {
+      "type": "skin_nipple",
+      "side": "L",
+      "location": [],
+      "oneView": [],
+      "size": null,
+      "shape": null,
+      "margin": null,
+      "density": null,
+      "distribution": null,
+      "morphology": null,
+      "asymmetryType": null,
+      "otherText": null
+    },
+    {
+      "type": "axillary_ln",
+      "side": "L",
+      "location": [],
+      "oneView": [],
+      "size": null,
+      "shape": null,
+      "margin": null,
+      "density": null,
+      "distribution": null,
+      "morphology": null,
+      "asymmetryType": null,
+      "otherText": null
+    }
+  ]
+}

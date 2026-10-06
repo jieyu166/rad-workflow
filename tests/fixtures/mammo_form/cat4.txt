@@ -1,0 +1,17 @@
+Screening with subsequently immediate diagnostic mammography of bilateral breasts with CC, MLO, spot magnification views of right breast:
+
+Comparison of previous mammography(date): YYYY/MM/DD. YYYY/MM/DD. YYYY/MM/DD. YYYY/MM/DD. YYYY/MM/DD.
+
+Breast composition: BIRADS density C - heterogeneously dense breasts, which may obscure small masses.
+
+Findings:
+New segmental fine pleomorphic microcalcifications in right UOQ 11/4 posterior breast, about 2.8cm in size, concluded as suspicious microcalcifications.
+
+BI-RADS assessment:
+Category 4C (Suspicious Abnormality-Biopsy Should Be Considered)
+
+Recommendation: correlate with breast US to find if any lesions; if not found, wire guided excision. 
+
+IMP: 
+New segmental fine pleomorphic microcalcifications in right UOQ 11/4 posterior breast, about 2.8cm in size, concluded as suspicious microcalcifications. 
+Suggest correlate with breast US at first. If no lesions, wire-guided excision may be considered.
