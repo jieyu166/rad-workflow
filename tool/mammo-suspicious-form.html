@@ -58,7 +58,7 @@
     #rawBox { display: none; margin-top: 8px; }
     #rawBox.show { display: block; }
     #rawResponse { min-height: 90px; background: #fafafa; }
-    /* ---------- Form pages ---------- */
+    /* ---------- Form pages (layout mirrors the official paper form) ---------- */
     .page-wrap { margin: 0 auto 20px; width: 210mm; }
     .page-bar {
         display: flex;
@@ -70,35 +70,55 @@
     }
     .form-page {
         width: 210mm;
-        min-height: 297mm;
-        padding: 12mm 13mm;
+        height: 297mm;
+        padding: 17mm 17mm 12mm 18mm;
+        overflow: hidden;
         background: #fff;
         box-shadow: 0 4px 14px rgba(0,0,0,0.18);
-        font-family: 'PMingLiU', '新細明體', 'MingLiU', 'Times New Roman', serif;
-        font-size: 10.5pt;
-        line-height: 1.45;
+        font-family: 'Times New Roman', 'DFKai-SB', '標楷體', serif;
+        font-size: 11pt;
+        line-height: 1.3;
         color: #000;
     }
-    .fp-top { display: flex; justify-content: space-between; align-items: flex-start; font-size: 10pt; }
-    .fp-top .fp-fund { font-size: 8.5pt; }
-    .fp-title { text-align: center; font-size: 14.5pt; font-weight: bold; margin: 6mm 0 2mm; letter-spacing: 0.5px; }
-    .fp-chart { text-align: right; margin-bottom: 1.5mm; }
-    .fp-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .fp-table td, .fp-table th { border: 1px solid #000; padding: 1.2mm 2mm; vertical-align: middle; }
+    .fp-top { display: flex; justify-content: space-between; align-items: flex-end; font-size: 10.5pt; padding: 0 1mm 0 2mm; }
+    .fp-top .fp-fund { font-size: 9.5pt; }
+    .fp-title { text-align: center; font-size: 16pt; font-weight: bold; letter-spacing: 0.12em; margin: 3.5mm 0 3mm; }
+    .fp-title .x, .grey .x { margin: 0 0.3em; }
+    .fp-chart { text-align: right; font-weight: bold; margin: 0 0 0.6mm; padding-right: 2mm; }
+    .fp-table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 2px solid #000; }
+    .fp-table td, .fp-table th { border: 1px solid #000; padding: 0.5mm 1.6mm; vertical-align: middle; font-weight: normal; }
     .fp-table th.grey {
         background: #d9d9d9;
-        text-align: left;
+        text-align: center;
         font-weight: bold;
+        letter-spacing: 0.1em;
+        padding: 0.3mm 1.6mm;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
-    .fp-table td.lbl { text-align: center; }
-    .fp-rev { text-align: right; font-size: 9.5pt; margin-top: 1.5mm; }
-    .fp-cat div { margin: 0.6mm 0; }
-    .fp-cat .sub { padding-left: 9mm; }
-    .item { margin: 0.4mm 0 1.6mm; }
-    .item .sub { padding-left: 7mm; }
-    .item .head { font-weight: normal; }
+    .fp-table td.lbl { text-align: left; font-weight: bold; letter-spacing: 0.1em; white-space: nowrap; }
+    .fp-table td.lbl.id { padding-top: 0.2mm; padding-bottom: 0.2mm; letter-spacing: 0.05em; }
+    .fp-table tr.hd td { height: 6.6mm; }
+    .fp-table td.idgrid { padding: 0; height: 5.4mm; }
+    .idrow { display: grid; grid-template-columns: repeat(10, 1fr); height: 5.4mm; }
+    .idrow > span { border-left: 1px solid #000; }
+    .fp-rev { text-align: right; font-size: 10.5pt; margin-top: 1mm; }
+    .fp-table td.fp-cat { padding: 1mm 1.6mm 0.6mm; }
+    .fp-cat div { margin: 0 0 0.7mm; }
+    .fp-cat .sub { padding-left: 29mm; }
+    .fp-table td.item-head { padding: 1mm 1.6mm; }
+    .fp-table td.simple { padding: 1mm 1.6mm 0.4mm; }
+    .simple div { margin: 0 0 1.4mm; }
+    /* Nested lesion attribute grid; hidden outer edges merge with the host cell borders */
+    .fp-table td.grid-host { padding: 0; }
+    table.lg { width: 100%; border-collapse: collapse; table-layout: fixed; border-style: hidden; font-size: 10pt; }
+    table.lg td, table.lg th { border: 1px solid #000; padding: 0.1mm 1.2mm; line-height: 1.25; }
+    table.lg th.gl { font-weight: bold; text-align: center; white-space: nowrap; }
+    table.lg td.nb { border-left: none; border-right: none; }
+    table.lg td.nb.loc { padding-left: 2.2mm; }
+    table.lg td.nb.hemi { padding-left: 2mm; }
+    .opts { display: grid; grid-template-columns: repeat(5, 1fr); }
+    .opts.morph { grid-template-columns: 0.85fr 1.4fr 1.3fr 1.5fr; }
     /* Inputs styled as handwriting lines */
     .form-page input[type="text"] {
         font: inherit;
@@ -110,60 +130,57 @@
     }
     .form-page input[type="text"]:focus { background: #fff8d6; }
     .w-name { width: 95%; }
-    .w-date { width: 2.3em; text-align: center; }
-    td.date-cell { white-space: nowrap; padding-left: 1.2mm; padding-right: 1mm; }
+    .dates { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; }
+    .w-date { width: 2.4em; text-align: center; }
     .w-full { width: 95%; }
-    .w-chart { width: 32mm; text-align: center; }
-    .w-other { width: 120mm; }
-    .idboxes { display: flex; gap: 0; }
+    .form-page input.w-chart { width: 34mm; text-align: center; font-weight: normal; }
+    .w-other { width: 130mm; }
     .form-page input.idbox {
-        flex: 1 1 0;
+        width: 100%;
         min-width: 0;
-        max-width: 6.2mm;
-        height: 7mm;
-        border: 1px solid #000;
-        border-right: none;
+        height: 100%;
+        border: none;
+        border-left: 1px solid #000;
         text-align: center;
         padding: 0;
     }
-    .form-page input.idbox:last-child { border-right: 1px solid #000; }
+    .form-page input.idbox:focus { background: #fff8d6; }
     .form-page input.needs-check { background: #ffe08a; border-bottom: 2px solid #d48a00; }
     /* Checkboxes drawn as paper-style boxes so print output is consistent */
-    label.cb { white-space: nowrap; margin-right: 2.2mm; cursor: pointer; }
+    label.cb { white-space: nowrap; margin-right: 2.6mm; cursor: pointer; }
+    label.cb.tight { margin-right: 0.6mm; }
     label.cb input[type="checkbox"] {
         -webkit-appearance: none;
         appearance: none;
-        width: 3.3mm;
-        height: 3.3mm;
+        width: 3.4mm;
+        height: 3.4mm;
         border: 1px solid #000;
-        margin: 0 0.8mm 0 0;
-        vertical-align: -0.4mm;
+        margin: 0 1.4mm 0 0;
+        vertical-align: -0.5mm;
         background: #fff center / 100% 100% no-repeat;
         cursor: pointer;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
+    label.cb.big input[type="checkbox"] { width: 4mm; height: 4mm; margin-right: 2.2mm; vertical-align: -0.6mm; }
     label.cb input[type="checkbox"]:checked {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5.2 L4 7.7 L8.7 2' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E");
     }
-    @page { size: A4 portrait; margin: 12mm; }
+    /* Zero page margin suppresses the browser's own header/footer; page margins live in .form-page padding. */
+    @page { size: A4 portrait; margin: 0; }
     @media print {
         body { background: #fff; padding: 0; margin: 0; }
         .no-print { display: none !important; }
-        .page-wrap { width: auto; margin: 0; }
+        .page-wrap { width: 210mm; margin: 0; }
         .form-page {
-            width: auto;
-            min-height: 0;
-            padding: 0;
             box-shadow: none;
             page-break-after: always;
             break-after: page;
         }
         .page-wrap:last-child .form-page { page-break-after: auto; break-after: auto; }
         .form-page input[type="text"] { border-bottom: none; }
+        .form-page input.idbox { border-left: 1px solid #000; }
         .form-page input.needs-check { background: transparent; border-bottom: none; }
-        .form-page input.idbox { border: 1px solid #000; border-right: none; }
-        .form-page input.idbox:last-child { border-right: 1px solid #000; }
     }
 </style>
 </head>
@@ -284,75 +301,84 @@ let lesionList = [];
 // ---------------------------------------------------------------
 // Form page template (static markup only; data is set via DOM properties)
 // ---------------------------------------------------------------
-function cb(key, label) {
-    return `<label class="cb"><input type="checkbox" data-k="${key}">${label}</label>`;
+function cb(key, label, cls = '') {
+    return `<label class="cb${cls ? ' ' + cls : ''}"><input type="checkbox" data-k="${key}">${label}</label>`;
 }
 function sideBoxes(n, withMultiple) {
     let s = cb(`i${n}.R`, 'Rt.') + cb(`i${n}.L`, 'Lt.');
     if (withMultiple) s += cb(`i${n}.mu`, 'Multiple, Unilateral') + cb(`i${n}.mb`, 'Multiple, Bilateral');
     return s;
 }
-function locationBlock(n) {
-    const loc = ENUMS.location.map(v => cb(`i${n}.loc.${v.replace(' ', '_')}`, v)).join('');
-    const ov = [['upper', 'Upper Hemisphere'], ['lower', 'Lower Hemisphere'], ['outer', 'Outer Hemisphere'], ['inner', 'Inner Hemisphere']]
-        .map(([v, l]) => cb(`i${n}.ov.${v}`, l)).join('');
-    return `<div class="sub">Location: ${loc}</div><div class="sub">One view only: ${ov}</div>`;
+const OV_LABELS = { upper: 'Upper Hemisphere', lower: 'Lower Hemisphere', outer: 'Outer Hemisphere', inner: 'Inner Hemisphere' };
+// Location block: 6 quadrant columns, then "One view only" with two hemisphere rows.
+function locationRows(n) {
+    const loc = ENUMS.location.map(v => `<td class="nb loc">${cb(`i${n}.loc.${v.replace(' ', '_')}`, v)}</td>`).join('');
+    const ov = v => cb(`i${n}.ov.${v}`, OV_LABELS[v]);
+    return `<tr><th rowspan="3" class="gl">Location</th>${loc}</tr>
+<tr><th rowspan="2" class="gl">One view only</th><td colspan="3" class="nb hemi">${ov('upper')}</td><td colspan="2" class="nb hemi">${ov('lower')}</td></tr>
+<tr><td colspan="3" class="nb hemi">${ov('outer')}</td><td colspan="2" class="nb hemi">${ov('inner')}</td></tr>`;
 }
-function optionLine(n, field, title, pairs) {
-    return `<div class="sub">${title}: ` + pairs.map(([v, l]) => cb(`i${n}.${field}.${v}`, l)).join('') + '</div>';
+function optionRow(n, field, title, pairs, cls = '') {
+    return `<tr><th class="gl">${title}</th><td colspan="6"><div class="opts ${cls}">`
+        + pairs.map(([v, l]) => `<span>${cb(`i${n}.${field}.${v}`, l)}</span>`).join('') + '</div></td></tr>';
+}
+function lesionGrid(rows, lblWidth) {
+    const cols = `<col style="width:${lblWidth}%">` + '<col>'.repeat(6);
+    return `<tr><td colspan="4" class="grid-host"><table class="lg"><colgroup>${cols}</colgroup>${rows}</table></td></tr>`;
+}
+function itemHead(n, title, rest) {
+    return `<tr><td colspan="4" class="item-head">${cb(`i${n}`, `<b>${title}</b>`, 'big')}${rest}</td></tr>`;
 }
 function simpleItem(n, text) {
-    return `<div class="item">${cb(`i${n}`, `${n}. ${text}:`)} ${cb(`i${n}.R`, 'Rt.')}／${cb(`i${n}.L`, 'Lt.')}</div>`;
+    return `<div>${cb(`i${n}`, `<b>${n}. ${text}:</b>`, 'big')} ${cb(`i${n}.R`, 'Rt.', 'tight')}／${cb(`i${n}.L`, 'Lt.')}</div>`;
 }
 
 function buildPageMarkup() {
-    const dateSlots = p => `民國 <input type="text" class="w-date" data-f="${p}y"> 年 <input type="text" class="w-date" data-f="${p}m"> 月 <input type="text" class="w-date" data-f="${p}d"> 日`;
+    const dateSlots = p => `<div class="dates"><span>民國</span><input type="text" class="w-date" data-f="${p}y"><span>年</span><input type="text" class="w-date" data-f="${p}m"><span>月</span><input type="text" class="w-date" data-f="${p}d"><span>日</span></div>`;
     const idBoxes = Array.from({ length: 10 }, (_, i) => `<input type="text" class="idbox" maxlength="1" data-f="id${i}">`).join('');
+    const idBlank = '<span></span>'.repeat(10);
     return `
 <div class="fp-top"><span>附表四之五</span><span class="fp-fund">本檢查「由衛生福利部國民健康署運用菸品健康福利捐/公務預算補助」</span></div>
-<div class="fp-title">健康署婦女乳房X光攝影檢查服務之篩檢疑似異常個案報告表</div>
+<div class="fp-title">健康署婦女乳房<span class="x">X</span>光攝影檢查服務之篩檢疑似異常個案報告表</div>
 <div class="fp-chart">病歷號：<input type="text" class="w-chart" data-f="chartNo">。</div>
 <table class="fp-table">
-  <colgroup><col style="width:13%"><col style="width:35%"><col style="width:17%"><col style="width:35%"></colgroup>
+  <colgroup><col style="width:13.8%"><col style="width:31.6%"><col style="width:20.2%"><col style="width:34.4%"></colgroup>
   <tr><th colspan="4" class="grey">檢查資訊</th></tr>
-  <tr><td class="lbl">姓名</td><td><input type="text" class="w-name" data-f="name"></td>
-      <td class="lbl">身分證統一編號<br>／統一證號（外籍）</td><td><div class="idboxes">${idBoxes}</div></td></tr>
-  <tr><td class="lbl">出生日期</td><td class="date-cell">${dateSlots('b')}</td><td class="lbl">攝影日期</td><td class="date-cell">${dateSlots('s')}</td></tr>
-  <tr><td class="lbl">醫院名稱</td><td><input type="text" class="w-full" data-f="hospital"></td>
+  <tr><td class="lbl" rowspan="2">姓名</td><td rowspan="2"><input type="text" class="w-name" data-f="name"></td>
+      <td class="lbl id">身分證統一編號</td><td class="idgrid"><div class="idrow">${idBoxes}</div></td></tr>
+  <tr><td class="lbl id">統一證號（外籍）</td><td class="idgrid"><div class="idrow">${idBlank}</div></td></tr>
+  <tr class="hd"><td class="lbl">出生日期</td><td>${dateSlots('b')}</td><td class="lbl">攝影日期</td><td>${dateSlots('s')}</td></tr>
+  <tr class="hd"><td class="lbl">醫院名稱</td><td><input type="text" class="w-full" data-f="hospital"></td>
       <td class="lbl">放射科醫師</td><td><input type="text" class="w-full" data-f="physician"></td></tr>
-  <tr><th colspan="4" class="grey">乳房X光攝影疑似異常結果</th></tr>
+  <tr><th colspan="4" class="grey">乳房<span class="x">X</span>光攝影疑似異常結果</th></tr>
   <tr><td colspan="4" class="fp-cat">
-    <div>${cb('cat0', 'Category 0: Need Additional Imaging Evaluation.')}</div>
-    <div>${cb('cat3', 'Category 3: Probably Benign Finding — Short Interval Follow-up Is Suggested.')}</div>
-    <div>${cb('cat4', 'Category 4: Suspicious Abnormality — Biopsy Should Be Considered.')}</div>
+    <div>${cb('cat0', '<b>Category 0:</b> Need Additional Imaging Evaluation.', 'big')}</div>
+    <div>${cb('cat3', '<b>Category 3:</b> Probably Benign Finding&nbsp;&nbsp;—&nbsp;&nbsp;Short Interval Follow-up Is Suggested.', 'big')}</div>
+    <div>${cb('cat4', '<b>Category 4:</b> Suspicious Abnormality&nbsp;&nbsp;—&nbsp;&nbsp;Biopsy Should Be Considered.', 'big')}</div>
     <div class="sub">${cb('cat4a', 'a. Low suspicion；')}${cb('cat4b', 'b. Moderate suspicion；')}${cb('cat4c', 'c. High suspicion')}</div>
-    <div>${cb('cat5', 'Category 5: Highly Suggestive of Malignancy — Appropriate Action Should Be Taken.')}</div>
+    <div>${cb('cat5', '<b>Category 5:</b> Highly Suggestive of Malignancy&nbsp;&nbsp;—&nbsp;&nbsp;Appropriate Action Should Be Taken.', 'big')}</div>
   </td></tr>
   <tr><th colspan="4" class="grey">病灶勾選（如單側多處病灶或兩側皆有病灶，請以不同表單分開呈現）</th></tr>
-  <tr><td colspan="4" class="fp-lesions">
-    <div class="item">${cb('i1', '1. Mass:')} ${sideBoxes(1, true)}
-      ${locationBlock(1)}
-      ${optionLine(1, 'size', 'Size', [['lt1', '&lt;1.0 cm'], ['1-2', '1-2 cm'], ['2-3', '2-3 cm'], ['3-4', '3-4 cm'], ['gt4', '&gt;4 cm']])}
-      ${optionLine(1, 'shape', 'Shape', [['round', 'Round'], ['oval', 'Oval'], ['lobular', 'Lobular'], ['irregular', 'Irregular']])}
-      ${optionLine(1, 'margin', 'Margin', [['circumscribed', 'Circumscribed'], ['microlobulated', 'Microlobulated'], ['obscured', 'Obscured'], ['indistinct', 'Indistinct'], ['spiculated', 'Spiculated']])}
-      ${optionLine(1, 'density', 'Density', [['high', 'High density'], ['equal', 'Equal density'], ['low', 'Low-density'], ['fat', 'Fat-containing']])}
-    </div>
-    <div class="item">${cb('i2', '2. Calcifications:')} ${sideBoxes(2, true)}
-      ${locationBlock(2)}
-      ${optionLine(2, 'distribution', 'Distribution', [['grouped', 'Grouped'], ['linear', 'Linear'], ['segmental', 'Segmental'], ['regional', 'Regional'], ['diffuse', 'Diffuse']])}
-      ${optionLine(2, 'morphology', 'Morphology', [['amorphous', 'Amorphous'], ['coarse_heterogeneous', 'Coarse Heterogeneous'], ['fine_pleomorphic', 'Fine Pleomorphic'], ['fine_linear_branching', 'Fine Linear Branching']])}
-    </div>
-    <div class="item">${cb('i3', '3. Asymmetry:')} ${sideBoxes(3, false)}${cb('i3.at.asymmetry', 'Asymmetry')}${cb('i3.at.focal', 'Focal asymmetry')}${cb('i3.at.developing', 'Developing asymmetry')}
-      ${locationBlock(3)}
-    </div>
-    <div class="item">${cb('i4', '4. Architectural Distortion:')} ${sideBoxes(4, false)}
-      ${locationBlock(4)}
-    </div>
+  ${itemHead(1, '1. Mass:', sideBoxes(1, true))}
+  ${lesionGrid(locationRows(1)
+      + optionRow(1, 'size', 'Size', [['lt1', '&lt; 1.0 cm'], ['1-2', '1-2 cm'], ['2-3', '2-3 cm'], ['3-4', '3-4 cm'], ['gt4', '&gt; 4 cm']])
+      + optionRow(1, 'shape', 'Shape', [['round', 'Round'], ['oval', 'Oval'], ['lobular', 'Lobular'], ['irregular', 'Irregular']])
+      + optionRow(1, 'margin', 'Margin', [['circumscribed', 'Circumscribed'], ['microlobulated', 'Microlobulated'], ['obscured', 'Obscured'], ['indistinct', 'Indistinct'], ['spiculated', 'Spiculated']])
+      + optionRow(1, 'density', 'Density', [['high', 'High density'], ['equal', 'Equal density'], ['low', 'Low-density'], ['fat', 'Fat-containing']]), 13)}
+  ${itemHead(2, '2. Calcifications:', sideBoxes(2, true))}
+  ${lesionGrid(locationRows(2)
+      + optionRow(2, 'distribution', 'Distribution', [['grouped', 'Grouped'], ['linear', 'Linear'], ['segmental', 'Segmental'], ['regional', 'Regional'], ['diffuse', 'Diffuse']])
+      + optionRow(2, 'morphology', 'Morphology', [['amorphous', 'Amorphous'], ['coarse_heterogeneous', 'Coarse Heterogeneous'], ['fine_pleomorphic', 'Fine Pleomorphic'], ['fine_linear_branching', 'Fine Linear Branching']], 'morph'), 13)}
+  ${itemHead(3, '3. Asymmetry:', sideBoxes(3, false) + cb('i3.at.asymmetry', 'Asymmetry') + cb('i3.at.focal', 'Focal asymmetry') + cb('i3.at.developing', 'Developing asymmetry'))}
+  ${lesionGrid(locationRows(3), 13)}
+  ${itemHead(4, '4. Architectural Distortion:', sideBoxes(4, false))}
+  ${lesionGrid(locationRows(4), 13)}
+  <tr><td colspan="4" class="simple">
     ${simpleItem(5, 'Thickening or retraction of the skin and/or nipple')}
     ${simpleItem(6, 'Dense or enlarged axillary LNs')}
     ${simpleItem(7, 'Dilated lactiferous ducts')}
     ${simpleItem(8, 'Diffuse thickening of the skin and increased density')}
-    <div class="item">${cb('i9', '9.Others:')} <input type="text" class="w-other" data-t="i9.text"></div>
+    <div>${cb('i9', '<b>9.Others:</b>', 'big')} <input type="text" class="w-other" data-t="i9.text"></div>
   </td></tr>
 </table>
 <div class="fp-rev">(114 年 1 月修訂)</div>`;
