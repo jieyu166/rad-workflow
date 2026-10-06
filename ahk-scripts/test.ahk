@@ -22,9 +22,12 @@ TrayTip, 快速鍵, [Win]+[A]/[F12] 送出+下一個`n[Win]+[R] 病歷彙總`n[W
 ; --- 視窗啟動函數 ---
 ; 輕量版：只啟動 HIS 視窗，不點擊編輯區（用於送出暫存、點按鈕等不需焦點在編輯區的場景）
 ActivateHISLight() {
+    HISFocusDebug("before")  ; TEMP debug: Win+X focus issue (2026-10-06)
     WinActivate ahk_exe chk060.exe
     WinWaitActive ahk_exe chk060.exe,, 1
+    waitErr := ErrorLevel
     ControlFocus, ThunderRT6TextBox14, ahk_exe chk060.exe
+    HISFocusDebug("after waitErr=" . waitErr . " focusErr=" . ErrorLevel)  ; TEMP debug
     ; 用 ControlGetPos 自動取得控件螢幕座標並點擊，確保焦點在報告欄位
 
 }
@@ -1354,3 +1357,20 @@ XB1_Reload:
 return
 
 
+
+; TEMP debug for Win+X focus issue (2026-10-06): logs window classes only, no titles (PII).
+HISFocusDebug(stage) {
+    WinGet, aExe, ProcessName, A
+    WinGetClass, aCls, A
+    ControlGetFocus, aCtl, A
+    line := A_Now . " " . stage . " active=" . aExe . "/" . aCls . " ctl=" . aCtl . " LWin=" . GetKeyState("LWin", "P") . " | chk060:"
+    WinGet, ids, List, ahk_exe chk060.exe
+    Loop, %ids% {
+        h := ids%A_Index%
+        WinGetClass, c, ahk_id %h%
+        WinGet, st, Style, ahk_id %h%
+        WinGet, mm, MinMax, ahk_id %h%
+        line .= " [" . c . (st & 0x10000000 ? " vis" : " hid") . " mm=" . mm . "]"
+    }
+    FileAppend, %line%`n, %A_ScriptDir%\logs\his_focus_debug.log, UTF-8
+}
