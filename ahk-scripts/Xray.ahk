@@ -696,7 +696,7 @@ CXRFinish:
 return
 
 ; 統一輸出函式（CXR2 / spine2 共用收尾）
-; outputMode: 1=只換行, 2=完整移動 呼叫 CopyCXRtoHISWithParam 的參數
+; outputMode: 1=只換行, 2=ActivateHIS + 換行 呼叫 CopyCXRtoHISWithParam 的參數
 ; windowName: 視窗名稱 ("CXR 範例" 或 "Spine phases")
 ; applyDash : 保留以維持呼叫端相容；目前所有呼叫端皆傳 false（項目符號已移除）
 ; resetCXR  : 是否呼叫 CXRClean 重置

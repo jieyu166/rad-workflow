@@ -662,7 +662,7 @@ return
 ; ✅ 推薦：使用數字參數，語意清晰
 ;CopyCXRtoHISWithParam(0)  ; 不移動不換行
 ;CopyCXRtoHISWithParam(1)  ; 只換行
-;CopyCXRtoHISWithParam(2)  ; 完整移動
+;CopyCXRtoHISWithParam(2)  ; ActivateHIS（完整啟動）+ 換行
 
 ; ⚠️ 可以但不推薦：使用 true/false
 ; CopyCXRtoHISWithParam(false)  ; = 0
@@ -674,7 +674,7 @@ CopyCXRtoHISWithParam(moveDown := 2) {
     else
         ActivateHISLight()
 
-    ; 開頭的移動（只在模式 2 時）
+    ; 開頭的移動：已停用（2026-03-08 起刻意設為模式 3，目前沒有呼叫端使用）
     if (moveDown = 3) {
         SendInput {End}{Down}
         SendInput {End}{Down}
