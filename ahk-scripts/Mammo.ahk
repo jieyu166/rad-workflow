@@ -154,6 +154,7 @@ Gui Add, Radio, xp yp+20 w150 h23 vmammoB6, BI-RADS &6
 
 Gui Add, Button, x25 y230 w140 h60 gMammo Default, 輸出(&`)
 Gui Add, Button, x25 y310 w140 h38 gMammoSilicone, 小針美容
+Gui Add, Button, x25 y355 w140 h38 gMammoSuspiciousForm, 疑陽表單
 
 Gui Show, w380 h400, Mammo
 
@@ -280,6 +281,16 @@ If (mammoB1 OR mammoB2 OR mammoB3){
 }
 
 CopyCXRtoHISWithParam(2)
+return
+
+; "疑陽表單" button. The capture code lives at the end of this file; it is called
+; dynamically so this GUI block has no load-time references outside the mammo; section.
+MammoSuspiciousForm:
+mammoFormFn := Func("MammoFormCapture")
+if (mammoFormFn)
+    mammoFormFn.Call()
+else
+    MsgBox, 16, 疑陽表單, 找不到 MammoFormCapture，請確認 Mammo.ahk 完整載入。
 return
 
 
@@ -1676,3 +1687,156 @@ WriteStudyID:
         ; SetTimer, RemoveToolTip, -1500
     }
     return
+
+;============================================================================================
+; Mammo suspicious-finding form (HPA appendix 4-5) capture
+; Collects chk060 report + PACS patient data, puts one JSON object on the clipboard and
+; opens tool/mammo-suspicious-form.html in Edge (no query string / fragment).
+;============================================================================================
+
+; ==== BEGIN mammo-form-core (sliced by tests/test_mammo_form_capture.py) ====
+; Escape a string as a JSON string body per RFC 8259 (non-ASCII is kept as-is).
+MammoFormEscapeJSON(str) {
+    str := StrReplace(str, "\", "\\")
+    str := StrReplace(str, """", "\""")
+    str := StrReplace(str, "`r", "\r")
+    str := StrReplace(str, "`n", "\n")
+    str := StrReplace(str, "`t", "\t")
+    Loop, 31
+    {
+        if (A_Index = 9 || A_Index = 10 || A_Index = 13)
+            continue
+        if InStr(str, Chr(A_Index))
+            str := StrReplace(str, Chr(A_Index), "\u" . Format("{:04X}", A_Index))
+    }
+    return str
+}
+
+; Build the clipboard hand-off JSON with a fixed key order; every value is a string.
+MammoFormBuildJSON(fields) {
+    keys := ["chartNo", "nameZh", "nameEn", "birthDate", "studyDate", "accession", "reportText"]
+    json := "{""source"":""rad-workflow/mammo-form"",""version"":""1"""
+    for index, key in keys
+    {
+        value := (IsObject(fields) && fields.HasKey(key)) ? fields[key] : ""
+        if (key = "birthDate" || key = "studyDate")
+            value := RegExReplace(value, "\D")
+        json .= ",""" . key . """:""" . MammoFormEscapeJSON(value . "") . """"
+    }
+    return json . "}"
+}
+
+; file:/// URL of the form page, resolved from this file's location; path segments are
+; percent-encoded (UTF-8) and no query string or fragment is ever appended.
+MammoFormPageURL() {
+    SplitPath, A_LineFile,, scriptDir
+    SplitPath, scriptDir,, repoDir
+    path := repoDir . "\tool\mammo-suspicious-form.html"
+    url := "file:///"
+    for index, segment in StrSplit(path, "\")
+    {
+        if (index = 1)
+            url .= segment
+        else
+            url .= "/" . LDCTUriEncodeUTF8(segment)
+    }
+    return url
+}
+
+; Collect all fields into `fields`. Returns "" on success or a Traditional Chinese abort message.
+MammoFormCollect(ByRef fields) {
+    fields := {}
+    reportText := MammoFormGetReportText()
+    if (Trim(reportText, " `t`r`n") = "")
+        return "請先在 chk060 開啟報告，再按「疑陽表單」。"
+
+    examNo := MammoFormGetExamNo()
+    if !RegExMatch(examNo, "\d{8}", chartNo)
+        return "chk060 檢查單號讀不到 8 碼病歷號，已中止。"
+
+    if !MammoFormPACSExists()
+        return "找不到 INFINITT PACS 視窗，請先在 PACS 開啟同一位病人。"
+
+    ActivatePACSForLDCT()
+    dicom := GetDICOMData()  ; read the DICOM header exactly once
+
+    ; Look up attributes by exact tag. "Patient ID" would also match the
+    ; Other Patient IDs line (0010,1000 = national ID), which must never be read.
+    patientId := GetDICOMLineData("0010,0020", dicom)
+    RegExMatch(patientId, "\d{8}", dicomChartNo)
+    if (dicomChartNo != chartNo) {
+        pacsShown := (dicomChartNo = "") ? "讀不到" : dicomChartNo
+        return "HIS 與 PACS 病人不同（HIS：" . chartNo . "，PACS：" . pacsShown . "），已中止。`n請確認 PACS 已切換到同一位病人。"
+    }
+
+    fields.chartNo := chartNo
+    fields.nameZh := Trim(GetPACSPatientChineseName())
+    fields.nameEn := Trim(GetDICOMLineData("0010,0010", dicom))
+    fields.birthDate := RegExReplace(GetDICOMLineData("0010,0030", dicom), "\D")
+    fields.studyDate := RegExReplace(GetDICOMLineData("0008,0020", dicom), "\D")
+    fields.accession := GetAccessionNumber(dicom)
+    fields.reportText := reportText
+    return ""
+}
+
+; Main flow. Returns true when the page was opened, false on abort (clipboard restored).
+MammoFormCapture() {
+    MammoFormClipSave(clipSaved)
+    msg := MammoFormCollect(fields)
+    if (msg = "") {
+        if (MammoFormClipSet(MammoFormBuildJSON(fields))) {
+            MammoFormOpenPage(MammoFormPageURL())
+            return true
+        }
+        msg := "無法寫入剪貼簿，請再試一次。"
+    }
+    MammoFormClipRestore(clipSaved)
+    MammoFormAlert(msg)
+    return false
+}
+; ==== END mammo-form-core ====
+
+; System wrappers (replaced by stubs in tests).
+; ClipboardAll data must travel ByRef; a by-value copy would be truncated.
+MammoFormClipSave(ByRef saved) {
+    saved := ""
+    try saved := ClipboardAll  ; can fail when another app holds the clipboard
+}
+
+MammoFormClipRestore(ByRef saved) {
+    try Clipboard := saved
+    saved := ""
+}
+
+MammoFormClipSet(text) {
+    try {
+        Clipboard := ""
+        Clipboard := text
+    } catch {
+        return false
+    }
+    ClipWait, 2
+    return !ErrorLevel
+}
+
+MammoFormGetReportText() {
+    ControlGetText, text, ThunderRT6TextBox14, ahk_exe chk060.exe
+    return text
+}
+
+MammoFormGetExamNo() {
+    ControlGetText, text, ThunderRT6TextBox9, ahk_exe chk060.exe
+    return text
+}
+
+MammoFormPACSExists() {
+    return WinExist("INFINITT PACS") ? true : false
+}
+
+MammoFormOpenPage(url) {
+    Run, msedge.exe "%url%"
+}
+
+MammoFormAlert(msg) {
+    MsgBox, 48, 疑陽表單, % msg
+}
