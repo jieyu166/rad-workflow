@@ -2,6 +2,7 @@
 ahk-scripts/radiologist_settings.ini
 ahk-scripts/remote.txt
 ahk-scripts/test3_name_debug.txt
+.env
 
 # 其他常見忽略項目
 *.log
