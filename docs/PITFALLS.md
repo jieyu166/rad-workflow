@@ -32,8 +32,8 @@
 - **症狀**：`ControlClick, %MyFunc()%, ...` 沒作用。根因：傳統參數的 `%...%` 只能包變數，不能包函式呼叫。修法：改用強制運算式 `ControlClick, % MyFunc(), ...`。（2026-08）
 - **症狀**：載入即報 `A control's variable must be global or static. Specifically: vXXX`。根因：`Gui, Add, ..., vXXX` 寫在函式內，`vXXX` 被當成區域變數。修法：函式內加 `global XXX`（或 `static`）。（2026-08）
 - **症狀**：腳本在家用機正常、醫院機路徑全錯。根因：硬編絕對路徑，但家用機是 `C:\Users\jai16\OneDrive\`、醫院機是 `D:\jai166\Onedrive\`。修法：用 `A_LineFile` 推導本檔位置（在 `#include` 的檔案裡回傳的是「本檔」路徑，不是主腳本），勿用 `A_ScriptDir`。（2026-08）
-
 - **症狀**：Win+X（複製舊報告）、`cxr2;`、`spine2;` 等所有經 `ActivateHISLight()` 輸出的功能，按鍵都打進原本的視窗（GUI 或 PACS），chk060 叫不到前景。根因：非程式碼問題（當晚 AHK 改動未觸及該路徑；chk060 無法以系統管理員執行，排除權限）；重開程式後即恢復。修法：**先重開 chk060／AHK 再查程式**，不要先改 `ActivateHISLight`。若重開無效，在 `ActivateHISLight` 記錄 WinActivate 前後的作用中程式與 chk060 視窗清單（只記類別、不記標題，標題含病人姓名）。（2026-10）
+
 ## Python
 
 - **症狀**：`http.server` 服靜態檔，中文檔名 404。根因：`urlparse(path).path` 不會 percent-decode。修法：手動 `unquote()` 再對磁碟路徑。（2026-06）
