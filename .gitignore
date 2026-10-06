@@ -54,3 +54,7 @@ openspec/.vector-search.db*
 # Superpowers isolated worktrees and task ledgers
 .worktrees/
 .superpowers/
+
+# Local pre-edit backups (git history is the real backup)
+*.bak-*
+ahk-scripts/usai-prompts/backup-*/
