@@ -1209,7 +1209,6 @@ return
 ; 全域變數
 global USAI_CurrentImage := ""
 global USAI_PreviousImage := ""
-global USAI_APIKey := API_KEY
 
 ; 熱字串觸發
 ::usaigui::
@@ -1918,16 +1917,6 @@ USAIAnalyze:
     SetTimer, CheckOpenAIResult, 1000
 return
 
-;    result := CallGeminiVision(USAIAPIKey, modelID, UserPrompt, images, useThinking)
-;    GuiControl, USAIG:Enable, 開始 Gemini 分析
-;    if (result != "") {
-;        GuiControl, USAIG:, USAIResult, %result%
-;        GuiControl, USAIG:, USAIStatus, 分析完成！
-;    } else {
-;        GuiControl, USAIG:, USAIStatus, 分析失敗
-;    }
-;return
-
 CheckOpenAIResult:
     Critical
     if (!IsObject(g_USAI_Job)) {
@@ -2377,7 +2366,7 @@ B64Encode(string) {
 
 
 ; ============================================================================
-; OpenAI Responses / legacy Gemini API helpers
+; OpenAI Responses API helpers
 ; ============================================================================
 BuildOpenAIResponsesJSON(modelID, prompt, images) {
     json := "{""model"":" . JEscape(modelID) . ",""input"":[{""role"":""user"",""content"":["
@@ -2477,98 +2466,6 @@ UnicodeChar(code) {
         , "Ptr", &mb, "Int", size
         , "Ptr", 0, "Ptr", 0)
     return StrGet(&mb, size, "CP0")
-}
-
-CallGeminiVision(apiKey, modelID, prompt, images, useThinking := false) {
-    ; API Endpoint
-    endpoint := "https://generativelanguage.googleapis.com/v1beta/models/" . modelID . ":generateContent?key=" . apiKey
-    
-    ; 構建 JSON Payload
-    json := BuildGeminiJSON(prompt, images, useThinking)
-    
-    whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-    whr.Open("POST", endpoint, false)
-    whr.SetRequestHeader("Content-Type", "application/json")
-    
-    ; Thinking 模型可能需要較長回應時間，設定超時為 120秒
-    whr.SetTimeouts(30000, 60000, 30000, 120000) 
-    
-    try {
-        whr.Send(json)
-        if (whr.Status = 200) {
-            return ParseGeminiResponse(whr.ResponseText)
-        } else {
-            MsgBox, 16, API Error, % "Status: " . whr.Status . "`nResponse: " . whr.ResponseText
-        }
-    } catch e {
-        MsgBox, 16, Network Error, % "Request failed: " . e.Message
-    }
-    return ""
-}
-
-BuildGeminiJSON(prompt, images, useThinking) {
-    ; 基礎結構
-    json := "{""contents"":[{""parts"":["
-    
-    ; Prompt
-    cleanPrompt := EscapeJSONString(prompt)
-    json .= "{""text"":""" . cleanPrompt . """}"
-    
-    ; Images
-    for index, imgData in images {
-        json .= ","
-        if (InStr(imgData, "base64,"))
-            imgRaw := SubStr(imgData, InStr(imgData, "base64,") + 7)
-        else
-            imgRaw := imgData
-        json .= "{""inline_data"":{""mime_type"":""image/png"",""" . "data"":""" . imgRaw . """}}"
-    }
-    json .= "]}]"
-    
-    ; === Thinking Config (關鍵修改) ===
-    if (useThinking) {
-        ; 根據文件，Gemini 3 / 2.0 Flash Thinking 使用 thinking_config
-        ; 設定 thinkingLevel 為 HIGH (對應 thinking=high)
-        ; 設定 includeThoughts 為 true (可選，若想看到思考過程)
-        json .= ",""generationConfig"":{"
-        json .= """thinkingConfig"":{"
-        json .= """includeThoughts"":true,"
-        json .= """thinkingLevel"":""HIGH"""  ; 這就是您需要的 thinking=high
-        json .= "}" ; End thinkingConfig
-        json .= "}" ; End generationConfig
-    }
-    
-    json .= "}" ; End root
-    return json
-}
-
-ParseGeminiResponse(responseText) {
-	; Gemini Thinking 模式會回傳多個 "text" 區塊
-    ; 第一個通常是思考過程 (Thought)，最後一個才是最終回答 (Response)
-    ; 所以我們需要用 Loop 抓取所有的 text，並保留最後一個
-    
-	finalResult := ""
-    pos := 1
-    
-    ; 循環尋找所有的 "text": "..."
-    while (pos := RegExMatch(responseText, """text""\s*:\s*""((?:\\.|[^""\\])*)""", match, pos)) {
-        finalResult := match1
-        ; 更新搜尋位置，繼續往後找下一個 text
-        pos += StrLen(match)
-    }
-    
-    if (finalResult != "") {
-        ; 還原轉義字符 (JSON Unescape)
-        result := finalResult
-        result := StrReplace(result, "\""", """")
-        result := StrReplace(result, "\n", "`n")
-        result := StrReplace(result, "\r", "`r")
-        result := StrReplace(result, "\t", "`t")
-        result := StrReplace(result, "\\", "\") ; 反斜線最後處理
-        return result
-    }
-    
-    return "Error parsing response: " . responseText
 }
 
 

@@ -21,7 +21,6 @@ global WB, lastUSAIResult := "", currentUSAIImage := "", previousUSAIImage := ""
 ; 全域變數
 global USAI_CurrentImage := ""
 global USAI_PreviousImage := ""
-global USAI_APIKey := API_KEY
 global USAI_CurrentOCRText := ""
 global USAI_PreviousOCRText := ""
 global g_USAI_StartTick := 0
@@ -548,7 +547,6 @@ return
 CreateConfigManager() {
     ; GUI 設定
 	
-	global USAI_APIKey := API_KEY
     Gui, ConfigManager:New, +AlwaysOnTop, 放射科工具設定管理器
     Gui, ConfigManager:Font, s12, 微軟正黑體
     
