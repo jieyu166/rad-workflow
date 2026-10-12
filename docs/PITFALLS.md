@@ -18,6 +18,7 @@
 - **症狀**：settings.json 的 hook command 跳脫寫到懷疑人生。修法：外部化成 `~/.claude/hooks/*.sh`，JSON 只放路徑。（2026-06）
 
 - **症狀**：repo 根目錄冒出 `pyvenv.cfg`、`Lib/`、`Include/`，`scripts/` 混入 `python.exe`／`pip.exe`，`.gitignore` 只剩 `*`，`git add` 說全部被忽略、`spectra task done` 顯示成功但 tasks.md 沒勾。根因：subagent 的 Bash cwd 每次呼叫後會重設回本 repo，agent 以相對路徑或空變數執行 `python -m venv`，venv 建在 repo 根目錄；venv 會寫一份內容為 `*` 的 `.gitignore` 蓋掉原檔。修法：`git checkout -- .gitignore`，逐檔刪 venv 殘留（`scripts/` 內只刪未追蹤的 venv 檔）；交辦 prompt 一律給**絕對路徑**的 venv 位置並要求建立前 `pwd`。（2026-09）
+- **症狀**：`l2n frames --mode scene` 跑十分鐘只留 1 張（00:00:00），log 滿是 `Frame at … has incorrect size and cannot be processed: decoded size = (2448, 1226), expected = (2448, 1338). Video may be corrupt.`。根因：螢幕錄影／直播存檔的解析度中途會變（分享畫面切換），PySceneDetect 以第一張為準、其後全部丟棄。修法：先 `ffprobe -show_entries stream=width,height` 或看 log，改 `l2n frames --mode interval --every 45 --force`；`--force` 只覆蓋 frames.json，不動其他產物。（2026-10）
 ## OneDrive（資料遺失風險）
 
 - **症狀**：原始 .py 檔憑空消失。案例：slide-extractor 曾遺失 .py，靠 .pyc 字串重建。修法：**寫完立即 commit**；Stop hook `~/.claude/hooks/check-uncommitted.sh` 會警告未 commit 的 .py/.md/.html/.yaml/.ahk。（2026-05）
