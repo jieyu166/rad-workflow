@@ -572,6 +572,16 @@ function handleClipboardText(text) {
     return importPayload(String(text ?? '').trim());
 }
 
+// True when text is a capture payload from the AHK button (source marker matches).
+function isPayloadText(text) {
+    try {
+        const data = JSON.parse(String(text ?? '').trim());
+        return !!data && typeof data === 'object' && !Array.isArray(data) && data.source === PAYLOAD_SOURCE;
+    } catch (e) {
+        return false;
+    }
+}
+
 async function importFromClipboard() {
     let text;
     try {
@@ -585,11 +595,18 @@ async function importFromClipboard() {
 }
 
 function onDocumentPaste(e) {
+    const text = e.clipboardData ? e.clipboardData.getData('text') : '';
+    // A capture payload is always imported, even when a text field has focus;
+    // otherwise it would land in the report box and be sent to the LLM with patient data.
+    if (isPayloadText(text)) {
+        e.preventDefault();
+        handleClipboardText(text);
+        return;
+    }
     const active = document.activeElement;
     // Let text-entry fields receive normal pastes; checkboxes and buttons do not count.
     const textInput = 'textarea, [contenteditable], input:not([type]), input[type="text"], input[type="password"], input[type="search"]';
     if (active && active.matches && active.matches(textInput)) return;
-    const text = e.clipboardData ? e.clipboardData.getData('text') : '';
     e.preventDefault();
     handleClipboardText(text);
 }
@@ -652,6 +669,10 @@ function applyParsedData(obj) {
 // Gemini call (only the report text is sent)
 // ---------------------------------------------------------------
 async function parseWithAI() {
+    // If the whole payload JSON ended up in the report box, import it first so that
+    // only the report text (never name, chart number or dates) is sent to the LLM.
+    if (isPayloadText(document.getElementById('reportText').value) &&
+        !importPayload(document.getElementById('reportText').value.trim())) return;
     const text = document.getElementById('reportText').value.trim();
     const apiKey = document.getElementById('apiKey').value.trim();
     hideRaw();

@@ -95,18 +95,48 @@ async function loadFixture(p, name) {
             assert.equal(await isChecked(p, 0, 'i1'), true);
             assert.equal(await p.evaluate(() => importPayload('hello')), false);
         });
-        await test('Ctrl+V 貼上 payload 可匯入；焦點在輸入框時不攔截', async p => {
+        await test('Ctrl+V 貼上 payload 一律匯入（含焦點在報告文字框）；一般文字照常貼進文字框', async p => {
             const paste = text => p.evaluate(t => {
                 const dt = new DataTransfer();
                 dt.setData('text/plain', t);
-                (document.activeElement || document).dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true }));
+                (document.activeElement || document).dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
             }, text);
             await p.locator('#reportText').focus();
             await paste(JSON.stringify(PAYLOAD));
-            assert.equal(await fieldValue(p, 'chartNo'), '');
-            await p.evaluate(() => document.activeElement.blur());
-            await paste(JSON.stringify(PAYLOAD));
             assert.equal(await fieldValue(p, 'chartNo'), '00000001');
+            assert.equal(await fieldValue(p, 'name'), '王小美');
+            assert.equal(await p.locator('#reportText').inputValue(), PAYLOAD.reportText);
+            // A non-payload paste inside the text area is left to the browser (not cancelled).
+            const cancelled = await p.evaluate(() => {
+                const dt = new DataTransfer();
+                dt.setData('text/plain', 'Right breast mass.');
+                const ev = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
+                document.getElementById('reportText').dispatchEvent(ev);
+                return ev.defaultPrevented;
+            });
+            assert.equal(cancelled, false);
+            assert.equal(await p.locator('#status.error').count(), 0);
+            await p.evaluate(() => document.activeElement.blur());
+            await paste(JSON.stringify({ ...PAYLOAD, chartNo: '00000002' }));
+            assert.equal(await fieldValue(p, 'chartNo'), '00000002');
+        });
+        await test('報告文字框內是整段 payload JSON 時，AI 解析前先匯入，不把姓名／病歷號送出', async (p, { geminiRequests }) => {
+            const { text, expected } = fixture('cat0_benign_calc');
+            let body;
+            await p.route(GEMINI, async route => {
+                body = route.request().postDataJSON();
+                await route.fulfill({ json: geminiBody(JSON.stringify({ cat4Sub: null, lesions: expected.lesions })) });
+            });
+            await p.locator('#reportText').fill(JSON.stringify({ ...PAYLOAD, reportText: text }));
+            await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
+            await p.getByRole('button', { name: 'AI 解析', exact: true }).click();
+            await p.waitForFunction(() => document.getElementById('status').classList.contains('success'));
+            assert.equal(geminiRequests.length, 1);
+            const sent = JSON.stringify(body);
+            for (const secret of ['00000001', '王小美', 'WANG', '19650309', '20261006', 'SYNTH0001', 'rad-workflow/mammo-form']) assert.ok(!sent.includes(secret), secret);
+            assert.equal(await fieldValue(p, 'chartNo'), '00000001');
+            assert.equal(await fieldValue(p, 'name'), '王小美');
+            assert.equal(await p.locator('#reportText').inputValue(), text);
         });
         await test('中文姓名缺漏時以英文姓名帶入並標示需人工修正', async p => {
             await p.evaluate(pl => importPayload({ ...pl, nameZh: '', nameEn: 'CHEN^MEI' }), PAYLOAD);

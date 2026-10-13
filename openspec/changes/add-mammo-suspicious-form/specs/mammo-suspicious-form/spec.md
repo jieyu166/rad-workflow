@@ -2,12 +2,17 @@
 
 ### Requirement: Import patient data from clipboard JSON
 
-tool/mammo-suspicious-form.html SHALL import data when the user pastes (Ctrl+V anywhere outside a text input) or presses the "從剪貼簿匯入" button. The page SHALL accept only a JSON object whose source equals "rad-workflow/mammo-form"; any other clipboard content SHALL show an error message and leave existing form data unchanged. The page SHALL NOT read patient data from the URL and SHALL NOT persist patient data to localStorage, sessionStorage or IndexedDB.
+tool/mammo-suspicious-form.html SHALL import data when the user pastes a payload (Ctrl+V anywhere, including while a text field such as the report box has focus) or presses the "從剪貼簿匯入" button. A non-payload paste inside a text field SHALL be left to the browser as a normal paste. If the report box contains a whole payload JSON when the user presses "AI 解析", the page SHALL import it first and send only the payload's reportText to the LLM. The page SHALL accept only a JSON object whose source equals "rad-workflow/mammo-form"; any other clipboard content SHALL show an error message and leave existing form data unchanged. The page SHALL NOT read patient data from the URL and SHALL NOT persist patient data to localStorage, sessionStorage or IndexedDB.
 
 #### Scenario: Valid payload
 
 - **WHEN** the user pastes a payload with source "rad-workflow/mammo-form"
 - **THEN** 病歷號, 姓名, 出生日期, 攝影日期 and the report text area are filled from the payload
+
+#### Scenario: Payload pasted into the report box
+
+- **WHEN** the report box has focus and the user pastes a payload with source "rad-workflow/mammo-form"
+- **THEN** the header fields are filled from the payload, the report box contains only reportText, and no chart number or name is later sent to the LLM
 
 #### Scenario: Foreign clipboard content
 
