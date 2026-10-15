@@ -240,7 +240,7 @@ Allowed values (exact strings only; never invent other values):
   Use "R" or "L" for one lesion. Use "multiple_unilateral" only when the report describes several lesions of the same type in one breast as a single finding, "multiple_bilateral" when it describes them as one finding in both breasts.
 - location (array, may be empty): "UOQ" | "UIQ" | "LOQ" | "LIQ" | "Subareolar" | "Axillary tail"
 - oneView (array, may be empty): "upper" | "lower" | "outer" | "inner"
-  Fill oneView only when the report says the finding is seen on one view only (upper/lower from MLO, outer/inner from CC).
+  Fill oneView (a) when the finding is seen on one view only and the report names its hemisphere, or (b) when the report gives only a hemisphere for the lesion (e.g. "left outer breast", "right medial breast", "lower breast") and no quadrant, or (c) for a boundary clock position (rule 5). If a quadrant is given, use location and leave oneView empty unless the report says one view only.
 - size (largest diameter, mass only): "<1" (< 1.0 cm) | "1-2" (1.0-1.9 cm) | "2-3" (2.0-2.9 cm) | "3-4" (3.0-3.9 cm) | ">4" (>= 4.0 cm). Convert mm to cm.
 - shape (mass only): "round" | "oval" | "lobular" | "irregular"
 - margin (mass only): "circumscribed" | "microlobulated" | "obscured" | "indistinct" | "spiculated"
@@ -254,12 +254,14 @@ Allowed values (exact strings only; never invent other values):
 Rules:
 1. List ONLY findings that drive the suspicious assessment (BI-RADS 0, 3, 4 or 5). If the report is BI-RADS 1 or 2, return "lesions": [].
 2. EXCLUDE findings described as benign, stable and concluded benign, typically benign, postoperative or negative ("no ..."), for example "Benign calcification of both breasts". Breast composition/density and comparison statements are never lesions.
-3. One lesion object per distinct lesion, in the order the lesions first appear in the report. A lesion repeated in IMP is the same lesion; do not duplicate it.
+3. One lesion object per distinct lesion, in the order the lesions first appear in the report. A lesion repeated in IMP is the same lesion; do not duplicate it. When one sentence lists several sites joined by "and" or commas (e.g. "left UOQ and lower breast, right medial breast"), make one lesion per site, each with its own location/oneView.
 4. Fields that do not apply to the type, or are not stated, are null (scalars) or [] (arrays). Never guess.
 5. Location: use the quadrant when the report states it (UOQ, UIQ, LOQ, LIQ, subareolar/retroareolar = "Subareolar", axillary tail). A clock position may be converted only when unambiguous:
    right breast: 12-3 o'clock = UIQ, 9-12 o'clock = UOQ, 3-6 o'clock = LIQ, 6-9 o'clock = LOQ;
    left breast: 12-3 o'clock = UOQ, 9-12 o'clock = UIQ, 3-6 o'clock = LOQ, 6-9 o'clock = LIQ.
-   Exactly 12, 3, 6 or 9 o'clock is a boundary: leave location empty. In "10/2" the first number is the clock position and the second is the distance. Words like "medial", "lateral", "upper" or "posterior" alone are not a quadrant.
+   Exactly 12, 3, 6 or 9 o'clock is a boundary: leave location empty and put the hemisphere in oneView instead: 12 o'clock = "upper", 6 o'clock = "lower"; right breast 9 o'clock = "outer", 3 o'clock = "inner"; left breast 3 o'clock = "outer", 9 o'clock = "inner".
+   In "10/2" or "1/3" the first number is the clock position and the second is the distance (never a fraction).
+   Hemisphere words are not a quadrant but ARE a hemisphere for oneView: "medial"/"inner" = "inner", "lateral"/"outer" = "outer", "upper" = "upper", "lower" = "lower". "posterior", "anterior", "middle" and "central" describe depth only and are ignored.
 6. otherText is a string only for type "other"; otherwise null.`;
 /* MAMMO-PROMPT-END */
 
