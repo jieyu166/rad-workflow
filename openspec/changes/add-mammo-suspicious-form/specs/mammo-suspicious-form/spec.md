@@ -102,6 +102,20 @@ The page SHALL render one complete form page (header, category and lesion sectio
 - **WHEN** the parsed result has a right mass and a left calcification
 - **THEN** two pages are rendered: page 1 ticks 1. Mass Rt., page 2 ticks 2. Calcifications Lt.
 
+### Requirement: Manual-tick prompt after parsing
+
+After LLM results are applied, the page SHALL check every form page and, for each page that still needs manual input, show a screen-only alert above that page listing the missing parts: no lesion item 1–9 ticked; a ticked item 1–8 with no side (Rt., Lt., or a Multiple option); a ticked item 1–4 with no location or one-view box; item 9 ticked with an empty description. When any page has an alert, the status line SHALL be a warning naming those pages and asking for manual ticking instead of the success message. Each alert SHALL update as the user ticks boxes and disappear when nothing is missing. Alerts SHALL NOT print.
+
+#### Scenario: No lesion found
+
+- **WHEN** the LLM returns lesions []
+- **THEN** the status line is a warning containing 人工勾選 and page 1 shows 未勾選任何病灶項目
+
+#### Scenario: Missing side and location cleared by the user
+
+- **WHEN** the LLM returns a mass with side null and location [] on page 1 and a complete lesion on page 2
+- **THEN** only page 1 shows an alert mentioning 左右側 and 位置, and after the user ticks Rt. and UOQ on page 1 the alert disappears
+
 ### Requirement: Manual edit and A4 print
 
 Every checkbox and text field on every form page SHALL be editable by the user after parsing. Printing SHALL output only the form pages, each on its own A4 portrait sheet with the layout of 附表四之五 (114 年 1 月修訂), hiding all controls, key input and report text area.

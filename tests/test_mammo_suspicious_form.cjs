@@ -130,7 +130,7 @@ async function loadFixture(p, name) {
             await p.locator('#reportText').fill(JSON.stringify({ ...PAYLOAD, reportText: text }));
             await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
             await p.getByRole('button', { name: 'AI 解析', exact: true }).click();
-            await p.waitForFunction(() => document.getElementById('status').classList.contains('success'));
+            await p.waitForFunction(() => document.getElementById('status').classList.contains('success') || document.getElementById('status').classList.contains('warning'));
             assert.equal(geminiRequests.length, 1);
             const sent = JSON.stringify(body);
             for (const secret of ['00000001', '王小美', 'WANG', '19650309', '20261006', 'SYNTH0001', 'rad-workflow/mammo-form']) assert.ok(!sent.includes(secret), secret);
@@ -306,6 +306,45 @@ async function loadFixture(p, name) {
             assert.equal(await pageCount(p), 1, '至少保留一頁');
         });
 
+        // ---------- manual-tick prompts ----------
+        const runAI = async (p, lesions) => {
+            await p.route(GEMINI, route => route.fulfill({ json: geminiBody(JSON.stringify({ cat4Sub: null, lesions })) }));
+            await p.evaluate(pl => importPayload(pl), PAYLOAD);
+            await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
+            await p.getByRole('button', { name: 'AI 解析', exact: true }).click();
+            await p.waitForFunction(() => !document.getElementById('status').classList.contains('loading'));
+        };
+        const alertText = (p, i) => p.locator('.page-wrap').nth(i).locator('.page-alert').innerText().catch(() => '');
+        await test('AI 解析後沒有任何病灶：狀態列警告並在頁面標示需人工勾選', async p => {
+            await runAI(p, []);
+            assert.equal(await p.locator('#status.warning').count(), 1);
+            assert.match(await p.locator('#status').innerText(), /人工勾選/);
+            assert.match(await alertText(p, 0), /未勾選任何病灶項目/);
+        });
+        await test('病灶缺左右側與位置時逐頁提示；人工補勾後提示消失', async p => {
+            await runAI(p, [{ type: 'mass', side: null, location: [] }, { type: 'calcification', side: 'L', location: ['UIQ'] }]);
+            assert.equal(await p.locator('#status.warning').count(), 1);
+            assert.match(await p.locator('#status').innerText(), /第 1 頁/);
+            const a1 = await alertText(p, 0);
+            assert.match(a1, /左右側/);
+            assert.match(a1, /位置/);
+            assert.equal(await p.locator('.page-wrap').nth(1).locator('.page-alert').count(), 0);
+            await p.locator('.page-wrap').nth(0).locator('input[data-k="i1.R"]').check();
+            assert.doesNotMatch(await alertText(p, 0), /左右側/);
+            await p.locator('.page-wrap').nth(0).locator('input[data-k="i1.loc.UOQ"]').check();
+            assert.equal(await p.locator('.page-wrap').nth(0).locator('.page-alert').count(), 0);
+        });
+        await test('AI 回傳未知病灶類型：該頁提示未勾選任何病灶項目；列印時提示隱藏', async p => {
+            await runAI(p, [{ type: 'weird', side: 'R' }]);
+            assert.match(await alertText(p, 0), /未勾選任何病灶項目/);
+            await p.emulateMedia({ media: 'print' });
+            assert.equal(await p.locator('.page-alert').first().isVisible(), false);
+        });
+        await test('病灶完整時狀態為成功、無頁面提示', async p => {
+            await runAI(p, [{ type: 'asymmetry', side: 'R', location: ['LOQ'], asymmetryType: 'focal' }]);
+            assert.equal(await p.locator('#status.success').count(), 1);
+            assert.equal(await p.locator('.page-alert').count(), 0);
+        });
         // ---------- LLM path ----------
         await test('AI 解析：攔截 Gemini 回傳 fixture JSON 後產生頁面，只送報告文字', async (p, { geminiRequests }) => {
             const { text, expected } = fixture('cat0_bilateral');
@@ -317,7 +356,7 @@ async function loadFixture(p, name) {
             await p.evaluate(pl => importPayload(pl), { ...PAYLOAD, reportText: text });
             await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
             await p.getByRole('button', { name: 'AI 解析', exact: true }).click();
-            await p.waitForFunction(() => document.getElementById('status').classList.contains('success'));
+            await p.waitForFunction(() => document.getElementById('status').classList.contains('success') || document.getElementById('status').classList.contains('warning'));
             assert.equal(await pageCount(p), 2);
             assert.equal(await isChecked(p, 1, 'i2.L'), true);
             assert.equal(geminiRequests.length, 1);
