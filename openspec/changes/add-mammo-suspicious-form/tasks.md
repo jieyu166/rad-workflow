@@ -25,4 +25,5 @@
 - [x] 4.1 實作 Local batch validation against archived reports：radtracker/validate_mammo_form_llm.py 以標記擷取 HTML 內同一份 prompt，讀 GEMINI_API_KEY（.env 或環境變數，缺則 exit 2），對 category 0/3/4/5 報告逐份解析並顯示進度，主控台只輸出 cp950 相容字元，明細 CSV 寫入 radtracker/output/；驗證：以 --limit 3 執行成功並輸出 JSON 合法率、schema 合法率、lesion 數分布、左右側一致率。
 - [ ] 4.2 全量批次驗證並調整 prompt：跑 202602–202606 全部疑陽報告，達成 JSON 與 schema 合法率 100%、category 0 報告 lesion ≥ 1 比例 ≥ 95%；驗證：結果數字記於本任務備註，抽 10 份由使用者人工核對勾選正確性。
   - 備註（2026-10-06 全量 202602–202606）：143 份；JSON 合法 143/143、schema 合法 143/143（嚴格，無 enum 被丟棄）；lesion 數 1:119、2:20、3:4；category 0 有 lesion 138/138；左右側一致 138/138。抽樣核對頁 radtracker/output/mammo_form_review_20261006.html（gitignored），待使用者核對。
+  - 備註（2026-10-15 實際報告測試）：新抓 202607–202610 共 507 份，BI-RADS 0 55 份；逐份 QA 唯一錯誤型態為「只寫半球／邊界鐘點時位置留空」（10 份 11 頁）。提示詞改為半球與邊界鐘點填 One view only 後，需人工補位置 15→2（剩餘 2 份報告本身無位置）。回歸 202602–202610 共 198 份：JSON／schema 100%、category 0 有 lesion 193/193、左右側一致 192/192。
 - [ ] 4.3 端到端實機測試：使用者在佳里工作站以真實病例從 mammo; 按「疑陽表單」到列印預覽；驗證：使用者確認表頭、民國日期、病灶勾選與 A4 版面正確，並以 python -m pytest -q tests/ 與 node tests/test_mammo_suspicious_form.cjs 全數通過作為合併前檢查。
