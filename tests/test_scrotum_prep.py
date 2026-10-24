@@ -58,10 +58,32 @@ class ScrotumPrepTests(unittest.TestCase):
         self.assertIn("Left testis: size = 1.6x0.8x2.3 cm; volume about 2.1 mL (<12 mL)", out)
         self.assertIn("Volume asymmetry: 28% (>20%)", out)
 
-    def test_pediatric_age_skips_adult_cutoff(self):
+    def test_asymmetry_flag_uses_unrounded_value(self):
+        # 15.47 vs 12.41 mL -> 19.8%: shown as 20% but not flagged
+        out = prep("right 2.6x2.4x3.5 left 2.6x2.1x3.2")
+        self.assertIn("Volume asymmetry: 20%\n", out)
+        self.assertNotIn(">20%", out)
+
+    def test_pediatric_age_uses_z_score_not_adult_cutoff(self):
+        # Bin 2021 z-score: 2.9 / 2.1 mL at 12 y are within the 95% reference interval
         out = prep("right 1.7x1.0x2.4\nleft 1.6x0.8x2.3\nage 12")
-        self.assertNotIn("mL (<12 mL)", out)
-        self.assertIn("age 12", out)
+        self.assertNotIn("(<12 mL)", out)
+        self.assertIn("volume about 2.9 mL; z = -0.06 (age 12 y; 95% range 1.2-7.4 mL)\n", out)
+        self.assertIn("volume about 2.1 mL; z = -0.77 (age 12 y; 95% range 1.2-7.4 mL)\n", out)
+        self.assertIn("Front Pediatr. 2021;9:648711", out)
+
+    def test_pediatric_small_for_age(self):
+        out = prep("right 1.7x1.0x2.4\nage 15")
+        self.assertIn("z = -2.09 (age 15 y; 95% range 3.1-18.9 mL) small for age", out)
+
+    def test_pediatric_age_in_months(self):
+        out = prep("right 0.8x0.5x1.0\nage 8m")
+        self.assertIn("z = -1.62 (age 8 months; 95% range 0.3-0.7 mL)", out)
+
+    def test_adult_age_keeps_adult_cutoff(self):
+        out = prep("right 2.0x1.6x2.2\nage 45")
+        self.assertIn("volume about 5.0 mL (<12 mL)", out)
+        self.assertNotIn("z =", out)
 
     def test_single_side_has_no_asymmetry(self):
         out = prep("Left testis not found.\nright 4.2x3.1x2.1")

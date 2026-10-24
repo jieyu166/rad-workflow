@@ -922,13 +922,25 @@ return
 
 ; Scrotal US: precompute Lambert testis volume (0.71 x L x W x H) and L/R asymmetry from the
 ; "right AxBxC / left AxBxC" input lines, so the model copies numbers instead of doing arithmetic.
-; Dimensions > 10 (or an explicit "mm") are treated as mm. "age N" (N < 18) skips the adult
-; <12 mL small-testis flag. Returns "" when no size line is present.
+; Dimensions > 10 (or an explicit "mm") are treated as mm. Returns "" when no size line is present.
+; "age N" (years; "Nm" = months) under 18 switches from the adult <12 mL flag to the age-based
+; z-score of Bin et al., Front Pediatr 2021;9:648711 (log10 volume, cubic mean / quadratic SD);
+; |z| > 1.96 is outside the 95% reference interval.
 I2F_ScrotumPrep(impr) {
     sides := [["Right", "right|rt"], ["Left", "left|lt"]]
     vols := {}
     out := ""
-    ped := RegExMatch(impr, "i)\bage\s*[:=]?\s*(\d{1,3})", ag) && (ag1 + 0 < 18)
+    ped := false
+    if RegExMatch(impr, "i)\bage\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(m|mo|mos|months?)?\b", ag) {
+        ageY := ag2 != "" ? ag1 / 12 : ag1 + 0
+        ped := ageY < 18
+    }
+    if (ped) {
+        zMu := -0.3524 - 0.01759 * ageY + 0.009417 * ageY**2 - 0.0001840 * ageY**3
+        zSd := 0.1059 + 0.01434 * ageY - 0.0005324 * ageY**2
+        ageTxt := ag2 != "" ? ag1 " months" : ag1 " y"
+        refTxt := "95% range " Round(10**(zMu - 1.96 * zSd), 1) "-" Round(10**(zMu + 1.96 * zSd), 1) " mL"
+    }
     for i, s in sides {
         if !RegExMatch(impr, "i)\b(?:" s[2] ")\s*[:=]?\s*(\d+(?:\.\d+)?)\s*[xX\*]\s*(\d+(?:\.\d+)?)\s*[xX\*]\s*(\d+(?:\.\d+)?)\s*(mm|cm)?", m)
             continue
@@ -939,18 +951,25 @@ I2F_ScrotumPrep(impr) {
         v := 0.71 * a * b * c
         vols[s[1]] := v
         out .= s[1] " testis: size = " a "x" b "x" c " cm; volume about " Round(v, 1) " mL"
-            . ((!ped && v < 12) ? " (<12 mL)" : "") "`n"
+        if (ped) {
+            z := v > 0 ? (Log(v) - zMu) / zSd : 0
+            out .= "; z = " Round(z, 2) " (age " ageTxt "; " refTxt ")"
+                . (z < -1.96 ? " small for age" : (z > 1.96 ? " large for age" : ""))
+        } else if (v < 12)
+            out .= " (<12 mL)"
+        out .= "`n"
     }
     if (out = "")
         return ""
     if (vols.HasKey("Right") && vols.HasKey("Left")) {
         big := vols.Right > vols.Left ? vols.Right : vols.Left
         small := vols.Right > vols.Left ? vols.Left : vols.Right
-        asym := big > 0 ? Round((big - small) / big * 100) : 0
-        out .= "Volume asymmetry: " asym "%" (asym >= 20 ? " (>20%)" : "") "`n"
+        pct := big > 0 ? (big - small) / big * 100 : 0
+        ; flag on the unrounded value so 19.8% (shown as 20%) is not labelled ">20%"
+        out .= "Volume asymmetry: " Round(pct) "%" (pct > 20 ? " (>20%)" : "") "`n"
     }
     if (ped)
-        out .= "Pediatric patient (age " ag1 "): adult <12 mL cutoff not applied.`n"
+        out .= "Pediatric reference: age-based z-score (Ref: Front Pediatr. 2021;9:648711).`n"
     return "PRECOMPUTED TESTIS MEASUREMENTS (copy verbatim; do not recalculate):`n" . out
 }
 
