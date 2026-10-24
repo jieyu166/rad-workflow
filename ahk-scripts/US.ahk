@@ -809,7 +809,7 @@ return
 ; ============================================================================
 ; AI Findings Generator (Impression -> Findings), AutoHotkey v1
 ; Requires: API_KEY global (loaded by 簡碼 jai.ahk from radiologist_settings.ini)
-; Prompts: external files in ahk-scripts/prompts/{us_abd,us_trus,us_ivp,ct_chest}.md
+; Prompts: external files in ahk-scripts/prompts/{us_abd,us_trus,us_ivp,ct_chest,us_scrotum}.md
 ; Hot entry point: gAI_FindOpen from Abd US 簡化 GUI
 ; ============================================================================
 
@@ -835,7 +835,7 @@ Gui, I2F:Add, Radio, x230 y30 w120 vI2F_TypeUroM, Urotract(&M)
 Gui, I2F:Add, Radio, x360 y30 w120 vI2F_TypeUroF, Urotract(&F)
 ; --- Prompt 情境選擇 ---
 Gui, I2F:Add, Text, x20 y60 w80 h20, 輸出模式:
-Gui, I2F:Add, DropDownList, x100 y55 w360 vI2F_Scenario gI2F_OnScenarioChange Choose1, 腹超||TRUS||IVP||CT-Chest
+Gui, I2F:Add, DropDownList, x100 y55 w360 vI2F_Scenario gI2F_OnScenarioChange Choose1, 腹超||TRUS||IVP||CT-Chest||Scrotum
 
 Gui, I2F:Add, Text, xm y+25, Impression:
 Gui, I2F:Add, Edit, vI2F_Impression w480 h160
@@ -907,7 +907,9 @@ return
 I2F_CopyFindImpr:
 Gui, I2F:Submit, NoHide
 findText := RegExReplace(I2F_Findings, "\r?\n", "`r`n")
-imprText := RegExReplace(I2F_Impression, "\r?\n", "`r`n")
+; Scrotum: drop the size / reflux / age input lines so they do not land in the report Impression
+imprSrc := InStr(I2F_Scenario, "Scrotum") ? I2F_ScrotumStrip(I2F_Impression) : I2F_Impression
+imprText := RegExReplace(imprSrc, "\r?\n", "`r`n")
 imprText := "Impression:`r`n" . imprText
 if (findText = "" && imprText = "") {
     MsgBox, 48, Warning, Findings and Impression are both empty.
@@ -917,6 +919,57 @@ ControlSetText, ThunderRT6TextBox14, %findText%, ahk_exe chk060.exe
 ControlSetText, ThunderRT6TextBox5, %imprText%, ahk_exe chk060.exe
 MsgBox, 64, Done, Findings + original Impression copied to chk060.
 return
+
+; Scrotal US: precompute Lambert testis volume (0.71 x L x W x H) and L/R asymmetry from the
+; "right AxBxC / left AxBxC" input lines, so the model copies numbers instead of doing arithmetic.
+; Dimensions > 10 (or an explicit "mm") are treated as mm. "age N" (N < 18) skips the adult
+; <12 mL small-testis flag. Returns "" when no size line is present.
+I2F_ScrotumPrep(impr) {
+    sides := [["Right", "right|rt"], ["Left", "left|lt"]]
+    vols := {}
+    out := ""
+    ped := RegExMatch(impr, "i)\bage\s*[:=]?\s*(\d{1,3})", ag) && (ag1 + 0 < 18)
+    for i, s in sides {
+        if !RegExMatch(impr, "i)\b(?:" s[2] ")\s*[:=]?\s*(\d+(?:\.\d+)?)\s*[xX\*]\s*(\d+(?:\.\d+)?)\s*[xX\*]\s*(\d+(?:\.\d+)?)\s*(mm|cm)?", m)
+            continue
+        if (m4 = "mm" || (m4 = "" && (m1 + 0 > 10 || m2 + 0 > 10 || m3 + 0 > 10)))
+            a := Round(m1 / 10, 1), b := Round(m2 / 10, 1), c := Round(m3 / 10, 1)
+        else
+            a := m1, b := m2, c := m3
+        v := 0.71 * a * b * c
+        vols[s[1]] := v
+        out .= s[1] " testis: size = " a "x" b "x" c " cm; volume about " Round(v, 1) " mL"
+            . ((!ped && v < 12) ? " (<12 mL)" : "") "`n"
+    }
+    if (out = "")
+        return ""
+    if (vols.HasKey("Right") && vols.HasKey("Left")) {
+        big := vols.Right > vols.Left ? vols.Right : vols.Left
+        small := vols.Right > vols.Left ? vols.Left : vols.Right
+        asym := big > 0 ? Round((big - small) / big * 100) : 0
+        out .= "Volume asymmetry: " asym "%" (asym >= 20 ? " (>20%)" : "") "`n"
+    }
+    if (ped)
+        out .= "Pediatric patient (age " ag1 "): adult <12 mL cutoff not applied.`n"
+    return "PRECOMPUTED TESTIS MEASUREMENTS (copy verbatim; do not recalculate):`n" . out
+}
+
+; Scrotal US: remove input-only lines (testis sizes, reflux, age) from the Impression text.
+I2F_ScrotumStrip(impr) {
+    out := ""
+    Loop, Parse, impr, `n, `r
+    {
+        line := A_LoopField
+        if RegExMatch(line, "i)^\s*(right|rt|left|lt)\s*[:=]?\s*\d+(\.\d+)?\s*[xX\*]")
+            continue
+        if RegExMatch(line, "i)^\s*((rt|lt|right|left|r|l|bil\.?|bilateral)\s*)?reflux\b")
+            continue
+        if RegExMatch(line, "i)^\s*age\s*[:=]?\s*\d")
+            continue
+        out .= (out = "" ? "" : "`n") . line
+    }
+    return out
+}
 
 I2F_DoGenerate:
 Gui, I2F:Submit, NoHide
@@ -972,6 +1025,8 @@ else if (InStr(I2F_Scenario, "TRUS"))
     promptFile := g_I2F_PromptDir "\us_trus.md"
 else if (InStr(I2F_Scenario, "CT-Chest"))
     promptFile := g_I2F_PromptDir "\ct_chest.md"
+else if (InStr(I2F_Scenario, "Scrotum"))
+    promptFile := g_I2F_PromptDir "\us_scrotum.md"
 
 if (!FileExist(promptFile)) {
     MsgBox, 16, Error, 找不到 prompt 檔案：%promptFile%`n請確認 ahk-scripts/prompts/ 內有對應 .md 檔。
@@ -994,6 +1049,11 @@ sysPrompt := StrReplace(sysPrompt, "{{ctLimitationNote}}", ctLimitationNote)
 
 ; 建立 userPrompt + JSON
 userPrompt := "Impression:`n" . I2F_Impression
+if (InStr(I2F_Scenario, "Scrotum")) {
+    scrotumPre := I2F_ScrotumPrep(I2F_Impression)
+    if (scrotumPre != "")
+        userPrompt .= "`n`n" . scrotumPre
+}
 
 ; 注意：gpt-5 系列不支援 temperature 自訂（只接受預設值 1），故不傳此參數
 json := "{"
