@@ -163,7 +163,8 @@ def load_biopsy_qc():
             row["malignant"] = mal
         summary.append(row)
 
-    total_malignant = sum(r.get("malignant", 0) for r in summary)
+    # Count malignancy from every procedure (thyroid FNA included), not only the PPV rows.
+    total_malignant = sum(r["counts"].get("malignant", 0) for r in summary)
     # Build sorted monthly thyroid trend with real (ex-cystic) ND rate
     thy_trend = []
     for mk in sorted(thy_monthly):
