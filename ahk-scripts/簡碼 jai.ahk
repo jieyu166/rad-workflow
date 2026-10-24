@@ -439,12 +439,12 @@ HotstringMenuV("A","MenuShortcut2"
     ,"Suggest _ for further evaluation"
     ,"Suggest correlate with other studies"
     ,"BRK"
-    ,"Suggest thyroid US follow-up."
-    ,"Suggest breast US correlation."
+	,"Suggest correlate with MRCP to evaluate if any connection to pancreatic duct."
     ,"Suggest diagnostic mammography for further evaluation."
     ,"Suggest diagnostic mammography with spot magnification for further evaluation."
-    ,"Suggest 6-month follow-up mammography."
-    ,"Diagnostic mammo(_ breast, spot magnification)")
+    ,"Diagnostic mammo(_ breast, spot magnification)"
+	,"Suggest breast US correlation."
+    ,"Suggest thyroid US follow-up.")
 return
 
 :O:nodule;::
