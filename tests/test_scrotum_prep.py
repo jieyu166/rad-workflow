@@ -76,9 +76,15 @@ class ScrotumPrepTests(unittest.TestCase):
         out = prep("right 1.7x1.0x2.4\nage 15")
         self.assertIn("z = -2.09 (age 15 y; 95% range 3.1-18.9 mL) small for age", out)
 
+    def test_no_flag_when_table_disagrees_with_equation(self):
+        # age 8, 0.40 mL: equation z = -2.23 (small) but Table 1 (0.90 +/- 0.29) z = -1.73 -> no flag
+        out = prep("right 1.1x0.6x0.85\nage 8")
+        self.assertIn("volume about 0.40 mL; z = -2.23 (age 8 y; 95% range 0.45-2.4 mL)", out)
+        self.assertNotIn("small for age", out)
+
     def test_pediatric_age_in_months(self):
         out = prep("right 0.8x0.5x1.0\nage 8m")
-        self.assertIn("z = -1.62 (age 8 months; 95% range 0.3-0.7 mL)", out)
+        self.assertIn("volume about 0.28 mL; z = -1.62 (age 8 months; 95% range 0.26-0.73 mL)", out)
 
     def test_adult_age_keeps_adult_cutoff(self):
         out = prep("right 2.0x1.6x2.2\nage 45")

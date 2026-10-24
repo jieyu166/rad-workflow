@@ -925,8 +925,15 @@ return
 ; Dimensions > 10 (or an explicit "mm") are treated as mm. Returns "" when no size line is present.
 ; "age N" (years; "Nm" = months) under 18 switches from the adult <12 mL flag to the age-based
 ; z-score of Bin et al., Front Pediatr 2021;9:648711 (log10 volume, cubic mean / quadratic SD);
-; |z| > 1.96 is outside the 95% reference interval.
+; |z| > 1.96 is outside the 95% reference interval. Because the paper's Table 1 means disagree
+; with its own curve at some ages (7-9 y, >16 y), "small/large for age" is flagged only when the
+; Table 1 bracket z-score (side-specific mean/SD by integer age) agrees with the equation.
 I2F_ScrotumPrep(impr) {
+    ; Bin 2021 Table 1, brackets 0-1 ... 17-18 y: mean and SD (mL)
+    static tblMean := {Right: [0.44,0.45,0.54,0.57,0.64,0.65,0.72,0.77,0.90,1.26,2.57,3.37,5.13,6.71,7.83,9.73,11.44,13.53]
+                     , Left:  [0.43,0.45,0.53,0.57,0.63,0.63,0.71,0.78,0.88,1.25,2.48,3.24,5.01,6.39,7.74,9.72,11.53,13.41]}
+    static tblSd := {Right: [0.14,0.11,0.15,0.16,0.17,0.18,0.21,0.22,0.29,0.57,1.46,2.20,2.73,2.57,2.28,2.50,2.54,3.33]
+                   , Left:  [0.13,0.11,0.14,0.17,0.17,0.17,0.21,0.22,0.29,0.55,1.35,2.05,2.68,2.56,2.36,2.44,2.63,3.10]}
     sides := [["Right", "right|rt"], ["Left", "left|lt"]]
     vols := {}
     out := ""
@@ -939,7 +946,8 @@ I2F_ScrotumPrep(impr) {
         zMu := -0.3524 - 0.01759 * ageY + 0.009417 * ageY**2 - 0.0001840 * ageY**3
         zSd := 0.1059 + 0.01434 * ageY - 0.0005324 * ageY**2
         ageTxt := ag2 != "" ? ag1 " months" : ag1 " y"
-        refTxt := "95% range " Round(10**(zMu - 1.96 * zSd), 1) "-" Round(10**(zMu + 1.96 * zSd), 1) " mL"
+        lo := 10**(zMu - 1.96 * zSd), hi := 10**(zMu + 1.96 * zSd)
+        refTxt := "95% range " (lo < 1 ? Round(lo, 2) : Round(lo, 1)) "-" (hi < 1 ? Round(hi, 2) : Round(hi, 1)) " mL"
     }
     for i, s in sides {
         if !RegExMatch(impr, "i)\b(?:" s[2] ")\s*[:=]?\s*(\d+(?:\.\d+)?)\s*[xX\*]\s*(\d+(?:\.\d+)?)\s*[xX\*]\s*(\d+(?:\.\d+)?)\s*(mm|cm)?", m)
@@ -950,11 +958,15 @@ I2F_ScrotumPrep(impr) {
             a := m1, b := m2, c := m3
         v := 0.71 * a * b * c
         vols[s[1]] := v
-        out .= s[1] " testis: size = " a "x" b "x" c " cm; volume about " Round(v, 1) " mL"
+        ; two decimals below 1 mL so infant volumes are not rounded into their reference range
+        out .= s[1] " testis: size = " a "x" b "x" c " cm; volume about " (v < 1 ? Round(v, 2) : Round(v, 1)) " mL"
         if (ped) {
             z := v > 0 ? (Log(v) - zMu) / zSd : 0
+            bk := Floor(ageY) + 1
+            bk := bk < 1 ? 1 : (bk > 18 ? 18 : bk)
+            tz := (v - tblMean[s[1]][bk]) / tblSd[s[1]][bk]
             out .= "; z = " Round(z, 2) " (age " ageTxt "; " refTxt ")"
-                . (z < -1.96 ? " small for age" : (z > 1.96 ? " large for age" : ""))
+                . ((z < -1.96 && tz < -1.96) ? " small for age" : ((z > 1.96 && tz > 1.96) ? " large for age" : ""))
         } else if (v < 12)
             out .= " (<12 mL)"
         out .= "`n"
