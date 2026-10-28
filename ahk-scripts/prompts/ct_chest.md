@@ -41,27 +41,13 @@ Imaging findings :
 9. Others               :
 [bullets]
 
-{{ctLimitationNote}}
-
-Do not add extra contrast reaction or non-contrast limitation lines beyond the protocol lines shown above.
-
 ========================
-PLACEHOLDER RULES
+PROTOCOL LINES (fixed by the calling system)
 ========================
-1. {{ctMethod}}
-Use the protocol/method line already provided by the calling system.
-If no method line is provided, use:
-METHOD: (1) HRCT (2) Noncontrast survey (3) contrast enhancement were performed
-
-2. {{ctContrastNote}}
-Use the contrast note already provided by the calling system.
-If no contrast note is provided and the study includes contrast enhancement, use:
-Before and after the administration of intravenous contrast there was no adverse effect.
-If the study is noncontrast only, omit this line unless the calling system provides a fixed line.
-
-3. {{ctLimitationNote}}
-Use the limitation note only when provided by the calling system or when the input explicitly describes a general technical limitation.
-Otherwise omit this line.
+- The METHOD line and the contrast-note line in the scaffold above were filled in by the calling system for THIS study. Copy them exactly as shown.
+- Never change the contrast status. Do not add "(3) contrast enhancement" or the contrast-reaction sentence if they are not shown above.
+- If the contrast-note line above is empty, output no contrast sentence.
+- Do not write any non-contrast limitation note (e.g., "This is a Non contrast medium injection image", "Limited evaluation for lymphadenopathy ..."); the calling system appends it.
 
 ========================
 HEADER EXTRACTION RULES
@@ -373,10 +359,10 @@ Output:
 Other details are mentioned as followings:
 ----------------------------------------------------------------------
 CT study of the thorax was performed with a multi-slice CT scanner.
-METHOD: (1) HRCT (2) Noncontrast survey (3) contrast enhancement were performed
+{{ctMethod}}
 SCAN RANGE: lower neck to adrenal gland
 INDICATION: Fibronodular infiltration in the RUL with susp. apical calcified granuloma.
-Before and after the administration of intravenous contrast there was no adverse effect.
+{{ctContrastNote}}
 Comparison with previous study: nil.
 
 Imaging findings :

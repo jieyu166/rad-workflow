@@ -1106,6 +1106,9 @@ GuiControl, I2F:, I2F_Status, % "處理中... 0.0s（" I2F_Scenario " / " gModel
 g_I2F_LastScenario := I2F_Scenario
 g_I2F_LastImpression := I2F_Impression
 g_I2F_LastModel := gModel
+g_I2F_LastCTMethod := ctMethod
+g_I2F_LastCTContrastNote := ctContrastNote
+g_I2F_LastCTLimitNote := ctLimitationNote
 
 ; 啟動非同步 HTTP（async = true）
 g_I2F_Whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -1186,6 +1189,8 @@ I2F_PollResponse:
             find := content
     }
     find := Trim(find)
+    if (InStr(g_I2F_LastScenario, "CT-Chest"))
+        find := I2F_FixCTScaffold(find, g_I2F_LastCTMethod, g_I2F_LastCTContrastNote, g_I2F_LastCTLimitNote)
 
     GuiControl, I2F:, I2F_Findings, % find
     GuiControl, I2F:, I2F_Status, % "完成 " elapsed_s "s | tokens " g_I2F_LastTokens.total " (in " g_I2F_LastTokens.prompt "/out " g_I2F_LastTokens.completion ")"
@@ -1264,6 +1269,67 @@ ExtractContent(json) {
 }
 
 ; 修正JEscape函數中的類似問題：
+; CT-Chest: force the protocol lines chosen in the GUI (contrast / non-contrast) after the LLM reply.
+; The model sometimes copies the contrast METHOD line into non-contrast studies or drops the
+; non-contrast limitation note, so these lines are never left to the model.
+I2F_FixCTScaffold(text, method, contrastNote, limitNote) {
+    text := StrReplace(text, "`r`n", "`n")
+    lines := []
+    placed := false
+    Loop, Parse, text, `n
+    {
+        line := A_LoopField
+        if RegExMatch(line, "i)^\s*METHOD\s*:") {
+            if (!placed) {
+                lines.Push(method)
+                placed := true
+            }
+            continue
+        }
+        if RegExMatch(line, "i)administration of intravenous contrast|non ?contrast medium injection image|^\s*[-*]?\s*Limited evalu(a)?tion for lymphadenopathy")
+            continue
+        lines.Push(line)
+    }
+    if (!placed) {
+        at := 1
+        for i, l in lines {
+            if InStr(l, "CT study of the thorax") {
+                at := i + 1
+                break
+            }
+        }
+        lines.InsertAt(at, method)
+    }
+    if (contrastNote != "") {
+        at := 0
+        for i, l in lines {
+            if RegExMatch(l, "i)^\s*INDICATION\s*:") {
+                at := i + 1
+                break
+            }
+        }
+        if (!at) {
+            for i, l in lines {
+                if RegExMatch(l, "i)^\s*METHOD\s*:") {
+                    at := i + 1
+                    break
+                }
+            }
+        }
+        lines.InsertAt(at ? at : 1, contrastNote)
+    }
+    while (lines.Length() && Trim(lines[lines.Length()]) = "")
+        lines.Pop()
+    if (limitNote != "") {
+        lines.Push("")
+        lines.Push(limitNote)
+    }
+    out := ""
+    for i, l in lines
+        out .= (i = 1 ? "" : "`n") . l
+    return out
+}
+
 JEscape(s) {
     ; 先處理反斜線，再處理雙引號
     s := StrReplace(s, "\", "\\")
