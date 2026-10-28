@@ -1020,7 +1020,9 @@ if (g_I2F_RequestActive) {
 }
 
 endpoint := "https://api.openai.com/v1/chat/completions"
-gModel   := "gpt-5.4-mini"   ; 非推理模型，TTFT < 1s，避開 gpt-5-mini 的 25-50s reasoning 延遲（2026-04-29）
+; 腹超 uses gpt-5.6-terra: 177-case replay showed 0 dropped extra-organ findings vs 1-3 with mini, p50 2.4s vs 1.4s (2026-10-28).
+; Other scenarios stay on gpt-5.4-mini until their prompts are validated on Terra.
+gModel   := InStr(I2F_Scenario, "腹超") ? "gpt-5.6-terra" : "gpt-5.4-mini"   ; reasoning_effort none = 非推理，避開 reasoning 延遲
 
 ; 依 US 類型決定 organSystems / conditionalOutput（僅腹超 prompt 會用到）
 if (I2F_TypeUpperAbd) {
@@ -1089,6 +1091,7 @@ if (InStr(I2F_Scenario, "Scrotum")) {
 ; 注意：gpt-5 系列不支援 temperature 自訂（只接受預設值 1），故不傳此參數
 json := "{"
     . """model"": """ gModel ""","
+    . """reasoning_effort"": ""none"","
     . """messages"": ["
         . "{""role"": ""system"", ""content"": " . JEscape(sysPrompt) . "},"
         . "{""role"": ""user"", ""content"": " . JEscape(userPrompt) . "}"
