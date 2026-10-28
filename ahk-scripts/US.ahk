@@ -1020,9 +1020,11 @@ if (g_I2F_RequestActive) {
 }
 
 endpoint := "https://api.openai.com/v1/chat/completions"
-; 腹超 uses gpt-5.6-terra: 177-case replay showed 0 dropped extra-organ findings vs 1-3 with mini, p50 2.4s vs 1.4s (2026-10-28).
-; Other scenarios stay on gpt-5.4-mini until their prompts are validated on Terra.
-gModel   := InStr(I2F_Scenario, "腹超") ? "gpt-5.6-terra" : "gpt-5.4-mini"   ; reasoning_effort none = 非推理，避開 reasoning 延遲
+; Model per scenario, chosen by replaying historical impressions (2026-10-28):
+;   腹超 / TRUS / IVP -> gpt-5.6-terra: fewer omissions and wrong details than mini in blind review, p50 +0.5-1.0s.
+;   CT-Chest stays on gpt-5.4-mini: Terra wrote the contrast METHOD line for non-contrast studies twice as often.
+;   Scrotum stays on gpt-5.4-mini (validated on mini).
+gModel   := (InStr(I2F_Scenario, "腹超") || InStr(I2F_Scenario, "TRUS") || InStr(I2F_Scenario, "IVP")) ? "gpt-5.6-terra" : "gpt-5.4-mini"   ; reasoning_effort none = 非推理，避開 reasoning 延遲
 
 ; 依 US 類型決定 organSystems / conditionalOutput（僅腹超 prompt 會用到）
 if (I2F_TypeUpperAbd) {
