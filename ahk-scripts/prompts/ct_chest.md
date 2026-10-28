@@ -128,6 +128,21 @@ Comparison with previous study: nil.
 Avoid duplicate bullets.
 
 11. Do not create normal negative statements unless they are explicitly present in the input or already part of the fixed report scaffold.
+Explicit negatives that ARE in the input must be kept in their section (e.g., "No aortic dissection.", "No left lung nodule.", "No visible rupture site of trachea or esophagus.").
+
+12. COMPLETENESS (check silently before answering): every finding, named condition, history line and explicit negative in the input must appear as a bullet. Only pure recommendations (follow up, correlate, biopsy, clinical correlation) and pure DDx tails may be left out.
+
+13. Known disease, treatment and post-operative status are findings, not commentary. Keep them in the section of the organ involved:
+- "Known colon cancer s/p right hemicolectomy." -> 7. Visible upper abdomen
+- "Lung adenocarcinoma, post CCRT." / "s/p RUL lobectomy." -> 1. Lung, airway, pleura
+- "Breast cancer s/p left mastectomy." -> 6. Breast, axilla
+- "Ewing sarcoma, known liver metastasis." -> the organ of each lesion
+- TNM / pathology / staging lines -> keep verbatim under the primary organ.
+Use 9. Others only if no organ is stated.
+
+14. Keep interval/stability clauses with their finding ("stable", "interval decrease", "progression", "no interval change").
+
+15. Keep technical limitation caveats as one bullet under 9. Others (e.g., "Motion artifact; small lesions may be obscured.").
 
 ========================
 DESCRIPTIVE FINDINGS ONLY RULES
@@ -157,12 +172,14 @@ Remove or avoid impression-style diagnostic comments, differential diagnoses, ma
 If a bullet BEGINS with "Suspect", "Suspected", "Compatible with", "Favor", "Probably", "DDx.", or "R/O", remove the leading hedge and keep the objective finding.
 - "Suspect gallstone.(Srs/Img:2/65)" -> "Gallstone.(Srs/Img:2/65)"
 - "Suspect <6mm peripheral nodules in RML.(Srs/Img:5/93)" -> "<6mm peripheral nodules in RML.(Srs/Img:5/93)"
-- "Compatible with ESRD." -> omit (a clinical diagnosis with no objective imaging finding; see rule 4).
-If removing the hedge leaves only a diagnosis with no anatomic or imaging description, omit the bullet.
+- "Suspect DISH." -> "DISH." (under Musculoskeletal)
+- "Compatible with CTEPH." -> "CTEPH." (under Cardiovascular system)
+If removing the hedge leaves a named imaging condition (DISH, osteopenia, old TB, CTEPH, pulmonary hypertension, old myocardial infarction, flail chest, adenomyomatosis, diverticulum, dissection), KEEP it as a bullet in its organ section. Never drop a named condition just because it has no measurement.
+If a hedged phrase names a specific lesion or site ("S6/7 possible viable tumor cannot be excluded"), keep the lesion neutrally: "- A lesion at S6/7 of the liver."
 
 3. Keep the objective imaging description, location, size, laterality, and Srs/Img reference.
 
-4. If the only available text is purely impression-style and lacks an objective anatomic or imaging description, omit it from findings unless a Srs/Img reference or anatomic clue allows a neutral descriptive sentence.
+4. Omit only text that carries no imaging content at all (e.g., "Suggest correlation with tumor markers", "Clinical correlation is recommended"). Named conditions, disease history and treatment status are kept (see GENERAL RULES 13).
 
 5. When converting an impression-style phrase into a finding, use neutral wording such as:
 - A lesion is noted in [location].(Srs/Img:_/_)
@@ -242,7 +259,7 @@ ORGAN MAPPING
 - calcified lymph nodes
 
 3. Mediastinum:
-- esophagitis, esophageal wall thickening, hiatal hernia
+- esophagitis, esophageal wall thickening, hiatal hernia, esophageal diverticulum (e.g., Killian-Jamieson, Zenker)
 - thymus remnant, anterior mediastinal fluid/infiltration/mass
 - mediastinal non-lymph-node lesions
 
@@ -252,7 +269,8 @@ ORGAN MAPPING
 - cardiomegaly, chamber enlargement
 - pericardial effusion
 - vascular stenosis/thrombosis, Port-A / central venous catheter tips
-- pulmonary embolism
+- pulmonary embolism, CTEPH, pulmonary hypertension, enlarged pulmonary artery
+- old myocardial infarction, chamber enlargement, aortic dissection / aneurysm, SMA dissection
 
 5. Visible lower neck:
 - thyroid nodule, thyroid cyst, goiter, thyroidectomy
@@ -266,7 +284,7 @@ ORGAN MAPPING
 7. Visible upper abdomen:
 - fatty liver, hepatic cysts / hypodense lesions
 - renal cysts, renal stones, adrenal hyperplasia/nodules
-- gallstone, cholecystectomy
+- gallstone, cholecystectomy, GB adenomyomatosis, cholecystitis changes, ampullary lesion, CBD stones
 - diverticula, accessory spleen, splenomegaly
 - gastric/esophageal abdominal findings if better placed here
 - gastric, duodenal, or colonic wall thickening; gastritis; gastric or colonic polyp
@@ -274,8 +292,9 @@ ORGAN MAPPING
 - place GI / upper-abdomen findings here, NOT under "9. Others" or "3. Mediastinum"
 
 8. Musculoskeletal:
-- degenerative and osteoporotic change of spine
-- scoliosis, DISH/OALL, compression fracture, rib fracture
+- degenerative and osteoporotic change of spine, osteopenia
+- scoliosis, DISH/OALL, compression fracture, rib fracture, flail chest
+- osteolytic / osteoblastic lesions
 - shoulder osteoarthritis, calcific tendinitis, pectus deformity
 - bony metastasis
 
@@ -396,6 +415,7 @@ Before final output, verify:
 - No-comparison status is extracted into the comparison header when present.
 - No comparison statement is placed under Others.
 - Every important objective finding appears once in the most appropriate section.
+- Known cancer / treatment / post-op status, named conditions (DISH, CTEPH, old MI, TB ...), explicit negatives and stability clauses from the input are all present.
 - Lung nodules remain in Lung, airway, pleura.
 - Lymph nodes are not incorrectly placed under Mediastinum.
 - Esophagitis is under Mediastinum.
