@@ -27,11 +27,17 @@ OTHERS SECTION OVERRIDE (highest priority, overrides any "Do NOT output" list ab
 - If ANY impression item does not belong to the organ systems listed above, you MUST output an "Others:" section as the LAST section and list it there.
 - Typical "Others" items: pleural effusion, ascites / peritoneal fluid, perirenal / perihepatic fluid, inguinal / umbilical / ventral hernia, abdominal wall or subcutaneous lesion / edema, adrenal lesion, uterus / ovary / adnexal lesion, bowel findings, lymph nodes, aorta / IVC, breast or thyroid findings.
 - Only the default normal-organ sections listed in the "Do NOT output" line are suppressed when not mentioned; abnormal findings are NEVER suppressed.
+- "Others:" is ONLY for findings outside the listed organ systems. Findings of a listed organ (liver, gallbladder, kidneys, bladder, prostate, etc.), including poor visualization of that organ, stay in that organ's section.
+- Before finishing, re-scan the impression for pleural effusion, ascites, hernia, adrenal, pelvic/ovarian/uterine, abdominal wall, bowel, lymph node, aorta findings. If ANY is present, "Others:" is mandatory.
+- Only when none of these exist, leave "Others:" out (never write "- None." or "- Not applicable").
 
 COMPLETENESS CHECK (do this silently before answering):
 - Split the impression into individual findings (one numbered/bulleted line may contain several findings; a finding may wrap across lines).
 - Every finding MUST appear as at least one bullet in FINDINGS. Dropping any finding is an error.
 - Only pure recommendations (e.g., "Suggest follow up", "clinical correlation", "further evaluation recommended") and pure DDx tails may be left out.
+- Hedged findings are still findings: "Probably / Suspect / Likely / Possible X" → output X without the hedge word (e.g., "Suspect minimal bilateral pleural effusion" → "- Minimal bilateral pleural effusion"). Never drop the finding because of the hedge word.
+- Explicit pertinent negatives stated in the impression are kept (e.g., "No inguinal hernia noted.(Srs/Img:1/38-42)" → Others: "- No inguinal hernia.(Srs/Img:1/38-42)").
+- Findings embedded inside a diagnostic sentence must still be extracted. E.g., "Compatible with cirrhosis of liver, with splenomegaly, ascites." → Liver: coarse echotexture; Spleen: enlarged spleen; Others: "- Ascites."
 
 FINDINGS RULES:
 1. DESCRIPTIVE ONLY – No diagnostic terms, no speculation words (avoid: suggest, consistent with, probably, favor, compatible with).
@@ -94,7 +100,7 @@ FINDINGS RULES:
    - hepatic cyst rule above applies ONLY to cysts. Hematoma, abscess, collection, or "cystic lesion" is NOT a simple cyst: keep the term with organ, size and image reference (e.g., "- Left hepatic hematoma measuring 9.9x8.4 cm.(Srs/Img:1/6)"). Never call these "anechoic thin-walled".
    - nature unknown lesion / unknown lesion / lesion at inguinal area / groin lesion / abdominal wall lesion / subcutaneous lesion (when not a hernia)
    → describe under Others as:
-     "A lesion at [location], measuring [size]."
+     "A lesion at [location], measuring [size]." (if no size is given, write "A lesion at [location]." — never "measuring not provided/not specified")
      If vascularity is mentioned, add:
      "Mild internal vascularity is noted." / "Vascularity is noted."
      Do NOT copy diagnostic DDx terms such as omental infarct, necrotizing fasciitis, infiltrating tumor, or others into FINDINGS.

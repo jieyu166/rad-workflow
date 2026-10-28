@@ -1026,15 +1026,15 @@ gModel   := "gpt-5.4-mini"   ; 非推理模型，TTFT < 1s，避開 gpt-5-mini �
 if (I2F_TypeUpperAbd) {
     usTitle := "Upper abdominal sonography:"
     organSystems := "Liver:`nBiliary trees:`nGallbladder:`nPancreas:`nSpleen:`nKidneys:"
-    conditionalOutput := "Do NOT output: Uterus/adnexa, Others, Aorta/IVC, Urinary bladder, Prostate (unless specifically mentioned in impression)"
+    conditionalOutput := "Do NOT output: Uterus/adnexa, Aorta/IVC, Urinary bladder, Prostate (unless specifically mentioned in impression)"
 } else if (I2F_TypeUroM) {
     usTitle := "Urotract sonography:"
     organSystems := "Liver:`nBiliary trees:`nGallbladder:`nPancreas:`nSpleen:`nKidneys:`nUrinary bladder:`nProstate:"
-    conditionalOutput := "Do NOT output: Uterus/adnexa, Others, Aorta/IVC (unless specifically mentioned in impression)"
+    conditionalOutput := "Do NOT output: Uterus/adnexa, Aorta/IVC (unless specifically mentioned in impression)"
 } else if (I2F_TypeUroF) {
     usTitle := "Urotract sonography:"
     organSystems := "Liver:`nBiliary trees:`nGallbladder:`nPancreas:`nSpleen:`nKidneys:`nUrinary bladder:"
-    conditionalOutput := "Do NOT output: Uterus/adnexa, Others, Aorta/IVC, Prostate (unless specifically mentioned in impression)"
+    conditionalOutput := "Do NOT output: Uterus/adnexa, Aorta/IVC, Prostate (unless specifically mentioned in impression)"
 }
 
 if (!InStr(I2F_Scenario, "CT-Chest") || I2F_TypeUpperAbd) {
