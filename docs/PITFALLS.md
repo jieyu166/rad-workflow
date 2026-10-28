@@ -55,6 +55,7 @@
 - 跨模態通用縮寫放 `Abbr.ahk`（如 CA;、FR;），不放 CT.ahk
 - 新 hotstring 提議前先比對所有 .ahk（含簡碼/選單）防 trigger 衝突；報告用 trigger 慣例帶 `;`
 - **症狀**：腹超 impression→finding 常漏 inguinal hernia、pleural effusion、ascites（重跑 573 例：pleural 約一半消失）。根因：`US.ahk` 注入的 `conditionalOutput` 寫「Do NOT output: … Others …」，蓋過 `us_abd.md` 的「必須建立 Others」；只改 md 壓不住，要拿掉 AHK 端那個字。另外帶保留語氣的發現（Suspect/Probably X）會被整條刪掉，md 要明寫「去掉保留語氣、保留發現本身」。驗證方式：依申請單號從 `demo_diff.asp` 抓舊報告，用同模型重跑 impression 再比對；報告內文只放 scratchpad，不進 repo。gpt-5.4-mini 不能設 temperature，同一 prompt 兩次結果會不同，比較至少要 150 例以上。大批重跑會用掉 OpenAI 額度（`insufficient_quota`），額度一歸零 US.ahk 也會跟著失效。（2026-10）
+- **症狀**：不打藥的胸部 CT，AI 產生的 METHOD 行寫成「有打藥」（重跑 48 例中 mini 有 8 例、Terra 有 16 例），不打藥的註記句也常漏掉。根因：`ct_chest.md` 有一條「沒給 METHOD 就用打藥版」的備用規則，範例輸出又把打藥的 METHOD 寫死，模型就照抄了。修法：固定不變的框架行不要交給模型產生，改由 `US.ahk` 的 `I2F_FixCTScaffold` 依 GUI 的選擇覆寫，測試在 `tests/test_ct_scaffold.py`；prompt 裡不要留會跟呼叫端代入值衝突的備用規則。（2026-10）
 - Keylogger 分析：`cd ahk-scripts && python analyze_keylog.py logs/<file> -o out.json`（腳本在 `ahk-scripts/`，log 檔在 `logs/`；舊文件寫 `cd ahk-scripts/logs` 是錯的，2026-07 實測修正）；跨檔彙整用 `aggregate_raw.json` 模式
 
 ## GitHub / 部署
