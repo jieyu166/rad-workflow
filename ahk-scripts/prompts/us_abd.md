@@ -23,6 +23,16 @@ Then output these organ systems in this EXACT order, even if normal:
 
 {{conditionalOutput}}
 
+OTHERS SECTION OVERRIDE (highest priority, overrides any "Do NOT output" list above):
+- If ANY impression item does not belong to the organ systems listed above, you MUST output an "Others:" section as the LAST section and list it there.
+- Typical "Others" items: pleural effusion, ascites / peritoneal fluid, perirenal / perihepatic fluid, inguinal / umbilical / ventral hernia, abdominal wall or subcutaneous lesion / edema, adrenal lesion, uterus / ovary / adnexal lesion, bowel findings, lymph nodes, aorta / IVC, breast or thyroid findings.
+- Only the default normal-organ sections listed in the "Do NOT output" line are suppressed when not mentioned; abnormal findings are NEVER suppressed.
+
+COMPLETENESS CHECK (do this silently before answering):
+- Split the impression into individual findings (one numbered/bulleted line may contain several findings; a finding may wrap across lines).
+- Every finding MUST appear as at least one bullet in FINDINGS. Dropping any finding is an error.
+- Only pure recommendations (e.g., "Suggest follow up", "clinical correlation", "further evaluation recommended") and pure DDx tails may be left out.
+
 FINDINGS RULES:
 1. DESCRIPTIVE ONLY – No diagnostic terms, no speculation words (avoid: suggest, consistent with, probably, favor, compatible with).
    You MUST rewrite diagnostic impression terms into descriptive ultrasound findings.
@@ -64,6 +74,8 @@ FINDINGS RULES:
      Include side, location, size, vascularity, echogenicity, and image reference when provided.
      Rewrite diagnostic/speculative terms into descriptive ultrasound findings only.
      Do NOT omit inguinal/groin/abdominal wall/subcutaneous lesions.
+     These terms are already descriptive and are kept as written (with side, severity and image reference), e.g.:
+       "- Left inguinal hernia.(Srs/Img:1/3)", "- Right pleural effusion.(Srs/Img:1/18)", "- Mild ascites.(Srs/Img:1/14)", "- Bilateral pleural effusion".
 3. Convert diagnoses to sonographic descriptions (case-insensitive):
    - hepatic cysts → "anechoic thin-walled lesions in liver"
    - fatty liver / steatosis → "diffusely increased echogenicity of liver parenchyma"
@@ -78,14 +90,18 @@ FINDINGS RULES:
    - Prostate measurements like "42x30x47" → If both size & volume are present, format as: "Prostate measuring 42x30x47 mm in size with volume estimated to be 34 c.c."
    - **If only one present**, use: "Prostate measuring 34x33x43 mm" OR "Prostate volume estimated to be 26 c.c."
    - (chronic) liver parenchymal disease → "coarse echotexture of the liver parenchyma" (use this phrasing instead of "diffusely increased echogenicity" when this phrase appears). If fatty liver/steatosis is also explicitly mentioned, you may include both bullets, with coarse echotexture first, e.g. "- Coarse, increased echotexture of the liver parenchyma".
-   - nature unknown lesion / unknown lesion / lesion at inguinal area / groin lesion / abdominal wall lesion / subcutaneous lesion
+   - hernia (inguinal / umbilical / ventral / incisional, direct / indirect) → keep the word "hernia" under Others, e.g. "- Right inguinal indirect hernia.(Srs/Img:1/7)". Do NOT rewrite a hernia into "A lesion at ...".
+   - hepatic cyst rule above applies ONLY to cysts. Hematoma, abscess, collection, or "cystic lesion" is NOT a simple cyst: keep the term with organ, size and image reference (e.g., "- Left hepatic hematoma measuring 9.9x8.4 cm.(Srs/Img:1/6)"). Never call these "anechoic thin-walled".
+   - nature unknown lesion / unknown lesion / lesion at inguinal area / groin lesion / abdominal wall lesion / subcutaneous lesion (when not a hernia)
    → describe under Others as:
      "A lesion at [location], measuring [size]."
      If vascularity is mentioned, add:
      "Mild internal vascularity is noted." / "Vascularity is noted."
      Do NOT copy diagnostic DDx terms such as omental infarct, necrotizing fasciitis, infiltrating tumor, or others into FINDINGS.
-4. Include location, side, size when provided.
+4. Include location, side, size when provided. Keep every image reference "(Srs/Img:x/y)" attached to its finding.
 5. Use bullet points within each system.
+   - Put each finding under ONE section only; do not repeat it in another organ (e.g., pancreatic duct dilatation → Pancreas only, not Biliary trees).
+   - When an organ has an abnormal finding, drop the parts of its default normal sentence that contradict it (e.g., bladder wall thickening → do NOT also write "smooth wall"; splenomegaly → do NOT also write "Normal size").
 6. Post-procedure / post-device language (exact wording rules):
    - Do **not** label non-surgical device insertions as "post-surgical changes". Foley insertion, pigtail drainage, PTGBD, NG tube, central line, double-J stent, nephrostomy tube, etc. are **procedures/devices**, not surgeries.
    - Use the phrasing **"Post [device/procedure] insertion"** (e.g., "Post Foley insertion", "Post pigtail drainage insertion", "Post PTGBD insertion") when the impression documents those devices/procedures.
