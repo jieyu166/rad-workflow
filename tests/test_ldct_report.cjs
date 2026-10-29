@@ -135,8 +135,14 @@ const html = fs.readFileSync(path.join(__dirname, '../tool/ldct-report.html'), '
                     insignificant_series: '2', insignificant_image: '4', emphysema: true },
                 { lung_rads_category: '1', no_nodule: true, emphysema: false }
             ];
-            await p.route('https://generativelanguage.googleapis.com/**', async route => {
-                await route.fulfill({ json: { candidates: [{ content: { parts: [{ text: JSON.stringify(responses.shift()) }] } }] } });
+            const requests = [];
+            await p.route('https://api.anthropic.com/**', async route => {
+                requests.push(route.request());
+                const text = JSON.stringify(responses.shift());
+                // Second reply wraps the JSON in a ```json fence: the page must strip it.
+                const wrapped = requests.length === 2 ? '```json\n' + text + '\n```' : text;
+                await route.fulfill({ json: { type: 'message', stop_reason: 'end_turn',
+                    content: [{ type: 'text', text: wrapped }] } });
             });
             await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
             await p.locator('#impressionText').fill('Small nodules (Ser/Img: 2/4) (Ser/Img: 2/55). Calcified granuloma. Emphysema.');
@@ -153,6 +159,30 @@ const html = fs.readFileSync(path.join(__dirname, '../tool/ldct-report.html'), '
             assert.equal(await p.locator('#noduleBenign').isChecked(), false);
             assert.equal(await p.locator('#insigSeries').inputValue(), '');
             assert.ok((await p.locator('#reportPreview').innerText()).includes('■No lung nodule'));
+            // Request shape: Messages API, key in header (not URL), no sampling params.
+            assert.equal(requests.length, 2);
+            const req = requests[0];
+            assert.equal(req.url(), 'https://api.anthropic.com/v1/messages');
+            assert.ok(!req.url().includes('SYNTHETIC_TEST_KEY'), 'key must not be in the URL');
+            const h = req.headers();
+            assert.equal(h['x-api-key'], 'SYNTHETIC_TEST_KEY');
+            assert.equal(h['anthropic-version'], '2026-10-21');
+            assert.equal(h['anthropic-dangerous-direct-browser-access'], 'true');
+            const body = req.postDataJSON();
+            assert.match(body.model, /^claude-/);
+            assert.ok(body.system.startsWith('You are a radiology AI assistant specializing in LDCT'));
+            assert.ok(body.messages[0].content.startsWith('IMPRESSION TEXT:\n'));
+            assert.equal(body.temperature, undefined);
+            assert.deepEqual(body.output_config, { effort: 'low' });
+        });
+        await test('AI Parse：模型拒答（refusal）時顯示錯誤、不套用結果', async p => {
+            await p.route('https://api.anthropic.com/**', route => route.fulfill({ json: {
+                type: 'message', stop_reason: 'refusal', content: [] } }));
+            await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
+            await p.locator('#impressionText').fill('A 4mm solid nodule in RUL.');
+            await p.getByRole('button', { name: 'AI Parse', exact: true }).click();
+            await p.waitForFunction(() => document.getElementById('aiStatus').classList.contains('error'));
+            assert.match(await p.locator('#aiStatus').innerText(), /refus/i);
         });
     } finally { await browser.close(); }
     console.log(`${passed} passed, ${failed} failed`);

@@ -189,7 +189,7 @@
 
 <div class="panel no-print" id="panel">
     <h1>乳篩疑似異常個案報告表（附表四之五）</h1>
-    <p class="hint">在 mammo; 按「疑陽表單」後回到此頁按 Ctrl+V（或按「從剪貼簿匯入」）。病人資料只存在此分頁，不會寫入網址或瀏覽器儲存空間；送給 Gemini 的只有報告文字。</p>
+    <p class="hint">在 mammo; 按「疑陽表單」後回到此頁按 Ctrl+V（或按「從剪貼簿匯入」）。病人資料只存在此分頁，不會寫入網址或瀏覽器儲存空間；送給 Claude 的只有報告文字。</p>
     <div class="row">
         <button class="btn btn-primary" id="btnImport" type="button">從剪貼簿匯入</button>
         <button class="btn btn-secondary" id="btnAddPage" type="button">新增空白頁</button>
@@ -199,8 +199,8 @@
     <textarea id="reportText" placeholder="匯入後顯示報告全文；也可直接貼上報告文字。"></textarea>
     <div class="status" id="catWarning"></div>
     <div class="row">
-        <label class="key-label" for="apiKey">Gemini API 金鑰：</label>
-        <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off">
+        <label class="key-label" for="apiKey">Anthropic API 金鑰：</label>
+        <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
         <button class="btn btn-secondary" id="btnToggleKey" type="button">顯示</button>
         <button class="btn btn-primary" id="btnParse" type="button">AI 解析</button>
     </div>
@@ -266,7 +266,16 @@ Rules:
 /* MAMMO-PROMPT-END */
 
 // Same model id constant value as tool/ldct-report.html.
-const MODEL_ID = 'gemini-3.8-flash';
+const MODEL_ID = 'claude-haiku-5-5';
+// Per-model request settings, mirrored in radtracker/validate_mammo_form_llm.py (CLAUDE_MODEL_SETTINGS).
+// Thinking is turned off where the model allows it (latency); Sonnet/Opus opt into server-side refusal fallbacks.
+const CLAUDE_MODEL_SETTINGS = {
+    'claude-haiku-5-5': { thinking: { type: 'disabled' }, fallbacks: false },
+    'claude-sonnet-5-5': { thinking: { type: 'between_tools' }, fallbacks: true },
+    'claude-opus-5-5': { thinking: null, fallbacks: true }
+};
+const ANTHROPIC_VERSION = '2026-10-21';
+const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
 const PAYLOAD_SOURCE = 'rad-workflow/mammo-form';
 const DEFAULT_HOSPITAL = '佳里奇美醫院';
 const CATEGORY_RE = /(?:BI-?RADS\s*)?category\s*:?\s*(\d)([abc])?(?![a-z])/i;
@@ -707,8 +716,40 @@ function applyParsedData(obj) {
 }
 
 // ---------------------------------------------------------------
-// Gemini call (only the report text is sent)
+// Claude call (only the report text is sent)
 // ---------------------------------------------------------------
+function buildClaudeRequest(apiKey, systemPrompt, userText) {
+    const settings = CLAUDE_MODEL_SETTINGS[MODEL_ID] || { thinking: null, fallbacks: false };
+    const headers = {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': ANTHROPIC_VERSION,
+        'anthropic-dangerous-direct-browser-access': 'true'
+    };
+    const body = {
+        model: MODEL_ID,
+        max_tokens: 8000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userText }],
+        output_config: { effort: 'low' }
+    };
+    if (settings.thinking) body.thinking = settings.thinking;
+    if (settings.fallbacks) {
+        headers['anthropic-beta'] = FALLBACK_BETA;
+        body.fallbacks = 'default';
+    }
+    return { headers, body };
+}
+
+// Text of a Messages API response; throws on refusal. Strips a ```json fence if the model added one.
+function claudeResponseText(data) {
+    if (data?.stop_reason === 'refusal') throw new Error('模型拒絕回應（refusal）');
+    const blocks = Array.isArray(data?.content) ? data.content : [];
+    const text = blocks.filter(b => b && b.type === 'text').map(b => b.text || '').join('').trim();
+    const fenced = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+    return fenced ? fenced[1].trim() : text;
+}
+
 async function parseWithAI() {
     // If the whole payload JSON ended up in the report box, import it first so that
     // only the report text (never name, chart number or dates) is sent to the LLM.
@@ -718,26 +759,22 @@ async function parseWithAI() {
     const apiKey = document.getElementById('apiKey').value.trim();
     hideRaw();
     if (!text) { showStatus('請先匯入或貼上報告內容。', 'error'); return; }
-    if (!apiKey) { showStatus('請輸入 Gemini API 金鑰後再按「AI 解析」。', 'error'); return; }
-    showStatus('Gemini 解析中…', 'loading');
+    if (!apiKey) { showStatus('請輸入 Anthropic API 金鑰後再按「AI 解析」。', 'error'); return; }
+    showStatus('Claude 解析中…', 'loading');
     let raw = '';
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent`, {
+        const req = buildClaudeRequest(apiKey, MAMMO_SYSTEM_PROMPT, 'MAMMOGRAPHY REPORT:\n' + text);
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-            body: JSON.stringify({
-                systemInstruction: { parts: [{ text: MAMMO_SYSTEM_PROMPT }] },
-                contents: [{ role: 'user', parts: [{ text: 'MAMMOGRAPHY REPORT:\n' + text }] }],
-                generationConfig: { responseMimeType: 'application/json', temperature: 0 }
-            })
+            headers: req.headers,
+            body: JSON.stringify(req.body)
         });
         raw = await response.text();
-        if (!response.ok) throw new Error(`Gemini 回傳錯誤（HTTP ${response.status}）`);
+        if (!response.ok) throw new Error(`Claude 回傳錯誤（HTTP ${response.status}）`);
         let data;
-        try { data = JSON.parse(raw); } catch (e) { throw new Error('Gemini 回應無法解讀'); }
-        const parts = data?.candidates?.[0]?.content?.parts;
-        const modelText = Array.isArray(parts) ? parts.map(p => p.text || '').join('') : '';
-        if (!modelText) throw new Error('Gemini 回應沒有內容');
+        try { data = JSON.parse(raw); } catch (e) { throw new Error('Claude 回應無法解讀'); }
+        const modelText = claudeResponseText(data);
+        if (!modelText) throw new Error('Claude 回應沒有內容');
         raw = modelText;
         let parsed;
         try { parsed = JSON.parse(modelText); } catch (e) { throw new Error('模型回應不是有效的 JSON'); }
@@ -750,7 +787,7 @@ async function parseWithAI() {
             showStatus(`AI 解析完成：${v.lesions.length} 個病灶，產生 ${getPages().length} 頁。請逐頁核對後列印。`, 'success');
         }
     } catch (err) {
-        const msg = err instanceof TypeError ? '無法連線到 Gemini（網路錯誤）' : err.message;
+        const msg = err instanceof TypeError ? '無法連線到 Claude（網路錯誤）' : err.message;
         showStatus(`AI 解析失敗：${msg}；勾選未變更。`, 'error');
         if (raw) showRaw(raw);
     }

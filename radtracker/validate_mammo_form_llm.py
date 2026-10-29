@@ -2,18 +2,21 @@
 
 Reads archived mammography reports (radtracker/output/mammo_YYYYMM_reports.json),
 selects those whose BI-RADS category (deterministic regex, same as the page) is
-0/3/4/5, sends each report to Gemini with the SAME system prompt and request
-settings used by tool/mammo-suspicious-form.html, and measures parse quality.
+0/3/4/5, sends each report to the Claude Messages API with the SAME system prompt
+and request settings used by tool/mammo-suspicious-form.html, and measures parse quality.
 
 Usage:
-    python radtracker/validate_mammo_form_llm.py --months 202602-202606 [--limit N] [--sleep SECONDS]
+    python radtracker/validate_mammo_form_llm.py --months 202602-202606 [--limit N] [--sleep SECONDS] [--model ID]
 
-API key: environment variable GEMINI_API_KEY, otherwise GEMINI_API_KEY=... in the
-repo-root .env file. Missing key -> exit code 2.
+--model overrides the page's MODEL_ID (must be a key of CLAUDE_MODEL_SETTINGS), for comparing models.
+
+API key: environment variable ANTHROPIC_API_KEY, otherwise ANTHROPIC_API_KEY=... in the
+repo-root .env file, otherwise APIKey3 in ahk-scripts/radiologist_settings.ini.
+Missing key -> exit code 2.
 
 Privacy: report files contain chart numbers. Console output and the detail CSV
 never contain chart_no, case_id or report text; only the report text itself is
-sent to Gemini (same as the page). Console output is ASCII only (cp950-safe).
+sent to Claude (same as the page). Console output is ASCII only (cp950-safe).
 
 Metrics printed at the end:
   - JSON-valid rate: model text parsed as JSON / reports processed.
@@ -44,7 +47,17 @@ from typing import Callable
 REPO_ROOT = Path(__file__).resolve().parent.parent
 HTML_REL = Path("tool") / "mammo-suspicious-form.html"
 OUTPUT_REL = Path("radtracker") / "output"
-API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+API_URL = "https://api.anthropic.com/v1/messages"
+ANTHROPIC_VERSION = "2026-10-21"
+FALLBACK_BETA = "server-side-fallback-2026-07-01"
+INI_REL = Path("ahk-scripts") / "radiologist_settings.ini"
+
+# Mirror of CLAUDE_MODEL_SETTINGS in tool/mammo-suspicious-form.html.
+CLAUDE_MODEL_SETTINGS = {
+    "claude-haiku-5-5": {"thinking": {"type": "disabled"}, "fallbacks": False},
+    "claude-sonnet-5-5": {"thinking": {"type": "between_tools"}, "fallbacks": True},
+    "claude-opus-5-5": {"thinking": None, "fallbacks": True},
+}
 SUSPICIOUS_CATEGORIES = (0, 3, 4, 5)
 MAX_TRIES = 3
 
@@ -231,13 +244,27 @@ def side_consistency(text: str | None, lesions: list[dict]) -> bool | None:
 # ---------------------------------------------------------------------------
 # Environment / IO helpers
 # ---------------------------------------------------------------------------
+def _ini_api_key(repo_root: Path) -> str | None:
+    """APIKey3 from the AHK settings INI (UTF-16, written by AutoHotkey IniWrite)."""
+    import configparser
+    ini = repo_root / INI_REL
+    if not ini.is_file():
+        return None
+    cp = configparser.ConfigParser(interpolation=None, strict=False)
+    try:
+        cp.read_string(ini.read_text(encoding="utf-16"))
+    except (UnicodeError, configparser.Error):
+        return None
+    return (cp.get("AI", "APIKey3", fallback="") or "").strip() or None
+
+
 def load_api_key(env: dict, repo_root: Path) -> str | None:
-    key = (env.get("GEMINI_API_KEY") or "").strip()
+    key = (env.get("ANTHROPIC_API_KEY") or "").strip()
     if key:
         return key
     env_file = repo_root / ".env"
     if not env_file.is_file():
-        return None
+        return _ini_api_key(repo_root)
     for line in env_file.read_text(encoding="utf-8-sig").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
@@ -245,12 +272,13 @@ def load_api_key(env: dict, repo_root: Path) -> str | None:
         if line.startswith("export "):
             line = line[len("export "):]
         name, value = line.split("=", 1)
-        if name.strip() == "GEMINI_API_KEY":
+        if name.strip() == "ANTHROPIC_API_KEY":
             value = value.strip()
             if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
                 value = value[1:-1]
-            return value.strip() or None
-    return None
+            if value.strip():
+                return value.strip()
+    return _ini_api_key(repo_root)
 
 
 def parse_months(spec: str) -> list[str]:
@@ -295,21 +323,44 @@ def urllib_post(url: str, headers: dict, body: bytes, timeout: float = 120.0) ->
 HttpPost = Callable[[str, dict, bytes, float], "tuple[int, str]"]
 
 
-def build_request(prompt: str, report_text: str) -> dict:
-    """Same body as parseWithAI() in the page."""
-    return {
-        "systemInstruction": {"parts": [{"text": prompt}]},
-        "contents": [{"role": "user", "parts": [{"text": "MAMMOGRAPHY REPORT:\n" + report_text.strip()}]}],
-        "generationConfig": {"responseMimeType": "application/json", "temperature": 0},
+def build_request(prompt: str, report_text: str, model: str, api_key: str) -> tuple[dict, dict]:
+    """Same (headers, body) as buildClaudeRequest() in the page, minus the browser-only CORS header."""
+    settings = CLAUDE_MODEL_SETTINGS.get(model, {"thinking": None, "fallbacks": False})
+    headers = {"content-type": "application/json", "x-api-key": api_key,
+               "anthropic-version": ANTHROPIC_VERSION}
+    body = {
+        "model": model,
+        "max_tokens": 8000,
+        "system": prompt,
+        "messages": [{"role": "user", "content": "MAMMOGRAPHY REPORT:\n" + report_text.strip()}],
+        "output_config": {"effort": "low"},
     }
+    if settings["thinking"]:
+        body["thinking"] = settings["thinking"]
+    if settings["fallbacks"]:
+        headers["anthropic-beta"] = FALLBACK_BETA
+        body["fallbacks"] = "default"
+    return headers, body
 
 
-def call_gemini(prompt: str, model: str, api_key: str, report_text: str,
+_FENCE_RE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.S | re.I)
+
+
+def response_text(data: dict) -> str:
+    """Mirror of claudeResponseText(): joined text blocks with a ```json fence stripped."""
+    blocks = data.get("content") or []
+    text = "".join(b.get("text", "") for b in blocks
+                   if isinstance(b, dict) and b.get("type") == "text").strip()
+    m = _FENCE_RE.match(text)
+    return m.group(1).strip() if m else text
+
+
+def call_claude(prompt: str, model: str, api_key: str, report_text: str,
                 http_post: HttpPost, sleep: Callable[[float], None]) -> tuple[str | None, str | None]:
     """Return (model_text, error_code). Retries 429/5xx/network up to MAX_TRIES."""
-    url = API_URL.format(model=model)
-    headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
-    body = json.dumps(build_request(prompt, report_text)).encode("utf-8")
+    url = API_URL
+    headers, req = build_request(prompt, report_text, model, api_key)
+    body = json.dumps(req).encode("utf-8")
     err = None
     for attempt in range(1, MAX_TRIES + 1):
         try:
@@ -320,10 +371,13 @@ def call_gemini(prompt: str, model: str, api_key: str, report_text: str,
             if status == 200:
                 try:
                     data = json.loads(text)
-                    parts = data["candidates"][0]["content"]["parts"]
-                    model_text = "".join(p.get("text", "") for p in parts if isinstance(p, dict))
-                except (ValueError, KeyError, IndexError, TypeError):
+                except ValueError:
                     return None, "bad_envelope"
+                if not isinstance(data, dict) or not isinstance(data.get("content"), list):
+                    return None, "bad_envelope"
+                if data.get("stop_reason") == "refusal":
+                    return None, "refusal"
+                model_text = response_text(data)
                 if not model_text:
                     return None, "empty_response"
                 return model_text, None
@@ -341,7 +395,7 @@ def call_gemini(prompt: str, model: str, api_key: str, report_text: str,
 def evaluate_one(prompt, model, api_key, text, category, http_post, sleep) -> dict:
     row = {"json_ok": 0, "schema_ok": 0, "n_lesions": "", "types": "", "sides": "",
            "side_consistent": "", "dropped_values": "", "error": "", "_valid": None}
-    model_text, err = call_gemini(prompt, model, api_key, text, http_post, sleep)
+    model_text, err = call_claude(prompt, model, api_key, text, http_post, sleep)
     if err:
         row["error"] = err
         return row
@@ -380,6 +434,7 @@ def main(argv=None, *, repo_root: Path | None = None, env: dict | None = None,
     ap.add_argument("--months", required=True, help="e.g. 202602-202606 (or 202602 / 202602,202604)")
     ap.add_argument("--limit", type=int, default=None, help="process at most N reports")
     ap.add_argument("--sleep", type=float, default=0.5, help="seconds between API calls (default 0.5)")
+    ap.add_argument("--model", default=None, help="override the page MODEL_ID (a key of CLAUDE_MODEL_SETTINGS)")
     args = ap.parse_args(argv)
 
     repo_root = Path(repo_root) if repo_root else REPO_ROOT
@@ -388,8 +443,9 @@ def main(argv=None, *, repo_root: Path | None = None, env: dict | None = None,
 
     api_key = load_api_key(env, repo_root)
     if not api_key:
-        say("ERROR: Gemini API key not found. Set environment variable GEMINI_API_KEY")
-        say("       or add a line GEMINI_API_KEY=... to the repo-root .env file (gitignored).")
+        say("ERROR: Anthropic API key not found. Set environment variable ANTHROPIC_API_KEY,")
+        say("       add ANTHROPIC_API_KEY=... to the repo-root .env file (gitignored),")
+        say("       or set APIKey3 in ahk-scripts/radiologist_settings.ini.")
         return 2
 
     try:
@@ -403,6 +459,11 @@ def main(argv=None, *, repo_root: Path | None = None, env: dict | None = None,
     except (OSError, ConfigError) as e:
         say(f"ERROR: cannot read prompt from {HTML_REL.as_posix()}: {e}")
         return 1
+    if args.model:
+        if args.model not in CLAUDE_MODEL_SETTINGS:
+            say(f"ERROR: unknown --model {args.model}; use one of {', '.join(CLAUDE_MODEL_SETTINGS)}")
+            return 1
+        model = args.model
     say(f"Model: {model} | prompt chars: {len(prompt)} | months: {', '.join(months)}")
 
     # Collect suspicious reports (only month, row index, category, text kept in memory).

@@ -18,9 +18,10 @@ FIXTURES = ROOT / "tests" / "fixtures" / "mammo_form"
 HTML = ROOT / "tool" / "mammo-suspicious-form.html"
 
 
-def gemini_envelope(obj_or_text):
+def claude_message(obj_or_text, stop_reason="end_turn"):
     text = obj_or_text if isinstance(obj_or_text, str) else json.dumps(obj_or_text)
-    return json.dumps({"candidates": [{"content": {"parts": [{"text": text}]}}]})
+    content = [] if stop_reason == "refusal" else [{"type": "text", "text": text}]
+    return json.dumps({"type": "message", "stop_reason": stop_reason, "content": content})
 
 
 class ExtractionTests(unittest.TestCase):
@@ -34,7 +35,17 @@ class ExtractionTests(unittest.TestCase):
         self.assertNotIn("`", prompt)
         expected_model = html.split("const MODEL_ID = '", 1)[1].split("'", 1)[0]
         self.assertEqual(model, expected_model)
-        self.assertTrue(model.startswith("gemini-"))
+        self.assertIn(model, v.CLAUDE_MODEL_SETTINGS)
+
+    def test_model_settings_mirror_page(self):
+        html = HTML.read_text(encoding="utf-8")
+        for model, cfg in v.CLAUDE_MODEL_SETTINGS.items():
+            with self.subTest(model=model):
+                thinking = "null" if cfg["thinking"] is None else "{ type: '%s' }" % cfg["thinking"]["type"]
+                line = "'%s': { thinking: %s, fallbacks: %s }" % (model, thinking, str(cfg["fallbacks"]).lower())
+                self.assertIn(line, html)
+        self.assertIn("const ANTHROPIC_VERSION = '%s';" % v.ANTHROPIC_VERSION, html)
+        self.assertIn("const FALLBACK_BETA = '%s';" % v.FALLBACK_BETA, html)
 
     def test_missing_markers_raise(self):
         with self.assertRaises(v.ConfigError):
@@ -149,9 +160,19 @@ class EnvTests(unittest.TestCase):
 
     def test_key_from_env_file(self):
         with tempfile.TemporaryDirectory() as td:
-            Path(td, ".env").write_text("# c\nOTHER=1\nexport GEMINI_API_KEY='abc123'\n", encoding="utf-8")
+            Path(td, ".env").write_text("# c\nOTHER=1\nexport ANTHROPIC_API_KEY='abc123'\n", encoding="utf-8")
             self.assertEqual(v.load_api_key({}, Path(td)), "abc123")
-            self.assertEqual(v.load_api_key({"GEMINI_API_KEY": "envkey"}, Path(td)), "envkey")
+            self.assertEqual(v.load_api_key({"ANTHROPIC_API_KEY": "envkey"}, Path(td)), "envkey")
+
+    def test_key_from_ahk_ini_fallback(self):
+        with tempfile.TemporaryDirectory() as td:
+            ini = Path(td, "ahk-scripts", "radiologist_settings.ini")
+            ini.parent.mkdir()
+            ini.write_text("[AI]\nAPIKey=gpt\nAPIKey2=gem\nAPIKey3=claudekey\n", encoding="utf-16")
+            self.assertEqual(v.load_api_key({}, Path(td)), "claudekey")
+            Path(td, ".env").write_text("OTHER=1\n", encoding="utf-8")
+            self.assertEqual(v.load_api_key({}, Path(td)), "claudekey")
+            self.assertEqual(v.load_api_key({"ANTHROPIC_API_KEY": "envkey"}, Path(td)), "envkey")
 
     def test_missing_key_exits_2(self):
         with tempfile.TemporaryDirectory() as td:
@@ -160,19 +181,19 @@ class EnvTests(unittest.TestCase):
                 rc = v.main(["--months", "202602"], repo_root=Path(td), env={},
                             http_post=lambda *a: self.fail("no request expected"))
             self.assertEqual(rc, 2)
-            self.assertIn("GEMINI_API_KEY", buf.getvalue())
+            self.assertIn("ANTHROPIC_API_KEY", buf.getvalue())
 
 
 class RetryTests(unittest.TestCase):
     def test_retry_then_success(self):
         calls, sleeps = [], []
-        responses = [(429, "rate"), (503, "busy"), (200, gemini_envelope({"lesions": []}))]
+        responses = [(429, "rate"), (503, "busy"), (200, claude_message({"lesions": []}))]
 
         def post(url, headers, body, timeout):
             calls.append(1)
             return responses[len(calls) - 1]
 
-        text, err = v.call_gemini("p", "m", "k", "r", post, sleeps.append)
+        text, err = v.call_claude("p", "m", "k", "r", post, sleeps.append)
         self.assertIsNone(err)
         self.assertEqual(json.loads(text), {"lesions": []})
         self.assertEqual(len(calls), 3)
@@ -185,7 +206,7 @@ class RetryTests(unittest.TestCase):
             calls.append(1)
             return 500, "err"
 
-        self.assertEqual(v.call_gemini("p", "m", "k", "r", post, lambda s: None), (None, "http_500"))
+        self.assertEqual(v.call_claude("p", "m", "k", "r", post, lambda s: None), (None, "http_500"))
         self.assertEqual(len(calls), 3)
 
     def test_no_retry_on_400(self):
@@ -195,14 +216,39 @@ class RetryTests(unittest.TestCase):
             calls.append(1)
             return 400, "bad"
 
-        self.assertEqual(v.call_gemini("p", "m", "k", "r", post, lambda s: None), (None, "http_400"))
+        self.assertEqual(v.call_claude("p", "m", "k", "r", post, lambda s: None), (None, "http_400"))
         self.assertEqual(len(calls), 1)
+
+    def test_refusal_is_an_error(self):
+        self.assertEqual(v.call_claude("p", "claude-haiku-5-5", "k", "r",
+                                       lambda *a: (200, claude_message("", "refusal")), lambda s: None),
+                         (None, "refusal"))
+
+    def test_json_fence_stripped(self):
+        text, err = v.call_claude("p", "claude-haiku-5-5", "k", "r",
+                                  lambda *a: (200, claude_message('```json\n{"lesions": []}\n```')), lambda s: None)
+        self.assertIsNone(err)
+        self.assertEqual(json.loads(text), {"lesions": []})
+
+    def test_request_settings_per_model(self):
+        h, b = v.build_request("P", " R ", "claude-haiku-5-5", "K")
+        self.assertEqual(b["thinking"], {"type": "disabled"})
+        self.assertNotIn("anthropic-beta", h)
+        self.assertNotIn("fallbacks", b)
+        h, b = v.build_request("P", "R", "claude-sonnet-5-5", "K")
+        self.assertEqual(b["thinking"], {"type": "between_tools"})
+        self.assertEqual((h["anthropic-beta"], b["fallbacks"]), (v.FALLBACK_BETA, "default"))
+        h, b = v.build_request("P", "R", "claude-opus-5-5", "K")
+        self.assertNotIn("thinking", b)
+        self.assertEqual(b["fallbacks"], "default")
+        for body in (b,):
+            self.assertNotIn("temperature", body)
 
     def test_network_error_retried(self):
         def post(*a):
             raise OSError("down")
 
-        self.assertEqual(v.call_gemini("p", "m", "k", "r", post, lambda s: None)[1], "network_OSError")
+        self.assertEqual(v.call_claude("p", "m", "k", "r", post, lambda s: None)[1], "network_OSError")
 
 
 class EndToEndTests(unittest.TestCase):
@@ -233,19 +279,19 @@ class EndToEndTests(unittest.TestCase):
             def post(url, headers, body, timeout):
                 req = json.loads(body.decode("utf-8"))
                 requests.append((url, headers, req))
-                user = req["contents"][0]["parts"][0]["text"]
+                user = req["messages"][0]["content"]
                 for n in self.NAMES:
                     if texts[n].strip() in user:
                         if n == "cat5":
-                            return 200, gemini_envelope("not json at all")
+                            return 200, claude_message("not json at all")
                         payload = {k: expected[n][k] for k in ("cat4Sub", "lesions")}
-                        return 200, gemini_envelope(payload)
+                        return 200, claude_message(payload)
                 return 500, "unexpected"
 
             buf = io.StringIO()
             with contextlib.redirect_stdout(buf):
                 rc = v.main(["--months", "202602", "--sleep", "0"], repo_root=root,
-                            env={"GEMINI_API_KEY": "SECRET-KEY-XYZ"}, http_post=post,
+                            env={"ANTHROPIC_API_KEY": "SECRET-KEY-XYZ"}, http_post=post,
                             sleep=lambda s: None, today=dt.date(2026, 10, 6))
             console = buf.getvalue()
             self.assertEqual(rc, 0, console)
@@ -253,11 +299,14 @@ class EndToEndTests(unittest.TestCase):
             # Request shape mirrors the page.
             self.assertEqual(len(requests), 5)  # cat2 excluded
             url, headers, req = requests[0]
-            self.assertEqual(url, f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent")
-            self.assertEqual(headers["x-goog-api-key"], "SECRET-KEY-XYZ")
-            self.assertEqual(req["systemInstruction"]["parts"][0]["text"], prompt)
-            self.assertEqual(req["generationConfig"], {"responseMimeType": "application/json", "temperature": 0})
-            self.assertTrue(req["contents"][0]["parts"][0]["text"].startswith("MAMMOGRAPHY REPORT:\n"))
+            self.assertEqual(url, "https://api.anthropic.com/v1/messages")
+            self.assertEqual(headers["x-api-key"], "SECRET-KEY-XYZ")
+            self.assertEqual(headers["anthropic-version"], "2026-10-21")
+            self.assertEqual(req["model"], model)
+            self.assertEqual(req["system"], prompt)
+            self.assertEqual(req["output_config"], {"effort": "low"})
+            self.assertNotIn("temperature", req)
+            self.assertTrue(req["messages"][0]["content"].startswith("MAMMOGRAPHY REPORT:\n"))
 
             # Console: ASCII only, no key / PII / report text.
             console.encode("ascii")
@@ -293,6 +342,30 @@ class EndToEndTests(unittest.TestCase):
             self.assertEqual(rows[2]["regex_category"], "4")
             self.assertEqual(rows[4]["error"], "json_error")
 
+    def test_model_override(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "tool").mkdir()
+            shutil.copy(HTML, root / "tool" / HTML.name)
+            out = root / "radtracker" / "output"
+            out.mkdir(parents=True)
+            text = (FIXTURES / "cat0_unilateral.txt").read_text(encoding="utf-8")
+            (out / "mammo_202603_reports.json").write_text(json.dumps({"reports": [{"report_text": text}]}), encoding="utf-8")
+            seen = []
+
+            def post(url, headers, body, timeout):
+                seen.append(json.loads(body.decode("utf-8"))["model"])
+                return 200, claude_message({"cat4Sub": None, "lesions": []})
+
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = v.main(["--months", "202603", "--sleep", "0", "--model", "claude-opus-5-5"], repo_root=root,
+                            env={"ANTHROPIC_API_KEY": "k"}, http_post=post, sleep=lambda s: None,
+                            today=dt.date(2026, 10, 6))
+                bad = v.main(["--months", "202603", "--model", "gpt-x"], repo_root=root,
+                             env={"ANTHROPIC_API_KEY": "k"}, http_post=post)
+            self.assertEqual((rc, seen), (0, ["claude-opus-5-5"]))
+            self.assertEqual(bad, 1)
+
     def test_limit(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -307,11 +380,11 @@ class EndToEndTests(unittest.TestCase):
 
             def post(*a):
                 calls.append(1)
-                return 200, gemini_envelope({"cat4Sub": None, "lesions": []})
+                return 200, claude_message({"cat4Sub": None, "lesions": []})
 
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = v.main(["--months", "202602-202603", "--limit", "2", "--sleep", "0"], repo_root=root,
-                            env={"GEMINI_API_KEY": "k"}, http_post=post, sleep=lambda s: None,
+                            env={"ANTHROPIC_API_KEY": "k"}, http_post=post, sleep=lambda s: None,
                             today=dt.date(2026, 10, 6))
             self.assertEqual(rc, 0)
             self.assertEqual(len(calls), 2)

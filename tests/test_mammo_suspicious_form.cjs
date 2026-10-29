@@ -13,7 +13,7 @@ const fixture = name => ({
 });
 // Served from a synthetic origin so that storage APIs are available to inspect.
 const PAGE_URL = 'http://mammo-form.localhost/tool/mammo-suspicious-form.html';
-const GEMINI = 'https://generativelanguage.googleapis.com/**';
+const CLAUDE = 'https://api.anthropic.com/**';
 const SCREENSHOT_DIR = process.env.MAMMO_SCREENSHOT_DIR || '';
 
 const PAYLOAD = {
@@ -30,7 +30,7 @@ const checkedKeys = (p, pageIndex) => p.evaluate(i =>
         .map(el => el.dataset.k), pageIndex);
 const fieldValue = (p, f, pageIndex = 0) =>
     p.locator('.form-page').nth(pageIndex).locator(`input[data-f="${f}"]`).inputValue();
-const geminiBody = text => ({ candidates: [{ content: { parts: [{ text }] } }] });
+const claudeBody = (text, stop_reason = 'end_turn') => ({ type: 'message', stop_reason, content: text === null ? [] : [{ type: 'text', text }] });
 
 async function loadFixture(p, name) {
     const { text, expected } = fixture(name);
@@ -48,16 +48,16 @@ async function loadFixture(p, name) {
     async function test(name, run, { init } = {}) {
         const page = await browser.newPage();
         const errors = [];
-        const geminiRequests = [];
+        const apiRequests = [];
         page.on('pageerror', e => errors.push(e.message));
-        page.on('request', r => { if (r.url().includes('generativelanguage.googleapis.com')) geminiRequests.push(r); });
+        page.on('request', r => { if (r.url().includes('api.anthropic.com')) apiRequests.push(r); });
         await page.route('**/*', route => (route.request().url() === PAGE_URL
             ? route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html })
             : route.abort()));
         if (init) await page.addInitScript(init);
         try {
             await page.goto(PAGE_URL);
-            await run(page, { geminiRequests });
+            await run(page, { apiRequests });
             assert.deepEqual(errors, [], '瀏覽器不可出現未處理的錯誤');
             passed++;
             console.log(`PASS ${name}`);
@@ -120,18 +120,18 @@ async function loadFixture(p, name) {
             await paste(JSON.stringify({ ...PAYLOAD, chartNo: '00000002' }));
             assert.equal(await fieldValue(p, 'chartNo'), '00000002');
         });
-        await test('報告文字框內是整段 payload JSON 時，AI 解析前先匯入，不把姓名／病歷號送出', async (p, { geminiRequests }) => {
+        await test('報告文字框內是整段 payload JSON 時，AI 解析前先匯入，不把姓名／病歷號送出', async (p, { apiRequests }) => {
             const { text, expected } = fixture('cat0_benign_calc');
             let body;
-            await p.route(GEMINI, async route => {
+            await p.route(CLAUDE, async route => {
                 body = route.request().postDataJSON();
-                await route.fulfill({ json: geminiBody(JSON.stringify({ cat4Sub: null, lesions: expected.lesions })) });
+                await route.fulfill({ json: claudeBody(JSON.stringify({ cat4Sub: null, lesions: expected.lesions })) });
             });
             await p.locator('#reportText').fill(JSON.stringify({ ...PAYLOAD, reportText: text }));
             await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
             await p.getByRole('button', { name: 'AI 解析', exact: true }).click();
             await p.waitForFunction(() => document.getElementById('status').classList.contains('success') || document.getElementById('status').classList.contains('warning'));
-            assert.equal(geminiRequests.length, 1);
+            assert.equal(apiRequests.length, 1);
             const sent = JSON.stringify(body);
             for (const secret of ['00000001', '王小美', 'WANG', '19650309', '20261006', 'SYNTH0001', 'rad-workflow/mammo-form']) assert.ok(!sent.includes(secret), secret);
             assert.equal(await fieldValue(p, 'chartNo'), '00000001');
@@ -308,7 +308,7 @@ async function loadFixture(p, name) {
 
         // ---------- manual-tick prompts ----------
         const runAI = async (p, lesions) => {
-            await p.route(GEMINI, route => route.fulfill({ json: geminiBody(JSON.stringify({ cat4Sub: null, lesions })) }));
+            await p.route(CLAUDE, route => route.fulfill({ json: claudeBody(JSON.stringify({ cat4Sub: null, lesions })) }));
             await p.evaluate(pl => importPayload(pl), PAYLOAD);
             await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
             await p.getByRole('button', { name: 'AI 解析', exact: true }).click();
@@ -346,12 +346,12 @@ async function loadFixture(p, name) {
             assert.equal(await p.locator('.page-alert').count(), 0);
         });
         // ---------- LLM path ----------
-        await test('AI 解析：攔截 Gemini 回傳 fixture JSON 後產生頁面，只送報告文字', async (p, { geminiRequests }) => {
+        await test('AI 解析：攔截 Claude 回傳 fixture JSON 後產生頁面，只送報告文字', async (p, { apiRequests }) => {
             const { text, expected } = fixture('cat0_bilateral');
             let body;
-            await p.route(GEMINI, async route => {
+            await p.route(CLAUDE, async route => {
                 body = route.request().postDataJSON();
-                await route.fulfill({ json: geminiBody(JSON.stringify({ cat4Sub: null, lesions: expected.lesions })) });
+                await route.fulfill({ json: claudeBody(JSON.stringify({ cat4Sub: null, lesions: expected.lesions })) });
             });
             await p.evaluate(pl => importPayload(pl), { ...PAYLOAD, reportText: text });
             await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
@@ -359,18 +359,27 @@ async function loadFixture(p, name) {
             await p.waitForFunction(() => document.getElementById('status').classList.contains('success') || document.getElementById('status').classList.contains('warning'));
             assert.equal(await pageCount(p), 2);
             assert.equal(await isChecked(p, 1, 'i2.L'), true);
-            assert.equal(geminiRequests.length, 1);
-            assert.ok(geminiRequests[0].url().includes('/models/gemini-3.8-flash:generateContent'));
-            assert.ok(!geminiRequests[0].url().includes('SYNTHETIC_TEST_KEY'), '金鑰不放網址');
+            assert.equal(apiRequests.length, 1);
+            assert.equal(apiRequests[0].url(), 'https://api.anthropic.com/v1/messages');
+            assert.ok(!apiRequests[0].url().includes('SYNTHETIC_TEST_KEY'), '金鑰不放網址');
+            const h = apiRequests[0].headers();
+            assert.equal(h['x-api-key'], 'SYNTHETIC_TEST_KEY');
+            assert.equal(h['anthropic-version'], '2026-10-21');
+            assert.equal(h['anthropic-dangerous-direct-browser-access'], 'true');
             const sent = JSON.stringify(body);
-            assert.equal(body.generationConfig.responseMimeType, 'application/json');
+            const model = html.match(/const MODEL_ID = '([^']+)'/)[1];
+            assert.equal(body.model, model);
+            assert.ok(body.system.startsWith('You extract the SUSPICIOUS findings'));
+            assert.ok(body.messages[0].content.startsWith('MAMMOGRAPHY REPORT:\n'));
+            assert.equal(body.temperature, undefined, '2026-10-21 版 API 不接受 temperature');
+            assert.deepEqual(body.output_config, { effort: 'low' });
             for (const secret of ['00000001', '王小美', 'WANG', '19650309', '20261006', 'SYNTH0001']) assert.ok(!sent.includes(secret), secret);
             assert.ok(sent.includes('Grouped coarse heterogenous'));
             const ldct = fs.readFileSync(path.join(__dirname, '../tool/ldct-report.html'), 'utf8');
-            assert.ok(ldct.includes("const modelId = 'gemini-3.8-flash'"), 'LDCT 模型 id 已變動，需同步');
+            assert.ok(ldct.includes(`const MODEL_ID = '${model}'`), 'LDCT 與 mammo 的 MODEL_ID 需同步');
         });
         await test('AI 解析：非 JSON 回應顯示錯誤與原始回應，勾選不變', async p => {
-            await p.route(GEMINI, route => route.fulfill({ json: geminiBody('Sorry, I cannot do that.') }));
+            await p.route(CLAUDE, route => route.fulfill({ json: claudeBody('Sorry, I cannot do that.') }));
             await loadFixture(p, 'cat0_bilateral');
             const before = [await checkedKeys(p, 0), await checkedKeys(p, 1)];
             await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
@@ -381,8 +390,27 @@ async function loadFixture(p, name) {
             assert.equal(await p.locator('#rawBox').isVisible(), true);
             assert.deepEqual([await checkedKeys(p, 0), await checkedKeys(p, 1)], before);
         });
+        await test('AI 解析：回應包在 ```json 圍欄內仍可解析', async p => {
+            const { expected } = fixture('cat0_bilateral');
+            await p.route(CLAUDE, route => route.fulfill({ json: claudeBody('```json\n' + JSON.stringify({ cat4Sub: null, lesions: expected.lesions }) + '\n```') }));
+            await p.evaluate(pl => importPayload(pl), { ...PAYLOAD, reportText: fixture('cat0_bilateral').text });
+            await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
+            await p.getByRole('button', { name: 'AI 解析', exact: true }).click();
+            await p.waitForFunction(() => document.getElementById('status').classList.contains('success') || document.getElementById('status').classList.contains('warning'));
+            assert.equal(await pageCount(p), 2);
+        });
+        await test('AI 解析：模型拒答（refusal）顯示錯誤，勾選不變', async p => {
+            await p.route(CLAUDE, route => route.fulfill({ json: claudeBody(null, 'refusal') }));
+            await loadFixture(p, 'cat0_bilateral');
+            const before = [await checkedKeys(p, 0), await checkedKeys(p, 1)];
+            await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
+            await p.getByRole('button', { name: 'AI 解析', exact: true }).click();
+            await p.waitForFunction(() => document.getElementById('status').classList.contains('error'));
+            assert.match(await p.locator('#status').innerText(), /拒絕/);
+            assert.deepEqual([await checkedKeys(p, 0), await checkedKeys(p, 1)], before);
+        });
         await test('AI 解析：缺 lesions（{"foo":1}）顯示錯誤', async p => {
-            await p.route(GEMINI, route => route.fulfill({ json: geminiBody('{"foo":1}') }));
+            await p.route(CLAUDE, route => route.fulfill({ json: claudeBody('{"foo":1}') }));
             await loadFixture(p, 'cat0_benign_calc');
             await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
             await p.getByRole('button', { name: 'AI 解析', exact: true }).click();
@@ -392,12 +420,12 @@ async function loadFixture(p, name) {
             assert.equal(await pageCount(p), 1);
             assert.equal(await isChecked(p, 0, 'i3.at.focal'), true);
         });
-        await test('AI 解析：缺金鑰時提示且不送出請求', async (p, { geminiRequests }) => {
+        await test('AI 解析：缺金鑰時提示且不送出請求', async (p, { apiRequests }) => {
             await p.locator('#reportText').fill('BI-RADS category 0');
             await p.getByRole('button', { name: 'AI 解析', exact: true }).click();
-            assert.match(await p.locator('#status').innerText(), /Gemini API 金鑰/);
+            assert.match(await p.locator('#status').innerText(), /Anthropic API 金鑰/);
             await p.waitForTimeout(200);
-            assert.equal(geminiRequests.length, 0);
+            assert.equal(apiRequests.length, 0);
         });
         await test('金鑰欄為 password，可切換顯示', async p => {
             assert.equal(await p.locator('#apiKey').getAttribute('type'), 'password');

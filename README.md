@@ -27,7 +27,7 @@
 
 以瀏覽器開啟 `tool/ldct-report.html`。No lung nodule、Benign features、Insignificant 與 Juxtapleural 為獨立勾選項，可疑結節可另行勾選及編輯。
 
-AI Parse 需要 Gemini API Key 與網路，會將輸入的 Impression 傳送至 Gemini；人工編輯與產生報告不需 API。AI 解析 insignificant nodules 時只填 SE，IM 留白，避免只列出部分影像；醫師可手動填入完整 IM 清單，例如 `4,55`。解析結果仍須人工覆核，PDF 通知單僅支援 Category 1–2。
+AI Parse 需要 Anthropic API Key（Claude）與網路，會將輸入的 Impression 傳送至 Anthropic Claude API；人工編輯與產生報告不需 API。金鑰只在頁面欄位中使用，不寫入網址或瀏覽器儲存空間；AHK 的 XButton1 選單「複製 Claude API Key」可從 `radiologist_settings.ini` 的 `APIKey3` 複製。AI 解析 insignificant nodules 時只填 SE，IM 留白，避免只列出部分影像；醫師可手動填入完整 IM 清單，例如 `4,55`。解析結果仍須人工覆核，PDF 通知單僅支援 Category 1–2。
 
 回歸測試需要 Node.js、Playwright 套件與 Microsoft Edge：
 
@@ -36,7 +36,7 @@ npm install --no-save --package-lock=false playwright
 node tests/test_ldct_report.cjs
 ```
 
-測試以合成資料在 headless Edge 執行，Gemini 回應由測試替代，不使用真實 API Key 或傳送病患資料；不涵蓋真實 Gemini 判讀品質、系統列印對話框或完整臨床規則驗證。
+測試以合成資料在 headless Edge 執行，Claude 回應由測試替代，不使用真實 API Key 或傳送病患資料；不涵蓋真實 Claude 判讀品質、系統列印對話框或完整臨床規則驗證。
 
 ## AHK Scripts
 
