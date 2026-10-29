@@ -14,6 +14,7 @@ global skipMoveDown := false
 global desc := ""
 global API_KEY := ""
 global API_KEY2 := ""
+global API_KEY3 := ""
 
 global ExamNo, varCopyOld
 global WB, lastUSAIResult := "", currentUSAIImage := "", previousUSAIImage := ""
@@ -33,6 +34,7 @@ global g_I2F_RequestActive := false
 global g_I2F_LastScenario := ""
 global g_I2F_LastImpression := ""
 global g_I2F_LastModel := ""
+global g_I2F_LastProvider := ""   ; "openai" / "claude"
 global g_I2F_LastTokens := {prompt: 0, completion: 0, total: 0}
 global g_I2F_History := []
 global g_I2F_HistoryMax := 10
@@ -574,7 +576,7 @@ CreateConfigManager() {
     Gui, ConfigManager:Add, Button, x200 y400 w170 h40 gConfigGuiClose, 取消
     
 	; 添加 AI 設定區塊 (修改後)
-    Gui, ConfigManager:Add, GroupBox, x10 y220 w380 h100, AI 設定 ; 高度增加
+    Gui, ConfigManager:Add, GroupBox, x10 y220 w380 h130, AI 設定 ; 高度增加
     
     ; GPT Key 欄位
     Gui, ConfigManager:Add, Text, x20 y240 w100 h25, GPT Key:
@@ -583,6 +585,10 @@ CreateConfigManager() {
     ; Gemini Key 欄位 (新增)
     Gui, ConfigManager:Add, Text, x20 y270 w100 h25, Gemini Key:
     Gui, ConfigManager:Add, Edit, x130 y270 w240 h25 vConfigGeminiKey Password, %API_KEY2%
+
+    ; Claude Key 欄位（APIKey3：AI_FindOpen 腹超/TRUS、LDCT 與 mammo 網頁）
+    Gui, ConfigManager:Add, Text, x20 y300 w100 h25, Claude Key:
+    Gui, ConfigManager:Add, Edit, x130 y300 w240 h25 vConfigClaudeKey Password, %API_KEY3%
 	
     ; 顯示GUI
     Gui, ConfigManager:Show, w400 h500
@@ -601,6 +607,7 @@ SaveConfig:
     PWD := LoginPwd
     API_KEY := ConfigGPTKey       ; 更新 GPT Key
     API_KEY2 := ConfigGeminiKey   ; 更新 Gemini Key
+    API_KEY3 := ConfigClaudeKey   ; 更新 Claude Key
     
     ; 處理下拉選單
     varWhere := SubStr(SelectedLocation, 1, 1)
@@ -615,7 +622,7 @@ SaveConfig:
     ; 儲存設定到檔案 (可選)
     SaveSettingsToFile()
     
-    MsgBox, 64, 設定已更新, 設定已儲存！`nGPT Key: 已更新`nGemini Key: 已更新
+    MsgBox, 64, 設定已更新, 設定已儲存！`nGPT Key: 已更新`nGemini Key: 已更新`nClaude Key: 已更新
     Gui, ConfigManager:Destroy
 return
 
@@ -635,6 +642,7 @@ SaveSettingsToFile() {
     IniWrite, %vExamLoc%, %settingsFile%, Server, ExamLocation
     IniWrite, %API_KEY%, %settingsFile%, AI, APIKey      ; 存 GPT Key
     IniWrite, %API_KEY2%, %settingsFile%, AI, APIKey2    ; 存 Gemini Key
+    IniWrite, %API_KEY3%, %settingsFile%, AI, APIKey3    ; 存 Claude Key
 }
 
 ; 從檔案載入設定 (實際應用時可自行實作)
@@ -647,6 +655,8 @@ LoadSettingsFromFile() {
         IniRead, vExamLoc, %settingsFile%, Server, ExamLocation, %vExamLoc%
         IniRead, API_KEY, %settingsFile%, AI, APIKey, %API_KEY%
         IniRead, API_KEY2, %settingsFile%, AI, APIKey2, %API_KEY2% ; 讀取 Gemini Key
+        IniRead, API_KEY3, %settingsFile%, AI, APIKey3, %A_Space% ; 讀取 Claude Key（缺少時為空白，不沿用 Gemini Key）
+        API_KEY3 := Trim(API_KEY3)
     }
 }
 

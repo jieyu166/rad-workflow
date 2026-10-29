@@ -1009,7 +1009,14 @@ if (I2F_Impression = "") {
     return
 }
 
-if (!API_KEY) {
+; 腹超 / TRUS -> Claude Sonnet 5.5 (blind review of 350 replayed cases: substantive errors 44 vs 113 for Terra).
+; IVP / CT-Chest stay on gpt-5.6-terra (tie with Sonnet), Scrotum on gpt-5.4-mini.
+useClaude := InStr(I2F_Scenario, "腹超") || InStr(I2F_Scenario, "TRUS")
+if (useClaude && !API_KEY3) {
+    MsgBox, 16, Error, Claude API Key 尚未設定。請按 Win+\ 開啟設定管理器並填入 Claude Key。
+    return
+}
+if (!useClaude && !API_KEY) {
     MsgBox, 16, Error, GPT API Key 尚未設定。請按 Win+\ 開啟設定管理器並填入 GPT Key。
     return
 }
@@ -1025,6 +1032,10 @@ endpoint := "https://api.openai.com/v1/chat/completions"
 ;   CT protocol lines are forced by I2F_FixCTScaffold, so the model cannot flip contrast status.
 ;   Scrotum stays on gpt-5.4-mini (validated on mini).
 gModel   := InStr(I2F_Scenario, "Scrotum") ? "gpt-5.4-mini" : "gpt-5.6-terra"   ; reasoning_effort none = 非推理，避開 reasoning 延遲
+if (useClaude) {
+    endpoint := "https://api.anthropic.com/v1/messages"
+    gModel   := "claude-sonnet-5-5"
+}
 
 ; 依 US 類型決定 organSystems / conditionalOutput（僅腹超 prompt 會用到）
 if (I2F_TypeUpperAbd) {
@@ -1091,6 +1102,9 @@ if (InStr(I2F_Scenario, "Scrotum")) {
 }
 
 ; 注意：gpt-5 系列不支援 temperature 自訂（只接受預設值 1），故不傳此參數
+if (useClaude)
+    json := I2F_BuildClaudeJSON(gModel, sysPrompt, userPrompt)
+else
 json := "{"
     . """model"": """ gModel ""","
     . """reasoning_effort"": ""none"","
@@ -1106,6 +1120,7 @@ GuiControl, I2F:, I2F_Status, % "處理中... 0.0s（" I2F_Scenario " / " gModel
 g_I2F_LastScenario := I2F_Scenario
 g_I2F_LastImpression := I2F_Impression
 g_I2F_LastModel := gModel
+g_I2F_LastProvider := useClaude ? "claude" : "openai"
 g_I2F_LastCTMethod := ctMethod
 g_I2F_LastCTContrastNote := ctContrastNote
 g_I2F_LastCTLimitNote := ctLimitationNote
@@ -1114,7 +1129,13 @@ g_I2F_LastCTLimitNote := ctLimitationNote
 g_I2F_Whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
 g_I2F_Whr.Open("POST", endpoint, true)
 g_I2F_Whr.SetRequestHeader("Content-Type", "application/json; charset=utf-8")
-g_I2F_Whr.SetRequestHeader("Authorization", "Bearer " API_KEY)
+if (useClaude) {
+    g_I2F_Whr.SetRequestHeader("x-api-key", API_KEY3)
+    g_I2F_Whr.SetRequestHeader("anthropic-version", "2026-10-21")
+    g_I2F_Whr.SetRequestHeader("anthropic-beta", "server-side-fallback-2026-07-01")
+} else {
+    g_I2F_Whr.SetRequestHeader("Authorization", "Bearer " API_KEY)
+}
 g_I2F_Whr.SetTimeouts(60000, 60000, 60000, 90000)
 g_I2F_Whr.Send(json)
 
@@ -1169,7 +1190,12 @@ I2F_PollResponse:
         return
     }
 
-    content := ExtractContent(resp)
+    if (g_I2F_LastProvider = "claude" && RegExMatch(resp, """stop_reason""\s*:\s*""refusal""")) {
+        GuiControl, I2F:, I2F_Status, % "模型拒答（refusal）"
+        MsgBox, 48, Claude, 模型拒絕回應（refusal）。請修改 Impression 後重試，或改用其他情境。
+        return
+    }
+    content := (g_I2F_LastProvider = "claude") ? I2F_ExtractClaudeText(resp) : ExtractContent(resp)
     if (content = "") {
         snippet := SubStr(resp, 1, 200)
         GuiControl, I2F:, I2F_Status, % "解析失敗"
@@ -1188,7 +1214,7 @@ I2F_PollResponse:
         if (find = "")
             find := content
     }
-    find := Trim(find)
+    find := I2F_StripTags(Trim(find))
     if (InStr(g_I2F_LastScenario, "CT-Chest"))
         find := I2F_FixCTScaffold(find, g_I2F_LastCTMethod, g_I2F_LastCTContrastNote, g_I2F_LastCTLimitNote)
 
@@ -1236,7 +1262,7 @@ I2F_HistoryEvent:
     GuiControl, I2F:, I2F_Status, % "已還原：" item.time " " item.scenario
 return
 
-; ── 從 OpenAI 回應中抓 token 數（更新 g_I2F_LastTokens） ──
+; ── 從 OpenAI / Claude 回應中抓 token 數（更新 g_I2F_LastTokens） ──
 ParseTokenUsage(resp) {
     global g_I2F_LastTokens
     g_I2F_LastTokens := {prompt: 0, completion: 0, total: 0}
@@ -1246,6 +1272,44 @@ ParseTokenUsage(resp) {
         g_I2F_LastTokens.completion := m1 + 0
     if RegExMatch(resp, """total_tokens""\s*:\s*(\d+)", m)
         g_I2F_LastTokens.total := m1 + 0
+    ; Claude usage: input = uncached + cache read + cache write
+    if (!g_I2F_LastTokens.prompt && RegExMatch(resp, """output_tokens""\s*:\s*(\d+)", m)) {
+        g_I2F_LastTokens.completion := m1 + 0
+        for _, f in ["input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"]
+            if RegExMatch(resp, """" f """\s*:\s*(\d+)", m)
+                g_I2F_LastTokens.prompt += m1 + 0
+        g_I2F_LastTokens.total := g_I2F_LastTokens.prompt + g_I2F_LastTokens.completion
+    }
+}
+
+; Claude Messages API request body (same settings as the replay that chose the model):
+; thinking off via between_tools, effort low, server-side refusal fallbacks, system prompt cached.
+I2F_BuildClaudeJSON(model, sysPrompt, userPrompt) {
+    return "{"
+        . """model"": """ model ""","
+        . """max_tokens"": 8000,"
+        . """system"": [{""type"": ""text"", ""text"": " . JEscape(sysPrompt) . ", ""cache_control"": {""type"": ""ephemeral""}}],"
+        . """messages"": [{""role"": ""user"", ""content"": " . JEscape(userPrompt) . "}],"
+        . """output_config"": {""effort"": ""low""},"
+        . """thinking"": {""type"": ""between_tools""},"
+        . """fallbacks"": ""default"""
+        . "}"
+}
+
+; Drop stand-alone tag lines such as <<END>> or a stray <<FINDINGS>> that the model sometimes adds
+; (Sonnet 5.5 appended <<END>> in 5/177 replayed 腹超 cases); they must not reach the report.
+I2F_StripTags(text) {
+    return Trim(RegExReplace(text, "`nm)^[ 	]*<<[A-Z_]+>>[ 	]*\R?", ""), " `t`r`n")
+}
+
+; Joined text blocks of a Claude Messages API response ("" if none).
+I2F_ExtractClaudeText(resp) {
+    out := "", pos := 1
+    while (pos := RegExMatch(resp, """text""\s*:\s*""((?:\\.|[^""\\])*)""", m, pos)) {
+        out .= JsonUnescape(m1)
+        pos += StrLen(m)
+    }
+    return out
 }
 
 ; ---- Helpers ----

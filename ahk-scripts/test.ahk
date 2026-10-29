@@ -1247,7 +1247,8 @@ XButton1::
     Menu, XB1Menu, Add, 顯示快速鍵 (&H), XB1_ShowHotkeys
 	Menu, XB1Menu, Add, KMU專案用, HGH_Build
     Menu, XB1Menu, Add, 置頂, XB1_OnTop
-    Menu, XB1Menu, Add, 複製 Gemini API Key (&K), XB1_CopyGeminiKey
+    Menu, XB1Menu, Add, 複製 Gemini API Key (&M), XB1_CopyGeminiKey
+	Menu, XB1Menu, Add, 複製 Claude API Key (&K), XB1_CopyClaudeKey
     Menu, XB1Menu, Add, 重新載入腳本 (&E), XB1_Reload
     
     ; 顯示選單
@@ -1331,6 +1332,16 @@ XB1_CopyGeminiKey:
     } else {
         Clipboard := API_KEY2
         TrayTip, XButton1, Gemini API Key 已複製到剪貼簿, 2, 1
+    }
+return
+
+; 複製 Claude API Key 到剪貼簿（供 LDCT 報告工具等網頁使用）
+XB1_CopyClaudeKey:
+    if (API_KEY3 = "") {
+        TrayTip, XButton1, Claude API Key 未設定！`n請先在設定管理器中設定, 3, 2
+    } else {
+        Clipboard := API_KEY3
+        TrayTip, XButton1, Claude API Key 已複製到剪貼簿, 2, 1
     }
 return
 
