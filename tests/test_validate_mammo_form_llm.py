@@ -225,10 +225,14 @@ class RetryTests(unittest.TestCase):
                          (None, "refusal"))
 
     def test_json_fence_stripped(self):
-        text, err = v.call_claude("p", "claude-haiku-5-5", "k", "r",
-                                  lambda *a: (200, claude_message('```json\n{"lesions": []}\n```')), lambda s: None)
-        self.assertIsNone(err)
-        self.assertEqual(json.loads(text), {"lesions": []})
+        for raw in ('```json\n{"lesions": []}\n```',
+                    '```json\n{"lesions": []}\n```\n\nNote: no suspicious finding.',
+                    'Here is the JSON:\n{"lesions": []}\nDone.'):
+            with self.subTest(raw=raw):
+                text, err = v.call_claude("p", "claude-haiku-5-5", "k", "r",
+                                          lambda *a, raw=raw: (200, claude_message(raw)), lambda s: None)
+                self.assertIsNone(err)
+                self.assertEqual(json.loads(text), {"lesions": []})
 
     def test_request_settings_per_model(self):
         h, b = v.build_request("P", " R ", "claude-haiku-5-5", "K")

@@ -1336,13 +1336,16 @@ change can be: "unchanged", "enlarging", "new", "no_prior"`;
         return { headers, body };
     }
 
-    // Text of a Messages API response; throws on refusal. Strips a ```json fence if the model added one.
+    // JSON text of a Messages API response; throws on refusal. The model sometimes wraps the JSON in a
+    // ```json fence or adds a sentence before/after it, so take the fenced block, else the outermost {...}.
     function claudeResponseText(data) {
         if (data?.stop_reason === 'refusal') throw new Error('Model refused the request (refusal)');
         const blocks = Array.isArray(data?.content) ? data.content : [];
         const text = blocks.filter(b => b && b.type === 'text').map(b => b.text || '').join('').trim();
-        const fenced = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-        return fenced ? fenced[1].trim() : text;
+        const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+        if (fenced) return fenced[1].trim();
+        const start = text.indexOf('{'), end = text.lastIndexOf('}');
+        return start >= 0 && end > start ? text.slice(start, end + 1) : text;
     }
 
     function mentionsCoronaryArteries(text) {

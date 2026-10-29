@@ -343,16 +343,19 @@ def build_request(prompt: str, report_text: str, model: str, api_key: str) -> tu
     return headers, body
 
 
-_FENCE_RE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.S | re.I)
+_FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.S | re.I)
 
 
 def response_text(data: dict) -> str:
-    """Mirror of claudeResponseText(): joined text blocks with a ```json fence stripped."""
+    """Mirror of claudeResponseText(): the ```json fenced block if any, else the outermost {...}."""
     blocks = data.get("content") or []
     text = "".join(b.get("text", "") for b in blocks
                    if isinstance(b, dict) and b.get("type") == "text").strip()
-    m = _FENCE_RE.match(text)
-    return m.group(1).strip() if m else text
+    m = _FENCE_RE.search(text)
+    if m:
+        return m.group(1).strip()
+    start, end = text.find("{"), text.rfind("}")
+    return text[start:end + 1] if start >= 0 and end > start else text
 
 
 def call_claude(prompt: str, model: str, api_key: str, report_text: str,

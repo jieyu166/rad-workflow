@@ -392,7 +392,7 @@ async function loadFixture(p, name) {
         });
         await test('AI 解析：回應包在 ```json 圍欄內仍可解析', async p => {
             const { expected } = fixture('cat0_bilateral');
-            await p.route(CLAUDE, route => route.fulfill({ json: claudeBody('```json\n' + JSON.stringify({ cat4Sub: null, lesions: expected.lesions }) + '\n```') }));
+            await p.route(CLAUDE, route => route.fulfill({ json: claudeBody('```json\n' + JSON.stringify({ cat4Sub: null, lesions: expected.lesions }) + '\n```\n\nNote: BI-RADS 0 lesions only.') }));
             await p.evaluate(pl => importPayload(pl), { ...PAYLOAD, reportText: fixture('cat0_bilateral').text });
             await p.locator('#apiKey').fill('SYNTHETIC_TEST_KEY');
             await p.getByRole('button', { name: 'AI 解析', exact: true }).click();

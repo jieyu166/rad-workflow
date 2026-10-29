@@ -139,8 +139,8 @@ const html = fs.readFileSync(path.join(__dirname, '../tool/ldct-report.html'), '
             await p.route('https://api.anthropic.com/**', async route => {
                 requests.push(route.request());
                 const text = JSON.stringify(responses.shift());
-                // Second reply wraps the JSON in a ```json fence: the page must strip it.
-                const wrapped = requests.length === 2 ? '```json\n' + text + '\n```' : text;
+                // Second reply wraps the JSON in a ```json fence followed by a note (seen live with Haiku): the page must extract it.
+                const wrapped = requests.length === 2 ? '```json\n' + text + '\n```\n\nNote: category assigned from the impression.' : text;
                 await route.fulfill({ json: { type: 'message', stop_reason: 'end_turn',
                     content: [{ type: 'text', text: wrapped }] } });
             });
