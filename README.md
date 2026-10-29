@@ -70,6 +70,70 @@ python -m unittest discover -s tests -p "test_usai_*.py"
 
 測試不代表真實 API 存取權、醫療影像分析品質或院內 HIS 完整操作已驗證。
 
+### AI_FindOpen（Impression → Findings）模型選擇
+
+`US.ahk` 的 AI_FindOpen 依情境選模型（2026-10-29 起）：
+
+| 情境 | 模型 | API 金鑰（`radiologist_settings.ini`） |
+|---|---|---|
+| 腹超、TRUS | `claude-sonnet-5-5`（thinking `between_tools`、effort `low`、拒答 fallback） | `APIKey3` |
+| IVP、CT-Chest | `gpt-5.6-terra`（`reasoning_effort: none`） | `APIKey` |
+| Scrotum | `gpt-5.4-mini`（`reasoning_effort: none`） | `APIKey` |
+
+CT 的 METHOD 行、打藥 contrast note 與不打藥註記由 `I2F_FixCTScaffold` 依 GUI radio button 覆寫，不交給模型；模型多加的 `<<END>>` 等標記行由 `I2F_StripTags` 刪除。
+
+#### 測試方法
+
+- **資料**：`radtracker/csv_input` 中 A80748 簽出的報告（2026-02～10），依申請單號從院內報告系統取回：腹超 19001-1（去重後 177 例）、TRUS 19017-1（173 例）、IVP 33012（105 例）、胸部 CT（隨機 140 例）。報告內文只放本機暫存區，不進 repo。
+- **重跑**：把 impression 以 US.ahk 相同的 prompt 與參數送給各模型，CT 輸出再經 `I2F_FixCTScaffold` 處理。
+- **評分**：關鍵字比對（漏寫 pleural effusion、ascites、hernia、Srs/Img 標記），以及由不知道模型身分的 LLM 評審（Claude Sonnet）逐例比較，計算漏寫、自行補出 impression 沒有的內容、細節錯誤、殘留診斷用語、格式問題，並選出最佳版本。
+- **速度**：每例請求總耗時（AHK 為非串流，等完整回應才顯示）。
+
+#### 結果一：OpenAI 各模型（腹超 177 例，關鍵字比對）
+
+| 模型 | 中位數耗時 | Pleural 漏寫 /45 | Ascites 漏寫 /20 | Hernia 漏寫 /8 | Srs/Img 遺失 /256 |
+|---|---|---|---|---|---|
+| gpt-5.4-mini | 1.4 s | 1～3 | 1～3 | 0 | 11～15 |
+| gpt-5.4-mini（effort low） | 2.1 s | 0 | 0 | 0 | 33 |
+| gpt-5.4 | 2.8 s | 0 | 0 | 0 | 0 |
+| gpt-5.6-luna | 2.4 s | 0 | 0 | 0 | 2 |
+| gpt-5.6-terra（兩次重跑） | 2.3～2.4 s | 0 | 0 | 0 | 0 |
+
+mini 兩次重跑結果不同（無法設定 temperature），剩下的漏寫屬隨機性；改 prompt 前（舊版 prompt）mini 漏 pleural 22/45、ascites 12/20、hernia 4/8。
+
+#### 結果二：gpt-5.4-mini vs gpt-5.6-terra（盲評，數字為問題總數）
+
+| 情境 | 漏寫 | 自行補出 | 細節錯誤 | 格式問題 | 中位數耗時 |
+|---|---|---|---|---|---|
+| TRUS（173） | 26 → 7 | 10 → 14 | 11 → 2 | 43 → 0 | 1.2 → 1.7 s |
+| IVP（105） | 20 → 4 | 37 → 12 | 31 → 4 | 3 → 0 | 1.4 → 2.0 s |
+| CT（140，框架修正後） | 50 → 44 | 0 → 2 | 33 → 20 | 1 → 1 | 1.8 → 2.7 s |
+
+CT 在框架修正前，不打藥的 48 例中 METHOD 被寫成打藥：mini 8 例、Terra 16 例；修正後兩者皆 0。
+
+#### 結果三：Terra vs Claude Haiku 5.5 vs Claude Sonnet 5.5（三方盲評，595 例）
+
+實質錯誤 = 漏寫 + 自行補出 + 細節錯誤（越低越好）。
+
+| 情境 | 實質錯誤 Terra／Haiku／Sonnet | 評審選為最佳（不含平手） | 中位數耗時 Terra／Haiku／Sonnet |
+|---|---|---|---|
+| 腹超（177） | 58／64／**31** | Sonnet 58、Terra 33、Haiku 9 | 2.4／1.9／2.6 s |
+| TRUS（173） | 55／36／**13** | Sonnet 35、Haiku 10、Terra 7 | 1.7／1.5／2.2 s |
+| IVP（105） | 34／75／33 | **Terra 34**、Sonnet 15、Haiku 7 | 2.0／1.6／2.2 s |
+| CT（140） | 26／54／28 | **Terra 22**、Sonnet 17、Haiku 5 | 2.8／2.3／3.4 s |
+
+- Haiku 最快、最便宜，但細節錯誤與殘留診斷用語最多（腹超診斷用語 176 處），不採用。
+- Sonnet 在腹超、TRUS 明顯最好；IVP、CT 與 Terra 相當，評審略偏好 Terra，故維持 Terra。
+- 費用：595 例 Sonnet 約 US$2.7、Haiku 約 US$0.14（system prompt 快取命中）。
+
+#### 未納入或有限制
+
+- **Claude Opus 5.5**：thinking 無法關閉，每例 4.8～11.8 s，太慢，未做完整測試。
+- **Gemini 3.8 Flash**：測試時 API 回 402（預付額度用完），未測。
+- 評審是 Claude 模型，雖然不知道各版本出自哪個模型，仍可能偏好 Claude 的寫法；Terra 與 mini 的比較不受此影響。
+- 關鍵字比對與 LLM 評審都不等於臨床判讀驗證；結果仍須醫師覆核。
+- 重跑與評審腳本在本機暫存區，未納入 repo；`tests/test_ct_scaffold.py`、`tests/test_i2f_claude.py` 只驗證 AHK 的組請求、解析與框架修正，不呼叫 API。
+
 ### CXR 報告範本
 
 `ahk-scripts/cxr/` 目錄：
